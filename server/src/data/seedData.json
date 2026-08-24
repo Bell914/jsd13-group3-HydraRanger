@@ -1,0 +1,60 @@
+{
+  "initialUsers": [
+    {
+      "username": "hydraleader",
+      "email": "leader@hydraranger.dev",
+      "role": "admin"
+    },
+    {
+      "username": "hydradev",
+      "email": "dev@hydraranger.dev",
+      "role": "user"
+    }
+  ],
+  "initialItems": [
+    {
+      "id": "item-001",
+      "_id": "64f1a2b3c4d5e6f7a8b9c001",
+      "title": "Setup Architecture & Modular Directory Structure",
+      "description": "Establish clear folder separation for Client and Server with MVC and Service patterns.",
+      "category": "Backend",
+      "status": "Done",
+      "priority": "High",
+      "creatorName": "HydraLeader",
+      "createdAt": "2026-08-24T08:00:00.000Z"
+    },
+    {
+      "id": "item-002",
+      "_id": "64f1a2b3c4d5e6f7a8b9c002",
+      "title": "Implement JWT Auth & Route Protection",
+      "description": "Build user registration, secure login with bcrypt password hashing, and token verification.",
+      "category": "Backend",
+      "status": "In Progress",
+      "priority": "Critical",
+      "creatorName": "HydraLeader",
+      "createdAt": "2026-08-24T09:30:00.000Z"
+    },
+    {
+      "id": "item-003",
+      "_id": "64f1a2b3c4d5e6f7a8b9c003",
+      "title": "Design Interactive Dashboard & Item Management",
+      "description": "Create responsive React UI with filterable cards, status badges, and real-time form inputs.",
+      "category": "Frontend",
+      "status": "In Progress",
+      "priority": "High",
+      "creatorName": "HydraDev",
+      "createdAt": "2026-08-24T10:15:00.000Z"
+    },
+    {
+      "id": "item-004",
+      "_id": "64f1a2b3c4d5e6f7a8b9c004",
+      "title": "Write Complete API Specification & Sprint Plan",
+      "description": "Document all REST endpoints, query parameters, schemas, and contribution guides.",
+      "category": "Design",
+      "status": "Done",
+      "priority": "Medium",
+      "creatorName": "HydraLeader",
+      "createdAt": "2026-08-24T11:00:00.000Z"
+    }
+  ]
+}

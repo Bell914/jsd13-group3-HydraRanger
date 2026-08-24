@@ -1,0 +1,28 @@
+{
+  "name": "hydraranger-server",
+  "version": "1.0.0",
+  "description": "Backend API Server for HydraRanger (Group 3) - Sprint 2",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "seed": "node src/scripts/seed.js",
+    "test:conn": "node src/scripts/testConnection.js"
+  },
+  "keywords": ["express", "rest-api", "nodejs", "hydraranger", "mern"],
+  "author": "HydraRanger Team",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
