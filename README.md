@@ -2,7 +2,7 @@
 
 OCCASION เป็นเว็บไซต์ E-commerce แฟชั่นแบบ Unisex ที่ช่วยให้ลูกค้าค้นหา เลือกซื้อ และจับคู่เสื้อผ้าผ่าน Lookbook / Mix & Match
 
-Repository นี้ใช้สำหรับ Sprint 2 โดยพัฒนาต่อยอดจาก Static HTML Prototype ใน Sprint 1 ไปเป็น MERN Stack Application
+Repository นี้มีไว้สำหรับ Sprint 2 โดยพัฒนาต่อยอดจาก Static HTML Prototype ใน Sprint 1 ไปเป็น MERN Stack Application
 
 > Junior Software Developer Bootcamp — Batch 13
 
