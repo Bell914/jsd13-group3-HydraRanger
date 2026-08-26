@@ -12,7 +12,7 @@ export const generateToken = (payload) => {
   });
 };
 
-export const registerUser = async ({ username, email, password, role = 'user' }) => {
+export const registerUser = async ({ username, email, password }) => {
   try {
     const existingUser = await User.findOne({
       $or: [{ email: email.toLowerCase() }, { username }]
@@ -26,7 +26,7 @@ export const registerUser = async ({ username, email, password, role = 'user' })
       username,
       email: email.toLowerCase(),
       password,
-      role
+      role: 'user'
     });
 
     const token = generateToken({
@@ -66,7 +66,7 @@ export const registerUser = async ({ username, email, password, role = 'user' })
       username,
       email: email.toLowerCase(),
       password: hashedPassword,
-      role,
+      role: 'user',
       createdAt: new Date().toISOString()
     };
     inMemoryUsers.push(mockUser);
@@ -100,7 +100,7 @@ export const loginUser = async ({ email, password }) => {
     }
 
     const isMatch = await user.matchPassword(password);
-    if (!isMatch) {
+    if (!isMatch || user.role !== 'user') {
       throw new Error('Invalid email or password');
     }
 
@@ -128,24 +128,11 @@ export const loginUser = async ({ email, password }) => {
     // In-memory fallback
     const mockUser = inMemoryUsers.find((u) => u.email === email.toLowerCase());
     if (!mockUser) {
-      // Default demo login fallback
-      if (email === 'admin@hydra.com' && password === 'Hydra1234!') {
-        const adminUser = {
-          id: 'admin-1',
-          username: 'HydraAdmin',
-          email: 'admin@hydra.com',
-          role: 'admin'
-        };
-        return {
-          user: adminUser,
-          token: generateToken(adminUser)
-        };
-      }
       throw new Error('Invalid email or password');
     }
 
     const isMatch = await bcrypt.compare(password, mockUser.password);
-    if (!isMatch) {
+    if (!isMatch || mockUser.role !== 'user') {
       throw new Error('Invalid email or password');
     }
 
@@ -165,5 +152,45 @@ export const loginUser = async ({ email, password }) => {
       },
       token
     };
+  }
+};
+
+export const loginAdmin = async ({ email, password }) => {
+  try {
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+    if (!user || user.role !== 'admin') throw new Error('Invalid admin credentials');
+
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) throw new Error('Invalid admin credentials');
+
+    const admin = { id: user._id, username: user.username, email: user.email, role: user.role };
+    return { user: admin, token: generateToken(admin) };
+  } catch (dbError) {
+    if (dbError.message === 'Invalid admin credentials') throw dbError;
+
+    const mockAdmin = inMemoryUsers.find(
+      (user) => user.email === email.toLowerCase() && user.role === 'admin'
+    );
+    if (mockAdmin && await bcrypt.compare(password, mockAdmin.password)) {
+      const admin = {
+        id: mockAdmin.id,
+        username: mockAdmin.username,
+        email: mockAdmin.email,
+        role: mockAdmin.role
+      };
+      return { user: admin, token: generateToken(admin) };
+    }
+
+    if (email === 'admin@occasion.dev' && password === 'Occasion1234!') {
+      const admin = {
+        id: 'admin-1',
+        username: 'OccasionAdmin',
+        email: 'admin@occasion.dev',
+        role: 'admin'
+      };
+      return { user: admin, token: generateToken(admin) };
+    }
+
+    throw new Error('Invalid admin credentials');
   }
 };

@@ -1,7 +1,7 @@
 {
-  "name": "hydraranger-server",
+  "name": "occasion-server",
   "version": "1.0.0",
-  "description": "Backend API Server for HydraRanger (Group 3) - Sprint 2",
+  "description": "Backend API Server for OCCASION by HydraRanger Team - Sprint 2",
   "main": "src/server.js",
   "type": "module",
   "scripts": {
@@ -10,7 +10,7 @@
     "seed": "node src/scripts/seed.js",
     "test:conn": "node src/scripts/testConnection.js"
   },
-  "keywords": ["express", "rest-api", "nodejs", "hydraranger", "mern"],
+  "keywords": ["express", "rest-api", "nodejs", "occasion", "hydraranger", "mern"],
   "author": "HydraRanger Team",
   "license": "MIT",
   "dependencies": {

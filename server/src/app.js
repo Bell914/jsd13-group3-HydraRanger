@@ -10,7 +10,13 @@ const app = express();
 // Global Middlewares
 app.use(
   cors({
-    origin: [ENV.CLIENT_URL, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+    origin: [
+      ENV.CLIENT_URL,
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      'http://localhost:5174',
+      'http://127.0.0.1:5174'
+    ],
     credentials: true
   })
 );
@@ -26,7 +32,7 @@ app.use(requestLogger);
 // Root Welcome Endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: '🛡️ Welcome to HydraRanger API (Group 3 - Sprint 2)',
+    message: 'Welcome to OCCASION API (HydraRanger Team - Sprint 2)',
     docs: '/api/health',
     version: '1.0.0'
   });

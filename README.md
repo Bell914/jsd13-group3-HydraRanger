@@ -59,6 +59,11 @@ Feature Owner รับผิดชอบให้ Flow ทำงานสำเ
 - Tailwind CSS
 - Axios
 
+หน้าร้านลูกค้าและระบบ Admin เป็นคนละ Vite application:
+
+- client/ — เว็บไซต์ลูกค้า (development port 5173)
+- admin-client/ — เว็บไซต์หลังบ้าน (development port 5174)
+
 ### Backend
 
 - Node.js
@@ -188,6 +193,11 @@ group-project-3-sprint-2/
 │       ├── routes/
 │       ├── App.jsx
 │       └── main.jsx
+├── admin-client/
+│   └── src/
+│       ├── services/
+│       ├── App.jsx
+│       └── main.jsx
 ├── server/
 │   └── src/
 │       ├── config/
@@ -242,6 +252,18 @@ cd server
 npm install
 npm run dev
 ```
+
+### Admin Client
+
+Open another Terminal and run npm install, then npm run dev from admin-client/.
+
+Customer login และ Admin login แยกจากกัน:
+
+- Customer: localhost:5173/login → POST /api/auth/login
+- Admin: localhost:5174 → POST /api/admin/auth/login
+
+Backend จะตรวจ role: admin ก่อนออก Admin session เสมอ และ Customer registration
+ไม่รับค่า role จาก Client
 
 ### Environment Variables
 

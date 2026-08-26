@@ -17,7 +17,7 @@ export const HomePage = () => {
           Powering Modular Full-Stack <br />
           with{' '}
           <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
-            HydraRanger
+            OCCASION
           </span>
         </h1>
 

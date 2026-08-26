@@ -7,15 +7,15 @@ export const getAllUsers = async () => {
     return [
       {
         id: 'mock-1',
-        username: 'HydraLeader',
-        email: 'leader@hydraranger.dev',
+        username: 'OccasionAdmin',
+        email: 'admin@occasion.dev',
         role: 'admin',
         createdAt: new Date().toISOString()
       },
       {
         id: 'mock-2',
-        username: 'HydraDev',
-        email: 'developer@hydraranger.dev',
+        username: 'OccasionDev',
+        email: 'developer@occasion.dev',
         role: 'user',
         createdAt: new Date().toISOString()
       }
@@ -29,8 +29,8 @@ export const getUserById = async (id) => {
   } catch {
     return {
       id,
-      username: 'HydraMember',
-      email: 'member@hydraranger.dev',
+      username: 'OccasionMember',
+      email: 'member@occasion.dev',
       role: 'user'
     };
   }

@@ -1,4 +1,4 @@
-# 🏛️ System Architecture - HydraRanger (Group 3)
+# 🏛️ System Architecture — OCCASION (HydraRanger Team, Group 3)
 
 เอกสารนี้อธิบายสถาปัตยกรรมระบบ รูปแบบการจัดวางโค้ด และการไหลของข้อมูล (Data Flow) ในโปรเจกต์ Sprint 2
 
@@ -6,13 +6,15 @@
 
 ## 🏗️ 1. High-Level Architecture
 
-ระบบถูกออกแบบเป็น **Decoupled Client-Server Architecture**:
+ระบบถูกออกแบบเป็น **Decoupled Multi-Client Architecture** โดยหน้าร้านลูกค้าและระบบ
+Admin เป็นคนละเว็บไซต์ แต่ใช้ Backend และฐานข้อมูลร่วมกัน:
 
 ```mermaid
 graph TD
-    Client["Frontend (React + Vite)"] -- "HTTP / REST JSON" --> Server["Backend (Express.js API)"]
+    Client["Customer Client (React + Vite :5173)"] -- "Customer REST API" --> Server["Backend (Express.js API)"]
+    AdminClient["Admin Client (React + Vite :5174)"] -- "Admin REST API" --> Server
     
-    subgraph Frontend Layer
+    subgraph Customer Frontend Layer
         Routes["Routes (AppRoutes)"]
         Pages["Pages (HomePage, Dashboard, Login)"]
         Components["Components (Navbar, Card, Button)"]
@@ -22,10 +24,18 @@ graph TD
         Pages --> Services
     end
 
+    subgraph Admin Frontend Layer
+        AdminLogin["Admin Login"]
+        AdminDashboard["Admin Dashboard"]
+        AdminService["Admin API Service + Separate Token"]
+        AdminLogin --> AdminService
+        AdminDashboard --> AdminService
+    end
+
     subgraph Backend Layer
         App["app.js / server.js"]
         Middlewares["Middlewares (Auth, Error, Logger)"]
-        Routers["Routes (/api/auth, /api/items, /api/users)"]
+        Routers["Routes (/api/auth, /api/admin/auth, /api/items, /api/users)"]
         Controllers["Controllers (Request/Response)"]
         Validators["Validators (Input Validation)"]
         BackendServices["Services (Business Logic)"]
@@ -68,3 +78,11 @@ graph TD
 4. **`src/pages/`**: View/Container components ที่ประกอบด้วย State และการเรียกใช้ Services
 5. **`src/components/`**: Reusable UI Components (Dumb/Presentational Components)
 6. **`src/services/`**: Centralized Axios/Fetch client พร้อมการแนบ Bearer Token อัตโนมัติ
+
+### Authentication Boundary
+
+- Customer token ใช้ key occasion_token
+- Admin token ใช้ key occasion_admin_token
+- Customer login ไม่รับบัญชี role admin
+- Admin login รับเฉพาะบัญชี role admin
+- Public registration สร้าง role user ที่ Backend เท่านั้น

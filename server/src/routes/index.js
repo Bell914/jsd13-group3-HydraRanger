@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import authRoutes from './authRoutes.js';
+import adminAuthRoutes from './adminAuthRoutes.js';
 import userRoutes from './userRoutes.js';
 import itemRoutes from './itemRoutes.js';
 import { getDBStatus } from '../config/db.js';
@@ -11,13 +12,14 @@ router.get('/health', (req, res) => {
   res.json({
     status: 'online',
     timestamp: new Date().toISOString(),
-    service: 'HydraRanger API Server (Sprint 2)',
+    service: 'OCCASION API Server (Sprint 2)',
     database: getDBStatus()
   });
 });
 
 // Sub-routes mounting
 router.use('/auth', authRoutes);
+router.use('/admin/auth', adminAuthRoutes);
 router.use('/users', userRoutes);
 router.use('/items', itemRoutes);
 

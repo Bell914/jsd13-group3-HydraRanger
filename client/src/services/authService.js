@@ -5,7 +5,7 @@ export const authService = {
     const res = await api.post('/auth/register', userData);
     if (res.data?.token) {
       api.setToken(res.data.token);
-      localStorage.setItem('hydra_user', JSON.stringify(res.data.user));
+      localStorage.setItem('occasion_user', JSON.stringify(res.data.user));
     }
     return res;
   },
@@ -14,7 +14,7 @@ export const authService = {
     const res = await api.post('/auth/login', credentials);
     if (res.data?.token) {
       api.setToken(res.data.token);
-      localStorage.setItem('hydra_user', JSON.stringify(res.data.user));
+      localStorage.setItem('occasion_user', JSON.stringify(res.data.user));
     }
     return res;
   },
@@ -25,11 +25,11 @@ export const authService = {
 
   logout() {
     api.setToken(null);
-    localStorage.removeItem('hydra_user');
+    localStorage.removeItem('occasion_user');
   },
 
   getCurrentUser() {
-    const saved = localStorage.getItem('hydra_user');
+    const saved = localStorage.getItem('occasion_user');
     return saved ? JSON.parse(saved) : null;
   },
 

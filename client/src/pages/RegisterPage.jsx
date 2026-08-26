@@ -57,7 +57,7 @@ export const RegisterPage = () => {
             <Shield size={24} className="text-slate-950 font-extrabold" />
           </div>
           <h2 className="text-2xl font-extrabold text-slate-100 tracking-tight">
-            Join Hydra<span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Ranger</span>
+            Join <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">OCCASION</span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-2">
             Create an account to start contributing to Sprint 2
@@ -89,7 +89,7 @@ export const RegisterPage = () => {
             <input
               type="email"
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-slate-700/70 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
-              placeholder="ranger@hydraranger.dev"
+              placeholder="customer@example.com"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
