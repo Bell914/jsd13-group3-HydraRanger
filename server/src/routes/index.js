@@ -9,10 +9,12 @@ const router = Router();
 
 // Health check endpoint
 router.get('/health', (req, res) => {
-  res.json({
+  res.status(200).json({
+    success: true,
+    message: 'Server is running',
     status: 'online',
     timestamp: new Date().toISOString(),
-    service: 'OCCASION API Server (Sprint 2)',
+    service: 'OCCASION API Server',
     database: getDBStatus()
   });
 });
