@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 export const Footer = () => {
   return (
-    <footer id="Footer" className="bg-accent text-white">
+    <footer id="Footer" className="bg-secondary text-white">
       <div className="max-w-6xl w-full mx-auto px-4 py-8">
         {/* Banner สีฟ้า */}
         <div className="bg-primary flex flex-col sm:flex-row justify-between items-center p-6 sm:p-8 rounded-xl shadow-md gap-4">

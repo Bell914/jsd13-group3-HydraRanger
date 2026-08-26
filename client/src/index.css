@@ -1,5 +1,59 @@
-@import "tailwindcss";
+/* 1. นำเข้าฟอนต์ Google Fonts ไว้เป็นอันดับแรกสุด */
 @import url("https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap");
+@import "tailwindcss";
+@plugin "daisyui";
+/* 2. ตั้งค่า Custom Theme สำหรับ Tailwind v4 */
+:root {
+  /* สีหลัก (Primary, Secondary, Accent) */
+  --p: #0046a7; /* Primary */
+  --s: #495f8f; /* Secondary */
+  --a: #e2156d; /* Accent */
+
+  /* สีพื้นหลังและข้อความ */
+  --b1: #fcf4ee; /* Base-100 (สีพื้นหลังหลักของเว็บ) */
+  --b2: #f3e8df; /* Base-200 (สีพื้นหลังที่เข้มขึ้นมานิดนึง) */
+  --b3: #e8dccf; /* Base-300 (สีพื้นหลังเข้มสุด) */
+  --bc: #1f2937; /* Base-content (สีตัวอักษรหลัก) */
+
+  /* สีแจ้งเตือน (State Colors) */
+  --in: #3b82f6; /* Info */
+  --su: #10b981; /* Success */
+  --wa: #f59e0b; /* Warning */
+  --er: #ef4444; /* Error */
+}
+
+/* ถ้าต้องการตั้งค่าสีสำหรับ Dark Mode ด้วย */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --b1: #090d16; /* พื้นหลังสีเข้ม */
+    --bc: #f8fafc; /* ตัวอักษรสีอ่อน */
+  }
+}
+.animate-gradient {
+  background: linear-gradient(90deg, #ffffff, #ffd6e7, #ffe066, #ffffff);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientMove 3s ease infinite;
+}
+
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+/* ซ่อน Scrollbar แนวนอน */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 3. ค่า CSS Variables ทั่วไป */
 :root {
   --font-primary:
     "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont,
@@ -7,6 +61,7 @@
   --font-mono: "Fira Code", monospace;
 }
 
+/* 4. Global Styles */
 body {
   font-family: var(--font-primary);
   background-color: #090d16;
@@ -19,25 +74,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-@theme {
-  /* กำหนดสีเดี่ยว */
-  --color-primary: #0046a7; /* เปลี่ยนเป็นรหัสสีฟ้า Primary ของคุณ */
-  --color-accent: #e2156d; /* เปลี่ยนเป็นรหัสสีเข้ม Accent ของคุณ */
-  --color-secondary: #495f8f;
-  --color-background: #fcf4ee;
-  /* เปลี่ยนฟอนต์หลักของทั้งเว็บ */
-  --font-sans: "Prompt", sans-serif;
-  /* หรือสร้างคลาสใหม่ font-prompt */
-  --font-prompt: "Prompt", sans-serif;
-}
-
+/* 5. Custom Components */
 @layer components {
-  /* คลาสหลักสำหรับโครงสร้างปุ่ม */
   .btn {
     @apply px-5 py-2.5 rounded-lg font-medium transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 shadow-sm;
   }
 
-  /* คลาสสำหรับสีต่าง ๆ (ตัด @apply btn ออก) */
   .btn-primary {
     @apply bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md;
   }
@@ -48,5 +90,19 @@ body {
 
   .btn-danger {
     @apply bg-red-600 text-white hover:bg-red-700;
+  }
+}
+@layer components {
+  .btn-aura {
+    @apply relative z-0;
+  }
+
+  .btn-aura::before {
+    content: "";
+    @apply absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg blur-md opacity-70 z-[-1] transition-opacity duration-300;
+  }
+
+  .btn-aura:hover::before {
+    @apply opacity-100 blur-lg;
   }
 }
