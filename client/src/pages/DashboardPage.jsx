@@ -139,10 +139,10 @@ export const DashboardPage = () => {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-100">
-            Hydra<span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Ranger</span> Dashboard
+            OCCASION Dashboard
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Welcome back, <strong className="text-slate-200">{currentUser?.username || 'Hydra User'}</strong>! Manage your Sprint 2 tasks and items.
+            Welcome back, <strong className="text-slate-200">{currentUser?.username || 'Occasion User'}</strong>! Manage your Occasion account and items.
           </p>
         </div>
 
@@ -314,7 +314,7 @@ export const DashboardPage = () => {
 
       {/* Items List */}
       {loading ? (
-        <LoadingSpinner message="Fetching items from HydraRanger Server..." />
+        <LoadingSpinner message="Fetching items from Occasion Server..." />
       ) : items.length === 0 ? (
         <Card>
           <div className="text-center py-12 px-4">
@@ -363,7 +363,7 @@ export const DashboardPage = () => {
                 <div className="flex items-center justify-between pt-3 border-t border-slate-800/80 text-xs text-slate-400 mt-2">
                   <div className="flex items-center gap-1.5">
                     <Clock size={13} className="text-slate-500" />
-                    <span>{item.creatorName || 'Hydra Member'}</span>
+                    <span>{item.creatorName || 'Occasion Member'}</span>
                   </div>
                   <div>{getStatusBadge(item.status)}</div>
                 </div>

@@ -9,7 +9,7 @@ const startServer = async () => {
   // Start HTTP Server
   const server = app.listen(ENV.PORT, () => {
     console.log('====================================================');
-    console.log(`🛡️  HydraRanger API Server Running on port: ${ENV.PORT}`);
+    console.log(`OCCASION API Server running on port: ${ENV.PORT}`);
     console.log(`📡 Environment: ${ENV.NODE_ENV}`);
     console.log(`🔗 Local URL: http://localhost:${ENV.PORT}`);
     console.log(`🩺 Health Check: http://localhost:${ENV.PORT}/api/health`);

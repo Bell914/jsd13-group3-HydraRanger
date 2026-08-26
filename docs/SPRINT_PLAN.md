@@ -1,4 +1,4 @@
-# 🎯 Sprint 2 Plan - HydraRanger (Group 3)
+# 🎯 Sprint 2 Plan — OCCASION (HydraRanger Team, Group 3)
 
 เอกสารแผนการดำเนินงานสำหรับ **Sprint 2** ของทีม **HydraRanger**
 

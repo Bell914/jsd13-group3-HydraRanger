@@ -1,4 +1,7 @@
-# 📖 REST API Specification - HydraRanger Backend
+# 📖 REST API Specification — OCCASION Backend
+
+Customer และ Admin ใช้หน้าเว็บและ Login endpoint แยกกัน โดยใช้ฐานข้อมูล User ร่วมกัน
+แต่ Backend เป็นผู้ตรวจสอบ role
 
 Base URL: `http://localhost:5000/api`
 
@@ -15,10 +18,11 @@ Base URL: `http://localhost:5000/api`
 {
   "username": "johndoe",
   "email": "johndoe@example.com",
-  "password": "SecurePassword123!",
-  "role": "user"
+  "password": "SecurePassword123!"
 }
 ```
+
+Public registration always creates role user. The API ignores client-supplied role values.
 - **Response (201 Created)**:
 ```json
 {
@@ -82,6 +86,18 @@ Base URL: `http://localhost:5000/api`
 }
 ```
 
+### 1.4 Login Admin
+- **Method**: `POST`
+- **Path**: `/admin/auth/login`
+- **Auth Required**: No
+- **Rule**: รับเฉพาะบัญชีที่มี role เป็น admin
+
+### 1.5 Get Current Admin
+- **Method**: `GET`
+- **Path**: `/admin/auth/me`
+- **Auth Required**: Yes (`Bearer <admin-token>`)
+- **Rule**: Token ต้องมี role เป็น admin
+
 ---
 
 ## 👥 2. User Management Endpoints
@@ -89,7 +105,7 @@ Base URL: `http://localhost:5000/api`
 ### 2.1 Get All Users
 - **Method**: `GET`
 - **Path**: `/users`
-- **Auth Required**: Yes (`Bearer <token>`)
+- **Auth Required**: Admin only (`Bearer <admin-token>`)
 - **Response (200 OK)**:
 ```json
 {
@@ -109,7 +125,7 @@ Base URL: `http://localhost:5000/api`
 ### 2.2 Get User by ID
 - **Method**: `GET`
 - **Path**: `/users/:id`
-- **Auth Required**: Yes (`Bearer <token>`)
+- **Auth Required**: Admin หรือเจ้าของบัญชีเท่านั้น
 
 ---
 
@@ -136,7 +152,7 @@ Base URL: `http://localhost:5000/api`
   "data": [
     {
       "id": "item-101",
-      "title": "Hydra Task Master",
+      "title": "OCCASION Item Manager",
       "description": "Task management module for Sprint 2",
       "category": "Development",
       "status": "In Progress",
@@ -155,7 +171,7 @@ Base URL: `http://localhost:5000/api`
 - **Request Body**:
 ```json
 {
-  "title": "Hydra Task Master",
+  "title": "OCCASION Item Manager",
   "description": "Task management module for Sprint 2",
   "category": "Development",
   "status": "In Progress",
@@ -169,7 +185,7 @@ Base URL: `http://localhost:5000/api`
   "message": "Item created successfully",
   "data": {
     "id": "item-101",
-    "title": "Hydra Task Master",
+    "title": "OCCASION Item Manager",
     "description": "Task management module for Sprint 2",
     "category": "Development",
     "status": "In Progress",
