@@ -1,7 +1,9 @@
 import mongoose from 'mongoose';
 import { connectDB } from '../config/db.js';
 import { User, Item } from '../models/index.js';
-import { initialUsers, initialItems } from '../data/seedData.json' with { type: 'json' };
+import seedData from '../data/seedData.json' with { type: 'json' };
+
+const { initialUsers, initialItems } = seedData;
 
 const runSeed = async () => {
   console.log('🌱 Starting Database Seeding...');
@@ -16,7 +18,7 @@ const runSeed = async () => {
       const createdUsers = await User.create(
         initialUsers.map((u) => ({
           ...u,
-          password: 'Password123!'
+          password: u.role === 'admin' ? 'Occasion1234!' : 'Password123!'
         }))
       );
       console.log(`✅ Seeded ${createdUsers.length} Users`);

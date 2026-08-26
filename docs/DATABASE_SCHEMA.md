@@ -1,4 +1,4 @@
-# 🗄️ Database Schema - HydraRanger (Group 3)
+# 🗄️ Database Schema — OCCASION (HydraRanger Team, Group 3)
 
 เอกสารนี้ระบุโครงสร้างฐานข้อมูล คอลเลกชัน (Collections) และฟิลด์ต่างๆ สำหรับ Sprint 2
 

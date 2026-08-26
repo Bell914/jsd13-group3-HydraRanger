@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogIn, Shield, AlertCircle } from 'lucide-react';
+import { LogIn, UserRound, AlertCircle } from 'lucide-react';
 import { authService } from '../services/authService.js';
 import { Button, Card } from '../components/index.js';
 
@@ -35,25 +35,18 @@ export const LoginPage = () => {
     }
   };
 
-  const handleFillDemo = () => {
-    setFormData({
-      email: 'admin@hydra.com',
-      password: 'Hydra1234!'
-    });
-  };
-
   return (
     <div className="max-w-md mx-auto w-full py-8">
       <Card>
         <div className="text-center mb-8">
           <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 w-12 h-12 rounded-2xl inline-flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/25">
-            <Shield size={24} className="text-slate-950 font-extrabold" />
+            <UserRound size={24} className="text-slate-950 font-extrabold" />
           </div>
           <h2 className="text-2xl font-extrabold text-slate-100 tracking-tight">
-            Sign In to Hydra<span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Ranger</span>
+            Customer Sign In
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-2">
-            Access your team's Sprint 2 dashboard & tasks
+            Sign in to shop, save looks and manage your orders
           </p>
         </div>
 
@@ -70,7 +63,7 @@ export const LoginPage = () => {
             <input
               type="email"
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-slate-700/70 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
-              placeholder="user@hydraranger.dev"
+              placeholder="customer@example.com"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
@@ -99,15 +92,6 @@ export const LoginPage = () => {
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>
 
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={handleFillDemo}
-            className="w-full mt-2"
-          >
-            Fill Demo Credentials
-          </Button>
         </form>
 
         <div className="mt-6 pt-5 border-t border-slate-800/80 text-center text-xs text-slate-400">

@@ -6,14 +6,14 @@ class ApiClient {
   }
 
   getToken() {
-    return localStorage.getItem('hydra_token');
+    return localStorage.getItem('occasion_token');
   }
 
   setToken(token) {
     if (token) {
-      localStorage.setItem('hydra_token', token);
+      localStorage.setItem('occasion_token', token);
     } else {
-      localStorage.removeItem('hydra_token');
+      localStorage.removeItem('occasion_token');
     }
   }
 

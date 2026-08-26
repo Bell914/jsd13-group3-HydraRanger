@@ -1,13 +1,13 @@
 {
   "initialUsers": [
     {
-      "username": "hydraleader",
-      "email": "leader@hydraranger.dev",
+      "username": "occasionadmin",
+      "email": "admin@occasion.dev",
       "role": "admin"
     },
     {
-      "username": "hydradev",
-      "email": "dev@hydraranger.dev",
+      "username": "occasiondev",
+      "email": "developer@occasion.dev",
       "role": "user"
     }
   ],
@@ -20,7 +20,7 @@
       "category": "Backend",
       "status": "Done",
       "priority": "High",
-      "creatorName": "HydraLeader",
+      "creatorName": "OccasionAdmin",
       "createdAt": "2026-08-24T08:00:00.000Z"
     },
     {
@@ -31,7 +31,7 @@
       "category": "Backend",
       "status": "In Progress",
       "priority": "Critical",
-      "creatorName": "HydraLeader",
+      "creatorName": "OccasionAdmin",
       "createdAt": "2026-08-24T09:30:00.000Z"
     },
     {
@@ -42,7 +42,7 @@
       "category": "Frontend",
       "status": "In Progress",
       "priority": "High",
-      "creatorName": "HydraDev",
+      "creatorName": "OccasionDev",
       "createdAt": "2026-08-24T10:15:00.000Z"
     },
     {
@@ -53,7 +53,7 @@
       "category": "Design",
       "status": "Done",
       "priority": "Medium",
-      "creatorName": "HydraLeader",
+      "creatorName": "OccasionAdmin",
       "createdAt": "2026-08-24T11:00:00.000Z"
     }
   ]

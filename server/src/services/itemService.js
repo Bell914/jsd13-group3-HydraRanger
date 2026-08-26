@@ -1,5 +1,7 @@
 import { Item } from '../models/Item.js';
-import { initialItems } from '../data/seedData.json' with { type: 'json' };
+import seedData from '../data/seedData.json' with { type: 'json' };
+
+const { initialItems } = seedData;
 
 // In-Memory store initialized with seed items
 let inMemoryItems = [...initialItems];
@@ -87,7 +89,7 @@ export const createItem = async (itemData, user) => {
     const newItem = await Item.create({
       ...itemData,
       createdBy: user?.id || null,
-      creatorName: user?.username || 'Hydra Member'
+      creatorName: user?.username || 'Occasion Member'
     });
     return newItem;
   } catch (error) {
@@ -96,7 +98,7 @@ export const createItem = async (itemData, user) => {
       _id: `item-${Date.now()}`,
       ...itemData,
       createdBy: user?.id || 'guest',
-      creatorName: user?.username || 'Hydra Member',
+      creatorName: user?.username || 'Occasion Member',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
