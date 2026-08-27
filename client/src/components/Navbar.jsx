@@ -2,17 +2,19 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { authService } from "../services/authService.js";
 import { assets } from "../assets/assets.js";
-
+import { SearchBar } from "./SearchBar.jsx";
+import { useCounterStore } from "../store/useStore.js";
 export const Navbar = () => {
+  const searchOpen = useCounterStore((state) => state.searchOpen);
+  const setSearchOpen = useCounterStore((state) => state.setSearchOpen);
+  const searchQuery = useCounterStore((state) => state.searchQuery);
+  const setSearchQuery = useCounterStore((state) => state.setSearchQuery);
   const navigate = useNavigate();
   const location = useLocation();
   const user = authService.getCurrentUser();
   const isAuthenticated = authService.isAuthenticated();
-
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
   const profileRef = useRef(null);
 
@@ -37,9 +39,10 @@ export const Navbar = () => {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
-    console.log("Searching for:", searchQuery);
-    setIsSearchOpen(false);
+
+    console.log("ระบบกำลังค้นหาสินค้า:", searchQuery);
+
+    setSearchOpen(false);
   };
 
   const isActive = (path) => location.pathname === path;
@@ -102,7 +105,7 @@ export const Navbar = () => {
               <li className="w-full md:w-auto pb-3 md:pb-0 md:px-4 border-b border-gray-100 md:border-b-0 flex justify-center items-center">
                 <button
                   type="button"
-                  onClick={() => setIsSearchOpen(true)}
+                  onClick={() => setSearchOpen(true)}
                   className="w-9 h-9 md:rounded-full border border-gray-300 items-center flex gap-2 justify-center hover:bg-gray-100 transition border-none rounded-none cursor-pointer"
                   id="search-button"
                 >
@@ -114,7 +117,11 @@ export const Navbar = () => {
               </li>
 
               {/* Products Link */}
-              <li className="w-full md:w-auto pb-3 md:pb-0 md:px-5 border-b border-gray-100 md:border-b-0 flex justify-center items-center text-primary hover:underline decoration-accent underline-offset-4 transition">
+              <li
+                className="w-full md:w-auto pb-3 md:pb-0 md:px-5 border-b border-gray-100 
+              md:border-b-0 flex justify-center items-center 
+              text-primary hover:underline decoration-secondary underline-offset-4 transition"
+              >
                 <Link
                   to="/products"
                   className={`whitespace-nowrap ${isActive("/products") ? "font-bold" : ""}`}
@@ -124,12 +131,20 @@ export const Navbar = () => {
               </li>
 
               {/* Features Link */}
-              <li className="w-full md:w-auto pb-3 md:pb-0 md:px-5 border-b border-gray-100 md:border-b-0 flex justify-center items-center text-primary hover:underline decoration-accent underline-offset-4 transition">
+              <li className="w-full md:w-auto pb-3 md:pb-0 md:px-5 border-b border-gray-100 md:border-b-0 flex justify-center items-center text-primary hover:underline decoration-secondary  underline-offset-4 transition">
                 <Link
                   to="/lookbook"
                   className={`whitespace-nowrap ${isActive("/lookbook") ? "font-bold" : ""}`}
                 >
-                  FEATURES
+                  LOOKBOOKS
+                </Link>
+              </li>
+              <li className="w-full md:w-auto pb-3 md:pb-0 md:px-5 border-b border-gray-100 md:border-b-0 flex justify-center items-center text-primary hover:underline decoration-secondary  underline-offset-4 transition">
+                <Link
+                  to="/lookbook"
+                  className={`whitespace-nowrap ${isActive("/lookbook") ? "font-bold" : ""}`}
+                >
+                  ARTICLES
                 </Link>
               </li>
 
@@ -218,40 +233,13 @@ export const Navbar = () => {
       </nav>
 
       {/* Search Modal */}
-      {isSearchOpen && (
-        <div
-          id="search-modal"
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-        >
-          <div className="bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl relative">
-            <button
-              type="button"
-              onClick={() => setIsSearchOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold cursor-pointer border-none bg-transparent"
-            >
-              ✕
-            </button>
-            <h3 className="text-lg font-bold text-gray-800 mb-4">
-              ค้นหาสินค้า
-            </h3>
-            <form onSubmit={handleSearchSubmit} className="flex gap-2">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="พิมพ์ชื่อสินค้า..."
-                className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none text-sm"
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:opacity-90 transition cursor-pointer border-none"
-              >
-                ค้นหา
-              </button>
-            </form>
-          </div>
-        </div>
+      {searchOpen && (
+        <SearchBar
+          handleSearchSubmit={handleSearchSubmit}
+          setSearchOpen={setSearchOpen}
+          setSearchQuery={setSearchQuery}
+          searchQuery={searchQuery}
+        />
       )}
     </>
   );

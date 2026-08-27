@@ -40,7 +40,7 @@ export const HomePage = () => {
             </p>
             <a
               href="./Product_Page.html"
-              className="mt-8 inline-flex items-center gap-3 rounded-md bg-background px-8 py-4 text-[12px] font-semibold uppercase tracking-[0.3em] text-foreground text-primary transition-opacity hover:opacity-85"
+              className="mt-8 inline-flex items-center gap-3 rounded-md bg-white px-8 py-4 text-[12px] font-semibold uppercase tracking-[0.3em] text-foreground text-primary transition-opacity hover:opacity-85"
             >
               OUR PRODUCT
             </a>

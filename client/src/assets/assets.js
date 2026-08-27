@@ -2,7 +2,7 @@ import newlogo from "./newlogo.png";
 import search from "./icon/search.png";
 import cartBag from "./icon/cartBag.png";
 import camera from "./icon/camera.png";
-
+import tiktok from "./icon/tiktok.png";
 import line from "./icon/line.png";
 import facebook from "./icon/facebook.png";
 import instagram from "./icon/instagram.png";
@@ -22,6 +22,8 @@ export const assets = {
   instagram,
   facebook,
   bghero,
+  line,
+  tiktok,
 };
 
 export const specialProducts = [

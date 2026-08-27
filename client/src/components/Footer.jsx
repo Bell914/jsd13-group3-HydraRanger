@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-
+import { assets } from "../assets/assets";
 export const Footer = () => {
   return (
     <footer id="Footer" className="bg-secondary text-white">
@@ -113,7 +113,7 @@ export const Footer = () => {
                   className="inline-flex items-center gap-2 hover:opacity-80 transition"
                 >
                   <img
-                    src="./assets/icon/facebook.png"
+                    src={assets.facebook}
                     alt="facebook"
                     className="w-5 h-5 object-contain"
                   />
@@ -128,7 +128,7 @@ export const Footer = () => {
                   className="inline-flex items-center gap-2 hover:opacity-80 transition"
                 >
                   <img
-                    src="./assets/icon/instagram.png"
+                    src={assets.instagram}
                     alt="instagram"
                     className="w-5 h-5 object-contain"
                   />
@@ -143,7 +143,7 @@ export const Footer = () => {
                   className="inline-flex items-center gap-2 hover:opacity-80 transition"
                 >
                   <img
-                    src="./assets/icon/line.png"
+                    src={assets.line}
                     alt="line"
                     className="w-5 h-5 object-contain"
                   />
@@ -158,7 +158,7 @@ export const Footer = () => {
                   className="inline-flex items-center gap-2 hover:opacity-80 transition"
                 >
                   <img
-                    src="./assets/icon/tiktok.png"
+                    src={assets.tiktok}
                     alt="tiktok"
                     className="w-5 h-5 object-contain"
                   />
