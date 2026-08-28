@@ -1,6 +1,7 @@
 import React from 'react';
 
 export const Button = ({
+  as: Component = 'button',
   children,
   type = 'button',
   variant = 'primary',
@@ -11,7 +12,15 @@ export const Button = ({
   icon: Icon = null,
   ...props
 }) => {
-  const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none';
+  const handleClick = (event) => {
+    if (disabled && Component !== 'button') {
+      event.preventDefault();
+      return;
+    }
+    onClick?.(event);
+  };
+
+  const baseClasses = 'inline-flex items-center justify-center gap-2 rounded-xl font-semibold select-none transition duration-200 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 focus-visible:ring-offset-2 active:translate-y-px disabled:pointer-events-none disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-disabled disabled:text-secondary/70 disabled:border-disabled disabled:shadow-none';
 
   const sizeClasses = {
     sm: 'text-xs px-3 py-1.5',
@@ -34,15 +43,19 @@ export const Button = ({
   };
 
   return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
+    <Component
+      {...(Component === 'button' ? { type } : {})}
+      onClick={handleClick}
+      {...(Component === 'button'
+        ? { disabled }
+        : disabled
+          ? { 'aria-disabled': true, tabIndex: -1 }
+          : {})}
       className={`${baseClasses} ${sizeClasses[size] || sizeClasses.md} ${variantClasses[variant] || variantClasses.primary} ${className}`}
       {...props}
     >
       {Icon && <Icon size={iconSizes[size] || 18} className="shrink-0" />}
       {children}
-    </button>
+    </Component>
   );
 };
