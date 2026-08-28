@@ -5,38 +5,34 @@ import { Button, Card } from '../components/index.js';
 
 export const HomePage = () => {
   return (
-    <div className="flex flex-col gap-16 py-8">
+    <div className="flex min-w-0 flex-col gap-12 py-4 sm:gap-16 sm:py-8">
       {/* Hero Section */}
-      <section className="text-center py-12 sm:py-20 px-4 relative">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-6 shadow-sm">
-          <Sparkles size={14} />
+      <section className="relative px-0 py-10 text-center sm:px-4 sm:py-20">
+        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-accent shadow-sm">
+          <Sparkles size={14} aria-hidden="true" />
           Group Project 3 • Sprint 2
         </div>
 
-        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight max-w-4xl mx-auto mb-6 text-slate-100">
-          Powering Modular Full-Stack <br />
+        <h1 className="mx-auto mb-6 max-w-4xl text-3xl font-extrabold leading-tight tracking-tight text-primary sm:text-5xl lg:text-6xl">
+          Powering Modular Full-Stack <br className="hidden sm:block" />
           with{' '}
-          <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
+          <span className="block text-accent sm:inline">
             OCCASION
           </span>
         </h1>
 
-        <p className="text-base sm:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+        <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-secondary sm:text-xl">
           ระบบโครงสร้างการทำงานแบบแยกส่วน (Modular Clean Architecture)
           พร้อมการเชื่อมต่อ REST API, JWT Authentication, Tailwind CSS v4, และ Dashboard จัดการข้อมูลแบบ Real-Time
         </p>
 
-        <div className="flex flex-wrap items-center justify-center gap-4">
-          <Link to="/dashboard">
-            <Button size="lg" icon={ArrowRight}>
-              Open Dashboard
-            </Button>
-          </Link>
-          <Link to="/login">
-            <Button variant="secondary" size="lg" icon={Terminal}>
-              Sign In Demo
-            </Button>
-          </Link>
+        <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <Button as={Link} to="/dashboard" size="lg" icon={ArrowRight} className="w-full sm:w-auto">
+            Open Dashboard
+          </Button>
+          <Button as={Link} to="/login" variant="secondary" size="lg" icon={Terminal} className="w-full sm:w-auto">
+            Sign In Demo
+          </Button>
         </div>
       </section>
 
@@ -48,7 +44,7 @@ export const HomePage = () => {
           subtitle="Backend Layered Design"
           hoverable
         >
-          <p className="text-sm text-slate-400 leading-relaxed">
+          <p className="text-sm leading-relaxed text-secondary">
             แยกเลเยอร์ชัดเจนตามหลัก MVC + Services + Validators พร้อมระบบ Fallback รองรับทั้ง MongoDB และ In-Memory Store
           </p>
         </Card>
@@ -59,7 +55,7 @@ export const HomePage = () => {
           subtitle="Modern Frontend Experience"
           hoverable
         >
-          <p className="text-sm text-slate-400 leading-relaxed">
+          <p className="text-sm leading-relaxed text-secondary">
             พัฒนาด้วย React Router v7, @tailwindcss/vite และ Custom API Service Layer ตอบสนองรวดเร็ว
           </p>
         </Card>
@@ -70,7 +66,7 @@ export const HomePage = () => {
           subtitle="Secure Access Control"
           hoverable
         >
-          <p className="text-sm text-slate-400 leading-relaxed">
+          <p className="text-sm leading-relaxed text-secondary">
             ระบบยืนยันตัวตนแบบ Token-Based พร้อม Password Hashing (bcrypt) และ Route Guard ปกป้องหน้าจัดการข้อมูล
           </p>
         </Card>
@@ -93,9 +89,9 @@ export const HomePage = () => {
           ].map((item, idx) => (
             <div
               key={idx}
-              className="flex items-center gap-3 p-3 rounded-xl bg-slate-950/40 border border-slate-800/60 text-sm font-medium text-slate-300"
+              className="flex items-center gap-3 rounded-xl border border-occasion-border/55 bg-background/65 p-3 text-sm font-medium text-secondary"
             >
-              <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+              <CheckCircle2 size={18} aria-hidden="true" className="shrink-0 text-accent" />
               <span>{item}</span>
             </div>
           ))}
