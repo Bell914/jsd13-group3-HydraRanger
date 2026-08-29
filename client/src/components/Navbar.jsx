@@ -1,215 +1,145 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { authService } from "../services/authService.js";
 import { assets } from "../assets/assets.js";
+import { ProfileDropdown } from "./ProfileDropdown.jsx";
+import { SearchModal } from "./SearchModal.jsx";
 
 export const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = authService.getCurrentUser();
   const isAuthenticated = authService.isAuthenticated();
-
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const navRef = useRef(null);
+  const searchButtonRef = useRef(null);
 
-  const profileRef = useRef(null);
-
-  // ปิด Dropdown เมื่อคลิกข้างนอก (Click Outside)
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (profileRef.current && !profileRef.current.contains(event.target)) {
-        setIsProfileOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+  const closeSearch = useCallback(() => {
+    setIsSearchOpen(false);
+    requestAnimationFrame(() => searchButtonRef.current?.focus());
   }, []);
 
-  const handleLogout = (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsProfileOpen(false);
+    setIsSearchOpen(false);
+  }, [location.pathname, location.search, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return undefined;
+    const handlePointerDown = (event) => {
+      if (!navRef.current?.contains(event.target)) setIsMobileMenuOpen(false);
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setIsMobileMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMobileMenuOpen]);
+
+  const handleLogout = () => {
     authService.logout();
     setIsProfileOpen(false);
     setIsMobileMenuOpen(false);
+    setIsSearchOpen(false);
     navigate("/login");
   };
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    console.log("Searching for:", searchQuery);
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    const keyword = searchQuery.trim();
+    if (!keyword) return;
     setIsSearchOpen(false);
+    setIsMobileMenuOpen(false);
+    navigate(`/products?search=${encodeURIComponent(keyword)}`);
   };
 
   const isActive = (path) => location.pathname === path;
 
   return (
     <>
-      <nav className="w-full bg-white shadow-sm py-3 relative z-50">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
-          {/* Logo (ฝั่งซ้าย) */}
-          <Link to="/" className="flex items-center gap-3 shrink-0">
-            <img
-              src={assets.newlogo}
-              alt="Logo"
-              className="w-20 md:w-24 h-auto"
-            />
+      <nav ref={navRef} aria-label="เมนูหลัก" className="relative z-50 w-full border-b border-occasion-border/40 bg-surface py-3 shadow-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link to="/" aria-label="OCCASION หน้าแรก" className="flex shrink-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45">
+            <img src={assets.newlogo} alt="OCCASION" className="h-auto w-20 md:w-24" />
           </Link>
 
-          {/* Mobile Buttons (Cart + Hamburger) */}
           <div className="flex flex-row gap-2 items-center md:hidden">
             <Link
               to="/cart"
-              className="inline-flex items-center justify-center p-2 w-10 h-10 text-gray-600 rounded-lg hover:bg-gray-100 transition"
-              aria-label="Cart"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-secondary transition hover:bg-background hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
+              aria-label="ตะกร้าสินค้า"
             >
-              <img src={assets.cartBag} alt="Cart" className="w-6 h-6" />
+              <img src={assets.cartBag} alt="" aria-hidden="true" className="w-6 h-6" />
             </Link>
-
             <button
               id="hamburger-btn"
               type="button"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="inline-flex items-center justify-center p-2 w-10 h-10 text-gray-600 rounded-lg hover:bg-gray-100 focus:outline-none transition cursor-pointer"
-              aria-label="Toggle Navigation"
+              onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+              className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl text-secondary transition hover:bg-background hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
+              aria-label={isMobileMenuOpen ? "ปิดเมนู" : "เปิดเมนู"}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-menu"
             >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
           </div>
 
-          {/* Menu List Container */}
           <div
             id="mobile-menu"
-            className={`${
-              isMobileMenuOpen ? "flex" : "hidden"
-            } absolute top-full left-0 w-full bg-white shadow-xl border-t border-gray-100 p-6 md:static md:flex md:items-center md:justify-end md:w-auto md:bg-transparent md:shadow-none md:border-0 md:p-0`}
+            className={`${isMobileMenuOpen ? "flex" : "hidden"} absolute left-0 top-full w-full border-t border-occasion-border/40 bg-surface p-5 shadow-xl md:static md:flex md:w-auto md:items-center md:justify-end md:border-0 md:bg-transparent md:p-0 md:shadow-none`}
           >
-            <ul className="flex flex-col md:flex-row items-center justify-center md:justify-end gap-4 md:gap-0 text-base font-medium w-full md:w-auto md:divide-x md:divide-gray-200">
-              {/* Search Button */}
-              <li className="w-full md:w-auto pb-3 md:pb-0 md:px-4 border-b border-gray-100 md:border-b-0 flex justify-center items-center">
+            <ul className="flex w-full flex-col items-center justify-center gap-2 text-base font-medium md:w-auto md:flex-row md:justify-end md:gap-0 md:divide-x md:divide-occasion-border/45">
+              <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-3 md:w-auto md:border-b-0 md:px-4 md:pb-0">
                 <button
+                  ref={searchButtonRef}
                   type="button"
                   onClick={() => setIsSearchOpen(true)}
-                  className="w-9 h-9 md:rounded-full border border-gray-300 items-center flex gap-2 justify-center hover:bg-gray-100 transition border-none rounded-none cursor-pointer"
+                  className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-0 bg-transparent text-primary transition hover:bg-background focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:h-11 md:w-11"
                   id="search-button"
+                  aria-label="ค้นหาสินค้า"
+                  aria-haspopup="dialog"
+                  aria-expanded={isSearchOpen}
+                  aria-controls="search-modal"
                 >
-                  <img src={assets.search} alt="search" className="w-4 h-4" />
-                  <span className="text-primary block text-xl md:hidden font-medium">
-                    ค้นหา
-                  </span>
+                  <img src={assets.search} alt="" aria-hidden="true" className="w-4 h-4" />
+                  <span className="text-primary block text-xl md:hidden font-medium">ค้นหา</span>
                 </button>
               </li>
 
-              {/* Products Link */}
-              <li className="w-full md:w-auto pb-3 md:pb-0 md:px-5 border-b border-gray-100 md:border-b-0 flex justify-center items-center text-primary hover:underline decoration-accent underline-offset-4 transition">
-                <Link
-                  to="/products"
-                  className={`whitespace-nowrap ${isActive("/products") ? "font-bold" : ""}`}
-                >
-                  PRODUCTS
-                </Link>
+              <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0">
+                <Link to="/products" aria-current={isActive("/products") ? "page" : undefined} className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/products") ? "bg-accent/10 font-bold text-accent" : ""}`}>PRODUCTS</Link>
+              </li>
+              <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0">
+                <Link to="/lookbook" aria-current={isActive("/lookbook") ? "page" : undefined} className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/lookbook") ? "bg-accent/10 font-bold text-accent" : ""}`}>FEATURES</Link>
               </li>
 
-              {/* Features Link */}
-              <li className="w-full md:w-auto pb-3 md:pb-0 md:px-5 border-b border-gray-100 md:border-b-0 flex justify-center items-center text-primary hover:underline decoration-accent underline-offset-4 transition">
-                <Link
-                  to="/lookbook"
-                  className={`whitespace-nowrap ${isActive("/lookbook") ? "font-bold" : ""}`}
-                >
-                  FEATURES
-                </Link>
-              </li>
-
-              {/* Dynamic Auth Section: Sign In หรือ Profile/Dropdown */}
               {!isAuthenticated ? (
-                <li className="w-full md:w-auto pb-3 md:pb-0 md:px-5 border-b border-gray-100 md:border-b-0 flex justify-center items-center">
-                  <Link
-                    to="/login"
-                    className="text-primary hover:opacity-80 transition whitespace-nowrap"
-                  >
-                    SIGN IN
-                  </Link>
+                <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0">
+                  <Link to="/login" aria-current={isActive("/login") ? "page" : undefined} className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/login") ? "bg-accent/10 font-bold text-accent" : ""}`}>SIGN IN</Link>
                 </li>
               ) : (
-                <li
-                  ref={profileRef}
-                  className="relative list-none cursor-pointer w-full md:w-auto pb-3 md:pb-0 md:px-5 border-b border-gray-100 md:border-b-0 flex justify-center items-center"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className="flex items-center gap-2 text-primary hover:opacity-80 transition select-none whitespace-nowrap bg-transparent border-none cursor-pointer text-base font-medium"
-                  >
-                    <span>{user?.username || "Admin"}</span>
-                    <img
-                      src={assets.down}
-                      alt="down-btn"
-                      className={`w-4 h-4 transition-transform ${isProfileOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>
-
-                  {/* Dropdown Menu */}
-                  {isProfileOpen && (
-                    <div
-                      id="dropdown-menu-btn"
-                      className="absolute top-full right-0 z-[100] mt-2 h-auto"
-                    >
-                      <div className="bg-white w-48 min-h-fit rounded-2xl p-4 shadow-2xl border border-gray-100 flex flex-col gap-2">
-                        <Link
-                          to="/profile"
-                          onClick={() => setIsProfileOpen(false)}
-                          className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition text-gray-700 font-medium"
-                        >
-                          <img
-                            src={assets.userimg}
-                            alt="profile"
-                            className="w-5 h-5 shrink-0"
-                          />
-                          <span className="text-sm">Profile</span>
-                        </Link>
-
-                        <hr className="border-gray-200 my-1" />
-
-                        <button
-                          type="button"
-                          onClick={handleLogout}
-                          className="flex items-center gap-3 p-2 hover:bg-red-50 rounded-lg transition text-red-600 font-medium w-full text-left bg-transparent border-none cursor-pointer"
-                        >
-                          <img
-                            src="./assets/icon/logout.png"
-                            alt="logout"
-                            className="w-5 h-5 shrink-0"
-                          />
-                          <span className="text-md text-red-600 font-semibold">
-                            Logout
-                          </span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </li>
+                <ProfileDropdown
+                  username={user?.username}
+                  isOpen={isProfileOpen}
+                  onToggle={() => setIsProfileOpen((isOpen) => !isOpen)}
+                  onClose={() => setIsProfileOpen(false)}
+                  onLogout={handleLogout}
+                />
               )}
 
-              {/* Cart (Desktop Only) */}
               <li className="w-full hidden md:w-auto md:flex justify-center items-center md:pl-5 pt-2 md:pt-0">
-                <Link
-                  to="/cart"
-                  className="hover:opacity-80 transition flex items-center"
-                >
-                  <img src={assets.cartBag} alt="Cart" className="w-6 h-6" />
+                <Link to="/cart" className="flex h-11 w-11 items-center justify-center rounded-xl transition hover:bg-background focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45" aria-label="ตะกร้าสินค้า">
+                  <img src={assets.cartBag} alt="" aria-hidden="true" className="w-6 h-6" />
                 </Link>
               </li>
             </ul>
@@ -217,41 +147,13 @@ export const Navbar = () => {
         </div>
       </nav>
 
-      {/* Search Modal */}
       {isSearchOpen && (
-        <div
-          id="search-modal"
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-        >
-          <div className="bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl relative">
-            <button
-              type="button"
-              onClick={() => setIsSearchOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold cursor-pointer border-none bg-transparent"
-            >
-              ✕
-            </button>
-            <h3 className="text-lg font-bold text-gray-800 mb-4">
-              ค้นหาสินค้า
-            </h3>
-            <form onSubmit={handleSearchSubmit} className="flex gap-2">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="พิมพ์ชื่อสินค้า..."
-                className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none text-sm"
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:opacity-90 transition cursor-pointer border-none"
-              >
-                ค้นหา
-              </button>
-            </form>
-          </div>
-        </div>
+        <SearchModal
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          onClose={closeSearch}
+          onSubmit={handleSearchSubmit}
+        />
       )}
     </>
   );
