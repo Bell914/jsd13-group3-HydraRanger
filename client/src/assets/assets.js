@@ -10,7 +10,7 @@ import userimg from "./icon/user.png";
 import down from "./icon/down.png";
 import bghero from "./bghero.jpg";
 import newtag from "./icon/newtag.png";
-
+import logout from "./icon/logout.png";
 export const assets = {
   newlogo,
   search,
@@ -18,6 +18,7 @@ export const assets = {
   camera,
   userimg,
   down,
+  logout,
   newtag,
   instagram,
   facebook,

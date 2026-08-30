@@ -49,7 +49,7 @@ export const Navbar = () => {
 
   return (
     <>
-      <nav className="w-full bg-white shadow-sm py-3 relative z-50">
+      <nav className="w-full bg-white shadow-sm py-2 relative z-50">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
           {/* Logo (ฝั่งซ้าย) */}
           <Link to="/" className="flex items-center gap-3 shrink-0">
@@ -204,7 +204,7 @@ export const Navbar = () => {
                           className="flex items-center gap-3 p-2 hover:bg-red-50 rounded-lg transition text-red-600 font-medium w-full text-left bg-transparent border-none cursor-pointer"
                         >
                           <img
-                            src="./assets/icon/logout.png"
+                            src={assets.logout}
                             alt="logout"
                             className="w-5 h-5 shrink-0"
                           />
