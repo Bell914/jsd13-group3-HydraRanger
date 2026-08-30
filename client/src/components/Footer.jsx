@@ -1,18 +1,19 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { assets } from "../assets/assets.js";
 
 export const Footer = () => {
   return (
-    <footer id="Footer" className="bg-secondary text-white">
+    <footer id="Footer" className="bg-primary text-white">
       <div className="max-w-6xl w-full mx-auto px-4 py-8">
         {/* Banner สีฟ้า */}
-        <div className="bg-primary flex flex-col sm:flex-row justify-between items-center p-6 sm:p-8 rounded-xl shadow-md gap-4">
+        <div className="flex flex-col items-center justify-between gap-4 rounded-xl bg-secondary p-6 shadow-md sm:flex-row sm:p-8">
           <p className="text-white font-medium text-base sm:text-lg text-center sm:text-left">
             Become a member and get 10% off for first purchase
           </p>
           <button
             type="button"
-            className="bg-white text-primary font-bold px-6 py-2.5 rounded-md hover:bg-gray-100 transition whitespace-nowrap shadow cursor-pointer border-none"
+            className="min-h-11 cursor-pointer whitespace-nowrap rounded-xl border border-white bg-surface px-6 py-2.5 font-bold text-primary shadow transition hover:bg-background focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-primary active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55"
           >
             Subscribe
           </button>
@@ -27,7 +28,7 @@ export const Footer = () => {
               <li>
                 <Link
                   to="/products?category=tops"
-                  className="hover:underline transition"
+                  className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
                 >
                   Tops
                 </Link>
@@ -35,13 +36,13 @@ export const Footer = () => {
               <li>
                 <Link
                   to="/products?category=bottoms"
-                  className="hover:underline transition"
+                  className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
                 >
                   Bottoms
                 </Link>
               </li>
               <li>
-                <Link to="/lookbook" className="hover:underline transition">
+                <Link to="/lookbook" className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80">
                   LookBooks
                 </Link>
               </li>
@@ -55,7 +56,7 @@ export const Footer = () => {
               <li>
                 <Link
                   to="/customer-service"
-                  className="hover:underline transition"
+                  className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
                 >
                   Customer Service
                 </Link>
@@ -63,7 +64,7 @@ export const Footer = () => {
               <li>
                 <Link
                   to="/terms-and-conditions"
-                  className="hover:underline transition"
+                  className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
                 >
                   Terms & Condition
                 </Link>
@@ -71,7 +72,7 @@ export const Footer = () => {
               <li>
                 <Link
                   to="/privacy-policy"
-                  className="hover:underline transition"
+                  className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
                 >
                   Privacy Policy
                 </Link>
@@ -84,17 +85,17 @@ export const Footer = () => {
             <h4 className="font-bold text-lg mb-4">USER</h4>
             <ul className="space-y-2 text-sm text-white/90 list-none p-0 m-0">
               <li>
-                <Link to="/register" className="hover:underline transition">
+                <Link to="/register" className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80">
                   Become A Member
                 </Link>
               </li>
               <li>
-                <Link to="/profile" className="hover:underline transition">
+                <Link to="/profile" className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80">
                   My Account
                 </Link>
               </li>
               <li>
-                <Link to="/lookbook" className="hover:underline transition">
+                <Link to="/lookbook" className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80">
                   My Lookbooks
                 </Link>
               </li>
@@ -110,11 +111,12 @@ export const Footer = () => {
                   href="https://facebook.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 hover:opacity-80 transition"
+                  className="inline-flex items-center gap-2 rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
                 >
                   <img
-                    src="./assets/icon/facebook.png"
-                    alt="facebook"
+                    src={assets.facebook}
+                    alt=""
+                    aria-hidden="true"
                     className="w-5 h-5 object-contain"
                   />
                   <span>Facebook</span>
@@ -125,11 +127,12 @@ export const Footer = () => {
                   href="https://instagram.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 hover:opacity-80 transition"
+                  className="inline-flex items-center gap-2 rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
                 >
                   <img
-                    src="./assets/icon/instagram.png"
-                    alt="instagram"
+                    src={assets.instagram}
+                    alt=""
+                    aria-hidden="true"
                     className="w-5 h-5 object-contain"
                   />
                   <span>Instagram</span>
@@ -140,11 +143,12 @@ export const Footer = () => {
                   href="https://line.me"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 hover:opacity-80 transition"
+                  className="inline-flex items-center gap-2 rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
                 >
                   <img
-                    src="./assets/icon/line.png"
-                    alt="line"
+                    src={assets.lineOfficial}
+                    alt=""
+                    aria-hidden="true"
                     className="w-5 h-5 object-contain"
                   />
                   <span>Line Official</span>
@@ -155,11 +159,12 @@ export const Footer = () => {
                   href="https://tiktok.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 hover:opacity-80 transition"
+                  className="inline-flex items-center gap-2 rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
                 >
                   <img
-                    src="./assets/icon/tiktok.png"
-                    alt="tiktok"
+                    src={assets.tiktok}
+                    alt=""
+                    aria-hidden="true"
                     className="w-5 h-5 object-contain"
                   />
                   <span>TikTok</span>
