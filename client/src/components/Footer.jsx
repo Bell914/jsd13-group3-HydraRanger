@@ -4,7 +4,7 @@ import { assets } from "../assets/assets.js";
 
 export const Footer = () => {
   return (
-    <footer id="Footer" className="bg-primary text-white">
+    <footer id="Footer" className="bg-accent text-white">
       <div className="max-w-6xl w-full mx-auto px-4 py-8">
         {/* Banner สีฟ้า */}
         <div className="flex flex-col items-center justify-between gap-4 rounded-xl bg-secondary p-6 shadow-md sm:flex-row sm:p-8">
