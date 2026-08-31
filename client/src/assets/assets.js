@@ -2,15 +2,14 @@ import newlogo from "./newlogo.png";
 import search from "./icon/search.png";
 import cartBag from "./icon/cartBag.png";
 import camera from "./icon/camera.png";
-import facebook from "./icon/facebook.png";
 import instagram from "./icon/instagram.png";
 import userimg from "./icon/user.png";
 import down from "./icon/down.png";
-import bghero from "./bghero.jpg";
-import newtag from "./icon/newtag.png";
+import facebook from "./icon/facebook.png";
 import lineOfficial from "./icon/line.png";
 import logout from "./icon/logout.png";
 import tiktok from "./icon/tiktok.png";
+import bghero from "./bghero.jpg";
 export const assets = {
   newlogo,
   search,
@@ -18,11 +17,10 @@ export const assets = {
   camera,
   userimg,
   down,
-  newtag,
-  instagram,
   facebook,
-  bghero,
+  instagram,
   lineOfficial,
+  bghero,
   logout,
   tiktok,
 };
