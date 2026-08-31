@@ -1,28 +1,36 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, RefreshCw, Trash2, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
-import { itemService } from '../services/itemService.js';
-import { authService } from '../services/authService.js';
-import { Button, Card, LoadingSpinner } from '../components/index.js';
+import React, { useState, useEffect } from "react";
+import {
+  Plus,
+  Search,
+  RefreshCw,
+  Trash2,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+} from "lucide-react";
+import { itemService } from "../services/itemService.js";
+import { authService } from "../services/authService.js";
+import { Button, Card, LoadingSpinner } from "../components/index.js";
 
 export const DashboardPage = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-  
+  const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+
   // Search & Filters
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
 
   // Create Form State
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: 'Frontend',
-    status: 'Todo',
-    priority: 'Medium'
+    title: "",
+    description: "",
+    category: "Frontend",
+    status: "Todo",
+    priority: "Medium",
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -31,15 +39,15 @@ export const DashboardPage = () => {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      setError('');
+      setError("");
       const res = await itemService.getItems({
         search: searchTerm,
         category: filterCategory,
-        status: filterStatus
+        status: filterStatus,
       });
       setItems(res.data || []);
     } catch (err) {
-      setError(err.message || 'Failed to fetch items from server');
+      setError(err.message || "Failed to fetch items from server");
     } finally {
       setLoading(false);
     }
@@ -57,61 +65,61 @@ export const DashboardPage = () => {
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.description) {
-      setError('Please fill in both title and description');
+      setError("Please fill in both title and description");
       return;
     }
 
     try {
       setSubmitting(true);
-      setError('');
+      setError("");
       await itemService.createItem(formData);
-      setSuccessMsg('Item created successfully!');
+      setSuccessMsg("Item created successfully!");
       setFormData({
-        title: '',
-        description: '',
-        category: 'Frontend',
-        status: 'Todo',
-        priority: 'Medium'
+        title: "",
+        description: "",
+        category: "Frontend",
+        status: "Todo",
+        priority: "Medium",
       });
       setShowForm(false);
       fetchItems();
-      setTimeout(() => setSuccessMsg(''), 4000);
+      setTimeout(() => setSuccessMsg(""), 4000);
     } catch (err) {
-      setError(err.message || 'Failed to create item');
+      setError(err.message || "Failed to create item");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDeleteItem = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this item?')) return;
+    if (!window.confirm("Are you sure you want to delete this item?")) return;
     try {
       await itemService.deleteItem(id);
-      setSuccessMsg('Item deleted successfully!');
+      setSuccessMsg("Item deleted successfully!");
       fetchItems();
-      setTimeout(() => setSuccessMsg(''), 4000);
+      setTimeout(() => setSuccessMsg(""), 4000);
     } catch (err) {
-      setError(err.message || 'Failed to delete item');
+      setError(err.message || "Failed to delete item");
     }
   };
 
   const getStatusBadge = (status) => {
-    const s = (status || '').toLowerCase();
-    if (s === 'done') {
+    const s = (status || "").toLowerCase();
+    if (s === "done") {
       return (
         <span className="px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
           Done
         </span>
       );
     }
-    if (s === 'in progress') {
+    if (s === "in progress") {
       return (
         <span className="px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
           In Progress
         </span>
       );
     }
-    if (s === 'review') {
+    if (s === "review") {
       return (
         <span className="px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
           Review
@@ -126,11 +134,11 @@ export const DashboardPage = () => {
   };
 
   const getPriorityColor = (priority) => {
-    const p = (priority || '').toLowerCase();
-    if (p === 'critical') return 'text-rose-400 font-bold';
-    if (p === 'high') return 'text-amber-400 font-semibold';
-    if (p === 'medium') return 'text-cyan-400 font-medium';
-    return 'text-slate-400 font-medium';
+    const p = (priority || "").toLowerCase();
+    if (p === "critical") return "text-rose-400 font-bold";
+    if (p === "high") return "text-amber-400 font-semibold";
+    if (p === "medium") return "text-cyan-400 font-medium";
+    return "text-slate-400 font-medium";
   };
 
   return (
@@ -142,7 +150,11 @@ export const DashboardPage = () => {
             OCCASION Dashboard
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Welcome back, <strong className="text-slate-200">{currentUser?.username || 'Occasion User'}</strong>! Manage your Occasion account and items.
+            Welcome back,{" "}
+            <strong className="text-slate-200">
+              {currentUser?.username || "Occasion User"}
+            </strong>
+            ! Manage your Occasion account and items.
           </p>
         </div>
 
@@ -160,7 +172,7 @@ export const DashboardPage = () => {
             icon={Plus}
             onClick={() => setShowForm(!showForm)}
           >
-            {showForm ? 'Close Form' : 'Add Item'}
+            {showForm ? "Close Form" : "Add Item"}
           </Button>
         </div>
       </div>
@@ -189,23 +201,31 @@ export const DashboardPage = () => {
           <form onSubmit={handleCreateSubmit} className="space-y-4 mt-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Title *</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Title *
+                </label>
                 <input
                   type="text"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-slate-700/70 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
                   placeholder="e.g. Build User API"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Category</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Category
+                </label>
                 <select
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-slate-700/70 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, category: e.target.value })
+                  }
                 >
                   <option value="Frontend">Frontend</option>
                   <option value="Backend">Backend</option>
@@ -217,11 +237,15 @@ export const DashboardPage = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Status</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Status
+                </label>
                 <select
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-slate-700/70 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
                   value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, status: e.target.value })
+                  }
                 >
                   <option value="Todo">Todo</option>
                   <option value="In Progress">In Progress</option>
@@ -231,11 +255,15 @@ export const DashboardPage = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Priority</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Priority
+                </label>
                 <select
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-slate-700/70 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
                   value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, priority: e.target.value })
+                  }
                 >
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
@@ -246,13 +274,17 @@ export const DashboardPage = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Description *</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Description *
+              </label>
               <textarea
                 rows="3"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-slate-700/70 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
                 placeholder="Explain the requirements or scope..."
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 required
               />
             </div>
@@ -262,7 +294,7 @@ export const DashboardPage = () => {
                 Cancel
               </Button>
               <Button type="submit" variant="primary" disabled={submitting}>
-                {submitting ? 'Saving...' : 'Save Item'}
+                {submitting ? "Saving..." : "Save Item"}
               </Button>
             </div>
           </form>
@@ -271,7 +303,10 @@ export const DashboardPage = () => {
 
       {/* Filter and Search Bar */}
       <div className="p-4 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-slate-800/80 flex flex-wrap gap-4 items-center justify-between">
-        <form onSubmit={handleSearch} className="flex gap-2 flex-1 min-w-[260px]">
+        <form
+          onSubmit={handleSearch}
+          className="flex gap-2 flex-1 min-w-[260px]"
+        >
           <input
             type="text"
             className="w-full px-3.5 py-2 rounded-xl bg-slate-950/80 border border-slate-700/80 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
@@ -345,10 +380,12 @@ export const DashboardPage = () => {
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-cyan-400 tracking-wide uppercase">
-                    {item.category || 'General'}
+                    {item.category || "General"}
                   </span>
-                  <span className={`text-xs ${getPriorityColor(item.priority)}`}>
-                    ● {item.priority || 'Medium'}
+                  <span
+                    className={`text-xs ${getPriorityColor(item.priority)}`}
+                  >
+                    ● {item.priority || "Medium"}
                   </span>
                 </div>
 
@@ -363,7 +400,7 @@ export const DashboardPage = () => {
                 <div className="flex items-center justify-between pt-3 border-t border-slate-800/80 text-xs text-slate-400 mt-2">
                   <div className="flex items-center gap-1.5">
                     <Clock size={13} className="text-slate-500" />
-                    <span>{item.creatorName || 'Occasion Member'}</span>
+                    <span>{item.creatorName || "Occasion Member"}</span>
                   </div>
                   <div>{getStatusBadge(item.status)}</div>
                 </div>
