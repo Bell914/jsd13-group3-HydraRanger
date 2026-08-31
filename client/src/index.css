@@ -29,8 +29,9 @@
   --radius-control: 0.75rem;
   --radius-surface: 1rem;
   --shadow-surface: 0 10px 30px rgb(0 70 167 / 0.1);
-  --font-primary: "Prompt", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+  --font-primary:
+    "Prompt", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
 }
 
 html {
@@ -54,6 +55,17 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: gradientMove 3s ease infinite;
+}
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .animate-marquee {
