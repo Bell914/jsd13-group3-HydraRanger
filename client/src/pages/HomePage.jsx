@@ -1,110 +1,42 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import {
-  Sparkles,
-  Layers,
-  Terminal,
-  ArrowRight,
-  CheckCircle2,
-  Zap,
-  Server,
-  Code,
-} from "lucide-react";
-import { assets } from "../assets/assets.js";
-import { Button, Card } from "../components/index.js";
-import { specialProducts } from "../assets/assets.js";
+import { CheckCircle2 } from "lucide-react";
+import { assets, specialProducts } from "../assets/assets.js";
+
 export const HomePage = () => {
   return (
-    <div className="flex min-w-0 flex-col gap-12 py-4 sm:gap-16 sm:py-8">
+    <div className="flex min-w-0 flex-col gap-12 sm:gap-16 ">
       {/* Hero Section */}
-      <section className="relative px-0 py-10 text-center sm:px-4 sm:py-20">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-accent shadow-sm">
-          <Sparkles size={14} aria-hidden="true" />
-          Group Project 3 • Sprint 2
-        </div>
-
-        <h1 className="mx-auto mb-6 max-w-4xl text-3xl font-extrabold leading-tight tracking-tight text-primary sm:text-5xl lg:text-6xl">
-          Powering Modular Full-Stack <br className="hidden sm:block" />
-          with{' '}
-          <span className="block text-accent sm:inline">
-            OCCASION
-          </span>
-        </h1>
-
-        <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-secondary sm:text-xl">
-          ระบบโครงสร้างการทำงานแบบแยกส่วน (Modular Clean Architecture)
-          พร้อมการเชื่อมต่อ REST API, JWT Authentication, Tailwind CSS v4, และ Dashboard จัดการข้อมูลแบบ Real-Time
-        </p>
-
-        <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4">
-          <Button as={Link} to="/dashboard" size="lg" icon={ArrowRight} className="w-full sm:w-auto">
-            Open Dashboard
-          </Button>
-          <Button as={Link} to="/login" variant="secondary" size="lg" icon={Terminal} className="w-full sm:w-auto">
-            Sign In Demo
-          </Button>
-        </div>
-      </section>
-
-      {/* Feature Highlights */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card
-          icon={Server}
-          title="Modular Express API"
-          subtitle="Backend Layered Design"
-          hoverable
-        >
-          <p className="text-sm leading-relaxed text-secondary">
-            แยกเลเยอร์ชัดเจนตามหลัก MVC + Services + Validators พร้อมระบบ Fallback รองรับทั้ง MongoDB และ In-Memory Store
-          </p>
-        </Card>
-
-        <Card
-          icon={Code}
-          title="React 19 + Tailwind v4"
-          subtitle="Modern Frontend Experience"
-          hoverable
-        >
-          <p className="text-sm leading-relaxed text-secondary">
-            พัฒนาด้วย React Router v7, @tailwindcss/vite และ Custom API Service Layer ตอบสนองรวดเร็ว
-          </p>
-        </Card>
-
-        <Card
-          icon={Zap}
-          title="JWT Authentication"
-          subtitle="Secure Access Control"
-          hoverable
-        >
-          <p className="text-sm leading-relaxed text-secondary">
-            ระบบยืนยันตัวตนแบบ Token-Based พร้อม Password Hashing (bcrypt) และ Route Guard ปกป้องหน้าจัดการข้อมูล
-          </p>
-        </Card>
-      </section>
-
-      {/* Sprint Deliverables Card */}
-      <Card
-        title="Sprint 2 Deliverables & Structure"
-        subtitle="Full-Stack Readiness Checklist"
-        icon={Layers}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-          {[
-            'Modular Client & Server Separation',
-            'Full REST API Specification in docs/',
-            'Centralized Error & Logger Middlewares',
-            'Interactive Item CRUD Dashboard',
-            'Tailwind CSS v4 with @tailwindcss/vite',
-            'Clean Git Flow & Contributing Guidelines'
-          ].map((item, idx) => (
-            <div
-              key={idx}
-              className="flex items-center gap-3 rounded-xl border border-occasion-border/55 bg-background/65 p-3 text-sm font-medium text-secondary"
+      <section className="relative" id="new">
+        <img
+          src={assets.bghero}
+          alt="Two models wearing black and white minimal tailoring in a concrete studio"
+          className="h-[78vh] w-full object-cover"
+        />
+        <div className="absolute inset-0 flex items-end justify-center bg-foreground/35">
+          <div className="absolute w-full max-w-7xl px-6 pb-14">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-white">
+              occasion mix and match style by ai
+            </p>
+            <h1 className="animate-gradient mt-4 max-w-3xl font-display text-5xl uppercase leading-[1.02] tracking-[0.02em] text-background md:text-7xl">
+              CREATE YOUR LOOK SMOOTH
+            </h1>
+            <p className="mt-8 text-[11px] uppercase tracking-[0.02em] text-white">
+              Lorem ipsum dolor sit amet consectetur adipisicing elit.
+              <br />
+              Rerum iure eaque voluptatum voluptas eius illum.
+            </p>
+            <a
+              href="./Product_Page.html"
+              className="mt-8 inline-flex items-center gap-3 rounded-md bg-white px-8 py-4 text-[12px] font-semibold uppercase tracking-[0.3em] text-foreground transition-opacity hover:opacity-85"
             >
-              <CheckCircle2 size={18} aria-hidden="true" className="shrink-0 text-accent" />
-              <span>{item}</span>
-            </div>
-          ))}
+              <CheckCircle2
+                size={18}
+                aria-hidden="true"
+                className="shrink-0 text-accent"
+              />
+              <span>EXPLORE NOW</span>
+            </a>
+          </div>
         </div>
       </section>
 
@@ -184,7 +116,7 @@ export const HomePage = () => {
         </div>
 
         {/* Mix and Match Section */}
-        <div className="my-12 flex flex-col justify-between gap-8 rounded-2xl bg-secondary p-6 sm:p-10 lg:flex-row">
+        <div className="my-12 flex flex-col justify-between gap-8 rounded-2xl bg-accent p-6 sm:p-10 lg:flex-row">
           <div className="flex flex-col p-9 lg:w-2/3">
             <div className="mb-6 text-white">
               <p className="text-sm font-bold tracking-wider opacity-80">
@@ -228,12 +160,8 @@ export const HomePage = () => {
           </div>
 
           {/* Dropzone */}
-          <div className="flex flex-col justify-center gap-4  sm:flex-row lg:w-1/3 lg:flex-col">
-            <div
-              className="flex cursor-pointer items-center justify-center 
-             lg:bg-gray-600 rounded-xl border-2 border-dashed
-              border-white/40 bg-secondary/80 p-12 transition hover:bg-secondary"
-            >
+          <div className="flex flex-col justify-center gap-4 sm:flex-row lg:w-1/3 lg:flex-col">
+            <div className="flex cursor-pointer items-center justify-center lg:bg-gray-600 rounded-xl border-2 border-dashed border-white/40 bg-secondary/80 p-12 transition hover:bg-secondary">
               <div className="flex items-center gap-3 text-white">
                 <img
                   src={assets.camera}
@@ -243,11 +171,7 @@ export const HomePage = () => {
                 <span className="font-medium">ลากรูปมาที่นี่</span>
               </div>
             </div>
-            <div
-              className="flex cursor-pointer items-center justify-center  
-             lg:bg-gray-600  rounded-xl border-2 border-dashed
-              border-white/40 bg-secondary/80 p-12 transition hover:bg-secondary"
-            >
+            <div className="flex cursor-pointer items-center justify-center lg:bg-gray-600 rounded-xl border-2 border-dashed border-white/40 bg-secondary/80 p-12 transition hover:bg-secondary">
               <div className="flex items-center gap-3 text-white">
                 <img
                   src={assets.camera}
@@ -277,7 +201,7 @@ export const HomePage = () => {
                 className="h-full w-full object-cover transition duration-300 ease-in-out group-hover:scale-105"
               />
               <div className="absolute bottom-4 left-4 rounded-lg bg-black/10 px-3 py-1 font-bold text-white drop-shadow-lg backdrop-blur-md">
-                <h4 className="bg-gradient-to-r from-white via-white to-gray-200 bg-clip-text text-3xl font-bold uppercase tracking-tight text-transparent [text-shadow:0_4px_8px_rgba(0,0,0,0.3),_0_2px_4px_rgba(255,255,255,0.4)]">
+                <h4 className="text-3xl font-bold uppercase tracking-tight text-white">
                   เสื้อ
                 </h4>
                 <h6 className="text-sm font-normal">สำรวจหมวดหมู่</h6>
@@ -292,7 +216,7 @@ export const HomePage = () => {
                 className="h-full w-full object-cover transition duration-300 ease-in-out group-hover:scale-105"
               />
               <div className="absolute bottom-4 left-4 rounded-lg bg-black/10 px-3 py-1 font-bold drop-shadow-lg backdrop-blur-md">
-                <h4 className="bg-gradient-to-r from-white via-white to-gray-200 bg-clip-text text-3xl font-bold uppercase tracking-tight text-transparent [text-shadow:0_4px_8px_rgba(0,0,0,0.3),_0_2px_4px_rgba(255,255,255,0.4)]">
+                <h4 className="text-3xl font-bold uppercase tracking-tight text-white">
                   กางเกง
                 </h4>
                 <h6 className="text-sm text-gray-200 opacity-90">
@@ -309,7 +233,7 @@ export const HomePage = () => {
                 className="h-auto w-full rounded-xl object-cover transition duration-300 ease-in-out group-hover:scale-105"
               />
               <div className="absolute bottom-4 left-4 rounded-lg bg-black/10 px-3 py-1 font-bold text-white drop-shadow-lg backdrop-blur-md">
-                <h4 className="bg-gradient-to-r from-white via-white to-gray-200 bg-clip-text text-3xl font-bold uppercase tracking-tight text-transparent [text-shadow:0_4px_8px_rgba(0,0,0,0.3),_0_2px_4px_rgba(255,255,255,0.4)]">
+                <h4 className="text-3xl font-bold uppercase tracking-tight text-white">
                   กระโปรง
                 </h4>
                 <h6 className="text-sm font-normal opacity-90">
@@ -365,24 +289,7 @@ export const HomePage = () => {
             ))}
           </div>
         </div>
-        <div className="aura">
-          <button className="btn">button with aura</button>
-        </div>
-        <button className="btn btn-secondary shadow-lg shadow-secondary/50">
-          Secondary Aura
-        </button>
-        <button className="btn btn-primary shadow-[0_0_15px_rgba(37,99,235,0.5)]">
-          Aura Button
-        </button>
-        <div className="aura aura-rainbow">
-          <div className="card bg-base-100">
-            <div className="card-body">
-              <p>This card has rainbow aura</p>
-            </div>
-          </div>
-        </div>
 
-        <button className="btn btn-neutral btn-aura">Hover Me</button>
         {/* Article Section */}
         <div className="pt-5 text-center md:text-left">
           <h2 className="text-2xl font-bold text-primary">Article</h2>
