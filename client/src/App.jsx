@@ -1,6 +1,6 @@
-import React from 'react';
-import { Navbar, Footer } from './components/index.js';
-import { AppRoutes } from './routes/index.js';
+import React from "react";
+import { Navbar, Footer } from "./components/index.js";
+import { AppRoutes } from "./routes/index.js";
 
 function App() {
   return (
