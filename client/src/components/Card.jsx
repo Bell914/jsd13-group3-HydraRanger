@@ -10,35 +10,45 @@ export const Card = ({
   onClick = null,
   hoverable = false
 }) => {
+  const handleKeyDown = (event) => {
+    if (onClick && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      onClick(event);
+    }
+  };
+
   return (
     <div
-      className={`bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl relative overflow-hidden transition-all duration-200 ${
-        hoverable ? 'hover:border-slate-700 hover:-translate-y-1 hover:shadow-2xl' : ''
-      } ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      className={`relative overflow-hidden rounded-2xl border border-occasion-border/65 bg-surface p-5 shadow-[var(--shadow-surface)] transition duration-200 sm:p-6 ${
+        hoverable ? 'hover:-translate-y-1 hover:border-primary/55 hover:shadow-xl' : ''
+      } ${onClick ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 focus-visible:ring-offset-2' : ''} ${className}`}
       onClick={onClick}
+      onKeyDown={handleKeyDown}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
     >
       {(title || Icon || action) && (
-        <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800/60">
-          <div className="flex items-center gap-3">
+        <div className="mb-4 flex items-start justify-between gap-4 border-b border-occasion-border/45 pb-3">
+          <div className="flex min-w-0 items-center gap-3">
             {Icon && (
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
-                <Icon size={20} />
+              <div className="flex shrink-0 items-center justify-center rounded-xl border border-accent/25 bg-accent/10 p-2.5 text-accent">
+                <Icon size={20} aria-hidden="true" />
               </div>
             )}
-            <div>
+            <div className="min-w-0">
               {title && (
-                <h3 className="text-lg font-bold text-slate-100 tracking-tight leading-snug">
+                <h3 className="text-lg font-bold leading-snug tracking-tight text-primary">
                   {title}
                 </h3>
               )}
               {subtitle && (
-                <p className="text-xs text-slate-400 font-medium mt-0.5">
+                <p className="mt-0.5 text-sm font-medium text-secondary">
                   {subtitle}
                 </p>
               )}
             </div>
           </div>
-          {action && <div>{action}</div>}
+          {action && <div className="shrink-0">{action}</div>}
         </div>
       )}
       {children}

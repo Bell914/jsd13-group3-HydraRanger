@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { LogIn, UserRound, AlertCircle } from "lucide-react";
 import { authService } from "../services/authService.js";
 import { Button, Card } from "../components/index.js";
+import { FormInput } from "../components/index.js";
 import { assets } from "../assets/assets.js";
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -36,22 +37,25 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="">
+    <div className="hero min-h-screen">
       <Card>
         <div className="text-center mb-8">
-          <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 w-12 h-12 rounded-2xl inline-flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/25">
-            <UserRound size={24} className="text-slate-950 font-extrabold" />
+          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-white shadow-lg shadow-accent/20">
+            <UserRound size={24} aria-hidden="true" />
           </div>
-          <h2 className="text-2xl font-extrabold text-primary tracking-tight">
-            Greate to see you again!
+          <h2 className="text-2xl font-extrabold tracking-tight text-primary">
+            Customer Sign In
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-2">
+          <p className="mt-2 text-xs text-secondary sm:text-sm">
             Sign in to shop, save looks and manage your orders
           </p>
         </div>
 
         {error && (
-          <div className="flex items-center gap-3 p-3.5 mb-6 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm">
+          <div
+            className="mb-6 flex items-center gap-3 rounded-xl border border-accent/35 bg-accent/10 p-3.5 text-sm text-accent"
+            role="alert"
+          >
             <AlertCircle size={18} className="shrink-0" />
             <span>{error}</span>
           </div>
@@ -64,7 +68,7 @@ export const LoginPage = () => {
             </label>
             <input
               type="email"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-slate-700/70 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-700/70 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-primary  focus:ring-1 focus:border-primary transition-all"
               placeholder="customer@example.com"
               value={formData.email}
               onChange={(e) =>
@@ -80,7 +84,7 @@ export const LoginPage = () => {
             </label>
             <input
               type="password"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-slate-700/70 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-700/70 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
               placeholder="••••••••"
               value={formData.password}
               onChange={(e) =>
@@ -101,69 +105,16 @@ export const LoginPage = () => {
           </Button>
         </form>
 
-        <div className="mt-6 pt-5 border-t border-slate-800/80 text-center text-xs text-slate-400">
+        <div className="mt-6 border-t border-occasion-border/45 pt-5 text-center text-xs text-secondary">
           Don't have an account?{" "}
           <Link
             to="/register"
-            className="text-emerald-400 hover:text-emerald-300 font-semibold"
+            className="rounded-sm font-semibold text-accent hover:text-accent-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
           >
             Register here
           </Link>
         </div>
       </Card>
-
-      <div className="hero min-h-screen ">
-        <div className="hero-content flex-col bg-white py-8 px-6 rounded-2xl shadow-2xl max-w-4xl lg:flex-row gap-10">
-          {/* ฝั่งซ้าย: โลโก้ */}
-          <div className="text-center w-full lg:w-1/2 flex justify-center lg:justify-start">
-            <img
-              src={assets.newlogo}
-              alt="occasion-logo"
-              className="w-[50%] lg:w-[70%]"
-            />
-          </div>
-
-          {/* ฝั่งขวา: ฟอร์ม Login */}
-          <div className="flex flex-col w-full lg:w-1/2 items-center">
-            <h1 className="text-primary py-3 text-center text-2xl font-bold mb-4">
-              Great to see you again!
-            </h1>
-
-            {/* การ์ดฟอร์ม (ลบอันที่ซ้อนกันออกแล้ว) */}
-            <div className="card shrink-0 shadow-xl w-full max-w-md border-base-200">
-              <div className="card-body p-8">
-                <fieldset className="fieldset">
-                  <label className="label text-lg font-semibold">Email</label>
-                  <input
-                    type="email"
-                    className="input input-lg input-bordered text-black bg-white w-full"
-                    placeholder="Email"
-                  />
-
-                  <label className="label text-lg font-semibold mt-4">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    className="input input-lg input-bordered text-black bg-white w-full"
-                    placeholder="Password"
-                  />
-
-                  <div className="mt-2 text-right">
-                    <a className="link link-hover text-sm text-gray-500">
-                      Forgot password?
-                    </a>
-                  </div>
-
-                  <button className="btn btn-primary btn-lg text-white mt-6 w-full">
-                    Login
-                  </button>
-                </fieldset>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

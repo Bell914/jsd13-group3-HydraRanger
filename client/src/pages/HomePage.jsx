@@ -308,10 +308,10 @@ export const HomePage = () => {
         <div className="aura">
           <button className="btn">button with aura</button>
         </div>
-        <button class="btn btn-secondary shadow-lg shadow-secondary/50">
+        <button className="btn btn-secondary shadow-lg shadow-secondary/50">
           Secondary Aura
         </button>
-        <button class="btn btn-primary shadow-[0_0_15px_rgba(37,99,235,0.5)]">
+        <button className="btn btn-primary shadow-[0_0_15px_rgba(37,99,235,0.5)]">
           Aura Button
         </button>
         <div className="aura aura-rainbow">
@@ -322,7 +322,7 @@ export const HomePage = () => {
           </div>
         </div>
 
-        <button class="btn btn-neutral btn-aura">Hover Me</button>
+        <button className="btn btn-neutral btn-aura">Hover Me</button>
         {/* Article Section */}
         <div className="pt-5 text-center md:text-left">
           <h2 className="text-2xl font-bold text-primary">Article</h2>

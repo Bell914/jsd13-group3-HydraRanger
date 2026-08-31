@@ -1,108 +1,147 @@
-/* 1. นำเข้าฟอนต์ Google Fonts ไว้เป็นอันดับแรกสุด */
-@import url("https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap");
 @import "tailwindcss";
 @plugin "daisyui";
-/* 2. ตั้งค่า Custom Theme สำหรับ Tailwind v4 */
+
 :root {
-  /* สีหลัก (Primary, Secondary, Accent) */
-  --p: #0046a7; /* Primary */
-  --s: #495f8f; /* Secondary */
-  --a: #e2156d; /* Accent */
-
-  /* สีพื้นหลังและข้อความ */
-  --b1: #fcf4ee; /* Base-100 (สีพื้นหลังหลักของเว็บ) */
-  --b2: #f3e8df; /* Base-200 (สีพื้นหลังที่เข้มขึ้นมานิดนึง) */
-  --b3: #e8dccf; /* Base-300 (สีพื้นหลังเข้มสุด) */
-  --bc: #1f2937; /* Base-content (สีตัวอักษรหลัก) */
-
-  /* สีแจ้งเตือน (State Colors) */
-  --in: #3b82f6; /* Info */
-  --su: #10b981; /* Success */
-  --wa: #f59e0b; /* Warning */
-  --er: #ef4444; /* Error */
+  --p: #0046a7;
+  --s: #495f8f;
+  --a: #e2156d;
+  --b1: #fcf4ee;
+  --b2: #f3e8df;
+  --b3: #e8dccf;
+  --bc: #1f2937;
+  --in: #3b82f6;
+  --su: #10b981;
+  --wa: #f59e0b;
+  --er: #ef4444;
+  --color-background: #fcf4ee;
+  --color-primary: #0046a7;
+  --color-secondary: #495f8f;
+  --color-accent: #e2156d;
+  --color-surface: #ffffff;
+  --color-text: #0046a7;
+  --color-text-muted: #495f8f;
+  --color-border: #a6afc4;
+  --color-focus-ring: #e2156d;
+  --color-primary-hover: #003985;
+  --color-secondary-hover: #3b4d75;
+  --color-accent-hover: #b81159;
+  --color-disabled: #d6d9e2;
+  --radius-control: 0.75rem;
+  --radius-surface: 1rem;
+  --shadow-surface: 0 10px 30px rgb(0 70 167 / 0.1);
+  --font-primary:
+    "Prompt", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
 }
 
-/* ถ้าต้องการตั้งค่าสีสำหรับ Dark Mode ด้วย */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --b1: #090d16; /* พื้นหลังสีเข้ม */
-    --bc: #f8fafc; /* ตัวอักษรสีอ่อน */
-  }
+html {
+  background-color: var(--color-background);
 }
+
+body {
+  margin: 0;
+  font-family: var(--font-primary);
+  background-color: var(--color-background);
+  color: var(--color-text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
 .animate-gradient {
   background: linear-gradient(90deg, #ffffff, #ffd6e7, #ffe066, #ffffff);
   background-size: 300% 100%;
-  -webkit-background-clip: text;
   background-clip: text;
+  -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: gradientMove 3s ease infinite;
+}
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .animate-marquee {
   animation: marquee 25s linear infinite;
 }
+
 .animate-marquee:hover {
   animation-play-state: paused;
 }
-/* ซ่อน Scrollbar แนวนอน */
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-/* 3. ค่า CSS Variables ทั่วไป */
-:root {
-  --font-primary:
-    "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  --font-mono: "Fira Code", monospace;
+@theme {
+  --color-background: #fcf4ee;
+  --color-primary: #0046a7;
+  --color-secondary: #495f8f;
+  --color-accent: #e2156d;
+  --color-surface: #ffffff;
+  --color-occasion-text: #0046a7;
+  --color-muted: #495f8f;
+  --color-occasion-border: #a6afc4;
+  --color-primary-hover: #003985;
+  --color-secondary-hover: #3b4d75;
+  --color-accent-hover: #b81159;
+  --color-disabled: #d6d9e2;
+  --font-sans: "Prompt", system-ui, sans-serif;
+  --font-prompt: "Prompt", system-ui, sans-serif;
 }
 
-/* 4. Global Styles */
-body {
-  font-family: var(--font-primary);
-  background-color: #090d16;
-  color: #f8fafc;
-  min-height: 100vh;
-  background-image:
-    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.1) 0px, transparent 50%);
-  background-attachment: fixed;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* 5. Custom Components */
 @layer components {
   .btn {
-    @apply px-5 py-2.5 rounded-lg font-medium transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 shadow-sm;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 font-semibold transition duration-200 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55;
   }
 
   .btn-primary {
-    @apply bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md;
+    @apply bg-primary text-white shadow-sm hover:bg-primary-hover active:translate-y-px;
   }
 
   .btn-secondary {
-    @apply bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300;
+    @apply border border-secondary bg-secondary text-white hover:bg-secondary-hover active:translate-y-px;
   }
 
   .btn-danger {
-    @apply bg-red-600 text-white hover:bg-red-700;
+    @apply bg-accent text-white hover:bg-accent-hover active:translate-y-px;
   }
-}
-@layer components {
+
   .btn-aura {
     @apply relative z-0;
   }
 
   .btn-aura::before {
     content: "";
-    @apply absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg blur-md opacity-70 z-[-1] transition-opacity duration-300;
+    @apply absolute -inset-1 z-[-1] rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 opacity-70 blur-md transition-opacity duration-300;
   }
 
   .btn-aura:hover::before {
     @apply opacity-100 blur-lg;
+  }
+}
+
+@layer base {
+  :focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--color-focus-ring) 70%, white);
+    outline-offset: 3px;
+  }
+
+  button,
+  a,
+  input {
+    -webkit-tap-highlight-color: transparent;
   }
 }

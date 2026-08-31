@@ -4,7 +4,7 @@ import { AppRoutes } from "./routes/index.js";
 
 function App() {
   return (
-    <div className="min-h-screen flex flex-col bg-white text-slate-100 selection:bg-emerald-500 selection:text-slate-950">
+    <div className="flex min-h-screen min-w-0 flex-col overflow-x-clip bg-background text-occasion-text selection:bg-accent selection:text-white">
       <Navbar />
 
       <AppRoutes />
