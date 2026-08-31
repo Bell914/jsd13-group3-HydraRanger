@@ -1,10 +1,9 @@
-import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { LogIn, UserRound, AlertCircle } from "lucide-react";
+import { useState } from "react";
 import { authService } from "../services/authService.js";
 import { Button, Card } from "../components/index.js";
-import { FormInput } from "../components/index.js";
-import { assets } from "../assets/assets.js";
+
 export const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();

@@ -162,6 +162,7 @@ export const Navbar = () => {
                   PRODUCTS
                 </Link>
               </li>
+
               <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0">
                 <Link
                   to="/lookbook"
@@ -171,11 +172,12 @@ export const Navbar = () => {
                   FEATURES
                 </Link>
               </li>
+
               <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0">
                 <Link
                   to="/article"
                   aria-current={isActive("/article") ? "page" : undefined}
-                  className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/lookbook") ? "bg-accent/10 font-bold text-accent" : ""}`}
+                  className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/article") ? "bg-accent/10 font-bold text-accent" : ""}`}
                 >
                   ARTICLE
                 </Link>

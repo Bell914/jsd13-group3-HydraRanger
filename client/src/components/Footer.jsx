@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { assets } from "../assets/assets";
+
 export const Footer = () => {
   return (
     <footer id="Footer" className="bg-primary text-white">
@@ -157,8 +158,8 @@ export const Footer = () => {
                   className="inline-flex items-center gap-2 rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
                 >
                   <img
-                    alt="line"
                     src={assets.lineOfficial}
+                    alt="line"
                     aria-hidden="true"
                     className="w-5 h-5 object-contain"
                   />
