@@ -1,18 +1,6 @@
 @import "tailwindcss";
-@plugin "daisyui";
 
 :root {
-  --p: #0046a7;
-  --s: #495f8f;
-  --a: #e2156d;
-  --b1: #fcf4ee;
-  --b2: #f3e8df;
-  --b3: #e8dccf;
-  --bc: #1f2937;
-  --in: #3b82f6;
-  --su: #10b981;
-  --wa: #f59e0b;
-  --er: #ef4444;
   --color-background: #fcf4ee;
   --color-primary: #0046a7;
   --color-secondary: #495f8f;
@@ -117,19 +105,6 @@ body {
 
   .btn-danger {
     @apply bg-accent text-white hover:bg-accent-hover active:translate-y-px;
-  }
-
-  .btn-aura {
-    @apply relative z-0;
-  }
-
-  .btn-aura::before {
-    content: "";
-    @apply absolute -inset-1 z-[-1] rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 opacity-70 blur-md transition-opacity duration-300;
-  }
-
-  .btn-aura:hover::before {
-    @apply opacity-100 blur-lg;
   }
 }
 
