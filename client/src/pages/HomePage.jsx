@@ -1,7 +1,7 @@
 import React from "react";
 import { CheckCircle2 } from "lucide-react";
-import { assets, specialProducts } from "../assets/assets.js";
-
+import { assets, fashionNews, specialProducts } from "../assets/assets.js";
+import { Link } from "react-router-dom";
 export const HomePage = () => {
   return (
     <div className="flex min-w-0 flex-col gap-12 sm:gap-16 ">
@@ -295,12 +295,38 @@ export const HomePage = () => {
           <h2 className="text-2xl font-bold text-primary">Article</h2>
           <p className="text-xl text-primary">อ่านบทความพิเศษช่วงนี้เท่านั้น</p>
         </div>
-        <div className="mx-auto max-w-7xl py-5">
+        <div className="mx-auto max-w-7xl py-5 px-4">
           <div
             id="article-grid"
             className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3"
           >
-            {/* DOM Render บทความใน React ผ่าน state หรือ props */}
+            {fashionNews.slice(1, 4).map((article) => (
+              /* แปลง class เป็น className และเปลี่ยน w-96 เป็น w-full เพื่อให้พอดีกับ Grid */
+              <div
+                key={article.id}
+                className="card bg-base-100 w-full shadow-sm"
+              >
+                <figure>
+                  <img
+                    src={article.image}
+                    alt={article.title}
+                    className="w-full h-48 object-cover"
+                  />
+                </figure>
+                <div className="card-body">
+                  <h2 className="card-title">{article.title}</h2>
+                  <p>{article.description}</p>
+                  <div className="card-actions justify-end mt-4">
+                    <Link
+                      to={`/article/${article.id}`}
+                      className="btn btn-primary btn-sm w-full md:w-auto"
+                    >
+                      Read More
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

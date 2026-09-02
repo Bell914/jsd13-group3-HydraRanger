@@ -6,8 +6,9 @@ import {
   LoginPage,
   RegisterPage,
   NotFoundPage,
-  ArticlePage,
   UiKitPage,
+  ArticleDetail,
+  ArticlePages,
 } from "../pages/index.js";
 import { ProtectedRoute } from "../components/index.js";
 
@@ -18,8 +19,9 @@ export const AppRoutes = () => {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/article" element={<ArticlePage />} />
       <Route path="/ui-kit" element={<UiKitPage />} />
+      <Route path="/article" element={<ArticlePages />} />
+      <Route path="/article/:id" element={<ArticleDetail />} />
 
       {/* Protected Dashboard Route */}
       <Route
