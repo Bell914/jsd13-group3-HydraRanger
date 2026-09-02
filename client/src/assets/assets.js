@@ -10,7 +10,10 @@ import lineOfficial from "./icon/line.png";
 import logout from "./icon/logout.png";
 import tiktok from "./icon/tiktok.png";
 import bghero from "./bghero.jpg";
+<<<<<<< HEAD
 import newtag from "./icon/newtag.png";
+=======
+>>>>>>> develop
 export const assets = {
   newlogo,
   search,
