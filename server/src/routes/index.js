@@ -14,7 +14,11 @@ router.get('/health', (req, res) => {
     message: 'Server is running',
     status: 'online',
     timestamp: new Date().toISOString(),
+<<<<<<< HEAD
+    service: 'OCCASION API Server (Sprint 2)',
+=======
     service: 'OCCASION API Server',
+>>>>>>> develop
     database: getDBStatus()
   });
 });

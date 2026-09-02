@@ -1,13 +1,11 @@
-import React from "react";
+import { assets } from "../assets/assets";
 import { Link } from "react-router-dom";
-import { assets } from "../assets/assets.js";
-
 export const Footer = () => {
   return (
     <footer id="Footer" className="bg-accent text-white">
       <div className="max-w-6xl w-full mx-auto px-4 py-8">
         {/* Banner สีฟ้า */}
-        <div className="flex flex-col items-center justify-between gap-4 rounded-xl bg-secondary p-6 shadow-md sm:flex-row sm:p-8">
+        <div className="flex flex-col items-center justify-between gap-4 rounded-xl bg-primary p-6 shadow-md sm:flex-row sm:p-8">
           <p className="text-white font-medium text-base sm:text-lg text-center sm:text-left">
             Become a member and get 10% off for first purchase
           </p>
@@ -42,7 +40,10 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/lookbook" className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80">
+                <Link
+                  to="/lookbook"
+                  className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
+                >
                   LookBooks
                 </Link>
               </li>
@@ -85,17 +86,26 @@ export const Footer = () => {
             <h4 className="font-bold text-lg mb-4">USER</h4>
             <ul className="space-y-2 text-sm text-white/90 list-none p-0 m-0">
               <li>
-                <Link to="/register" className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80">
+                <Link
+                  to="/register"
+                  className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
+                >
                   Become A Member
                 </Link>
               </li>
               <li>
-                <Link to="/profile" className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80">
+                <Link
+                  to="/profile"
+                  className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
+                >
                   My Account
                 </Link>
               </li>
               <li>
-                <Link to="/lookbook" className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80">
+                <Link
+                  to="/lookbook"
+                  className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
+                >
                   My Lookbooks
                 </Link>
               </li>
@@ -115,7 +125,7 @@ export const Footer = () => {
                 >
                   <img
                     src={assets.facebook}
-                    alt=""
+                    alt="facebook"
                     aria-hidden="true"
                     className="w-5 h-5 object-contain"
                   />
@@ -131,7 +141,7 @@ export const Footer = () => {
                 >
                   <img
                     src={assets.instagram}
-                    alt=""
+                    alt="instagram"
                     aria-hidden="true"
                     className="w-5 h-5 object-contain"
                   />
@@ -147,7 +157,7 @@ export const Footer = () => {
                 >
                   <img
                     src={assets.lineOfficial}
-                    alt=""
+                    alt="line"
                     aria-hidden="true"
                     className="w-5 h-5 object-contain"
                   />
@@ -163,7 +173,7 @@ export const Footer = () => {
                 >
                   <img
                     src={assets.tiktok}
-                    alt=""
+                    alt="tiktok"
                     aria-hidden="true"
                     className="w-5 h-5 object-contain"
                   />

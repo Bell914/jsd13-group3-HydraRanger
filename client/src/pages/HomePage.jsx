@@ -1,28 +1,15 @@
 import React from "react";
+import { CheckCircle2 } from "lucide-react";
+import { assets, fashionNews, specialProducts } from "../assets/assets.js";
 import { Link } from "react-router-dom";
-import {
-  Sparkles,
-  Layers,
-  Terminal,
-  ArrowRight,
-  CheckCircle2,
-  Zap,
-  Server,
-  Code,
-} from "lucide-react";
-import { assets } from "../assets/assets.js";
-import { Button, Card } from "../components/index.js";
-import { specialProducts } from "../assets/assets.js";
 export const HomePage = () => {
   return (
-    <div className="w-full bg-background font-sans">
+    <div className="flex min-w-0 flex-col gap-12 sm:gap-16 ">
       {/* Hero Section */}
       <section className="relative" id="new">
         <img
           src={assets.bghero}
           alt="Two models wearing black and white minimal tailoring in a concrete studio"
-          width="1920"
-          height="1080"
           className="h-[78vh] w-full object-cover"
         />
         <div className="absolute inset-0 flex items-end justify-center bg-foreground/35">
@@ -40,9 +27,14 @@ export const HomePage = () => {
             </p>
             <a
               href="./Product_Page.html"
-              className="mt-8 inline-flex items-center gap-3 rounded-md bg-background px-8 py-4 text-[12px] font-semibold uppercase tracking-[0.3em] text-foreground text-primary transition-opacity hover:opacity-85"
+              className="mt-8 inline-flex items-center gap-3 rounded-md bg-white px-8 py-4 text-[12px] font-semibold uppercase tracking-[0.3em] text-foreground transition-opacity hover:opacity-85"
             >
-              OUR PRODUCT
+              <CheckCircle2
+                size={18}
+                aria-hidden="true"
+                className="shrink-0 text-accent"
+              />
+              <span>EXPLORE NOW</span>
             </a>
           </div>
         </div>
@@ -124,7 +116,7 @@ export const HomePage = () => {
         </div>
 
         {/* Mix and Match Section */}
-        <div className="my-12 flex flex-col justify-between gap-8 rounded-2xl bg-secondary p-6 sm:p-10 lg:flex-row">
+        <div className="my-12 flex flex-col justify-between gap-8 rounded-2xl bg-accent p-6 sm:p-10 lg:flex-row">
           <div className="flex flex-col p-9 lg:w-2/3">
             <div className="mb-6 text-white">
               <p className="text-sm font-bold tracking-wider opacity-80">
@@ -168,12 +160,8 @@ export const HomePage = () => {
           </div>
 
           {/* Dropzone */}
-          <div className="flex flex-col justify-center gap-4  sm:flex-row lg:w-1/3 lg:flex-col">
-            <div
-              className="flex cursor-pointer items-center justify-center 
-             lg:bg-gray-600 rounded-xl border-2 border-dashed
-              border-white/40 bg-secondary/80 p-12 transition hover:bg-secondary"
-            >
+          <div className="flex flex-col justify-center gap-4 sm:flex-row lg:w-1/3 lg:flex-col">
+            <div className="flex cursor-pointer items-center justify-center lg:bg-gray-600 rounded-xl border-2 border-dashed border-white/40 bg-secondary/80 p-12 transition hover:bg-secondary">
               <div className="flex items-center gap-3 text-white">
                 <img
                   src={assets.camera}
@@ -183,11 +171,7 @@ export const HomePage = () => {
                 <span className="font-medium">ลากรูปมาที่นี่</span>
               </div>
             </div>
-            <div
-              className="flex cursor-pointer items-center justify-center  
-             lg:bg-gray-600  rounded-xl border-2 border-dashed
-              border-white/40 bg-secondary/80 p-12 transition hover:bg-secondary"
-            >
+            <div className="flex cursor-pointer items-center justify-center lg:bg-gray-600 rounded-xl border-2 border-dashed border-white/40 bg-secondary/80 p-12 transition hover:bg-secondary">
               <div className="flex items-center gap-3 text-white">
                 <img
                   src={assets.camera}
@@ -217,7 +201,7 @@ export const HomePage = () => {
                 className="h-full w-full object-cover transition duration-300 ease-in-out group-hover:scale-105"
               />
               <div className="absolute bottom-4 left-4 rounded-lg bg-black/10 px-3 py-1 font-bold text-white drop-shadow-lg backdrop-blur-md">
-                <h4 className="bg-gradient-to-r from-white via-white to-gray-200 bg-clip-text text-3xl font-bold uppercase tracking-tight text-transparent [text-shadow:0_4px_8px_rgba(0,0,0,0.3),_0_2px_4px_rgba(255,255,255,0.4)]">
+                <h4 className="text-3xl font-bold uppercase tracking-tight text-white">
                   เสื้อ
                 </h4>
                 <h6 className="text-sm font-normal">สำรวจหมวดหมู่</h6>
@@ -232,7 +216,7 @@ export const HomePage = () => {
                 className="h-full w-full object-cover transition duration-300 ease-in-out group-hover:scale-105"
               />
               <div className="absolute bottom-4 left-4 rounded-lg bg-black/10 px-3 py-1 font-bold drop-shadow-lg backdrop-blur-md">
-                <h4 className="bg-gradient-to-r from-white via-white to-gray-200 bg-clip-text text-3xl font-bold uppercase tracking-tight text-transparent [text-shadow:0_4px_8px_rgba(0,0,0,0.3),_0_2px_4px_rgba(255,255,255,0.4)]">
+                <h4 className="text-3xl font-bold uppercase tracking-tight text-white">
                   กางเกง
                 </h4>
                 <h6 className="text-sm text-gray-200 opacity-90">
@@ -249,7 +233,7 @@ export const HomePage = () => {
                 className="h-auto w-full rounded-xl object-cover transition duration-300 ease-in-out group-hover:scale-105"
               />
               <div className="absolute bottom-4 left-4 rounded-lg bg-black/10 px-3 py-1 font-bold text-white drop-shadow-lg backdrop-blur-md">
-                <h4 className="bg-gradient-to-r from-white via-white to-gray-200 bg-clip-text text-3xl font-bold uppercase tracking-tight text-transparent [text-shadow:0_4px_8px_rgba(0,0,0,0.3),_0_2px_4px_rgba(255,255,255,0.4)]">
+                <h4 className="text-3xl font-bold uppercase tracking-tight text-white">
                   กระโปรง
                 </h4>
                 <h6 className="text-sm font-normal opacity-90">
@@ -305,35 +289,44 @@ export const HomePage = () => {
             ))}
           </div>
         </div>
-        <div className="aura">
-          <button className="btn">button with aura</button>
-        </div>
-        <button className="btn btn-secondary shadow-lg shadow-secondary/50">
-          Secondary Aura
-        </button>
-        <button className="btn btn-primary shadow-[0_0_15px_rgba(37,99,235,0.5)]">
-          Aura Button
-        </button>
-        <div className="aura aura-rainbow">
-          <div className="card bg-base-100">
-            <div className="card-body">
-              <p>This card has rainbow aura</p>
-            </div>
-          </div>
-        </div>
 
-        <button className="btn btn-neutral btn-aura">Hover Me</button>
         {/* Article Section */}
         <div className="pt-5 text-center md:text-left">
           <h2 className="text-2xl font-bold text-primary">Article</h2>
           <p className="text-xl text-primary">อ่านบทความพิเศษช่วงนี้เท่านั้น</p>
         </div>
-        <div className="mx-auto max-w-7xl py-5">
+        <div className="mx-auto max-w-7xl py-5 px-4">
           <div
             id="article-grid"
             className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3"
           >
-            {/* DOM Render บทความใน React ผ่าน state หรือ props */}
+            {fashionNews.slice(1, 4).map((article) => (
+              /* แปลง class เป็น className และเปลี่ยน w-96 เป็น w-full เพื่อให้พอดีกับ Grid */
+              <div
+                key={article.id}
+                className="card bg-base-100 w-full shadow-sm"
+              >
+                <figure>
+                  <img
+                    src={article.image}
+                    alt={article.title}
+                    className="w-full h-48 object-cover"
+                  />
+                </figure>
+                <div className="card-body">
+                  <h2 className="card-title">{article.title}</h2>
+                  <p>{article.description}</p>
+                  <div className="card-actions justify-end mt-4">
+                    <Link
+                      to={`/article/${article.id}`}
+                      className="btn btn-primary btn-sm w-full md:w-auto"
+                    >
+                      Read More
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

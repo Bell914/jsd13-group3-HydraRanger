@@ -1,4 +1,5 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+const BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api";
 
 class ApiClient {
   constructor(baseUrl) {
@@ -6,26 +7,26 @@ class ApiClient {
   }
 
   getToken() {
-    return localStorage.getItem('occasion_token');
+    return localStorage.getItem("occasion_token");
   }
 
   setToken(token) {
     if (token) {
-      localStorage.setItem('occasion_token', token);
+      localStorage.setItem("occasion_token", token);
     } else {
-      localStorage.removeItem('occasion_token');
+      localStorage.removeItem("occasion_token");
     }
   }
 
   getHeaders(customHeaders = {}) {
     const headers = {
-      'Content-Type': 'application/json',
-      ...customHeaders
+      "Content-Type": "application/json",
+      ...customHeaders,
     };
 
     const token = this.getToken();
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers["Authorization"] = `Bearer ${token}`;
     }
 
     return headers;
@@ -37,7 +38,7 @@ class ApiClient {
 
     const config = {
       ...options,
-      headers
+      headers,
     };
 
     try {
@@ -45,7 +46,9 @@ class ApiClient {
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        const error = new Error(data.message || `HTTP error! status: ${response.status}`);
+        const error = new Error(
+          data.message || `HTTP error! status: ${response.status}`,
+        );
         error.status = response.status;
         error.data = data;
         throw error;
@@ -53,33 +56,36 @@ class ApiClient {
 
       return data;
     } catch (error) {
-      console.error(`API Error on [${options.method || 'GET'} ${endpoint}]:`, error);
+      console.error(
+        `API Error on [${options.method || "GET"} ${endpoint}]:`,
+        error,
+      );
       throw error;
     }
   }
 
   get(endpoint, options = {}) {
-    return this.request(endpoint, { ...options, method: 'GET' });
+    return this.request(endpoint, { ...options, method: "GET" });
   }
 
   post(endpoint, body, options = {}) {
     return this.request(endpoint, {
       ...options,
-      method: 'POST',
-      body: JSON.stringify(body)
+      method: "POST",
+      body: JSON.stringify(body),
     });
   }
 
   put(endpoint, body, options = {}) {
     return this.request(endpoint, {
       ...options,
-      method: 'PUT',
-      body: JSON.stringify(body)
+      method: "PUT",
+      body: JSON.stringify(body),
     });
   }
 
   delete(endpoint, options = {}) {
-    return this.request(endpoint, { ...options, method: 'DELETE' });
+    return this.request(endpoint, { ...options, method: "DELETE" });
   }
 }
 
