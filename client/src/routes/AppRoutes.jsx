@@ -6,6 +6,7 @@ import {
   LoginPage,
   RegisterPage,
   NotFoundPage,
+  UiKitPage,
   ArticleDetail,
   ArticlePages,
 } from "../pages/index.js";
@@ -18,6 +19,7 @@ export const AppRoutes = () => {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/ui-kit" element={<UiKitPage />} />
       <Route path="/article" element={<ArticlePages />} />
       <Route path="/article/:id" element={<ArticleDetail />} />
 
