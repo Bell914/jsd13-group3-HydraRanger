@@ -31,7 +31,7 @@ export const specialProducts = [
   {
     id: 1,
     title: "เครื่องประดับ",
-    image: "/collection-2026/product-detail/bottom-01-black-detail.png",
+    image: "/collection-2026/product-detail/bottom-01-black-front.png",
     link: "/collection-2026/lookbook/look-01-city-museum.png",
   },
   {
@@ -43,7 +43,7 @@ export const specialProducts = [
   {
     id: 3,
     title: "เสื้อ",
-    image: "/collection-2026/product-detail/bottom-01-black-front.png",
+    image: "/collection-2026/products/bottom-01-black.png",
     link: "/product/3",
   },
   {
