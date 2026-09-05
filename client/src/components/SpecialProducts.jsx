@@ -1,5 +1,4 @@
 import { assets } from "../assets/assets";
-
 export const SpecialProducts = ({ product, index }) => {
   return (
     <div
