@@ -16,6 +16,7 @@ export const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isProductsHovered, setIsProductsHovered] = useState(false);
   const navRef = useRef(null);
   const searchButtonRef = useRef(null);
 
@@ -28,6 +29,7 @@ export const Navbar = () => {
     setIsMobileMenuOpen(false);
     setIsProfileOpen(false);
     setIsSearchOpen(false);
+    setIsProductsHovered(false);
   }, [location.pathname, location.search, isAuthenticated]);
 
   useEffect(() => {
@@ -153,14 +155,52 @@ export const Navbar = () => {
                 </button>
               </li>
 
-              <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0">
+              <li
+                className="relative group flex flex-col items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0"
+                onMouseEnter={() => setIsProductsHovered(true)}
+                onMouseLeave={() => setIsProductsHovered(false)}
+              >
                 <Link
                   to="/products"
                   aria-current={isActive("/products") ? "page" : undefined}
-                  className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/products") ? "bg-accent/10 font-bold text-accent" : ""}`}
+                  className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${
+                    isActive("/products")
+                      ? "font-bold text-primary underline decoration-accent decoration-2 underline-offset-4"
+                      : ""
+                  }`}
                 >
-                  PRODUCTS
+                  Products
                 </Link>
+
+                {/* Dropdown on hover: Tops & Bottoms matching user screenshot */}
+                <div
+                  className={`flex flex-col gap-2 pt-2 md:absolute md:top-full md:left-1/2 md:-translate-x-1/2 z-50 w-28 transition-all duration-200 ${
+                    isProductsHovered
+                      ? "opacity-100 visible translate-y-0"
+                      : "hidden md:flex opacity-0 invisible md:-translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:pointer-events-auto"
+                  }`}
+                >
+                  <Link
+                    to="/products?category=tops"
+                    onClick={() => {
+                      setIsProductsHovered(false);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full text-center rounded-lg bg-accent px-4 py-1.5 text-xs sm:text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                  >
+                    Tops
+                  </Link>
+                  <Link
+                    to="/products?category=bottoms"
+                    onClick={() => {
+                      setIsProductsHovered(false);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full text-center rounded-lg bg-[#2d568c] px-4 py-1.5 text-xs sm:text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                  >
+                    Bottoms
+                  </Link>
+                </div>
               </li>
 
               <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0">
