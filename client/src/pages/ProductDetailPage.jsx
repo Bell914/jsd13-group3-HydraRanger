@@ -140,6 +140,15 @@ export default function ProductDetailPage() {
       return;
     }
 
+    const cartPayload = {
+      product,
+      productId: product._id,
+      variant: selectedVariant,
+      variantId: selectedVariant._id,
+      quantity,
+    };
+    console.log("Add to Cart:", cartPayload);
+
     // Add to Zustand Cart Store
     addToCart({
       product,
