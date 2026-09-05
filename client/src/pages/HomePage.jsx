@@ -1,118 +1,27 @@
 import React from "react";
-import { CheckCircle2 } from "lucide-react";
 import { assets, fashionNews, specialProducts } from "../assets/assets.js";
 import { Link } from "react-router-dom";
+import { HeroSection } from "../components/HeroSection.jsx";
+import { RecommendProduct } from "./RecommendProduct.jsx";
+import { TextHomepage } from "../components/TextHomepage.jsx";
+import { SpecialProducts } from "../components/SpecialProducts.jsx";
 export const HomePage = () => {
   return (
     <div className="flex min-w-0 flex-col gap-12 sm:gap-16 ">
       {/* Hero Section */}
-      <section className="relative" id="new">
-        <img
-          src={assets.bghero}
-          alt="Two models wearing black and white minimal tailoring in a concrete studio"
-          className="h-[78vh] w-full object-cover"
-        />
-        <div className="absolute inset-0 flex items-end justify-center bg-foreground/35">
-          <div className="absolute w-full max-w-7xl px-6 pb-14">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white">
-              occasion mix and match style by ai
-            </p>
-            <h1 className="animate-gradient mt-4 max-w-3xl font-display text-5xl uppercase leading-[1.02] tracking-[0.02em] text-background md:text-7xl">
-              CREATE YOUR LOOK SMOOTH
-            </h1>
-            <p className="mt-8 text-[11px] uppercase tracking-[0.02em] text-white">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit.
-              <br />
-              Rerum iure eaque voluptatum voluptas eius illum.
-            </p>
-            <a
-              href="./Product_Page.html"
-              className="mt-8 inline-flex items-center gap-3 rounded-md bg-white px-8 py-4 text-[12px] font-semibold uppercase tracking-[0.3em] text-foreground transition-opacity hover:opacity-85"
-            >
-              <CheckCircle2
-                size={18}
-                aria-hidden="true"
-                className="shrink-0 text-accent"
-              />
-              <span>EXPLORE NOW</span>
-            </a>
-          </div>
-        </div>
-      </section>
-
+      <HeroSection bgimage={assets.bghero} />
       {/* Main Section */}
       <section id="main" className="mx-auto w-full max-w-7xl sm:px-6 lg:px-8">
         {/* Recommend Section Header */}
-        <div className="my-6 text-center text-primary sm:text-center md:text-left lg:text-left">
-          <h3 className="text-center text-2xl font-bold md:text-left">
-            RECOMMEND PRODUCT
-          </h3>
-          <p className="text-center font-semibold text-xl text-gray-700 md:text-left">
-            สินค้าแนะนำเลือกช็อปตามใจ
-          </p>
-        </div>
-
+        <TextHomepage
+          textheader={"RECOMMEND PRODUCT"}
+          textdisc={"สินค้าแนะนำเลือกช็อปตามใจ"}
+        />
         {/* Card Grid */}
         <div className="my-8 grid grid-cols-1 gap-6 px-4 md:grid-cols-3">
-          {/* Card 1 */}
-          <div className="group relative aspect-[3/4] mx-auto w-full max-w-sm overflow-hidden rounded-xl shadow-md">
-            <a
-              href="Product_Page.html?category=tops"
-              className="block h-full w-full"
-            >
-              <img
-                src="/collection-2026/lookbook/look-01-city-museum.png"
-                alt="เสื้อ"
-                className="h-full w-full cursor-pointer object-cover transition duration-300 ease-in-out group-hover:scale-105"
-              />
-              <div className="absolute bottom-4 left-4 font-bold text-white drop-shadow-lg">
-                <h4 className="text-3xl">เสื้อ</h4>
-                <h6 className="text-sm font-normal opacity-90">
-                  สำรวจหมวดหมู่
-                </h6>
-              </div>
-            </a>
-          </div>
-
-          {/* Card 2 */}
-          <div className="group relative aspect-[3/4] mx-auto w-full max-w-sm overflow-hidden rounded-xl shadow-md">
-            <a
-              href="Product_Page.html?category=bottoms"
-              className="block h-full w-full"
-            >
-              <img
-                src="/collection-2026/all-images/bottom-01-black.png"
-                alt="กางเกง"
-                className="h-full w-full cursor-pointer object-cover transition duration-300 ease-in-out group-hover:scale-105"
-              />
-              <div className="absolute bottom-4 left-4 font-bold text-white drop-shadow-lg">
-                <h4 className="text-3xl">กางเกง</h4>
-                <h6 className="text-sm font-normal opacity-90">
-                  สำรวจหมวดหมู่
-                </h6>
-              </div>
-            </a>
-          </div>
-
-          {/* Card 3 */}
-          <div className="group relative aspect-[3/4] mx-auto w-full max-w-sm overflow-hidden rounded-xl shadow-md">
-            <a
-              href="Product_Page.html?category=bottoms"
-              className="block h-full w-full"
-            >
-              <img
-                src="/collection-2026/lookbook/look-02-weekend-market.png"
-                alt="กระโปรง"
-                className="h-full w-full cursor-pointer object-cover transition duration-300 ease-in-out group-hover:scale-105"
-              />
-              <div className="absolute bottom-4 left-4 font-bold text-white drop-shadow-lg">
-                <h4 className="text-3xl">กระโปรง</h4>
-                <h6 className="text-sm font-normal opacity-90">
-                  สำรวจหมวดหมู่
-                </h6>
-              </div>
-            </a>
-          </div>
+          {specialProducts.slice(1, 4).map((el, index) => (
+            <RecommendProduct product={el} index={index} />
+          ))}
         </div>
 
         {/* Mix and Match Section */}
@@ -186,115 +95,39 @@ export const HomePage = () => {
 
         {/* Lookbook Section */}
         <div>
-          <div className="py-5 text-center text-primary md:text-left">
-            <h2 className="text-2xl font-bold">RECOMMEND LOOKBOOK</h2>
-            <p className="font-semibold text-xl text-gray-700">
-              Mix and Match ลุคสุดพิเศษที่ได้รับความนิยม
-            </p>
-          </div>
+          <TextHomepage
+            textheader={"RECOMMEND LOOKBOOK"}
+            textdisc={"Mix and Match ลุคสุดพิเศษที่ได้รับความนิยม"}
+          />
+
           <div className="my-8 grid grid-cols-1 gap-6 md:grid-cols-3">
             {/* Card 1 */}
-            <div className="group relative mx-auto w-full max-w-sm overflow-hidden rounded-xl shadow-md">
-              <img
-                src="/collection-2026/lookbook/look-05-seaside-walk.png"
-                alt="เสื้อ"
-                className="h-full w-full object-cover transition duration-300 ease-in-out group-hover:scale-105"
-              />
-              <div className="absolute bottom-4 left-4 rounded-lg bg-black/10 px-3 py-1 font-bold text-white drop-shadow-lg backdrop-blur-md">
-                <h4 className="text-3xl font-bold uppercase tracking-tight text-white">
-                  เสื้อ
-                </h4>
-                <h6 className="text-sm font-normal">สำรวจหมวดหมู่</h6>
-              </div>
-            </div>
-
-            {/* Card 2 */}
-            <div className="group relative mx-auto w-full max-w-sm overflow-hidden rounded-xl shadow-md">
-              <img
-                src="/collection-2026/lookbook/look-06-gallery-date.png"
-                alt="กางเกง"
-                className="h-full w-full object-cover transition duration-300 ease-in-out group-hover:scale-105"
-              />
-              <div className="absolute bottom-4 left-4 rounded-lg bg-black/10 px-3 py-1 font-bold drop-shadow-lg backdrop-blur-md">
-                <h4 className="text-3xl font-bold uppercase tracking-tight text-white">
-                  กางเกง
-                </h4>
-                <h6 className="text-sm text-gray-200 opacity-90">
-                  สำรวจหมวดหมู่
-                </h6>
-              </div>
-            </div>
-
-            {/* Card 3 */}
-            <div className="group relative mx-auto w-full max-w-sm overflow-hidden rounded-xl shadow-md">
-              <img
-                src="/collection-2026/lookbook/look-08-park-picnic.png"
-                alt="กระโปรง"
-                className="h-auto w-full rounded-xl object-cover transition duration-300 ease-in-out group-hover:scale-105"
-              />
-              <div className="absolute bottom-4 left-4 rounded-lg bg-black/10 px-3 py-1 font-bold text-white drop-shadow-lg backdrop-blur-md">
-                <h4 className="text-3xl font-bold uppercase tracking-tight text-white">
-                  กระโปรง
-                </h4>
-                <h6 className="text-sm font-normal opacity-90">
-                  สำรวจหมวดหมู่
-                </h6>
-              </div>
-            </div>
+            {fashionNews.slice(1, 4).map((el, index) => (
+              <RecommendProduct product={el} index={index} />
+            ))}
           </div>
         </div>
 
         {/* Special Product Marquee Section */}
-        <div className="text-center md:text-left">
-          <h2 className="text-2xl font-bold text-primary">Special Product</h2>
-          <p className="text-xl text-primary">
-            สินค้าพิเศษเฉพาะช่วงนี้เท่านั้น
-          </p>
-        </div>
+        <TextHomepage
+          textheader={"Special Product"}
+          textdisc={" สินค้าพิเศษเฉพาะช่วงนี้เท่านั้น"}
+        />
 
         <div className="relative my-8 h-auto w-full overflow-hidden rounded-2xl bg-background px-4 py-8 font-bold text-lg text-white sm:px-6 lg:px-8">
           <div className="animate-marquee flex w-max gap-4 whitespace-nowrap">
             {specialProducts.map((product, idx) => (
-              <div
-                key={idx}
-                className="group relative shrink-0 overflow-hidden rounded-xl cursor-pointer"
-              >
-                <img
-                  src={product.image}
-                  alt={product.title}
-                  className="h-[400px] w-96 object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <a
-                  href={product.link}
-                  className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                >
-                  <span className="rounded-full bg-white px-6 py-2 font-bold text-gray-900 shadow-lg transition-colors hover:bg-gray-100">
-                    ดูสินค้า
-                  </span>
-                </a>
-                <span className="absolute top-0 left-1">
-                  <img
-                    src={assets.newtag}
-                    alt="new-icon"
-                    className="h-12 w-13"
-                  />
-                </span>
-                <div className="absolute bottom-4 left-4 font-bold text-white drop-shadow-lg">
-                  <h4 className="text-3xl">{product.title}</h4>
-                  <h6 className="text-sm font-normal opacity-90">
-                    สำรวจหมวดหมู่
-                  </h6>
-                </div>
-              </div>
+              <SpecialProducts product={product} index={idx} />
             ))}
           </div>
         </div>
 
         {/* Article Section */}
-        <div className="pt-5 text-center md:text-left">
-          <h2 className="text-2xl font-bold text-primary">Article</h2>
-          <p className="text-xl text-primary">อ่านบทความพิเศษช่วงนี้เท่านั้น</p>
-        </div>
+        <TextHomepage
+          textheader={"Article"}
+          textdisc={"อ่านบทความพิเศษช่วงนี้เท่านั้น"}
+        />
+
         <div className="mx-auto max-w-7xl py-5 px-4">
           <div
             id="article-grid"
