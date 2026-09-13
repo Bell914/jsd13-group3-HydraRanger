@@ -3,12 +3,16 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { authService } from "../services/authService.js";
 import { assets } from "../assets/assets.js";
 import { useCounterStore } from "../store/useStore.js";
+import { useCartStore } from "../store/cartStore.js";
 import { ProfileDropdown } from "./ProfileDropdown.jsx";
 import { SearchModal } from "./SearchModal.jsx";
 
 export const Navbar = () => {
   const searchQuery = useCounterStore((state) => state.searchQuery);
   const setSearchQuery = useCounterStore((state) => state.setSearchQuery);
+  const totalCartItems = useCartStore((state) =>
+    state.cartItems.reduce((acc, item) => acc + item.quantity, 0)
+  );
   const navigate = useNavigate();
   const location = useLocation();
   const user = authService.getCurrentUser();
@@ -90,7 +94,7 @@ export const Navbar = () => {
           <div className="flex flex-row gap-2 items-center md:hidden">
             <Link
               to="/cart"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-secondary transition hover:bg-background hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
+              className="relative inline-flex h-11 w-11 items-center justify-center rounded-xl text-secondary transition hover:bg-background hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
               aria-label="ตะกร้าสินค้า"
             >
               <img
@@ -99,6 +103,11 @@ export const Navbar = () => {
                 aria-hidden="true"
                 className="w-6 h-6"
               />
+              {totalCartItems > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-extrabold text-white shadow-sm ring-2 ring-surface">
+                  {totalCartItems > 99 ? "99+" : totalCartItems}
+                </span>
+              )}
             </Link>
             <button
               id="hamburger-btn"
@@ -246,7 +255,7 @@ export const Navbar = () => {
               <li className="w-full hidden md:w-auto md:flex justify-center items-center md:pl-5 pt-2 md:pt-0">
                 <Link
                   to="/cart"
-                  className="flex h-11 w-11 items-center justify-center rounded-xl transition hover:bg-background focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
+                  className="relative flex h-11 w-11 items-center justify-center rounded-xl transition hover:bg-background focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
                   aria-label="ตะกร้าสินค้า"
                 >
                   <img
@@ -255,6 +264,11 @@ export const Navbar = () => {
                     aria-hidden="true"
                     className="w-6 h-6"
                   />
+                  {totalCartItems > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-extrabold text-white shadow-sm ring-2 ring-surface">
+                      {totalCartItems > 99 ? "99+" : totalCartItems}
+                    </span>
+                  )}
                 </Link>
               </li>
             </ul>

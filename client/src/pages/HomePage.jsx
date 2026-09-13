@@ -1,20 +1,22 @@
 import React from "react";
-import rawLookData from "../../public/collection-2026/look-data.json?raw";
+import lookData from "../data/look-data.json";
 import { assets, fashionNews } from "../assets/assets.js";
 import { Link } from "react-router-dom";
 import { HeroSection } from "../components/HeroSection.jsx";
 import { RecommendProduct } from "./RecommendProduct.jsx";
 import { TextHomepage } from "../components/TextHomepage.jsx";
 import { SpecialProducts } from "../components/SpecialProducts.jsx";
-import MixAndMatchSection from "../components/MixandMatchSection.jsx";
-const lookData = JSON.parse(rawLookData);
-const looks = lookData.looks.map((look) => ({
+import MixAndMatchSection from "../components/MixAndMatchSection.jsx";
+const looksData = lookData?.looks || lookData?.default?.looks || [];
+const looks = looksData.map((look) => ({
   ...look,
-  image: look.image.replace("./assets", ""),
-  items: look.items?.map((item) => ({
-    ...item,
-    image: item.image.replace("./assets", ""),
-  })),
+  image: typeof look?.image === "string" ? look.image.replace("./assets", "") : (look?.image || ""),
+  items: Array.isArray(look?.items)
+    ? look.items.map((item) => ({
+        ...item,
+        image: typeof item?.image === "string" ? item.image.replace("./assets", "") : (item?.image || ""),
+      }))
+    : [],
 }));
 
 export const HomePage = () => {
@@ -49,7 +51,7 @@ export const HomePage = () => {
           <div className="my-8 grid grid-cols-1 gap-6 md:grid-cols-3">
             {/* Card 1 */}
             {looks.slice(1, 4).map((el, index) => (
-              <RecommendProduct product={el} index={index} />
+              <RecommendProduct key={el.id || index} product={el} index={index} />
             ))}
           </div>
         </div>
@@ -63,7 +65,7 @@ export const HomePage = () => {
         <div className="relative my-8 h-auto w-full overflow-hidden rounded-2xl bg-background px-4 py-8 font-bold text-lg text-white sm:px-6 lg:px-8">
           <div className="animate-marquee flex w-max gap-4 whitespace-nowrap">
             {looks.map((product, idx) => (
-              <SpecialProducts product={product} index={idx} />
+              <SpecialProducts key={product.id || idx} product={product} index={idx} />
             ))}
           </div>
         </div>

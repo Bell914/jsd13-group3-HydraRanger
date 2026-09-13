@@ -1,4 +1,4 @@
-import { fashionNews } from "../assets/assets";
+import { fashionNews } from "../assets/assets.js";
 import { useParams, Link } from "react-router-dom";
 
 export const ArticleDetail = () => {

@@ -1,4 +1,4 @@
-export const validateForm = (formData) => {
+export const validateRegisterForm = (formData) => {
   const errors = {};
 
   // ตรวจสอบชื่อ (Required)
@@ -20,5 +20,12 @@ export const validateForm = (formData) => {
     errors.password = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
   }
 
+  // ตรวจสอบ ยืนยันรหัสผ่าน
+  if (formData.confirmPassword !== undefined && formData.password !== formData.confirmPassword) {
+    errors.confirmPassword = 'รหัสผ่านยืนยันไม่ตรงกัน';
+  }
+
   return errors;
 };
+
+export const validateForm = validateRegisterForm;

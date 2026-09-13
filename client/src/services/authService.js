@@ -29,8 +29,12 @@ export const authService = {
   },
 
   getCurrentUser() {
-    const saved = localStorage.getItem('occasion_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('occasion_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   },
 
   isAuthenticated() {
