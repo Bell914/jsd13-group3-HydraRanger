@@ -8,6 +8,7 @@ export default function ProductListPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Default to "tops" or "all" based on query param
   const selectedCategory = searchParams.get("category") || "all";
@@ -207,6 +208,37 @@ export default function ProductListPage() {
               ))}
             </div>
           </section>
+        )}
+
+        {/* Pagination Numbers 1-10 matching user screenshot */}
+        {!loading && !error && displayedProducts.length > 0 && (
+          <nav
+            aria-label="การแบ่งหน้าสินค้า"
+            className="my-12 flex items-center justify-center gap-3 sm:gap-6 text-base sm:text-lg font-bold"
+          >
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((pageNum) => {
+              const isActive = currentPage === pageNum;
+              return (
+                <button
+                  key={pageNum}
+                  type="button"
+                  onClick={() => {
+                    setCurrentPage(pageNum);
+                    window.scrollTo({ top: 380, behavior: "smooth" });
+                  }}
+                  className={`transition-all duration-200 cursor-pointer px-1 py-0.5 select-none ${
+                    isActive
+                      ? "text-[#0046a7] font-black text-xl sm:text-2xl underline decoration-accent decoration-2 underline-offset-8 scale-110"
+                      : "text-[#3b82f6] hover:text-[#0046a7] hover:scale-110"
+                  }`}
+                  aria-current={isActive ? "page" : undefined}
+                  aria-label={`หน้า ${pageNum}`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </nav>
         )}
       </div>
     </main>
