@@ -219,9 +219,9 @@ export default function ProductDetailPage() {
 
   return (
     <main className="flex-1 bg-background py-6 md:py-10">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         {/* TOP SECTION: Gallery & Buy Options */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
           <ProductGallery
             displayedImage={displayedImage}
             productName={product.name}
