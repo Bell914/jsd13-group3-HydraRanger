@@ -14,7 +14,15 @@ async function seedUsers() {
     let user = await User.findOne({ email: userData.email });
 
     if (!user) {
-      const password = userData.role === 'admin' ? 'Occasion1234!' : 'Password123!';
+      const passwordVariable = userData.role === 'admin'
+        ? 'SEED_ADMIN_PASSWORD'
+        : 'SEED_USER_PASSWORD';
+      const password = process.env[passwordVariable];
+
+      if (!password) {
+        throw new Error(`Missing ${passwordVariable} for database seed`);
+      }
+
       user = await User.create({ ...userData, password });
     } else {
       user.username = userData.username;
