@@ -8,3 +8,5 @@ export { ArticleDetail } from "./ArticleDetail.jsx";
 export { ArticlePages } from "./ArticlePages.jsx";
 export { default as ProductListPage } from "./ProductListPage.jsx";
 export { default as ProductDetailPage } from "./ProductDetailPage.jsx";
+export { default as CartPage } from "./CartPage";
+export { default as CheckoutPage } from "./CheckoutPage";
