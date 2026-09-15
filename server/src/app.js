@@ -1,9 +1,14 @@
-import express from 'express';
-import cors from 'cors';
-import morgan from 'morgan';
-import { ENV } from './config/env.js';
-import apiRouter from './routes/index.js';
-import { requestLogger, notFoundHandler, errorHandler } from './middleware/index.js';
+import express from "express";
+import cors from "cors";
+import morgan from "morgan";
+import { ENV } from "./config/env.js";
+import apiRouter from "./routes/index.js";
+import {
+  requestLogger,
+  notFoundHandler,
+  errorHandler,
+} from "./middleware/index.js";
+import newUserRouter from "./routes/V2/newuserRoute.js";
 
 const app = express();
 
@@ -12,35 +17,35 @@ app.use(
   cors({
     origin: [
       ENV.CLIENT_URL,
-      'http://localhost:5173',
-      'http://127.0.0.1:5173',
-      'http://localhost:5174',
-      'http://127.0.0.1:5174'
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "http://localhost:5174",
+      "http://127.0.0.1:5174",
     ],
-    credentials: true
-  })
+    credentials: true,
+  }),
 );
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-if (ENV.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
+if (ENV.NODE_ENV === "development") {
+  app.use(morgan("dev"));
 }
 app.use(requestLogger);
 
 // Root Welcome Endpoint
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   res.json({
-    message: 'Welcome to OCCASION API (HydraRanger Team - Sprint 2)',
-    docs: '/api/health',
-    version: '1.0.0'
+    message: "Welcome to OCCASION API (HydraRanger Team - Sprint 2)",
+    docs: "/api/health",
+    version: "1.0.0",
   });
 });
 
 // API Routes
-app.use('/api', apiRouter);
-
+app.use("/api", apiRouter);
+app.use("/api/newuser", newUserRouter);
 // 404 & Error Middlewares
 app.use(notFoundHandler);
 app.use(errorHandler);

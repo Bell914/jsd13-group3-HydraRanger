@@ -1,9 +1,16 @@
 import mongoose from 'mongoose';
 import { connectDB } from '../config/db.js';
+import { ENV } from '../config/env.js';
 import { User, Item } from '../models/index.js';
 import seedData from '../data/seedData.json' with { type: 'json' };
 
 const { initialUsers, initialItems } = seedData;
+
+if (!ENV.ADMIN_PASSWORD || !ENV.ADMIN_EMAIL) {
+  console.error('❌ ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env before seeding.');
+  process.exit(1);
+}
+const adminPassword = ENV.ADMIN_PASSWORD;
 
 const runSeed = async () => {
   console.log('🌱 Starting Database Seeding...');
@@ -18,7 +25,7 @@ const runSeed = async () => {
       const createdUsers = await User.create(
         initialUsers.map((u) => ({
           ...u,
-          password: u.role === 'admin' ? 'Occasion1234!' : 'Password123!'
+          password: u.role === 'admin' ? adminPassword : 'Password123!'
         }))
       );
       console.log(`✅ Seeded ${createdUsers.length} Users`);

@@ -1,22 +1,22 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus, Shield, AlertCircle } from 'lucide-react';
-import { authService } from '../services/authService.js';
-import { Button, Card, FormInput } from '../components/index.js';
-import { validateRegisterForm } from '../utils/validation.js'; // 1. import validation helper
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { UserPlus, Shield, AlertCircle } from "lucide-react";
+import { authService } from "../services/authService.js";
+import { Button, Card, FormInput } from "../components/index.js";
+import { validateForm } from "../utils/validation.js"; // 1. import validation helper
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const [fieldErrors, setFieldErrors] = useState({}); // เก็บ error รายช่อง
-  const [apiError, setApiError] = useState('');      // เก็บ error จาก API
+  const [apiError, setApiError] = useState(""); // เก็บ error จาก API
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -25,16 +25,16 @@ export const RegisterPage = () => {
 
     // เคลียร์ error ของช่องนั้นๆ เมื่อผู้ใช้เริ่มพิมพ์แก้ไข
     if (fieldErrors[name]) {
-      setFieldErrors((prev) => ({ ...prev, [name]: '' }));
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setApiError('');
+    setApiError("");
 
     // 2. ตรวจสอบข้อมูลก่อนส่ง (Validation Check)
-    const errors = validateRegisterForm(formData);
+    const errors = validateForm(formData);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
@@ -45,11 +45,11 @@ export const RegisterPage = () => {
       await authService.register({
         username: formData.username,
         email: formData.email,
-        password: formData.password
+        password: formData.password,
       });
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (err) {
-      setApiError(err.message || 'Registration failed. Please try again.');
+      setApiError(err.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -72,7 +72,10 @@ export const RegisterPage = () => {
 
         {/* แสดงเฉพาะ API/Server Error Alert */}
         {apiError && (
-          <div className="mb-6 flex items-center gap-3 rounded-xl border border-accent/35 bg-accent/10 p-3.5 text-sm text-accent" role="alert">
+          <div
+            className="mb-6 flex items-center gap-3 rounded-xl border border-accent/35 bg-accent/10 p-3.5 text-sm text-accent"
+            role="alert"
+          >
             <AlertCircle size={18} className="shrink-0" />
             <span>{apiError}</span>
           </div>
@@ -130,12 +133,12 @@ export const RegisterPage = () => {
             disabled={loading}
             className="w-full mt-2"
           >
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading ? "Creating Account..." : "Create Account"}
           </Button>
         </form>
 
         <div className="mt-6 border-t border-occasion-border/45 pt-5 text-center text-xs text-secondary">
-          Already have an account?{' '}
+          Already have an account?{" "}
           <Link
             to="/login"
             className="rounded-sm font-semibold text-accent hover:text-accent-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"

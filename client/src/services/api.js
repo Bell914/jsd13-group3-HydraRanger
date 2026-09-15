@@ -32,7 +32,7 @@ class ApiClient {
     return headers;
   }
 
-  async request(endpoint, options = {}) {
+  async request(endpoint, options = {}, _retried = false) {
     const url = `${this.baseUrl}${endpoint}`;
     const headers = this.getHeaders(options.headers);
 
@@ -44,6 +44,20 @@ class ApiClient {
     try {
       const response = await fetch(url, config);
       const data = await response.json().catch(() => ({}));
+
+      // Expired token → try to refresh once, then retry the original request
+      if (
+        response.status === 401 &&
+        !_retried &&
+        endpoint !== "/auth/refresh" &&
+        endpoint !== "/auth/login" &&
+        endpoint !== "/auth/register"
+      ) {
+        const refreshed = await this.tryRefresh();
+        if (refreshed) {
+          return this.request(endpoint, options, true);
+        }
+      }
 
       if (!response.ok) {
         const error = new Error(
@@ -61,6 +75,34 @@ class ApiClient {
         error,
       );
       throw error;
+    }
+  }
+
+  async tryRefresh() {
+    const token = this.getToken();
+    if (!token) return false;
+
+    try {
+      const response = await fetch(`${this.baseUrl}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+
+      if (!response.ok) {
+        this.setToken(null);
+        localStorage.removeItem("occasion_user");
+        return false;
+      }
+
+      const data = await response.json().catch(() => ({}));
+      if (data?.data?.token) {
+        this.setToken(data.data.token);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
     }
   }
 

@@ -23,14 +23,32 @@ export const authService = {
     return await api.get('/auth/me');
   },
 
+  async changePassword({ currentPassword, newPassword }) {
+    return await api.post('/auth/change-password', {
+      currentPassword,
+      newPassword
+    });
+  },
+
+  async refresh() {
+    const token = api.getToken();
+    if (!token) return null;
+    const res = await api.post('/auth/refresh', { token });
+    return res?.data?.token || null;
+  },
+
   logout() {
     api.setToken(null);
     localStorage.removeItem('occasion_user');
   },
 
   getCurrentUser() {
-    const saved = localStorage.getItem('occasion_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('occasion_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   },
 
   isAuthenticated() {
