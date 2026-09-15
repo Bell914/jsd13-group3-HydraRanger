@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit from "express-rate-limit";
 
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -8,7 +8,7 @@ export const authRateLimiter = rateLimit({
   handler(req, res) {
     res.status(429).json({
       success: false,
-      message: 'ลองเข้าสู่ระบบหลายครั้งเกินไป กรุณารอ 15 นาทีแล้วลองใหม่'
+      message: "ลองเข้าสู่ระบบหลายครั้งเกินไป กรุณารอ 15 นาทีแล้วลองใหม่",
     });
-  }
+  },
 });

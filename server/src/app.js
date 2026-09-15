@@ -3,6 +3,8 @@ import cors from "cors";
 import morgan from "morgan";
 import { ENV } from "./config/env.js";
 import apiRouter from "./routes/index.js";
+import { fileURLToPath } from "url";
+import path from "path"; // (ถ้าจำเป็นต้องใช้ path.dirname ต่อ)
 import {
   requestLogger,
   notFoundHandler,
@@ -15,7 +17,7 @@ const currentFilePath = fileURLToPath(import.meta.url);
 const currentFolderPath = path.dirname(currentFilePath);
 const productImageFolder = path.resolve(
   currentFolderPath,
-  '../../client/public/collection-2026'
+  "../../client/public/collection-2026",
 );
 
 // Global Middlewares

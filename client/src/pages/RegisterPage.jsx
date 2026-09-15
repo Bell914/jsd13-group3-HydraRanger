@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { UserPlus, Shield, AlertCircle } from "lucide-react";
 import { authService } from "../services/authService.js";
 import { Button, Card, FormInput } from "../components/index.js";
-import { validateForm } from "../utils/validation.js"; // 1. import validation helper
+import { validateRegisterForm } from "../utils/validation.js"; // 1. import validation helper
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
@@ -34,7 +34,7 @@ export const RegisterPage = () => {
     setApiError("");
 
     // 2. ตรวจสอบข้อมูลก่อนส่ง (Validation Check)
-    const errors = validateForm(formData);
+    const errors = validateRegisterForm(formData);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
