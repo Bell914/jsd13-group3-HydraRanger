@@ -1,13 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-if (process.env.NODE_ENV === "production") {
-  const requiredVars = ["JWT_SECRET"];
-  for (const key of requiredVars) {
-    if (!process.env[key]) {
-      throw new Error(`Missing required environment variable in production: ${key}`);
-    }
-  }
 function getRequiredEnv(name) {
   const value = process.env[name];
 

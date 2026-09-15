@@ -1,6 +1,5 @@
 import { Router } from "express";
 import authRoutes from "./authRoutes.js";
-import adminAuthRoutes from "./adminAuthRoutes.js";
 import userRoutes from "./userRoutes.js";
 import { getDBStatus } from "../config/db.js";
 import itemRoutes from './itemRoutes.js';
@@ -17,8 +16,8 @@ router.get("/health", (req, res) => {
     message: "Server is running",
     status: "online",
     timestamp: new Date().toISOString(),
-    service: 'OCCASION API Server (Sprint 2)',
-    database: getDBStatus()
+    service: "OCCASION API Server (Sprint 2)",
+    database: getDBStatus(),
   });
 });
 

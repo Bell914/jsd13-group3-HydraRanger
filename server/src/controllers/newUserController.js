@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 // สร้าง JWT Token
 const createToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || "your_jwt_secret_key", {
-    expiresIn: "1d",
+    expiresIn: process.env.JWT_EXPIRES_IN || "1d",
   });
 };
 
@@ -15,7 +15,15 @@ const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // 1. ตรวจสอบว่ามี user นี้ในระบบหรือยัง
+    // 1. ตรวจสอบว่าใส่ข้อมูลครบถ้วนหรือไม่
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide all required fields",
+      });
+    }
+
+    // 2. ตรวจสอบว่ามี user นี้ในระบบหรือยัง
     const exists = await userModel.findOne({ email });
     if (exists) {
       return res
@@ -23,7 +31,7 @@ const registerUser = async (req, res) => {
         .json({ success: false, message: "User already exists" });
     }
 
-    // 2. ตรวจสอบรูปแบบ Email และความยาว Password
+    // 3. ตรวจสอบรูปแบบ Email และความยาว Password
     if (!validator.isEmail(email)) {
       return res
         .status(400)
@@ -37,13 +45,13 @@ const registerUser = async (req, res) => {
       });
     }
 
-    // 3. Hash password (กรณีที่ userModel ไม่มี pre('save') hook)
+    // 4. Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const newUser = new userModel({
       name,
-      email,
+      email: email.toLowerCase(),
       password: hashedPassword,
     });
 
@@ -56,7 +64,7 @@ const registerUser = async (req, res) => {
       user: { id: user._id, name: user.name, email: user.email },
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -67,7 +75,7 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     // 1. ค้นหา User จาก Email
-    const user = await userModel.findOne({ email });
+    const user = await userModel.findOne({ email: email.toLowerCase() });
     if (!user) {
       return res
         .status(401)
@@ -90,7 +98,7 @@ const loginUser = async (req, res) => {
       user: { id: user._id, name: user.name, email: user.email },
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -98,11 +106,9 @@ const loginUser = async (req, res) => {
 // 🔴 Route for User Logout
 const logOutUser = async (req, res) => {
   try {
-    // ในระบบ Bearer Token ฝั่ง Backend เพียงแค่ตอบกลับ 200 OK
-    // แล้วให้ฝั่ง React เคลียร์ localStorage.removeItem("accessToken") ออก
     res.status(200).json({ success: true, message: "Logged out successfully" });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
