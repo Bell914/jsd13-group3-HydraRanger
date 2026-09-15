@@ -5,6 +5,7 @@ import userRoutes from './userRoutes.js';
 import itemRoutes from './itemRoutes.js';
 import productRoutes from './productRoutes.js';
 import adminProductRoutes from './adminProductRoutes.js';
+import adminDashboardRoutes from './adminDashboardRoutes.js';
 import { getDBStatus } from '../config/db.js';
 
 const router = Router();
@@ -28,5 +29,6 @@ router.use('/users', userRoutes);
 router.use('/items', itemRoutes);
 router.use('/products', productRoutes);
 router.use('/admin/products', adminProductRoutes);
+router.use('/admin/dashboard', adminDashboardRoutes);
 
 export default router;

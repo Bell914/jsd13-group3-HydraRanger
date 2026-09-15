@@ -1,46 +1,53 @@
-import { Bell, Menu, Package, ShoppingBag, TrendingUp, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Bell, Menu, Package, PackageCheck, PackageX, Users } from 'lucide-react';
+import { getDashboardSummary } from '../services/dashboardService.js';
 
-const monthlySales = [
-  { month: 'ม.ค.', amount: 42 },
-  { month: 'ก.พ.', amount: 58 },
-  { month: 'มี.ค.', amount: 48 },
-  { month: 'เม.ย.', amount: 72 },
-  { month: 'พ.ค.', amount: 64 },
-  { month: 'มิ.ย.', amount: 88 },
-];
-
-const averageOrders = [
-  { month: 'ม.ค.', amount: 1.4 },
-  { month: 'ก.พ.', amount: 1.8 },
-  { month: 'มี.ค.', amount: 1.6 },
-  { month: 'เม.ย.', amount: 2.2 },
-  { month: 'พ.ค.', amount: 2.4 },
-  { month: 'มิ.ย.', amount: 2.8 },
-];
-
-const linePoints = averageOrders.map((item, index) => {
-  const x = 35 + (index * 85);
-  const y = 190 - (item.amount * 50);
-  return `${x},${y}`;
-}).join(' ');
-
-const summaryCards = [
-  { label: 'รายได้รวม', value: '฿372,000', detail: '+12% จากเดือนก่อน', icon: TrendingUp },
-  { label: 'คำสั่งซื้อ', value: '186', detail: 'เฉลี่ย 6 รายการ/วัน', icon: ShoppingBag },
-  { label: 'สินค้าในคลัง', value: '100', detail: 'เหลือน้อย 8 รายการ', icon: Package },
-  { label: 'ลูกค้าทั้งหมด', value: '248', detail: 'ลูกค้าใหม่ 24 คน', icon: Users },
-];
+function SummaryCard({ label, value, detail, Icon }) {
+  return (
+    <article className="summary-card">
+      <div className="summary-icon"><Icon size={19} /></div>
+      <p>{label}</p>
+      <strong>{value}</strong>
+      <small>{detail}</small>
+    </article>
+  );
+}
 
 export function AdminDashboardPage({ user, onOpenSidebar }) {
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  async function loadDashboard() {
+    setLoading(true);
+    setError('');
+
+    try {
+      const dashboardData = await getDashboardSummary();
+      setSummary(dashboardData);
+    } catch (loadError) {
+      setError(loadError.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  const categoryStock = summary?.stockByCategory || [];
+  const monthlyProducts = summary?.monthlyProducts || [];
+  const highestStock = Math.max(1, ...categoryStock.map((item) => item.stock));
+  const highestMonthlyCount = Math.max(1, ...monthlyProducts.map((item) => item.count));
+
   return (
     <div className="admin-content">
       <header className="admin-topbar">
         <button type="button" className="mobile-menu" onClick={onOpenSidebar} aria-label="เปิดเมนู">
           <Menu size={20} />
         </button>
-        <div>
-          <strong className="topbar-title">ภาพรวมร้านค้า</strong>
-        </div>
+        <strong className="topbar-title">ภาพรวมร้านค้า</strong>
         <div className="admin-profile">
           <button type="button" className="notification" aria-label="การแจ้งเตือน">
             <Bell size={18} />
@@ -54,72 +61,76 @@ export function AdminDashboardPage({ user, onOpenSidebar }) {
         <header className="page-heading">
           <div>
             <h1>Admin Dashboard</h1>
-            <p>ติดตามยอดขาย คำสั่งซื้อ และสินค้าในคลัง</p>
+            <p>ข้อมูลสินค้าและลูกค้าจริงจาก MongoDB</p>
           </div>
+          <button type="button" className="refresh-button" onClick={loadDashboard} disabled={loading}>
+            {loading ? 'กำลังโหลด…' : 'อัปเดตข้อมูล'}
+          </button>
         </header>
 
-        <section className="summary-grid" aria-label="ข้อมูลสรุปของร้านค้า">
-          {summaryCards.map(({ label, value, detail, icon: Icon }) => (
-            <article className="summary-card" key={label}>
-              <div className="summary-icon"><Icon size={19} /></div>
-              <p>{label}</p>
-              <strong>{value}</strong>
-              <small>{detail}</small>
-            </article>
-          ))}
-        </section>
+        {error && (
+          <div className="dashboard-error" role="alert">
+            <p>{error}</p>
+            <button type="button" onClick={loadDashboard}>ลองใหม่</button>
+          </div>
+        )}
 
-        <section className="chart-grid">
-          <article className="chart-card">
-            <header>
-              <div>
-                <h2>ยอดขายรายเดือน</h2>
-                <p>Revenue (พันบาท)</p>
-              </div>
-              <span className="chart-type">Bar Chart</span>
-            </header>
-            <div className="bar-chart" role="img" aria-label="กราฟแท่งยอดขายรายเดือน มกราคมถึงมิถุนายน">
-              {monthlySales.map((item) => (
-                <div className="bar-column" key={item.month}>
-                  <span>{item.amount}</span>
-                  <div className="bar" style={{ height: `${item.amount}%` }} />
-                  <small>{item.month}</small>
+        {loading && !summary && <p className="dashboard-message">กำลังโหลดข้อมูล Dashboard…</p>}
+
+        {summary && (
+          <>
+            <section className="summary-grid" aria-label="ข้อมูลสรุปของร้านค้า">
+              <SummaryCard label="สินค้าทั้งหมด" value={summary.totalProducts} detail={`พร้อมขาย ${summary.activeProductCount} รายการ`} Icon={Package} />
+              <SummaryCard label="สต็อกรวม" value={summary.totalStock} detail={`สต็อกต่ำ ${summary.lowStockCount} รายการ`} Icon={PackageCheck} />
+              <SummaryCard label="สินค้าที่ไม่แสดง" value={summary.inactiveProductCount} detail="รวมสินค้าที่ปิดการขาย" Icon={PackageX} />
+              <SummaryCard label="ลูกค้าทั้งหมด" value={summary.customerCount} detail="เฉพาะบัญชีประเภทลูกค้า" Icon={Users} />
+            </section>
+
+            <section className="chart-grid">
+              <article className="chart-card">
+                <header>
+                  <div>
+                    <h2>จำนวนสต็อกแยกตามหมวดหมู่</h2>
+                    <p>รวมจำนวนสินค้าคงเหลือในแต่ละหมวด</p>
+                  </div>
+                  <span className="chart-type">Bar Chart</span>
+                </header>
+                <div className="bar-chart" role="img" aria-label="กราฟแท่งจำนวนสต็อกแยกตามหมวดหมู่">
+                  {categoryStock.map((item) => (
+                    <div className="bar-column" key={item.category}>
+                      <span>{item.stock}</span>
+                      <div className="bar" style={{ height: `${(item.stock / highestStock) * 85}%` }} />
+                      <small>{item.category}</small>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </article>
+              </article>
 
-          <article className="chart-card">
-            <header>
-              <div>
-                <h2>มูลค่าเฉลี่ยต่อคำสั่งซื้อ</h2>
-                <p>Average Order (พันบาท)</p>
-              </div>
-              <span className="chart-type">Line Chart</span>
-            </header>
-            <div className="line-chart">
-              <svg viewBox="0 0 500 220" role="img" aria-label="กราฟเส้นมูลค่าเฉลี่ยต่อคำสั่งซื้อ มกราคมถึงมิถุนายน">
-                {[40, 90, 140, 190].map((y) => (
-                  <line className="line-grid" key={y} x1="25" y1={y} x2="475" y2={y} />
-                ))}
-                <polyline className="order-line" points={linePoints} />
-                {averageOrders.map((item, index) => {
-                  const x = 35 + (index * 85);
-                  const y = 190 - (item.amount * 50);
-                  return (
-                    <g key={item.month}>
-                      <circle className="line-point" cx={x} cy={y} r="5" />
-                      <text className="line-value" x={x} y={y - 12}>{item.amount}</text>
-                      <text className="line-month" x={x} y="212">{item.month}</text>
-                    </g>
-                  );
-                })}
-              </svg>
-            </div>
-          </article>
-        </section>
+              <article className="chart-card">
+                <header>
+                  <div>
+                    <h2>สินค้าที่เพิ่มใน 6 เดือนล่าสุด</h2>
+                    <p>จำนวนสินค้าใหม่แยกตามเดือน</p>
+                  </div>
+                  <span className="chart-type">Horizontal Bar</span>
+                </header>
+                <div className="monthly-chart" role="img" aria-label="กราฟจำนวนสินค้าที่เพิ่มในหกเดือนล่าสุด">
+                  {monthlyProducts.map((item) => (
+                    <div className="monthly-row" key={item.label}>
+                      <span>{item.label}</span>
+                      <div className="monthly-track">
+                        <div style={{ width: `${(item.count / highestMonthlyCount) * 100}%` }} />
+                      </div>
+                      <strong>{item.count}</strong>
+                    </div>
+                  ))}
+                </div>
+              </article>
+            </section>
 
-        <p className="mock-data-note">ข้อมูลบน Dashboard เป็น Mock Data สำหรับพัฒนา UI และจะเปลี่ยนเป็นข้อมูลจาก API ภายหลัง</p>
+            <p className="live-data-note">ข้อมูลจริงจาก MongoDB • กด “อัปเดตข้อมูล” เพื่อโหลดข้อมูลล่าสุด</p>
+          </>
+        )}
       </main>
     </div>
   );
