@@ -294,7 +294,7 @@ Never commit `.env`.
 After starting the Server, open:
 
 ```text
-http://localhost:5000/api/health
+http://localhost:5001/api/health
 ```
 
 Expected response:

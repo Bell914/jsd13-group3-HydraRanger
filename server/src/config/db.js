@@ -8,9 +8,15 @@ export const connectDB = async () => {
     return;
   }
 
+  // Fail fast instead of buffering queries for 10s+ when DB is offline,
+  // so the in-memory fallback service can kick in quickly.
+  mongoose.set('bufferCommands', false);
+  mongoose.set('bufferTimeoutMS', 2000);
+
   try {
     const conn = await mongoose.connect(ENV.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000
+      serverSelectionTimeoutMS: 5000,
+      bufferCommands: false
     });
     isConnected = true;
     console.log(`✅ MongoDB Connected successfully: ${conn.connection.host}`);

@@ -7,6 +7,8 @@ import { ENV } from './config/env.js';
 import apiRouter from './routes/index.js';
 import { requestLogger, notFoundHandler, errorHandler } from './middleware/index.js';
 
+import newUserRouter from './routes/V2/newuserRoute.js';
+
 const app = express();
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentFolderPath = path.dirname(currentFilePath);
@@ -51,6 +53,7 @@ app.get('/', (req, res) => {
 
 // API Routes
 app.use('/api', apiRouter);
+app.use('/api/newuser', newUserRouter);
 
 // 404 & Error Middlewares
 app.use(notFoundHandler);
