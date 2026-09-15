@@ -4,6 +4,7 @@ import { protect, authorize } from '../middleware/authMiddleware.js';
 import { rateLimit } from '../middleware/rateLimiterMiddleware.js';
 import { validate } from '../middleware/validatorMiddleware.js';
 import { validateLoginInput } from '../validators/authValidator.js';
+import { authRateLimiter } from '../middleware/authRateLimiter.js';
 
 const router = Router();
 

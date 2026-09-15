@@ -14,7 +14,7 @@ class AuthError extends Error {
 }
 
 const isMongoDuplicateKeyError = (error) =>
-  Boolean(error && (error.code === 11000 || error.name === 'MongoServerError' && error.code === 11000));
+  Boolean(error && (error.code === 11000 || (error.name === 'MongoServerError' && error.code === 11000)));
 
 const isMongooseValidationError = (error) => Boolean(error && error.name === 'ValidationError');
 
@@ -24,7 +24,7 @@ const isSyntheticId = (id) =>
 const isDbUnavailableError = (error) => {
   if (!error) return false;
   if (
-    ['MongoServerSelectionError', 'MongooseServerSelectionError', 'MongoNetworkError'].includes(error.name)
+    ['MongoServerSelectionError', 'MongooseServerSelectionError', 'MongoNetworkError', 'MongooseError'].includes(error.name)
   ) {
     return true;
   }
@@ -78,7 +78,7 @@ export const registerUser = async ({ username, email, password }) => {
 
     return buildUserSession(user);
   } catch (dbError) {
-    if (dbError.message.includes('already exists')) {
+    if (dbError.message?.includes('already exists')) {
       throw dbError;
     }
     if (isMongoDuplicateKeyError(dbError)) {
@@ -134,7 +134,7 @@ export const loginUser = async ({ email, password }) => {
   } catch (dbError) {
     if (
       dbError.message === 'Invalid email or password' ||
-      dbError.message.includes('admin portal')
+      dbError.message?.includes('admin portal')
     ) {
       throw dbError;
     }
@@ -241,7 +241,10 @@ export const changePassword = async ({ userId, currentPassword, newPassword }) =
       await user.save();
       return { success: true, message: 'Password updated successfully' };
     } catch (error) {
-      if (error.message === 'Current password is incorrect' || error.message === 'User not found') {
+      if (
+        error.message === 'Current password is incorrect' ||
+        error.message === 'User not found'
+      ) {
         throw error;
       }
       if (!isDbUnavailableError(error)) throw error;

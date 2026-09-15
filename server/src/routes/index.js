@@ -2,8 +2,11 @@ import { Router } from "express";
 import authRoutes from "./authRoutes.js";
 import adminAuthRoutes from "./adminAuthRoutes.js";
 import userRoutes from "./userRoutes.js";
-import itemRoutes from "./itemRoutes.js";
 import { getDBStatus } from "../config/db.js";
+import itemRoutes from './itemRoutes.js';
+import productRoutes from './productRoutes.js';
+import adminProductRoutes from './adminProductRoutes.js';
+import adminAuthRoutes from './adminAuthRoutes.js';
 
 const router = Router();
 
@@ -14,15 +17,17 @@ router.get("/health", (req, res) => {
     message: "Server is running",
     status: "online",
     timestamp: new Date().toISOString(),
-    service: "OCCASION API Server",
-    database: getDBStatus(),
+    service: 'OCCASION API Server (Sprint 2)',
+    database: getDBStatus()
   });
 });
 
 // Sub-routes mounting
-router.use("/auth", authRoutes);
-router.use("/admin/auth", adminAuthRoutes);
-router.use("/users", userRoutes);
-router.use("/items", itemRoutes);
+router.use('/auth', authRoutes);
+router.use('/admin/auth', adminAuthRoutes);
+router.use('/users', userRoutes);
+router.use('/items', itemRoutes);
+router.use('/products', productRoutes);
+router.use('/admin/products', adminProductRoutes);
 
 export default router;

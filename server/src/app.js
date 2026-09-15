@@ -11,6 +11,12 @@ import {
 import newUserRouter from "./routes/V2/newuserRoute.js";
 
 const app = express();
+const currentFilePath = fileURLToPath(import.meta.url);
+const currentFolderPath = path.dirname(currentFilePath);
+const productImageFolder = path.resolve(
+  currentFolderPath,
+  '../../client/public/collection-2026'
+);
 
 // Global Middlewares
 app.use(
