@@ -3,7 +3,9 @@
 Customer และ Admin ใช้หน้าเว็บและ Login endpoint แยกกัน โดยใช้ฐานข้อมูล User ร่วมกัน
 แต่ Backend เป็นผู้ตรวจสอบ role
 
-Base URL: `http://localhost:5000/api`
+Base URL: `http://localhost:5001/api`
+
+> Rate limiting: `/auth/login`, `/admin/auth/login` allow 10 requests/15min per IP; `/auth/register` allows 5/hour per IP.
 
 ---
 
@@ -86,13 +88,41 @@ Public registration always creates role user. The API ignores client-supplied ro
 }
 ```
 
-### 1.4 Login Admin
+### 1.4 Refresh Token
+- **Method**: `POST`
+- **Path**: `/auth/refresh`
+- **Auth Required**: No (Body ต้องมีตัว token เดิม)
+- **Request Body**:
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+- **Response (200 OK)**: `{ "success": true, "data": { "token": "..." } }`
+- หาก token หมดอายุหรือใช้ได้ตอนนี้ → เกิดใหม่; Client (`api.js`) จะ refresh + retry อัตโนมัติเมื่อเจอ HTTP 401
+
+### 1.5 Change Password
+- **Method**: `POST`
+- **Path**: `/auth/change-password`
+- **Auth Required**: Yes (`Bearer <token>`)
+- **Request Body**:
+```json
+{
+  "currentPassword": "SecurePassword123!",
+  "newPassword": "NewPassword456!"
+}
+```
+- **Response (200 OK)**: `{ "success": true, "message": "Password updated successfully" }`
+- Failed login / wrong current password → 400
+
+### 1.6 Login Admin
 - **Method**: `POST`
 - **Path**: `/admin/auth/login`
 - **Auth Required**: No
 - **Rule**: รับเฉพาะบัญชีที่มี role เป็น admin
+- Bootstrap admin จาก `ADMIN_EMAIL`/`ADMIN_PASSWORD` env vars ต้องอยู่ใน `.env`
 
-### 1.5 Get Current Admin
+### 1.7 Get Current Admin
 - **Method**: `GET`
 - **Path**: `/admin/auth/me`
 - **Auth Required**: Yes (`Bearer <admin-token>`)

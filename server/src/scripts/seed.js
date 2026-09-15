@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { connectDB } from '../config/db.js';
+import { ENV } from '../config/env.js';
 import { User, Item, Product, Lookbook } from '../models/index.js';
 import { productSeedData } from '../data/productSeedData.js';
 import seedData from '../data/seedData.json' with { type: 'json' };
@@ -7,23 +8,28 @@ import lookData from '../../../client/public/collection-2026/look-data.json' wit
 
 const { initialUsers, initialItems } = seedData;
 
+// 1. Seed Users (Upsert)
 async function seedUsers() {
   const users = [];
 
   for (const userData of initialUsers) {
-    let user = await User.findOne({ email: userData.email });
+    let user = await User.findOne({ email: userData.email.toLowerCase() });
+
+    // กำหนด Password: ถ้าเป็น Admin ให้ใช้ ADMIN_PASSWORD จาก ENV ถ้าไม่ใช่ใช้ Default
+    const defaultPassword = userData.role === 'admin' 
+      ? (ENV.ADMIN_PASSWORD || process.env.SEED_ADMIN_PASSWORD)
+      : (process.env.SEED_USER_PASSWORD || 'Password123!');
+
+    if (!defaultPassword) {
+      throw new Error(`Missing password configuration for role: ${userData.role}`);
+    }
 
     if (!user) {
-      const passwordVariable = userData.role === 'admin'
-        ? 'SEED_ADMIN_PASSWORD'
-        : 'SEED_USER_PASSWORD';
-      const password = process.env[passwordVariable];
-
-      if (!password) {
-        throw new Error(`Missing ${passwordVariable} for database seed`);
-      }
-
-      user = await User.create({ ...userData, password });
+      user = await User.create({
+        ...userData,
+        email: userData.email.toLowerCase(),
+        password: defaultPassword
+      });
     } else {
       user.username = userData.username;
       user.role = userData.role;
@@ -37,6 +43,7 @@ async function seedUsers() {
   return users;
 }
 
+// 2. Seed Items (Upsert)
 async function seedItems(users) {
   for (let index = 0; index < initialItems.length; index += 1) {
     const item = initialItems[index];
@@ -59,6 +66,7 @@ async function seedItems(users) {
   console.log(`✅ Items ready: ${initialItems.length}`);
 }
 
+// 3. Seed Products (Upsert)
 async function seedProducts() {
   const products = [];
 
@@ -75,6 +83,7 @@ async function seedProducts() {
   return products;
 }
 
+// Helper Function
 function getProductIdFromNumber(productNumber) {
   if (productNumber <= 5) {
     return `top-00${productNumber}`;
@@ -82,6 +91,7 @@ function getProductIdFromNumber(productNumber) {
   return `bottom-00${productNumber - 5}`;
 }
 
+// 4. Seed Lookbooks (Upsert)
 async function seedLookbooks(products) {
   const productMap = new Map();
   products.forEach((product) => productMap.set(product.productId, product._id));
@@ -121,6 +131,7 @@ async function seedLookbooks(products) {
   console.log(`✅ Lookbooks ready: ${lookData.looks.length}`);
 }
 
+// Main Runner Function
 async function runSeed() {
   console.log('🌱 Starting safe database seed...');
   await connectDB();
@@ -134,6 +145,7 @@ async function runSeed() {
     await seedItems(users);
     const products = await seedProducts();
     await seedLookbooks(products);
+    
     console.log('🎉 Database seed completed without deleting existing data');
   } catch (error) {
     console.error('❌ Seed error:', error.message);

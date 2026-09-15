@@ -6,10 +6,57 @@ import { ENV } from '../config/env.js';
 // In-Memory mock store fallback if DB is offline
 const inMemoryUsers = [];
 
+class AuthError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'AuthError';
+  }
+}
+
+const isMongoDuplicateKeyError = (error) =>
+  Boolean(error && (error.code === 11000 || (error.name === 'MongoServerError' && error.code === 11000)));
+
+const isMongooseValidationError = (error) => Boolean(error && error.name === 'ValidationError');
+
+const isSyntheticId = (id) =>
+  id === 'env-admin' || (typeof id === 'string' && id.startsWith('mock-user-'));
+
+const isDbUnavailableError = (error) => {
+  if (!error) return false;
+  if (
+    ['MongoServerSelectionError', 'MongooseServerSelectionError', 'MongoNetworkError', 'MongooseError'].includes(error.name)
+  ) {
+    return true;
+  }
+  return /buffering timed out|could not connect|server selection|topology was destroyed|before initial connection|marked failed|not established/i.test(
+    error.message || ''
+  );
+};
+
 export const generateToken = (payload) => {
   return jwt.sign(payload, ENV.JWT_SECRET, {
     expiresIn: ENV.JWT_EXPIRES_IN
   });
+};
+
+const buildUserSession = (user) => {
+  const id = user._id?.toString() || user.id;
+  const sessionUser = {
+    id,
+    username: user.username,
+    email: user.email,
+    role: user.role,
+    createdAt: user.createdAt
+  };
+  return {
+    user: sessionUser,
+    token: generateToken({
+      id,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    })
+  };
 };
 
 export const registerUser = async ({ username, email, password }) => {
@@ -29,29 +76,19 @@ export const registerUser = async ({ username, email, password }) => {
       role: 'user'
     });
 
-    const token = generateToken({
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      role: user.role
-    });
-
-    return {
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt
-      },
-      token
-    };
+    return buildUserSession(user);
   } catch (dbError) {
-    if (dbError.message.includes('already exists')) {
+    if (dbError.message?.includes('already exists')) {
+      throw dbError;
+    }
+    if (isMongoDuplicateKeyError(dbError)) {
+      throw new Error('User with this email or username already exists');
+    }
+    if (!isDbUnavailableError(dbError)) {
       throw dbError;
     }
 
-    // Fallback: In-memory simulation
+    // Fallback: In-memory simulation (only when DB is offline)
     console.warn('⚠️  AuthService: Using in-memory fallback for user registration.');
     const userExists = inMemoryUsers.find(
       (u) => u.email === email.toLowerCase() || u.username === username
@@ -67,27 +104,11 @@ export const registerUser = async ({ username, email, password }) => {
       email: email.toLowerCase(),
       password: hashedPassword,
       role: 'user',
-      createdAt: new Date().toISOString()
+      createdAt: new Date()
     };
     inMemoryUsers.push(mockUser);
 
-    const token = generateToken({
-      id: mockUser.id,
-      username: mockUser.username,
-      email: mockUser.email,
-      role: mockUser.role
-    });
-
-    return {
-      user: {
-        id: mockUser.id,
-        username: mockUser.username,
-        email: mockUser.email,
-        role: mockUser.role,
-        createdAt: mockUser.createdAt
-      },
-      token
-    };
+    return buildUserSession(mockUser);
   }
 };
 
@@ -100,87 +121,158 @@ export const loginUser = async ({ email, password }) => {
     }
 
     const isMatch = await user.matchPassword(password);
-    if (!isMatch || user.role !== 'user') {
+    if (!isMatch) {
       throw new Error('Invalid email or password');
     }
+    if (user.role !== 'user') {
+      throw new Error(
+        'This account is not a customer account. Please sign in from the admin portal instead.'
+      );
+    }
 
-    const token = generateToken({
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      role: user.role
-    });
-
-    return {
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role
-      },
-      token
-    };
+    return buildUserSession(user);
   } catch (dbError) {
-    if (dbError.message === 'Invalid email or password') {
+    if (
+      dbError.message === 'Invalid email or password' ||
+      dbError.message?.includes('admin portal')
+    ) {
+      throw dbError;
+    }
+    if (!isDbUnavailableError(dbError)) {
       throw dbError;
     }
 
-    // In-memory fallback
+    // In-memory fallback (only when DB is offline)
     const mockUser = inMemoryUsers.find((u) => u.email === email.toLowerCase());
     if (!mockUser) {
       throw new Error('Invalid email or password');
     }
 
     const isMatch = await bcrypt.compare(password, mockUser.password);
-    if (!isMatch || mockUser.role !== 'user') {
+    if (!isMatch) {
       throw new Error('Invalid email or password');
     }
+    if (mockUser.role !== 'user') {
+      throw new Error(
+        'This account is not a customer account. Please sign in from the admin portal instead.'
+      );
+    }
 
-    const token = generateToken({
-      id: mockUser.id,
-      username: mockUser.username,
-      email: mockUser.email,
-      role: mockUser.role
-    });
-
-    return {
-      user: {
-        id: mockUser.id,
-        username: mockUser.username,
-        email: mockUser.email,
-        role: mockUser.role
-      },
-      token
-    };
+    return buildUserSession(mockUser);
   }
 };
 
 export const loginAdmin = async ({ email, password }) => {
+  let dbUnavailable = false;
+
   try {
     const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
-    if (!user || user.role !== 'admin') throw new Error('Invalid admin credentials');
 
-    const isMatch = await user.matchPassword(password);
-    if (!isMatch) throw new Error('Invalid admin credentials');
+    if (user && user.role === 'admin') {
+      const isMatch = await user.matchPassword(password);
+      if (isMatch) {
+        return buildUserSession(user);
+      }
+    }
 
-    const admin = { id: user._id, username: user.username, email: user.email, role: user.role };
-    return { user: admin, token: generateToken(admin) };
-  } catch (dbError) {
-    if (dbError.message === 'Invalid admin credentials') throw dbError;
+    throw new AuthError('Invalid admin credentials');
+  } catch (error) {
+    if (error instanceof AuthError) throw error;
+    if (!isDbUnavailableError(error)) throw error;
+    dbUnavailable = true;
+  }
 
+  // Fallback: In-memory admin (only when DB is offline)
+  if (dbUnavailable) {
     const mockAdmin = inMemoryUsers.find(
       (user) => user.email === email.toLowerCase() && user.role === 'admin'
     );
-    if (mockAdmin && await bcrypt.compare(password, mockAdmin.password)) {
-      const admin = {
-        id: mockAdmin.id,
-        username: mockAdmin.username,
-        email: mockAdmin.email,
-        role: mockAdmin.role
-      };
-      return { user: admin, token: generateToken(admin) };
+    if (mockAdmin && (await bcrypt.compare(password, mockAdmin.password))) {
+      return buildUserSession(mockAdmin);
     }
+  }
 
-    throw new Error('Invalid admin credentials');
+  // Bootstrap admin defined via env vars — works regardless of DB state
+  if (
+    ENV.ADMIN_EMAIL &&
+    ENV.ADMIN_PASSWORD &&
+    email.toLowerCase() === ENV.ADMIN_EMAIL.toLowerCase() &&
+    password === ENV.ADMIN_PASSWORD
+  ) {
+    return buildUserSession({
+      id: 'env-admin',
+      username: 'OccasionAdmin',
+      email: ENV.ADMIN_EMAIL,
+      role: 'admin',
+      createdAt: null
+    });
+  }
+
+  throw new AuthError('Invalid admin credentials');
+};
+
+export const getMe = async (userId) => {
+  if (!isSyntheticId(userId)) {
+    try {
+      const user = await User.findById(userId).select('-password');
+      if (user) return user;
+    } catch (error) {
+      if (!isDbUnavailableError(error)) throw error;
+    }
+  }
+
+  // In-memory fallback (only when DB is offline or synthetic user)
+  const mockUser = inMemoryUsers.find((u) => u.id === userId);
+  if (!mockUser) return null;
+  const { password, ...safeUser } = mockUser;
+  return safeUser;
+};
+
+export const changePassword = async ({ userId, currentPassword, newPassword }) => {
+  if (!isSyntheticId(userId)) {
+    try {
+      const user = await User.findById(userId).select('+password');
+      if (!user) throw new Error('User not found');
+
+      const isMatch = await user.matchPassword(currentPassword);
+      if (!isMatch) throw new Error('Current password is incorrect');
+
+      user.password = newPassword;
+      await user.save();
+      return { success: true, message: 'Password updated successfully' };
+    } catch (error) {
+      if (
+        error.message === 'Current password is incorrect' ||
+        error.message === 'User not found'
+      ) {
+        throw error;
+      }
+      if (!isDbUnavailableError(error)) throw error;
+    }
+  }
+
+  // In-memory fallback (only when DB is offline or synthetic user)
+  const mockUser = inMemoryUsers.find((u) => u.id === userId);
+  if (!mockUser) throw new Error('User not found');
+
+  const isMatch = await bcrypt.compare(currentPassword, mockUser.password);
+  if (!isMatch) throw new Error('Current password is incorrect');
+
+  mockUser.password = await bcrypt.hash(newPassword, 10);
+  return { success: true, message: 'Password updated successfully' };
+};
+
+export const refreshToken = (currentToken) => {
+  try {
+    const decoded = jwt.verify(currentToken, ENV.JWT_SECRET);
+    const token = generateToken({
+      id: decoded.id,
+      username: decoded.username,
+      email: decoded.email,
+      role: decoded.role
+    });
+    return { token };
+  } catch {
+    throw new Error('Invalid or expired token');
   }
 };
