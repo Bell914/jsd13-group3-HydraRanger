@@ -37,46 +37,22 @@ export const ProductSizeGuideModal = ({ isOpen, onClose }) => {
             </thead>
             <tbody className="divide-y divide-gray-200">
               <tr>
-                <td className="px-3 py-2 font-bold text-primary">XS</td>
-                <td className="px-3 py-2">96 ซม.</td>
-                <td className="px-3 py-2">66 ซม.</td>
-                <td className="px-3 py-2">46 ซม.</td>
+                <td className="px-3 py-2.5 font-bold text-primary">S</td>
+                <td className="px-3 py-2.5">102 ซม.</td>
+                <td className="px-3 py-2.5">69 ซม.</td>
+                <td className="px-3 py-2.5">49 ซม.</td>
               </tr>
               <tr>
-                <td className="px-3 py-2 font-bold text-primary">S</td>
-                <td className="px-3 py-2">102 ซม.</td>
-                <td className="px-3 py-2">69 ซม.</td>
-                <td className="px-3 py-2">49 ซม.</td>
+                <td className="px-3 py-2.5 font-bold text-primary">M</td>
+                <td className="px-3 py-2.5">108 ซม.</td>
+                <td className="px-3 py-2.5">72 ซม.</td>
+                <td className="px-3 py-2.5">51 ซม.</td>
               </tr>
               <tr>
-                <td className="px-3 py-2 font-bold text-primary">M</td>
-                <td className="px-3 py-2">108 ซม.</td>
-                <td className="px-3 py-2">72 ซม.</td>
-                <td className="px-3 py-2">51 ซม.</td>
-              </tr>
-              <tr>
-                <td className="px-3 py-2 font-bold text-primary">L</td>
-                <td className="px-3 py-2">114 ซม.</td>
-                <td className="px-3 py-2">74 ซม.</td>
-                <td className="px-3 py-2">53 ซม.</td>
-              </tr>
-              <tr>
-                <td className="px-3 py-2 font-bold text-primary">XL</td>
-                <td className="px-3 py-2">122 ซม.</td>
-                <td className="px-3 py-2">76 ซม.</td>
-                <td className="px-3 py-2">56 ซม.</td>
-              </tr>
-              <tr>
-                <td className="px-3 py-2 font-bold text-primary">XXL</td>
-                <td className="px-3 py-2">130 ซม.</td>
-                <td className="px-3 py-2">78 ซม.</td>
-                <td className="px-3 py-2">59 ซม.</td>
-              </tr>
-              <tr>
-                <td className="px-3 py-2 font-bold text-primary">3XL</td>
-                <td className="px-3 py-2">138 ซม.</td>
-                <td className="px-3 py-2">80 ซม.</td>
-                <td className="px-3 py-2">62 ซม.</td>
+                <td className="px-3 py-2.5 font-bold text-primary">L</td>
+                <td className="px-3 py-2.5">114 ซม.</td>
+                <td className="px-3 py-2.5">74 ซม.</td>
+                <td className="px-3 py-2.5">53 ซม.</td>
               </tr>
             </tbody>
           </table>

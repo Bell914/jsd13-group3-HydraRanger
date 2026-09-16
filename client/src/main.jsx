@@ -8,12 +8,12 @@ import { AuthProvider } from "./context/Auth/AuthProvider.jsx";
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-   <AuthProvider>
-    <ErrorBoundary>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </ErrorBoundary>
-  </AuthProvider>
+    <AuthProvider>
+      <ErrorBoundary>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </ErrorBoundary>
+    </AuthProvider>
   </StrictMode>
 );

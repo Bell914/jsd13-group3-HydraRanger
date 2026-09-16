@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, ArrowLeft } from "lucide-react";
 import { useCartStore } from "../store/cartStore.js";
+import { normalizeImageUrl } from "../utils/imageUtils.js";
 
 export const CartPage = () => {
   const {
@@ -83,7 +84,7 @@ export const CartPage = () => {
                       className="shrink-0 overflow-hidden rounded-xl bg-background/50"
                     >
                       <img
-                        src={item.imageUrl}
+                        src={normalizeImageUrl(item.imageUrl) || item.imageUrl}
                         alt={item.name}
                         className="h-20 w-20 sm:h-24 sm:w-24 rounded-xl object-cover transition-transform hover:scale-105"
                       />

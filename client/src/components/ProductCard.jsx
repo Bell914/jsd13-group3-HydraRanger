@@ -12,7 +12,12 @@ export default function ProductCard({ product }) {
   const title = product.title || product.name || "";
   const categoryName = product.category_id?.name || product.category || "";
   const categoryLabel = categoryName === "tops" ? "เสื้อ" : categoryName === "bottoms" ? "กางเกง" : categoryName || "เสื้อ";
-  const rawImg = product.images?.[0]?.image_url || product.imageUrl;
+  const rawImg =
+    product.images?.[0]?.image_url ||
+    product.imageUrl ||
+    product.image ||
+    product.variants?.[0]?.imageUrl ||
+    "";
   const imgUrl = normalizeImageUrl(rawImg);
 
   return (

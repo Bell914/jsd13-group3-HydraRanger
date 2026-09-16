@@ -1,9 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Check } from "lucide-react";
+import { normalizeImageUrl } from "../../utils/imageUtils.js";
 
 export const ProductAddedModal = ({ addedItem, onClose }) => {
   if (!addedItem) return null;
+
+  const imgSrc = normalizeImageUrl(addedItem.image) || addedItem.image;
 
   return (
     <div
@@ -25,7 +28,7 @@ export const ProductAddedModal = ({ addedItem, onClose }) => {
 
         <div className="mt-5 flex items-center gap-4 rounded-2xl border border-occasion-border/20 bg-background/60 p-3 text-left">
           <img
-            src={addedItem.image}
+            src={imgSrc}
             alt=""
             className="h-16 w-16 rounded-xl object-cover"
           />
