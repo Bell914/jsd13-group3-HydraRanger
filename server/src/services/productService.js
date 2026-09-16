@@ -1,5 +1,73 @@
 import mongoose from 'mongoose';
 import { Product } from '../models/Product.js';
+import { Category } from '../models/Category.js';
+
+function getCategoryName(slug) {
+  if (slug === 'tops') return 'Tops';
+  if (slug === 'bottoms') return 'Bottoms';
+  return slug;
+}
+
+async function findCategoryId(productData) {
+  const categoryId = productData.category_id;
+
+  if (mongoose.Types.ObjectId.isValid(categoryId)) {
+    return categoryId;
+  }
+
+  const categorySlug = productData.category?.slug || productData.category;
+  if (!categorySlug) return null;
+
+  const category = await Category.findOneAndUpdate(
+    { slug: categorySlug },
+    { $setOnInsert: { name: getCategoryName(categorySlug), slug: categorySlug } },
+    { upsert: true, new: true, runValidators: true }
+  );
+
+  return category._id;
+}
+
+function prepareImages(productData) {
+  if (Array.isArray(productData.images) && productData.images.length > 0) {
+    return productData.images;
+  }
+
+  const imageUrls = [];
+  if (productData.imageUrl) imageUrls.push(productData.imageUrl);
+
+  for (const variant of productData.variants || []) {
+    if (variant.imageUrl) imageUrls.push(variant.imageUrl);
+    if (Array.isArray(variant.detailImages)) {
+      imageUrls.push(...variant.detailImages);
+    }
+  }
+
+  return [...new Set(imageUrls.filter(Boolean))].map((imageUrl, index) => ({
+    image_url: imageUrl,
+    display_order: index
+  }));
+}
+
+function prepareVariants(variants = []) {
+  return variants.map((variant) => ({
+    sku: variant.sku,
+    size_or_color: variant.size_or_color || variant.size || variant.color,
+    price: variant.price,
+    stock_quantity: variant.stock_quantity ?? variant.stockQuantity ?? 0
+  }));
+}
+
+async function prepareProductData(productData) {
+  return {
+    category_id: await findCategoryId(productData),
+    title: productData.title || productData.name,
+    description: productData.description || '',
+    is_active: productData.is_active ?? productData.isActive ?? true,
+    images: prepareImages(productData),
+    variants: prepareVariants(productData.variants),
+    size_chart: productData.size_chart || []
+  };
+}
 
 export async function getProducts({ includeInactive = false, category, search } = {}) {
   const filter = includeInactive ? {} : { is_active: { $ne: false } };
@@ -8,10 +76,10 @@ export async function getProducts({ includeInactive = false, category, search } 
     if (mongoose.Types.ObjectId.isValid(category)) {
       filter.category_id = category;
     } else {
-      filter.$or = [
-        { category: category },
-        { 'category_id.slug': category }
-      ];
+      const categoryDocument = await Category.findOne({ slug: category });
+      if (categoryDocument) {
+        filter.category_id = categoryDocument._id;
+      }
     }
   }
 
@@ -47,23 +115,14 @@ export async function getProductById(id) {
 }
 
 export async function createProduct(productData) {
-  // Support both title/name and is_active/isActive
-  const data = {
-    ...productData,
-    title: productData.title || productData.name,
-    is_active: productData.is_active ?? productData.isActive ?? true
-  };
-  return Product.create(data);
+  const data = await prepareProductData(productData);
+  data.productId = productData.productId || `product-${Date.now()}`;
+  const product = await Product.create(data);
+  return Product.findById(product._id).populate('category_id');
 }
 
 export async function updateProduct(id, productData) {
-  const data = {
-    ...productData
-  };
-  if (productData.name && !productData.title) data.title = productData.name;
-  if (productData.isActive !== undefined && productData.is_active === undefined) {
-    data.is_active = productData.isActive;
-  }
+  const data = await prepareProductData(productData);
 
   const product = await Product.findByIdAndUpdate(id, data, {
     new: true,
