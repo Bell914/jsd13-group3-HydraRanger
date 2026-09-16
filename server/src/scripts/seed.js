@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { connectDB } from '../config/db.js';
+import { ENV } from '../config/env.js';
 import { User, Item, Product, Lookbook } from '../models/index.js';
 import { productSeedData } from '../data/productSeedData.js';
 import seedData from '../data/seedData.json' with { type: 'json' };
@@ -11,19 +12,21 @@ async function seedUsers() {
   const users = [];
 
   for (const userData of initialUsers) {
-    let user = await User.findOne({ email: userData.email });
+    let user = await User.findOne({ email: userData.email.toLowerCase() });
 
     if (!user) {
       const passwordVariable = userData.role === 'admin'
         ? 'SEED_ADMIN_PASSWORD'
         : 'SEED_USER_PASSWORD';
-      const password = process.env[passwordVariable];
+      const password = userData.role === 'admin'
+        ? (ENV.ADMIN_PASSWORD || process.env[passwordVariable])
+        : process.env[passwordVariable];
 
       if (!password) {
         throw new Error(`Missing ${passwordVariable} for database seed`);
       }
 
-      user = await User.create({ ...userData, password });
+      user = await User.create({ ...userData, email: userData.email.toLowerCase(), password });
     } else {
       user.username = userData.username;
       user.role = userData.role;

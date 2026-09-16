@@ -9,8 +9,11 @@ export default function ProductCard({ product }) {
     ? Math.min(...variants.map((v) => v.price)) 
     : 590;
 
-  const categoryLabel = product.category === "tops" ? "เสื้อ" : "กางเกง";
-  const imgUrl = normalizeImageUrl(product.imageUrl);
+  const title = product.title || product.name || "";
+  const categoryName = product.category_id?.name || product.category || "";
+  const categoryLabel = categoryName === "tops" ? "เสื้อ" : categoryName === "bottoms" ? "กางเกง" : categoryName || "เสื้อ";
+  const rawImg = product.images?.[0]?.image_url || product.imageUrl;
+  const imgUrl = normalizeImageUrl(rawImg);
 
   return (
     <Link
@@ -21,13 +24,13 @@ export default function ProductCard({ product }) {
       <div className="relative w-full flex-1 overflow-hidden rounded-xl bg-white/95 p-3 flex items-center justify-center">
         <img
           src={imgUrl}
-          alt={product.name}
+          alt={title}
           className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
         />
-        {product.category && (
+        {categoryName && (
           <span className="absolute top-2 left-2 rounded-md bg-[#0046a7] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
-            {product.category}
+            {categoryName}
           </span>
         )}
       </div>
@@ -39,7 +42,7 @@ export default function ProductCard({ product }) {
             {categoryLabel}
           </span>
           <span className="text-[11px] text-white/80 line-clamp-1 max-w-[130px]">
-            {product.name}
+            {title}
           </span>
         </div>
 

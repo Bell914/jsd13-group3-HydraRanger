@@ -36,3 +36,24 @@ export const validateLoginInput = ({ email, password }) => {
     errors
   };
 };
+
+export const validateChangePasswordInput = ({ currentPassword, newPassword }) => {
+  const errors = [];
+
+  if (!currentPassword || typeof currentPassword !== 'string') {
+    errors.push('Current password is required');
+  }
+
+  if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
+    errors.push('New password is required and must be at least 6 characters');
+  }
+
+  if (newPassword && currentPassword && newPassword === currentPassword) {
+    errors.push('New password must be different from the current password');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
