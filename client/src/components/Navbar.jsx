@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { authService } from "../services/authService.js";
+import { useAuth } from "../context/Auth/useAuth.jsx";
 import { assets } from "../assets/assets.js";
 import { useCounterStore } from "../store/useStore.js";
 import { useCartStore } from "../store/cartStore.js";
@@ -15,8 +15,7 @@ export const Navbar = () => {
   );
   const navigate = useNavigate();
   const location = useLocation();
-  const user = authService.getCurrentUser();
-  const isAuthenticated = authService.isAuthenticated();
+  const { user, isAuthenticated, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -53,7 +52,7 @@ export const Navbar = () => {
   }, [isMobileMenuOpen]);
 
   const handleLogout = () => {
-    authService.logout();
+    logout();
     setIsProfileOpen(false);
     setIsMobileMenuOpen(false);
     setIsSearchOpen(false);
@@ -239,7 +238,7 @@ export const Navbar = () => {
                     aria-current={isActive("/login") ? "page" : undefined}
                     className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/login") ? "bg-accent/10 font-bold text-accent" : ""}`}
                   >
-                    SIGN IN
+                    {"SIGN IN"}
                   </Link>
                 </li>
               ) : (
