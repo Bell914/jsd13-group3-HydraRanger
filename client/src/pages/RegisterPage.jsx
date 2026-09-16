@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserPlus, Shield, AlertCircle } from "lucide-react";
-import { authService } from "../services/authService.js";
 import { Button, Card, FormInput } from "../components/index.js";
 import { validateRegisterForm } from "../utils/validation.js"; // 1. import validation helper
+import { useAuth } from "../context/Auth/useAuth.jsx";
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const [formData, setFormData] = useState({
     username: "",
@@ -42,12 +43,12 @@ export const RegisterPage = () => {
 
     try {
       setLoading(true);
-      await authService.register({
+      await register({
         username: formData.username,
         email: formData.email,
         password: formData.password,
       });
-      navigate("/dashboard");
+      navigate("/");
     } catch (err) {
       setApiError(err.message || "Registration failed. Please try again.");
     } finally {
