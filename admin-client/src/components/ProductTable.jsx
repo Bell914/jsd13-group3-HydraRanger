@@ -102,26 +102,26 @@ export function ProductTable({ products, onEdit, onDelete }) {
               const summary = getSummary(product);
               return (
                 <tr key={product._id ?? product.productId}>
-                  <td>
+                  <td data-label="รูปภาพ">
                     <ProductThumbnail product={product} />
                   </td>
-                  <td>
+                  <td data-label="ชื่อสินค้า / SKU">
                     <strong className="product-name">{product.name}</strong>
                     <small>SKU: {summary.sku}</small>
                   </td>
-                  <td className="capitalize">{product.category}</td>
-                  <td className="price">{formatPrice.format(summary.price)}</td>
-                  <td>
+                  <td data-label="หมวดหมู่" className="capitalize">{product.category}</td>
+                  <td data-label="ราคา" className="price">{formatPrice.format(summary.price)}</td>
+                  <td data-label="คงเหลือ">
                     <span className={summary.totalStock <= 10 ? 'stock low' : 'stock'}>
                       {summary.totalStock} ตัว
                     </span>
                   </td>
-                  <td>
+                  <td data-label="สถานะ">
                     <span className={`status ${summary.totalStock > 0 ? 'active' : 'empty'}`}>
                       {summary.status}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="จัดการ">
                     <div className="row-actions">
                       <button type="button" aria-label={`แก้ไข ${product.name}`} title="แก้ไข" onClick={() => onEdit(product)}>
                         แก้ไข
