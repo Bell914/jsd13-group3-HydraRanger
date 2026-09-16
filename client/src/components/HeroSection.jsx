@@ -1,3 +1,5 @@
+import React from "react";
+import { Link } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 export const HeroSection = ({ bgimage }) => {
   return (
@@ -20,8 +22,8 @@ export const HeroSection = ({ bgimage }) => {
             <br />
             Rerum iure eaque voluptatum voluptas eius illum.
           </p>
-          <a
-            href="./Product_Page.html"
+          <Link
+            to="/products"
             className="mt-8 inline-flex items-center gap-3 rounded-md bg-white px-8 py-4 text-[12px] font-semibold uppercase tracking-[0.3em] text-foreground transition-opacity hover:opacity-85"
           >
             <CheckCircle2
@@ -30,7 +32,7 @@ export const HeroSection = ({ bgimage }) => {
               className="shrink-0 text-accent"
             />
             <span>EXPLORE NOW</span>
-          </a>
+          </Link>
         </div>
       </div>
     </section>
