@@ -40,7 +40,7 @@ form button { margin-top: 14px; padding: 14px; border: 0; border-radius: 10px; b
 .admin-shell { min-height: 100vh; display: grid; grid-template-columns: 256px minmax(0, 1fr); }
 .admin-sidebar { position: sticky; top: 0; z-index: 30; height: 100vh; display: flex; flex-direction: column; background: #fff; border-right: 1px solid #e5e7eb; }
 .sidebar-brand { min-height: 82px; display: flex; align-items: center; gap: 12px; padding: 18px 20px; border-bottom: 1px solid #f3f4f6; }
-.admin-avatar { width: 46px; height: 46px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 999px; background: #e2156d; color: #fff; font-size: 11px; font-weight: 800; box-shadow: 0 3px 8px rgba(226, 21, 109, .24); }
+.admin-avatar { width: 46px; height: 46px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 999px; background: #e2156d; color: #fff; font-size: 11px; font-weight: 800; }
 .sidebar-brand strong { display: block; color: #1f2937; font-size: 15px; }
 .sidebar-brand small { display: block; margin-top: 3px; color: #9ca3af; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .sidebar-close { display: none; margin-left: auto; padding: 7px; border: 0; background: transparent; color: #6b7280; }
@@ -63,8 +63,15 @@ form button { margin-top: 14px; padding: 14px; border: 0; border-radius: 10px; b
 .topbar-search input, .product-search input { width: 100%; padding: 9px 12px 9px 36px; border: 1px solid #e5e7eb; border-radius: 9px; background: #f9fafb; color: #374151; outline: none; }
 .topbar-search input:focus, .product-search input:focus, .filters select:focus { border-color: #e2156d; box-shadow: 0 0 0 2px #ffd6e7; }
 .admin-profile { display: flex; align-items: center; gap: 16px; color: #374151; font-size: 13px; }
+.notification-area { position: relative; }
 .notification { position: relative; padding: 8px; border: 0; background: transparent; color: #9ca3af; }
+.notification:hover, .notification[aria-expanded="true"] { border-radius: 8px; background: #fff0f6; color: #e2156d; }
 .notification span { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: #ef4444; }
+.notification-panel { position: absolute; top: calc(100% + 8px); right: 0; z-index: 40; width: min(300px, calc(100vw - 24px)); padding: 14px; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; box-shadow: 0 12px 30px rgba(15, 23, 42, .14); }
+.notification-panel strong { color: #1f2937; font-size: 13px; }
+.notification-panel p { margin: 10px 0 0; color: #6b7280; font-size: 12px; }
+.notification-panel ul { display: grid; gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; }
+.notification-panel li { padding: 9px 10px; border-radius: 7px; background: #fff0f6; color: #4b5563; font-size: 12px; }
 
 .products-page, .dashboard-page { padding: 30px 32px; }
 .topbar-title { color: #374151; font-size: 15px; }
@@ -75,9 +82,11 @@ form button { margin-top: 14px; padding: 14px; border: 0; border-radius: 10px; b
 .primary-action:hover { background: #b81159; }
 .filter-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 22px; padding: 16px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 1px 2px rgba(0, 0, 0, .04); }
 .product-search { width: min(330px, 100%); }
+.product-search input, .filters select { font-size: 13px; }
 .filters { display: flex; align-items: center; gap: 10px; }
-.filters select, .filter-button { padding: 9px 12px; border: 1px solid #e5e7eb; border-radius: 9px; background: #f9fafb; color: #4b5563; font-size: 12px; outline: none; }
+.filters select, .filter-button { padding: 9px 12px; border: 1px solid #e5e7eb; border-radius: 9px; background: #f9fafb; color: #4b5563; font-size: 13px; outline: none; }
 .filter-button { display: inline-flex; align-items: center; gap: 6px; }
+.filter-button:hover { border-color: #e2156d; background: #fff0f6; color: #e2156d; }
 
 .product-table-card { overflow: hidden; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 1px 2px rgba(0, 0, 0, .04); }
 .empty-state { padding: 60px 24px; border: 1px dashed #d1d5db; border-radius: 12px; background: #fff; color: #6b7280; text-align: center; }

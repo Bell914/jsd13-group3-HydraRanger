@@ -61,7 +61,7 @@ function Login({ onLogin }) {
         <div className="brand-mark"><LockKeyhole size={26} /></div>
         <p className="eyebrow">SECURE BACK OFFICE</p>
         <h1>OCCASION Admin</h1>
-        <p className="muted">สำหรับผู้ดูแลระบบเท่านั้น ลูกค้าไม่สามารถเข้าสู่ระบบจากหน้านี้ได้</p>
+        <p className="muted">สำหรับผู้ดูแลระบบเท่านั้น</p>
         {apiError && <p className="error" role="alert">{apiError}</p>}
         <form onSubmit={submitLogin} noValidate>
           <label>Admin email</label>

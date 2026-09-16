@@ -1,5 +1,6 @@
-import { Bell, Filter, Menu, Plus, Search } from 'lucide-react';
+import { Filter, Menu, Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { AdminNotifications } from '../components/AdminNotifications.jsx';
 import { ProductTable } from '../components/ProductTable.jsx';
 import { ProductFormModal } from '../components/ProductFormModal.jsx';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal.jsx';
@@ -8,6 +9,7 @@ import { productService } from '../services/productService.js';
 export function AdminProductsPage({ user, onOpenSidebar }) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [productList, setProductList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -60,6 +62,18 @@ export function AdminProductsPage({ user, onOpenSidebar }) {
 
     return isCorrectCategory && (isNameMatch || isSkuMatch);
   });
+
+  const lowStockCount = productList.filter((product) => {
+    const totalStock = product.variants.reduce((total, variant) => {
+      return total + Number(variant.stockQuantity || 0);
+    }, 0);
+    return totalStock <= 10;
+  }).length;
+
+  const notifications = [];
+  if (lowStockCount > 0) {
+    notifications.push(`มีสินค้าใกล้หมด ${lowStockCount} รายการ`);
+  }
 
   const saveProduct = async (product) => {
     setErrorMessage('');
@@ -138,7 +152,11 @@ export function AdminProductsPage({ user, onOpenSidebar }) {
   };
 
   const changeCategory = (event) => {
-    setCategory(event.target.value);
+    setSelectedCategory(event.target.value);
+  };
+
+  const applyCategoryFilter = () => {
+    setCategory(selectedCategory);
   };
 
   return (
@@ -152,10 +170,7 @@ export function AdminProductsPage({ user, onOpenSidebar }) {
           <input type="search" placeholder="ค้นหาข้อมูลระบบ..." aria-label="ค้นหาข้อมูลระบบ" />
         </div>
         <div className="admin-profile">
-          <button type="button" className="notification" aria-label="การแจ้งเตือน">
-            <Bell size={18} />
-            <span />
-          </button>
+          <AdminNotifications items={notifications} />
           <strong>{user?.username ?? 'Admin'} (Super Admin)</strong>
         </div>
       </header>
@@ -199,12 +214,12 @@ export function AdminProductsPage({ user, onOpenSidebar }) {
             />
           </label>
           <div className="filters">
-            <select value={category} onChange={changeCategory} aria-label="กรองตามหมวดหมู่">
+            <select value={selectedCategory} onChange={changeCategory} aria-label="เลือกหมวดหมู่">
               <option value="all">ทุกหมวดหมู่ (Categories)</option>
               <option value="tops">เสื้อ (Tops)</option>
               <option value="bottoms">กางเกง (Bottoms)</option>
             </select>
-            <button type="button" className="filter-button" disabled>
+            <button type="button" className="filter-button" onClick={applyCategoryFilter}>
               <Filter size={15} /> ตัวกรอง
             </button>
           </div>
