@@ -1,0 +1,171 @@
+{
+  "collection": {
+    "id": "OCCASION-2026-01",
+    "name": "Everyday Play",
+    "description": "คอลเลกชันเสื้อผ้า Unisex สไตล์มินิมอลที่หยิบมาจัดลุคได้สนุก",
+    "currency": "THB",
+    "sizes": ["S", "M", "L"]
+  },
+  "looks": [
+    {
+      "id": "LOOK-001",
+      "name": "City Museum",
+      "nameTh": "วันสบายในพิพิธภัณฑ์",
+      "concept": "เรียบ สะอาด และดูดีแบบไม่ตั้งใจ เหมาะกับการเดินชมงานศิลปะหรือเที่ยวในเมือง",
+      "occasion": ["Museum", "City Walk", "Casual Weekend"],
+      "styleTags": ["minimal", "clean", "relaxed", "unisex"],
+      "image": "./assets/collection-2026/lookbook/look-01-city-museum.png",
+      "items": [
+        { "productId": 1, "sku": "TOP001", "name": "เสื้อยืดคอตตอนทรง Relaxed", "color": "Off White", "colorCode": "OW", "sizes": ["S", "M", "L"], "price": 490, "image": "./assets/collection-2026/products/top-01-off-white.png" },
+        { "productId": 6, "sku": "BOT001", "name": "กางเกงยีนส์ทรงตรง Relaxed", "color": "Medium Indigo", "colorCode": "MI", "sizes": ["S", "M", "L"], "price": 990, "image": "./assets/collection-2026/products/bottom-01-indigo.png" }
+      ],
+      "regularPrice": 1480,
+      "setPrice": 1290,
+      "saving": 190
+    },
+    {
+      "id": "LOOK-002",
+      "name": "Weekend Market",
+      "nameTh": "เดินตลาดสุดสัปดาห์",
+      "concept": "เชิ้ตสีฟ้าโปร่งเบาจับคู่คาร์โก้ เพิ่มความคล่องตัวและสีสันให้วันชิล",
+      "occasion": ["Weekend Market", "Cafe Hopping", "Travel"],
+      "styleTags": ["utility", "layering", "fresh", "unisex"],
+      "image": "./assets/collection-2026/lookbook/look-02-weekend-market.png",
+      "items": [
+        { "productId": 2, "sku": "TOP002", "name": "เสื้อเชิ้ตลินิน Oversized", "color": "Sky Blue", "colorCode": "SB", "sizes": ["S", "M", "L"], "price": 790, "image": "./assets/collection-2026/products/top-02-sky-blue.png" },
+        { "productId": 8, "sku": "BOT003", "name": "กางเกง Utility Cargo ทรง Tapered", "color": "Muted Olive", "colorCode": "MO", "sizes": ["S", "M", "L"], "price": 990, "image": "./assets/collection-2026/products/bottom-03-olive.png" }
+      ],
+      "regularPrice": 1780,
+      "setPrice": 1590,
+      "saving": 190
+    },
+    {
+      "id": "LOOK-003",
+      "name": "Coffee & Vinyl",
+      "nameTh": "กาแฟกับแผ่นเสียง",
+      "concept": "โปโลสีเขียวเข้มกับกางเกงโทนอุ่น ให้ความรู้สึกเรโทรร่วมสมัยและสุภาพกำลังดี",
+      "occasion": ["Coffee Shop", "Record Store", "Casual Date"],
+      "styleTags": ["smart-casual", "retro", "warm", "unisex"],
+      "image": "./assets/collection-2026/lookbook/look-03-coffee-vinyl.png",
+      "items": [
+        { "productId": 3, "sku": "TOP003", "name": "เสื้อโปโลผ้าถัก Compact Knit", "color": "Forest Green", "colorCode": "FG", "sizes": ["S", "M", "L"], "price": 690, "image": "./assets/collection-2026/products/top-03-forest.png" },
+        { "productId": 7, "sku": "BOT002", "name": "กางเกง Easy Pleated ขากว้าง", "color": "Warm Taupe", "colorCode": "WT", "sizes": ["S", "M", "L"], "price": 890, "image": "./assets/collection-2026/products/bottom-02-taupe.png" }
+      ],
+      "regularPrice": 1580,
+      "setPrice": 1390,
+      "saving": 190
+    },
+    {
+      "id": "LOOK-004",
+      "name": "Rainy Commute",
+      "nameTh": "เดินทางในวันฝนตก",
+      "concept": "ลุคโทนเข้มพร้อมเสื้อคลุมทรงบ็อกซี ดูคล่องตัวและเข้ากับบรรยากาศเมือง",
+      "occasion": ["Commute", "Rainy Day", "Urban Walk"],
+      "styleTags": ["urban", "utility", "layered", "monochrome"],
+      "image": "./assets/collection-2026/lookbook/look-04-rainy-commute.png",
+      "items": [
+        { "productId": 4, "sku": "TOP004", "name": "เสื้อคลุม Utility Overshirt", "color": "Navy", "colorCode": "NV", "sizes": ["S", "M", "L"], "price": 990, "image": "./assets/collection-2026/products/top-04-navy.png" },
+        { "productId": 8, "sku": "BOT003", "name": "กางเกง Utility Cargo ทรง Tapered", "color": "Matte Black", "colorCode": "MB", "sizes": ["S", "M", "L"], "price": 990, "image": "./assets/collection-2026/products/bottom-03-black.png" }
+      ],
+      "regularPrice": 1980,
+      "setPrice": 1790,
+      "saving": 190
+    },
+    {
+      "id": "LOOK-005",
+      "name": "Seaside Walk",
+      "nameTh": "เดินเล่นริมทะเล",
+      "concept": "ลายทางคลาสสิกกับกางเกงขาสั้นสีกรม ให้ลุคเบาสบายและสดชื่น",
+      "occasion": ["Seaside", "Holiday", "Summer Walk"],
+      "styleTags": ["nautical", "casual", "light", "summer"],
+      "image": "./assets/collection-2026/lookbook/look-05-seaside-walk.png",
+      "items": [
+        { "productId": 5, "sku": "TOP005", "name": "เสื้อแขนยาวลายทาง Breton", "color": "Navy Stripe", "colorCode": "NS", "sizes": ["S", "M", "L"], "price": 590, "image": "./assets/collection-2026/products/top-05-navy-stripe.png" },
+        { "productId": 9, "sku": "BOT004", "name": "กางเกงขาสั้น Nylon Easy", "color": "Deep Navy", "colorCode": "DN", "sizes": ["S", "M", "L"], "price": 590, "image": "./assets/collection-2026/products/bottom-04-navy.png" }
+      ],
+      "regularPrice": 1180,
+      "setPrice": 990,
+      "saving": 190
+    },
+    {
+      "id": "LOOK-006",
+      "name": "Gallery Date",
+      "nameTh": "เดตที่แกลเลอรี",
+      "concept": "เชิ้ตขาวกับกางเกงจีบสีชาร์โคล เรียบหรูแต่ไม่เป็นทางการเกินไป",
+      "occasion": ["Gallery", "Casual Date", "Creative Office"],
+      "styleTags": ["smart-casual", "gallery", "clean", "monochrome"],
+      "image": "./assets/collection-2026/lookbook/look-06-gallery-date.png",
+      "items": [
+        { "productId": 2, "sku": "TOP002", "name": "เสื้อเชิ้ตลินิน Oversized", "color": "White", "colorCode": "WH", "sizes": ["S", "M", "L"], "price": 790, "image": "./assets/collection-2026/products/top-02-white.png" },
+        { "productId": 7, "sku": "BOT002", "name": "กางเกง Easy Pleated ขากว้าง", "color": "Charcoal", "colorCode": "CH", "sizes": ["S", "M", "L"], "price": 890, "image": "./assets/collection-2026/products/bottom-02-charcoal.png" }
+      ],
+      "regularPrice": 1680,
+      "setPrice": 1490,
+      "saving": 190
+    },
+    {
+      "id": "LOOK-007",
+      "name": "Creative Studio",
+      "nameTh": "วันสร้างสรรค์ในสตูดิโอ",
+      "concept": "โปโลสีทรายกับยีนส์ดำฟอก ให้ลุคเรียบเท่ที่พร้อมทำงานสร้างสรรค์",
+      "occasion": ["Creative Studio", "Workshop", "Casual Work"],
+      "styleTags": ["creative", "neutral", "retro", "relaxed"],
+      "image": "./assets/collection-2026/lookbook/look-07-creative-studio.png",
+      "items": [
+        { "productId": 3, "sku": "TOP003", "name": "เสื้อโปโลผ้าถัก Compact Knit", "color": "Sand", "colorCode": "SD", "sizes": ["S", "M", "L"], "price": 690, "image": "./assets/collection-2026/products/top-03-sand.png" },
+        { "productId": 6, "sku": "BOT001", "name": "กางเกงยีนส์ทรงตรง Relaxed", "color": "Washed Black", "colorCode": "WB", "sizes": ["S", "M", "L"], "price": 990, "image": "./assets/collection-2026/products/bottom-01-black.png" }
+      ],
+      "regularPrice": 1680,
+      "setPrice": 1490,
+      "saving": 190
+    },
+    {
+      "id": "LOOK-008",
+      "name": "Park Picnic",
+      "nameTh": "ปิกนิกในสวน",
+      "concept": "ลายทางสีแดงและกางเกงสีส้มอิฐ เพิ่มความสนุกแบบพอดีสำหรับวันกลางแจ้ง",
+      "occasion": ["Picnic", "Park", "Sunny Weekend"],
+      "styleTags": ["playful", "colorful", "casual", "outdoor"],
+      "image": "./assets/collection-2026/lookbook/look-08-park-picnic.png",
+      "items": [
+        { "productId": 5, "sku": "TOP005", "name": "เสื้อแขนยาวลายทาง Breton", "color": "Red Stripe", "colorCode": "RS", "sizes": ["S", "M", "L"], "price": 590, "image": "./assets/collection-2026/products/top-05-red-stripe.png" },
+        { "productId": 9, "sku": "BOT004", "name": "กางเกงขาสั้น Nylon Easy", "color": "Terracotta", "colorCode": "TC", "sizes": ["S", "M", "L"], "price": 590, "image": "./assets/collection-2026/products/bottom-04-terracotta.png" }
+      ],
+      "regularPrice": 1180,
+      "setPrice": 990,
+      "saving": 190
+    },
+    {
+      "id": "LOOK-009",
+      "name": "Morning Errands",
+      "nameTh": "เช้าวันทำธุระ",
+      "concept": "เสื้อคลุมสีโอลีฟกับจ็อกเกอร์สีเทา ให้ความสบายพร้อมออกจากบ้านทันที",
+      "occasion": ["Daily Errands", "Morning Walk", "Travel Day"],
+      "styleTags": ["athleisure", "utility", "comfortable", "layered"],
+      "image": "./assets/collection-2026/lookbook/look-09-morning-errands.png",
+      "items": [
+        { "productId": 4, "sku": "TOP004", "name": "เสื้อคลุม Utility Overshirt", "color": "Muted Olive", "colorCode": "MO", "sizes": ["S", "M", "L"], "price": 990, "image": "./assets/collection-2026/products/top-04-olive.png" },
+        { "productId": 10, "sku": "BOT005", "name": "กางเกง Jersey Jogger", "color": "Heather Gray", "colorCode": "HG", "sizes": ["S", "M", "L"], "price": 690, "image": "./assets/collection-2026/products/bottom-05-gray.png" }
+      ],
+      "regularPrice": 1680,
+      "setPrice": 1490,
+      "saving": 190
+    },
+    {
+      "id": "LOOK-010",
+      "name": "Night Bookstore",
+      "nameTh": "ค่ำคืนที่ร้านหนังสือ",
+      "concept": "เสื้อยืดชาร์โคลกับจ็อกเกอร์สีเขียวเข้ม ให้ลุคค่ำคืนที่เรียบและดูมีมิติ",
+      "occasion": ["Bookstore", "Evening Walk", "Casual Hangout"],
+      "styleTags": ["dark-tone", "comfortable", "minimal", "evening"],
+      "image": "./assets/collection-2026/lookbook/look-10-night-bookstore.png",
+      "items": [
+        { "productId": 1, "sku": "TOP001", "name": "เสื้อยืดคอตตอนทรง Relaxed", "color": "Charcoal", "colorCode": "CH", "sizes": ["S", "M", "L"], "price": 490, "image": "./assets/collection-2026/products/top-01-charcoal.png" },
+        { "productId": 10, "sku": "BOT005", "name": "กางเกง Jersey Jogger", "color": "Forest Green", "colorCode": "FG", "sizes": ["S", "M", "L"], "price": 690, "image": "./assets/collection-2026/products/bottom-05-forest.png" }
+      ],
+      "regularPrice": 1180,
+      "setPrice": 990,
+      "saving": 190
+    }
+  ]
+}

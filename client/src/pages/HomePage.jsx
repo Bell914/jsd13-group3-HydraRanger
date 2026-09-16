@@ -1,21 +1,24 @@
 import React from "react";
-import rawLookData from "../../public/collection-2026/look-data.json?raw";
+import lookData from "../data/look-data.json";
 import { assets, fashionNews } from "../assets/assets.js";
 import { Link } from "react-router-dom";
 import { HeroSection } from "../components/HeroSection.jsx";
 import { RecommendProduct } from "./RecommendProduct.jsx";
 import { TextHomepage } from "../components/TextHomepage.jsx";
 import { SpecialProducts } from "../components/SpecialProducts.jsx";
-import MixAndMatchSection from "../components/MixandMatchSection.jsx";
+import MixAndMatchSection from "../components/MixAndMatchSection.jsx";
+import { normalizeImageUrl } from "../utils/imageUtils.js";
 
-const lookData = JSON.parse(rawLookData);
-const looks = lookData.looks.map((look) => ({
+const looksData = lookData?.looks || lookData?.default?.looks || [];
+const looks = looksData.map((look) => ({
   ...look,
-  image: look.image.replace("./assets", ""),
-  items: look.items?.map((item) => ({
-    ...item,
-    image: item.image.replace("./assets", ""),
-  })),
+  image: normalizeImageUrl(look?.image),
+  items: Array.isArray(look?.items)
+    ? look.items.map((item) => ({
+        ...item,
+        image: normalizeImageUrl(item?.image),
+      }))
+    : [],
 }));
 
 export const HomePage = () => {
