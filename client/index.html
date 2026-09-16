@@ -11,9 +11,26 @@
       href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <script>
+      window.addEventListener('error', function(event) {
+        var root = document.getElementById('root') || document.body;
+        root.innerHTML = 
+          '<div style="padding:28px;font-family:Prompt,system-ui,sans-serif;color:#991b1b;background:#fef2f2;border:2px solid #ef4444;margin:20px;border-radius:16px;max-width:800px;margin:40px auto;box-shadow:0 10px 30px rgba(0,0,0,0.1);">' +
+            '<h2 style="margin:0 0 10px;font-size:20px;color:#b91c1c;">⚠️ พบข้อผิดพลาด (JavaScript Runtime Error)</h2>' +
+            '<p style="margin:4px 0;font-size:14px;color:#1f2937;"><strong>ข้อความ:</strong> ' + event.message + '</p>' +
+            '<p style="margin:4px 0;font-size:13px;color:#4b5563;"><strong>ไฟล์:</strong> ' + event.filename + ':' + event.lineno + '</p>' +
+            '<pre style="background:#fff;padding:12px;border-radius:8px;border:1px solid #fecaca;overflow:auto;font-size:12px;color:#374151;margin-top:12px;max-height:240px;">' + (event.error && event.error.stack ? event.error.stack : 'No stack available') + '</pre>' +
+            '<button onclick="location.reload()" style="margin-top:16px;padding:8px 18px;background:#0046a7;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">รีโหลดหน้าเว็บ</button>' +
+          '</div>';
+      });
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:Prompt,system-ui,sans-serif;color:#0046a7;">
+        <p style="font-size:16px;font-weight:600;">กำลังโหลดระบบ OCCASION...</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

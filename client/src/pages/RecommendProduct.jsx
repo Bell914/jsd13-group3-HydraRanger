@@ -1,12 +1,25 @@
+import React from "react";
+import { Link } from "react-router-dom";
+import { normalizeImageUrl } from "../utils/imageUtils.js";
+
 export const RecommendProduct = ({ product, index }) => {
+  const rawImg =
+    product.image ||
+    product.items?.[0]?.image ||
+    product.imageUrl ||
+    product.images?.[0]?.image_url ||
+    product.variants?.[0]?.imageUrl ||
+    "";
+  const imgUrl = normalizeImageUrl(rawImg) || rawImg;
+
   return (
     <div
       key={index}
       className="group relative aspect-[3/4] mx-auto w-full max-w-sm overflow-hidden rounded-xl shadow-md"
     >
-      <a href="Product_Page.html?category=tops" className="block h-full w-full">
+      <Link to="/products?category=tops" className="block h-full w-full">
         <img
-          src={product.image || product.items?.[0]?.image}
+          src={imgUrl}
           alt={product.title || product.nameTh || product.name}
           className="h-full w-full cursor-pointer object-cover transition duration-300 ease-in-out group-hover:scale-105"
         />
@@ -16,7 +29,7 @@ export const RecommendProduct = ({ product, index }) => {
           </h4>
           <h6 className="text-sm font-normal opacity-90">สำรวจหมวดหมู่</h6>
         </div>
-      </a>
+      </Link>
     </div>
   );
 };

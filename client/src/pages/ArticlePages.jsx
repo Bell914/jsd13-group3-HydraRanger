@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { fashionNews } from "../assets/assets"; // ตรวจสอบ path ให้ตรง
-import { ArticleCard } from "../components/ArticleCard"; // ตรวจสอบ path ให้ตรง
-import { Pagination } from "../components/Pagination"; // ตรวจสอบ path ให้ตรง
+import { fashionNews } from "../assets/assets.js";
+import { ArticleCard } from "../components/ArticleCard.jsx";
+import { Pagination } from "../components/Pagination.jsx";
 
 export const ArticlePages = () => {
   const [currentPage, setCurrentPage] = useState(1);

@@ -1,6 +1,10 @@
-import { assets } from "../assets/assets";
+import { assets } from "../assets/assets.js";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/Auth/useAuth.jsx";
+
 export const Footer = () => {
+  const { isAuthenticated } = useAuth();
+
   return (
     <footer id="Footer" className="bg-accent text-white">
       <div className="max-w-6xl w-full mx-auto px-4 py-8">
@@ -56,7 +60,7 @@ export const Footer = () => {
             <ul className="space-y-2 text-sm text-white/90 list-none p-0 m-0">
               <li>
                 <Link
-                  to="/customer-service"
+                  to="/customerservice"
                   className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
                 >
                   Customer Service
@@ -64,7 +68,7 @@ export const Footer = () => {
               </li>
               <li>
                 <Link
-                  to="/terms-and-conditions"
+                  to="/termsconditions"
                   className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
                 >
                   Terms & Condition
@@ -72,7 +76,7 @@ export const Footer = () => {
               </li>
               <li>
                 <Link
-                  to="/privacy-policy"
+                  to="/privacy"
                   className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
                 >
                   Privacy Policy
@@ -86,12 +90,21 @@ export const Footer = () => {
             <h4 className="font-bold text-lg mb-4">USER</h4>
             <ul className="space-y-2 text-sm text-white/90 list-none p-0 m-0">
               <li>
-                <Link
-                  to="/register"
-                  className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
-                >
-                  Become A Member
-                </Link>
+                {!isAuthenticated ? (
+                  <Link
+                    to="/register"
+                    className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
+                  >
+                    Become A Member
+                  </Link>
+                ) : (
+                  <Link
+                    to="/profile"
+                    className="rounded-sm transition hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80"
+                  >
+                    Profile
+                  </Link>
+                )}
               </li>
               <li>
                 <Link
