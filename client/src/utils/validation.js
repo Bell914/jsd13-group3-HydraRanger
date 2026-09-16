@@ -1,4 +1,8 @@
+<<<<<<< HEAD
+export const validateForm = (formData) => {
+=======
 export const validateRegisterForm = (formData) => {
+>>>>>>> develop
   const errors = {};
 
   // ตรวจสอบชื่อ (Required)
@@ -20,6 +24,10 @@ export const validateRegisterForm = (formData) => {
     errors.password = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
   }
 
+<<<<<<< HEAD
+  return errors;
+};
+=======
   // ตรวจสอบการยืนยันรหัสผ่าน
   if (!formData.confirmPassword) {
     errors.confirmPassword = 'กรุณายืนยันรหัสผ่าน';
@@ -31,3 +39,4 @@ export const validateRegisterForm = (formData) => {
 };
 
 export const validateForm = validateRegisterForm;
+>>>>>>> develop
