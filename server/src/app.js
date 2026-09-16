@@ -1,29 +1,15 @@
-<<<<<<< HEAD
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { ENV } from "./config/env.js";
 import apiRouter from "./routes/index.js";
-import { fileURLToPath } from "url";
-import path from "path"; // (ถ้าจำเป็นต้องใช้ path.dirname ต่อ)
 import {
   requestLogger,
   notFoundHandler,
   errorHandler,
 } from "./middleware/index.js";
-import newUserRouter from "./routes/V2/newuserRoute.js";
-=======
-import express from 'express';
-import cors from 'cors';
-import morgan from 'morgan';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { ENV } from './config/env.js';
-import apiRouter from './routes/index.js';
-import { requestLogger, notFoundHandler, errorHandler } from './middleware/index.js';
-
-import newUserRouter from './routes/V2/newuserRoute.js';
->>>>>>> develop
 
 const app = express();
 const currentFilePath = fileURLToPath(import.meta.url);
@@ -38,38 +24,37 @@ app.use(
   cors({
     origin: [
       ENV.CLIENT_URL,
-      'http://localhost:5173',
-      'http://127.0.0.1:5173',
-      'http://localhost:5174',
-      'http://127.0.0.1:5174'
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "http://localhost:5174",
+      "http://127.0.0.1:5174",
     ],
-    credentials: true
-  })
+    credentials: true,
+  }),
 );
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Let the Admin website display the same product images as the customer website.
-app.use('/collection-2026', express.static(productImageFolder));
+app.use("/collection-2026", express.static(productImageFolder));
 
-if (ENV.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
+if (ENV.NODE_ENV === "development") {
+  app.use(morgan("dev"));
 }
 app.use(requestLogger);
 
 // Root Welcome Endpoint
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   res.json({
-    message: 'Welcome to OCCASION API (HydraRanger Team - Sprint 2)',
-    docs: '/api/health',
-    version: '1.0.0'
+    message: "Welcome to OCCASION API (HydraRanger Team - Sprint 2)",
+    docs: "/api/health",
+    version: "1.0.0",
   });
 });
 
 // API Routes
-app.use('/api', apiRouter);
-app.use('/api/newuser', newUserRouter);
+app.use("/api", apiRouter);
 
 // 404 & Error Middlewares
 app.use(notFoundHandler);
