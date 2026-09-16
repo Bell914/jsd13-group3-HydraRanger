@@ -31,37 +31,37 @@ export const specialProducts = [
   {
     id: 1,
     title: "เครื่องประดับ",
-    image: "/collection-2026/product-detail/bottom-01-black-front.png",
+    image: "/collection-2026/all-images/bottom-01-black.png",
     link: "/collection-2026/lookbook/look-01-city-museum.png",
   },
   {
     id: 2,
     title: "กางเกง",
-    image: "/collection-2026/product-detail/bottom-01-black-detail.png",
+    image: "/collection-2026/all-images/bottom-01-black-detail.png",
     link: "/product/2",
   },
   {
     id: 3,
     title: "เสื้อ",
-    image: "/collection-2026/products/bottom-01-black.png",
+    image: "/collection-2026/all-images/bottom-01-black.png",
     link: "/product/3",
   },
   {
     id: 4,
     title: "เครื่องประดับ",
-    image: "/collection-2026/product-detail/bottom-01-indigo-black.png",
+    image: "/collection-2026/all-images/bottom-01-indigo.png",
     link: "/product/1",
   },
   {
     id: 5,
     title: "กางเกง",
-    image: "/collection-2026/product/bottom-03-black.png",
+    image: "/collection-2026/all-images/bottom-03-black.png",
     link: "/product/2",
   },
   {
     id: 6,
     title: "เสื้อ",
-    image: "/collection-2026/product/bottom-03-olive.png",
+    image: "/collection-2026/all-images/bottom-03-olive.png",
     link: "/product/3",
   },
 ];

@@ -2,7 +2,10 @@ import { Product } from '../models/Product.js';
 import { User } from '../models/User.js';
 
 function getTotalStock(product) {
-  return product.variants.reduce((total, variant) => total + variant.stockQuantity, 0);
+  return product.variants.reduce((total, variant) => {
+    const stock = variant.stock_quantity ?? variant.stockQuantity ?? 0;
+    return total + stock;
+  }, 0);
 }
 
 function getLastSixMonths() {
@@ -22,7 +25,7 @@ function getLastSixMonths() {
 }
 
 export async function getDashboardSummary() {
-  const products = await Product.find().lean();
+  const products = await Product.find().populate('category_id').lean();
   const customerCount = await User.countDocuments({ role: 'user' });
   const monthlyProducts = getLastSixMonths();
   const categoryMap = {};
@@ -32,10 +35,13 @@ export async function getDashboardSummary() {
 
   products.forEach((product) => {
     const productStock = getTotalStock(product);
+    const isActive = product.is_active ?? product.isActive ?? true;
+    const category = product.category_id?.slug || product.category || 'uncategorized';
+
     totalStock += productStock;
-    if (product.isActive) activeProductCount += 1;
-    if (product.isActive && productStock <= 10) lowStockCount += 1;
-    categoryMap[product.category] = (categoryMap[product.category] || 0) + productStock;
+    if (isActive) activeProductCount += 1;
+    if (isActive && productStock <= 10) lowStockCount += 1;
+    categoryMap[category] = (categoryMap[category] || 0) + productStock;
 
     const createdDate = new Date(product.createdAt);
     const monthKey = `${createdDate.getFullYear()}-${createdDate.getMonth()}`;

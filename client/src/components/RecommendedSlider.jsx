@@ -142,7 +142,14 @@ export default function RecommendedSlider({ products = [] }) {
         >
           {items.map((item, idx) => {
             const targetId = item._id || item.productId;
-            const imgSrc = normalizeImageUrl(item.imageUrl);
+            const rawImg =
+              item.images?.[0]?.image_url ||
+              item.imageUrl ||
+              item.image ||
+              item.variants?.[0]?.imageUrl ||
+              "";
+            const imgSrc = normalizeImageUrl(rawImg);
+            const title = item.title || item.name || "สินค้าแนะนำ";
 
             return (
               <div
@@ -169,9 +176,9 @@ export default function RecommendedSlider({ products = [] }) {
                     <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-wide transition-transform duration-300 group-hover:scale-105 drop-shadow-md">
                       แสดงสินค้าแนะนำ
                     </h2>
-                    {item.name && (
+                    {title && (
                       <p className="mt-2 text-xs sm:text-sm font-semibold text-white/90 bg-[#0046a7]/80 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20 shadow-sm line-clamp-1 max-w-[240px] sm:max-w-xs">
-                        {item.name}
+                        {title}
                       </p>
                     )}
                   </div>

@@ -7,15 +7,16 @@ import { RecommendProduct } from "./RecommendProduct.jsx";
 import { TextHomepage } from "../components/TextHomepage.jsx";
 import { SpecialProducts } from "../components/SpecialProducts.jsx";
 import MixAndMatchSection from "../components/MixAndMatchSection.jsx";
+import { normalizeImageUrl } from "../utils/imageUtils.js";
 
 const looksData = lookData?.looks || lookData?.default?.looks || [];
 const looks = looksData.map((look) => ({
   ...look,
-  image: typeof look?.image === "string" ? look.image.replace("./assets", "") : (look?.image || ""),
+  image: normalizeImageUrl(look?.image),
   items: Array.isArray(look?.items)
     ? look.items.map((item) => ({
         ...item,
-        image: typeof item?.image === "string" ? item.image.replace("./assets", "") : (item?.image || ""),
+        image: normalizeImageUrl(item?.image),
       }))
     : [],
 }));
