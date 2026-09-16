@@ -398,10 +398,17 @@ export async function getProductById(productId) {
     return response || null;
   } catch (error) {
     console.warn("API error fetching product by ID from MongoDB, using fallback:", error.message);
+    const num = Number(productId);
+    const mappedSlug = !isNaN(num) && num >= 1 && num <= 10
+      ? (num <= 5 ? `top-00${num}` : `bottom-00${num - 5}`)
+      : null;
+
     return (
       fallbackProducts.find(
         (product) =>
-          product._id === productId || product.productId === productId
+          product._id === productId ||
+          product.productId === productId ||
+          (mappedSlug && (product._id === mappedSlug || product.productId === mappedSlug))
       ) || null
     );
   }
