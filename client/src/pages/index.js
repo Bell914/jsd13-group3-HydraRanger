@@ -12,3 +12,5 @@ export { default as CartPage } from "./CartPage.jsx";
 export { default as CheckoutPage } from "./CheckoutPage.jsx";
 
 export { ProfilePage } from './ProfilePage.jsx';
+export { default as LookbookListPage } from "./LookbookListPage.jsx";
+export { default as LookbookDetailPage } from "./LookbookDetailPage.jsx";
