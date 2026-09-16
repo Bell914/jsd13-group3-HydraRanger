@@ -1,65 +1,31 @@
-# 🗄️ Database Schema — OCCASION (HydraRanger Team, Group 3)
+# OCCASION Database
 
-เอกสารนี้ระบุโครงสร้างฐานข้อมูล คอลเลกชัน (Collections) และฟิลด์ต่างๆ สำหรับ Sprint 2
+ใช้ MongoDB ผ่าน Mongoose ฟิลด์ใช้ `camelCase`
 
----
+## Model ที่มีในโค้ด
 
-## 📊 Collections Overview
+| Model | ฟิลด์หลัก |
+|---|---|
+| User | username, email, password, role, avatar |
+| Product | productId, name, description, category, gender, tags[], availableDate, imageUrl, variants[], isActive |
+| Lookbook | lookbookId, name, nameTh, concept, occasion[], styleTags[], imageUrl, items[], regularPrice, setPrice, saving, isActive |
 
-### 1. `users` Collection
-เก็บข้อมูลผู้ใช้งานระบบและสิทธิ์การเข้าถึง
+ทุก Model ข้างต้นมี `_id`, `createdAt`, `updatedAt`
 
-| Field Name | Type | Required | Unique | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `_id` | ObjectId / String | Yes | Yes | Primary Key |
-| `username` | String | Yes | Yes | ชื่อผู้ใช้งาน (3-30 ตัวอักษร) |
-| `email` | String | Yes | Yes | อีเมลผู้ใช้งาน (lowercase) |
-| `password` | String | Yes | No | รหัสผ่านที่ผ่านการ Hash (bcrypt) |
-| `role` | String | Yes | No | สิทธิ์ (`user`, `admin`, `moderator`) default: `user` |
-| `avatar` | String | No | No | URL รูปโปรไฟล์ |
-| `createdAt` | Date | Yes | No | วันที่สร้างบัญชี |
-| `updatedAt` | Date | Yes | No | วันที่แก้ไขข้อมูลล่าสุด |
+- **User:** username/email ไม่ซ้ำ; password เก็บแบบ hash; ผู้สมัครทั่วไปเป็น role `user`
+- **Product:** `productId` เป็นรหัสธุรกิจไม่ซ้ำ; API ใช้ `_id`; ลบด้วย `isActive=false`
+- **Variant:** เก็บใน `variants[]` อย่างน้อย 1 รายการ มี `_id`, sku, color, size, price, stockQuantity และข้อมูลเสริม colorCode, imageUrl, detailImages[]
+- **Lookbook Item:** `product` อ้าง Product `_id`; `defaultVariantSku` ระบุ Variant
+- **ข้อจำกัด:** Schema กำหนดราคา/Stock ≥ 0; API กำหนดราคา > 0 และ Stock เป็นจำนวนเต็ม มี unique index ที่ `variants.sku`; ต้องตรวจ SKU ซ้ำภายในสินค้าเพิ่มเติม
 
----
+## Cart / Order ที่เสนอ — ยังไม่มี Model
 
-### 2. `items` Collection
-เก็บข้อมูลทรัพยากรหลัก/การ์ดกิจกรรมของทีมในระบบ
+| ส่วน | ฟิลด์ที่เสนอ |
+|---|---|
+| Cart | user อ้าง User, items[], createdAt, updatedAt |
+| Cart Item | _id, product อ้าง Product, variantId, quantity |
+| Order (หากทำ) | user, items พร้อมราคาตอนซื้อ, total, shippingAddress, status, purchasedAt |
 
-| Field Name | Type | Required | Unique | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `_id` | ObjectId / String | Yes | Yes | Primary Key |
-| `title` | String | Yes | No | หัวข้อหรือชื่องาน |
-| `description` | String | Yes | No | รายละเอียดงาน |
-| `category` | String | Yes | No | หมวดหมู่ (`Design`, `Frontend`, `Backend`, `DevOps`) |
-| `status` | String | Yes | No | สถานะ (`Todo`, `In Progress`, `Done`, `Review`) |
-| `priority` | String | Yes | No | ความสำคัญ (`Low`, `Medium`, `High`, `Critical`) |
-| `createdBy` | ObjectId / String | Yes | No | User ID ผู้สร้างรายการ |
-| `createdAt` | Date | Yes | No | วันที่สร้างรายการ |
-| `updatedAt` | Date | Yes | No | วันที่แก้ไขรายการล่าสุด |
+Server ตรวจเจ้าของ Cart, Variant และ Stock; quantity เป็นจำนวนเต็ม ≥ 1 ราคาและยอดรวมมาจากฐานข้อมูล
 
----
-
-## 🔗 Relationships
-
-```mermaid
-erDiagram
-    USERS ||--o{ ITEMS : "creates"
-    USERS {
-        ObjectId id PK
-        string username UK
-        string email UK
-        string password
-        string role
-        date createdAt
-    }
-    ITEMS {
-        ObjectId id PK
-        string title
-        string description
-        string category
-        string status
-        string priority
-        ObjectId createdBy FK
-        date createdAt
-    }
-```
+ตกลง User Model หลักก่อนเชื่อม Cart เพราะ `/auth` และ `/newuser` ใช้คนละชุด ดูชื่อข้อมูลรับส่งใน [API_SPEC.md](API_SPEC.md)
