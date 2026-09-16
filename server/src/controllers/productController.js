@@ -10,7 +10,7 @@ function sendProductError(error, res, next) {
 
 export async function getProducts(req, res, next) {
   try {
-    const products = await productService.getProducts();
+    const products = await productService.getProducts(req.query);
     res.status(HTTP_STATUS.OK).json({ success: true, data: products });
   } catch (error) {
     next(error);
@@ -19,7 +19,7 @@ export async function getProducts(req, res, next) {
 
 export async function getAdminProducts(req, res, next) {
   try {
-    const products = await productService.getProducts();
+    const products = await productService.getProducts({ includeInactive: true });
     res.status(HTTP_STATUS.OK).json({ success: true, data: products });
   } catch (error) {
     next(error);

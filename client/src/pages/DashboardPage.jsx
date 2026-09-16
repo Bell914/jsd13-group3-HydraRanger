@@ -9,7 +9,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { itemService } from "../services/itemService.js";
-import { authService } from "../services/authService.js";
+import { useAuth } from "../context/Auth/useAuth.jsx";
 import { Button, Card, LoadingSpinner } from "../components/index.js";
 
 export const DashboardPage = () => {
@@ -34,7 +34,7 @@ export const DashboardPage = () => {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  const currentUser = authService.getCurrentUser();
+  const { user: currentUser } = useAuth();
 
   const fetchItems = async () => {
     try {

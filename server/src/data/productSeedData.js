@@ -24,11 +24,11 @@ function createVariants(product) {
         size,
         price: product.price,
         stockQuantity: 12 - (index * 2),
-        imageUrl: `/collection-2026/products/${fileName}.png`,
+        imageUrl: `/collection-2026/all-images/${fileName}.png`,
         detailImages: [
-          `/collection-2026/product-detail/${fileName}-front.png`,
-          `/collection-2026/product-detail/${fileName}-back.png`,
-          `/collection-2026/product-detail/${fileName}-detail.png`
+          `/collection-2026/all-images/${fileName}.png`,
+          `/collection-2026/all-images/${fileName}-back.png`,
+          `/collection-2026/all-images/${fileName}-detail.png`
         ]
       };
     });
