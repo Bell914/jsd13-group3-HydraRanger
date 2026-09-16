@@ -9,8 +9,8 @@ export const ProductGallery = ({
 }) => {
   return (
     <div className="lg:col-span-7 w-full rounded-2xl sm:rounded-3xl bg-[#e6006e] p-4 sm:p-6 shadow-lg flex flex-col justify-between">
-      {/* Main Image View - Slate-blue box matching the wireframe */}
-      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl sm:rounded-2xl bg-[#3b5377] flex items-center justify-center shadow-inner">
+      {/* Main Image View - White background */}
+      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl sm:rounded-2xl bg-white flex items-center justify-center shadow-inner">
         <img
           src={displayedImage}
           alt={productName || "Product"}
@@ -18,7 +18,7 @@ export const ProductGallery = ({
         />
       </div>
 
-      {/* 7 Thumbnail Boxes matching the wireframe */}
+      {/* 7 Thumbnail Boxes */}
       <div className="mt-4 grid grid-cols-7 gap-2 sm:gap-3 w-full">
         {thumbnails.slice(0, 7).map((thumb, idx) => {
           const isActive = activeThumbIndex === idx;
@@ -27,9 +27,9 @@ export const ProductGallery = ({
               key={idx}
               type="button"
               onClick={() => onSelectThumbnail(thumb, idx)}
-              className={`relative aspect-square w-full overflow-hidden rounded-lg sm:rounded-xl bg-[#3b5377] p-1 transition-all cursor-pointer ${
+              className={`relative aspect-square w-full overflow-hidden rounded-lg sm:rounded-xl bg-white p-1 transition-all cursor-pointer ${
                 isActive
-                  ? "ring-2 sm:ring-3 ring-white shadow-lg scale-105"
+                  ? "ring-2 sm:ring-3 ring-white ring-offset-2 ring-offset-[#e6006e] shadow-lg scale-105"
                   : "opacity-80 hover:opacity-100 hover:scale-102"
               }`}
               aria-label={`ดูภาพมุมที่ ${idx + 1}`}
