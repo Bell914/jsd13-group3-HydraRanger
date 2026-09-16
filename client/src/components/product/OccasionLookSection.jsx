@@ -49,7 +49,8 @@ export const OccasionLookSection = ({ looks = [] }) => {
               </div>
             </div>
           </Link>
-        ))}
+        );
+      })}
       </div>
     </section>
   );

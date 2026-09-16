@@ -6,16 +6,10 @@ import { HeroSection } from "../components/HeroSection.jsx";
 import { RecommendProduct } from "./RecommendProduct.jsx";
 import { TextHomepage } from "../components/TextHomepage.jsx";
 import { SpecialProducts } from "../components/SpecialProducts.jsx";
-<<<<<<< HEAD
 import MixAndMatchSection from "../components/MixAndMatchSection.jsx";
+
 const looksData = lookData?.looks || lookData?.default?.looks || [];
 const looks = looksData.map((look) => ({
-=======
-import MixAndMatchSection from "../components/MixandMatchSection.jsx";
-
-const lookData = JSON.parse(rawLookData);
-const looks = lookData.looks.map((look) => ({
->>>>>>> 7545ab1b8d248255842f6c23a57014320b7a23fe
   ...look,
   image: typeof look?.image === "string" ? look.image.replace("./assets", "") : (look?.image || ""),
   items: Array.isArray(look?.items)
@@ -64,15 +58,11 @@ export const HomePage = () => {
           <div className="my-8 grid grid-cols-1 gap-6 md:grid-cols-3">
             {/* Card 1 */}
             {looks.slice(1, 4).map((el, index) => (
-<<<<<<< HEAD
-              <RecommendProduct key={el.id || index} product={el} index={index} />
-=======
               <RecommendProduct
                 key={el.id || `lookbook-${index}`}
                 product={el}
                 index={index}
               />
->>>>>>> 7545ab1b8d248255842f6c23a57014320b7a23fe
             ))}
           </div>
         </div>
@@ -86,15 +76,11 @@ export const HomePage = () => {
         <div className="relative my-8 h-auto w-full overflow-hidden rounded-2xl bg-background px-4 py-8 font-bold text-lg text-white sm:px-6 lg:px-8">
           <div className="animate-marquee flex w-max gap-4 whitespace-nowrap">
             {looks.map((product, idx) => (
-<<<<<<< HEAD
-              <SpecialProducts key={product.id || idx} product={product} index={idx} />
-=======
               <SpecialProducts
                 key={product.id ? `marquee-${product.id}` : `marquee-${idx}`}
                 product={product}
                 index={idx}
               />
->>>>>>> 7545ab1b8d248255842f6c23a57014320b7a23fe
             ))}
           </div>
         </div>
