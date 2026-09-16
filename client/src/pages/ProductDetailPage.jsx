@@ -38,16 +38,27 @@ export default function ProductDetailPage() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(true);
   const [isMaterialsOpen, setIsMaterialsOpen] = useState(true);
 
-  // Standard 7 sizes matching wireframe
-  const standardSizes = ["XS", "S", "M", "L", "XL", "XXL", "3XL"];
+  // Standard sizes matching backend (S, M, L)
   const sizeOptions = useMemo(() => {
-    if (!product?.variants) return standardSizes;
-    const variantSizes = [...new Set(product.variants.map((v) => v.size))];
-    // If variants specify sizes, ensure all standard sizes are available or at least available ones
-    return standardSizes.some((s) => variantSizes.includes(s))
-      ? standardSizes
-      : variantSizes;
+    if (!product?.variants || product.variants.length === 0) return ["S", "M", "L"];
+    const variantSizes = [
+      ...new Set(
+        product.variants
+          .map((v) => v.size || v.size_or_color)
+          .filter(Boolean)
+      ),
+    ];
+    const allowed = ["S", "M", "L"];
+    const filtered = allowed.filter((s) => variantSizes.includes(s));
+    return filtered.length > 0 ? filtered : allowed;
   }, [product]);
+
+  // Ensure selectedSize is valid
+  useEffect(() => {
+    if (!sizeOptions.includes(selectedSize) && sizeOptions.length > 0) {
+      setSelectedSize(sizeOptions[0]);
+    }
+  }, [sizeOptions, selectedSize]);
 
   useEffect(() => {
     let isMounted = true;
@@ -67,9 +78,15 @@ export default function ProductDetailPage() {
         }
 
         if (isMounted) {
+          const mainImg =
+            prodData.images?.[0]?.image_url ||
+            prodData.imageUrl ||
+            prodData.image ||
+            prodData.variants?.[0]?.imageUrl ||
+            "";
           const normProd = {
             ...prodData,
-            imageUrl: normalizeImageUrl(prodData.imageUrl),
+            imageUrl: normalizeImageUrl(mainImg),
           };
           setProduct(normProd);
           setAllProducts(prodList || []);
@@ -78,8 +95,10 @@ export default function ProductDetailPage() {
             const firstVariant = normProd.variants[0];
             setSelectedColor(firstVariant.color || "");
             setSelectedSize(firstVariant.size || "S");
+            const variantImg =
+              firstVariant.imageUrl || firstVariant.image || normProd.imageUrl;
             const initialImg =
-              normalizeImageUrl(firstVariant.imageUrl) || normProd.imageUrl;
+              normalizeImageUrl(variantImg) || normProd.imageUrl;
             setDisplayedImage(initialImg);
           } else {
             setDisplayedImage(normProd.imageUrl);
@@ -163,9 +182,12 @@ export default function ProductDetailPage() {
       });
     }
 
-    // 3) Product main image
+    // 3) Product main image and additional images
     if (product.imageUrl) {
       addUnique(product.imageUrl);
+    }
+    if (Array.isArray(product.images)) {
+      product.images.forEach((img) => addUnique(img?.image_url || img));
     }
 
     // 4) Pad with existing images if less than 7 so all 7 slots are filled

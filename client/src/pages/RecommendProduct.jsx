@@ -1,7 +1,17 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { normalizeImageUrl } from "../utils/imageUtils.js";
 
 export const RecommendProduct = ({ product, index }) => {
+  const rawImg =
+    product.image ||
+    product.items?.[0]?.image ||
+    product.imageUrl ||
+    product.images?.[0]?.image_url ||
+    product.variants?.[0]?.imageUrl ||
+    "";
+  const imgUrl = normalizeImageUrl(rawImg) || rawImg;
+
   return (
     <div
       key={index}
@@ -9,7 +19,7 @@ export const RecommendProduct = ({ product, index }) => {
     >
       <Link to="/products?category=tops" className="block h-full w-full">
         <img
-          src={product.image || product.items?.[0]?.image}
+          src={imgUrl}
           alt={product.title || product.nameTh || product.name}
           className="h-full w-full cursor-pointer object-cover transition duration-300 ease-in-out group-hover:scale-105"
         />

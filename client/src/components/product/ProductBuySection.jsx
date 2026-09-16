@@ -124,7 +124,7 @@ export const ProductBuySection = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+          <div className="flex flex-wrap gap-2.5 sm:gap-3">
             {sizeOptions.map((size) => {
               const isSelected = selectedSize === size;
               return (
@@ -132,10 +132,10 @@ export const ProductBuySection = ({
                   key={size}
                   type="button"
                   onClick={() => onSizeChange(size)}
-                  className={`rounded-lg py-2 text-xs sm:text-sm font-bold transition-all cursor-pointer text-center ${
+                  className={`min-w-[56px] sm:min-w-[68px] rounded-xl py-2.5 px-4 text-sm font-extrabold transition-all cursor-pointer text-center shadow-xs ${
                     isSelected
-                      ? "bg-primary text-white shadow ring-2 ring-accent"
-                      : "border border-occasion-border/50 bg-white text-secondary hover:border-primary hover:text-primary"
+                      ? "bg-primary text-white shadow ring-2 ring-accent scale-102"
+                      : "border border-occasion-border/60 bg-white text-secondary hover:border-primary hover:text-primary hover:scale-102"
                   }`}
                 >
                   {size}

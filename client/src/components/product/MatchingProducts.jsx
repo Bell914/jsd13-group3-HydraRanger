@@ -13,7 +13,14 @@ export const MatchingProducts = ({ products = [] }) => {
 
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {products.map((match, idx) => {
-          const imgUrl = normalizeImageUrl(match.imageUrl);
+          const rawImg =
+            match.images?.[0]?.image_url ||
+            match.imageUrl ||
+            match.image ||
+            match.variants?.[0]?.imageUrl ||
+            "";
+          const imgUrl = normalizeImageUrl(rawImg);
+          const title = match.title || match.name || `Product ${idx + 1}`;
           const minPrice = match.variants?.[0]?.price ?? 490;
           return (
             <Link
