@@ -9,6 +9,10 @@ import {
   UiKitPage,
   ArticleDetail,
   ArticlePages,
+  ProductListPage,
+  ProductDetailPage,
+  CartPage,
+  CheckoutPage,
 } from "../pages/index.js";
 import { ProtectedRoute } from "../components/index.js";
 
@@ -17,6 +21,10 @@ export const AppRoutes = () => {
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<HomePage />} />
+      <Route path="/products" element={<ProductListPage />} />
+      <Route path="/products/:productId" element={<ProductDetailPage />} />
+      <Route path="/cart" element={<CartPage />} />
+      <Route path="/checkout" element={<CheckoutPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/ui-kit" element={<UiKitPage />} />

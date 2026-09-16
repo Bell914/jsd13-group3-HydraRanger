@@ -14,3 +14,5 @@ export {
 export { Navbar } from "./Navbar.jsx";
 export { Footer } from "./Footer.jsx";
 export { ProtectedRoute } from "./ProtectedRoute.jsx";
+export { default as ProductCard } from "./ProductCard.jsx";
+export { ErrorBoundary } from "./ErrorBoundary.jsx";

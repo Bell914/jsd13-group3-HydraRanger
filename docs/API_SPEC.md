@@ -1,211 +1,55 @@
-# 📖 REST API Specification — OCCASION Backend
+# OCCASION API
 
-Customer และ Admin ใช้หน้าเว็บและ Login endpoint แยกกัน โดยใช้ฐานข้อมูล User ร่วมกัน
-แต่ Backend เป็นผู้ตรวจสอบ role
+Base URL: `http://localhost:5001/api` · JSON ใช้ `camelCase`
+API ที่ต้อง Login ส่ง `Authorization: Bearer <token>`
 
-Base URL: `http://localhost:5000/api`
+## API ที่มีในโค้ด
 
----
+| Method | Path | ข้อมูล / สิทธิ์ |
+|---|---|---|
+| GET | `/health` | ตรวจ Server |
+| POST | `/auth/register` | username, email, password |
+| POST | `/auth/login` | email, password; คืน `data.token` |
+| GET | `/auth/me` | ต้อง Login |
+| POST | `/auth/refresh` | `{token}` ที่ยังไม่หมดอายุ |
+| POST | `/auth/change-password` | currentPassword, newPassword; ต้อง Login |
+| POST | `/admin/auth/login` | email, password ของ Admin |
+| GET | `/admin/auth/me` | Admin Token |
+| GET | `/products`, `/products/:id` | สินค้า active: รายการ / รายชิ้น |
+| GET, POST | `/admin/products` | Admin: รายการ active / เพิ่ม |
+| PUT, DELETE | `/admin/products/:id` | Admin: แก้ / ซ่อน |
+| GET | `/admin/dashboard` | Admin Token |
 
-## 🔐 1. Authentication Endpoints
+### เพิ่ม / แก้ Product
 
-### 1.1 Register User
-- **Method**: `POST`
-- **Path**: `/auth/register`
-- **Auth Required**: No
-- **Request Body**:
 ```json
 {
-  "username": "johndoe",
-  "email": "johndoe@example.com",
-  "password": "SecurePassword123!"
-}
-```
-
-Public registration always creates role user. The API ignores client-supplied role values.
-- **Response (201 Created)**:
-```json
-{
-  "success": true,
-  "message": "User registered successfully",
-  "data": {
-    "user": {
-      "id": "64f1a2b3c4d5e6f7a8b9c0d1",
-      "username": "johndoe",
-      "email": "johndoe@example.com",
-      "role": "user",
-      "createdAt": "2026-08-24T10:00:00.000Z"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-### 1.2 Login User
-- **Method**: `POST`
-- **Path**: `/auth/login`
-- **Auth Required**: No
-- **Request Body**:
-```json
-{
-  "email": "johndoe@example.com",
-  "password": "SecurePassword123!"
-}
-```
-- **Response (200 OK)**:
-```json
-{
-  "success": true,
-  "message": "Login successful",
-  "data": {
-    "user": {
-      "id": "64f1a2b3c4d5e6f7a8b9c0d1",
-      "username": "johndoe",
-      "email": "johndoe@example.com",
-      "role": "user"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-### 1.3 Get Current User Profile (Me)
-- **Method**: `GET`
-- **Path**: `/auth/me`
-- **Auth Required**: Yes (`Bearer <token>`)
-- **Response (200 OK)**:
-```json
-{
-  "success": true,
-  "data": {
-    "id": "64f1a2b3c4d5e6f7a8b9c0d1",
-    "username": "johndoe",
-    "email": "johndoe@example.com",
-    "role": "user"
-  }
-}
-```
-
-### 1.4 Login Admin
-- **Method**: `POST`
-- **Path**: `/admin/auth/login`
-- **Auth Required**: No
-- **Rule**: รับเฉพาะบัญชีที่มี role เป็น admin
-
-### 1.5 Get Current Admin
-- **Method**: `GET`
-- **Path**: `/admin/auth/me`
-- **Auth Required**: Yes (`Bearer <admin-token>`)
-- **Rule**: Token ต้องมี role เป็น admin
-
----
-
-## 👥 2. User Management Endpoints
-
-### 2.1 Get All Users
-- **Method**: `GET`
-- **Path**: `/users`
-- **Auth Required**: Admin only (`Bearer <admin-token>`)
-- **Response (200 OK)**:
-```json
-{
-  "success": true,
-  "count": 2,
-  "data": [
-    {
-      "id": "64f1a2b3c4d5e6f7a8b9c0d1",
-      "username": "johndoe",
-      "email": "johndoe@example.com",
-      "role": "user"
-    }
+  "name": "T-Shirt",
+  "description": "เสื้อยืด",
+  "category": "tops",
+  "gender": "unisex",
+  "tags": ["casual"],
+  "availableDate": "2026-09-01",
+  "variants": [
+    {"sku": "TOP-WHT-S", "color": "white", "size": "S", "price": 590, "stockQuantity": 10}
   ]
 }
 ```
 
-### 2.2 Get User by ID
-- **Method**: `GET`
-- **Path**: `/users/:id`
-- **Auth Required**: Admin หรือเจ้าของบัญชีเท่านั้น
+- `:id` ใช้ MongoDB `_id`; PUT ส่งข้อมูลบังคับครบ
+- ราคา > 0; Stock เป็นจำนวนเต็ม ≥ 0; DELETE ตั้ง `isActive=false`
+- สำเร็จคืน `{success: true, data}`: เพิ่ม 201, อ่าน/แก้ 200; ลบคืน 200 พร้อม message ไม่มี data
+- Validator คืน 400 พร้อม `{success: false, message, errors}`; ไม่พบ Product คืน 404; Mongoose Error บางกรณียังคืน 500
 
----
+## Cart API ที่เสนอ — ยังไม่มี Route
 
-## 📦 3. Items / Resources Endpoints (CRUD)
+| Method | Path | Body |
+|---|---|---|
+| GET | `/cart` | — |
+| POST | `/cart/items` | `{productId, variantId, quantity}` |
+| PATCH | `/cart/items/:itemId` | `{quantity}` |
+| DELETE | `/cart/items/:itemId` | — |
 
-### 3.1 Get All Items
-- **Method**: `GET`
-- **Path**: `/items`
-- **Query Parameters**:
-  - `page` (optional, default: 1)
-  - `limit` (optional, default: 10)
-  - `category` (optional)
-  - `search` (optional)
-- **Response (200 OK)**:
-```json
-{
-  "success": true,
-  "count": 3,
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "totalPages": 1
-  },
-  "data": [
-    {
-      "id": "item-101",
-      "title": "OCCASION Item Manager",
-      "description": "Task management module for Sprint 2",
-      "category": "Development",
-      "status": "In Progress",
-      "priority": "High",
-      "createdBy": "johndoe",
-      "createdAt": "2026-08-24T10:30:00.000Z"
-    }
-  ]
-}
-```
+ใช้ Product/Variant `_id`; `itemId` คือรายการใน Cart Server ดึงเจ้าของจาก Token ตรวจ Variant, จำนวนเต็ม ≥ 1 และ Stock แล้วคำนวณราคาจาก MongoDB ผู้ใช้เข้าถึงได้เฉพาะ Cart ตนเอง
 
-### 3.2 Create New Item
-- **Method**: `POST`
-- **Path**: `/items`
-- **Auth Required**: Yes (`Bearer <token>`)
-- **Request Body**:
-```json
-{
-  "title": "OCCASION Item Manager",
-  "description": "Task management module for Sprint 2",
-  "category": "Development",
-  "status": "In Progress",
-  "priority": "High"
-}
-```
-- **Response (201 Created)**:
-```json
-{
-  "success": true,
-  "message": "Item created successfully",
-  "data": {
-    "id": "item-101",
-    "title": "OCCASION Item Manager",
-    "description": "Task management module for Sprint 2",
-    "category": "Development",
-    "status": "In Progress",
-    "priority": "High",
-    "createdAt": "2026-08-24T10:30:00.000Z"
-  }
-}
-```
-
-### 3.3 Get Item by ID
-- **Method**: `GET`
-- **Path**: `/items/:id`
-- **Auth Required**: No
-
-### 3.4 Update Item
-- **Method**: `PUT` / `PATCH`
-- **Path**: `/items/:id`
-- **Auth Required**: Yes (`Bearer <token>`)
-
-### 3.5 Delete Item
-- **Method**: `DELETE`
-- **Path**: `/items/:id`
-- **Auth Required**: Yes (`Bearer <token>`)
+**ต้องตกลงก่อนเชื่อม:** Response ของ Cart และ Auth หลัก (`/auth` หรือ `/newuser`) ส่วน Product ยังต้องเพิ่ม Validation Tag/วันที่ผิดรูปแบบ

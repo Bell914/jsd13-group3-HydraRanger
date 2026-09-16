@@ -33,7 +33,10 @@ export const login = async (req, res, next) => {
       data: result
     });
   } catch (error) {
-    if (error.message === 'Invalid email or password') {
+    if (
+      error.message === 'Invalid email or password' ||
+      error.message.includes('admin portal')
+    ) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: error.message
@@ -64,9 +67,74 @@ export const adminLogin = async (req, res, next) => {
   }
 };
 
-export const getMe = async (req, res) => {
-  res.status(HTTP_STATUS.OK).json({
-    success: true,
-    data: req.user
-  });
+export const getMe = async (req, res, next) => {
+  try {
+    const user = await authService.getMe(req.user.id || req.user._id);
+    if (!user) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const result = await authService.changePassword({
+      userId: req.user.id || req.user._id,
+      currentPassword,
+      newPassword
+    });
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    if (
+      error.message === 'Current password is incorrect' ||
+      error.message === 'User not found'
+    ) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: error.message
+      });
+    }
+    next(error);
+  }
+};
+
+export const refresh = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: 'Token is required'
+      });
+    }
+    const result = await authService.refreshToken(token);
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    if (
+      error.message === 'Token is required' ||
+      error.message === 'Invalid or expired token'
+    ) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        success: false,
+        message: error.message
+      });
+    }
+    next(error);
+  }
 };

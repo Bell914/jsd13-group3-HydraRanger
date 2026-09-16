@@ -1,14 +1,19 @@
-import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { authService } from '../services/authService.js';
+import React, { useEffect } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/Auth/useAuth.jsx";
+import { LoadingSpinner } from "./index.js";
 
 export const ProtectedRoute = ({ children }) => {
   const location = useLocation();
-  const isAuthenticated = authService.isAuthenticated();
-  const currentUser = authService.getCurrentUser();
+  const { user, isAuthenticated, loading, logout } = useAuth();
 
-  if (!isAuthenticated || currentUser?.role === 'admin') {
-    if (currentUser?.role === 'admin') authService.logout();
+  useEffect(() => {
+    if (user?.role === "admin") logout();
+  }, [user?.role, logout]);
+
+  if (loading) return <LoadingSpinner message="Checking session..." />;
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

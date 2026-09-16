@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { create } from "zustand";
-import { fashionNews } from "../assets/assets";
+import { fashionNews } from "../assets/assets.js";
 const articleStore = (set) => ({
   articles: fashionNews,
   currentPage: 1,

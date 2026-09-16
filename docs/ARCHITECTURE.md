@@ -1,10 +1,10 @@
-# 🏛️ System Architecture — OCCASION (HydraRanger Team, Group 3)
+# System Architecture — OCCASION (HydraRanger Team, Group 3)
 
 เอกสารนี้อธิบายสถาปัตยกรรมระบบ รูปแบบการจัดวางโค้ด และการไหลของข้อมูล (Data Flow) ในโปรเจกต์ Sprint 2
 
 ---
 
-## 🏗️ 1. High-Level Architecture
+## 1. High-Level Architecture
 
 ระบบถูกออกแบบเป็น **Decoupled Multi-Client Architecture** โดยหน้าร้านลูกค้าและระบบ
 Admin เป็นคนละเว็บไซต์ แต่ใช้ Backend และฐานข้อมูลร่วมกัน:
@@ -55,9 +55,9 @@ graph TD
 
 ---
 
-## 🔄 2. Backend Layered Pattern (MVC + Service Layer)
+## 2. Backend Layered Pattern (MVC + Service Layer)
 
-สถาปัตยกรรมฝั่ง Server แบ่งออกเป็นชั้นชัดเจนตามหลัก Separation of Concerns (SoC):
+ฝั่ง Server แบ่งออกเป็นชั้นชัดเจนตามหลัก Separation of Concerns (SoC):
 
 1. **Routes Layer (`routes/`)**: กำหนด HTTP Method, Path และผูก Middleware กับ Controller
 2. **Middleware Layer (`middleware/`)**: ตรวจสอบสิทธิ์ (Authentication/Authorization), การบันทึก Log, และการจัดการ Error รวม
@@ -68,7 +68,7 @@ graph TD
 
 ---
 
-## 🌐 3. Frontend Architecture
+## 3. Frontend Architecture
 
 ฝั่ง Client ใช้ React Component-based Architecture ร่วมกับ Vite:
 
