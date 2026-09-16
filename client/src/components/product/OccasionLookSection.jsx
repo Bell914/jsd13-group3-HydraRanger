@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { normalizeImageUrl } from "../../utils/imageUtils.js";
 
 export const OccasionLookSection = ({ looks = [] }) => {
   if (!looks || looks.length === 0) return null;
@@ -11,17 +12,27 @@ export const OccasionLookSection = ({ looks = [] }) => {
       </h2>
 
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {looks.map((look, idx) => (
-          <Link
-            key={look.id || idx}
-            to="/lookbook"
-            className="group flex flex-col justify-between overflow-hidden rounded-2xl bg-[#0046a7] text-white shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl aspect-[3/4] p-3"
-          >
-            <div className="relative w-full flex-1 overflow-hidden rounded-xl bg-[#3b5377] flex items-center justify-center p-3 text-center">
-              <h3 className="text-xl sm:text-2xl font-extrabold text-white tracking-wide group-hover:scale-105 transition-transform">
-                {look.name || `Look${idx + 1}`}
-              </h3>
-            </div>
+        {looks.map((look, idx) => {
+          const imgUrl = normalizeImageUrl(look.image);
+          return (
+            <Link
+              key={look.id || idx}
+              to="/lookbook"
+              className="group flex flex-col justify-between overflow-hidden rounded-2xl bg-[#0046a7] text-white shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl aspect-[3/4] p-3"
+            >
+              <div className="relative w-full flex-1 overflow-hidden rounded-xl bg-[#3b5377] flex items-center justify-center p-1 text-center">
+                {imgUrl ? (
+                  <img
+                    src={imgUrl}
+                    alt={look.name || `Look ${idx + 1}`}
+                    className="h-full w-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-white tracking-wide group-hover:scale-105 transition-transform">
+                    {`Look ${idx + 1}`}
+                  </h3>
+                )}
+              </div>
             <div className="pt-3 pb-1 flex items-center justify-between text-white">
               <div className="flex flex-col">
                 <span className="text-xs sm:text-sm font-extrabold text-white">

@@ -13,6 +13,7 @@ import {
   ProductSizeGuideModal,
   ProductAddedModal,
 } from "../components/product/index.js";
+import { normalizeImageUrl, getDetailImageSet } from "../utils/imageUtils.js";
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
@@ -37,8 +38,16 @@ export default function ProductDetailPage() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(true);
   const [isMaterialsOpen, setIsMaterialsOpen] = useState(true);
 
-  // Standard sizes matching wireframe: XS, S, M, L, XL, XXL, 3XL
-  const sizeOptions = ["XS", "S", "M", "L", "XL", "XXL", "3XL"];
+  // Standard 7 sizes matching wireframe
+  const standardSizes = ["XS", "S", "M", "L", "XL", "XXL", "3XL"];
+  const sizeOptions = useMemo(() => {
+    if (!product?.variants) return standardSizes;
+    const variantSizes = [...new Set(product.variants.map((v) => v.size))];
+    // If variants specify sizes, ensure all standard sizes are available or at least available ones
+    return standardSizes.some((s) => variantSizes.includes(s))
+      ? standardSizes
+      : variantSizes;
+  }, [product]);
 
   useEffect(() => {
     let isMounted = true;
@@ -58,16 +67,22 @@ export default function ProductDetailPage() {
         }
 
         if (isMounted) {
-          setProduct(prodData);
-          setDisplayedImage(prodData.imageUrl);
+          const normProd = {
+            ...prodData,
+            imageUrl: normalizeImageUrl(prodData.imageUrl),
+          };
+          setProduct(normProd);
           setAllProducts(prodList || []);
 
-          if (prodData.variants && prodData.variants.length > 0) {
-            const firstColor = prodData.variants[0].color;
-            setSelectedColor(firstColor);
-            if (prodData.variants[0].imageUrl) {
-              setDisplayedImage(prodData.variants[0].imageUrl);
-            }
+          if (normProd.variants && normProd.variants.length > 0) {
+            const firstVariant = normProd.variants[0];
+            setSelectedColor(firstVariant.color || "");
+            setSelectedSize(firstVariant.size || "S");
+            const initialImg =
+              normalizeImageUrl(firstVariant.imageUrl) || normProd.imageUrl;
+            setDisplayedImage(initialImg);
+          } else {
+            setDisplayedImage(normProd.imageUrl);
           }
         }
       } catch (err) {
@@ -84,39 +99,87 @@ export default function ProductDetailPage() {
     };
   }, [productId]);
 
-  // Unique list of colors from variants
+  // Unique list of colors with their colorCode from variants
   const colors = useMemo(() => {
     if (!product?.variants) return [];
-    return [...new Set(product.variants.map((v) => v.color))];
+    const colorMap = new Map();
+    product.variants.forEach((v) => {
+      if (!colorMap.has(v.color)) {
+        colorMap.set(v.color, v.colorCode || "");
+      }
+    });
+    return [...colorMap.entries()].map(([color, colorCode]) => ({
+      color,
+      colorCode,
+    }));
   }, [product]);
-
-  // Generate 7 thumbnails for gallery matching the wireframe
-  const thumbnails = useMemo(() => {
-    if (!product) return [];
-    const baseImg = displayedImage || product.imageUrl;
-    const list = [baseImg];
-    if (product.variants) {
-      product.variants.forEach((v) => {
-        if (v.imageUrl && !list.includes(v.imageUrl)) {
-          list.push(v.imageUrl);
-        }
-      });
-    }
-    while (list.length < 7) {
-      list.push(baseImg);
-    }
-    return list.slice(0, 7);
-  }, [product, displayedImage]);
 
   // Selected variant
   const selectedVariant = useMemo(() => {
     if (!product?.variants) return null;
-    return (
+    const match =
       product.variants.find((v) => v.color === selectedColor) ||
       product.variants[0] ||
-      null
-    );
+      null;
+    if (!match) return null;
+    return {
+      ...match,
+      imageUrl: normalizeImageUrl(match.imageUrl),
+      detailImages: (match.detailImages || []).map(normalizeImageUrl),
+    };
   }, [product, selectedColor]);
+
+  // Generate 7 thumbnails from collection-2026/all-images matching the wireframe
+  const thumbnails = useMemo(() => {
+    if (!product) return [];
+    const list = [];
+    const seen = new Set();
+
+    const addUnique = (url) => {
+      const normalized = normalizeImageUrl(url);
+      if (normalized && !seen.has(normalized)) {
+        seen.add(normalized);
+        list.push(normalized);
+      }
+    };
+
+    // 1) Selected variant detail set (front, back, detail)
+    if (selectedVariant?.imageUrl) {
+      getDetailImageSet(selectedVariant.imageUrl).forEach(addUnique);
+    }
+    if (selectedVariant?.detailImages) {
+      selectedVariant.detailImages.forEach(addUnique);
+    }
+
+    // 2) Other variants detail set (front, back, detail)
+    if (product.variants) {
+      product.variants.forEach((v) => {
+        if (v.color !== selectedColor && v.imageUrl) {
+          getDetailImageSet(v.imageUrl).forEach(addUnique);
+        }
+        if (v.detailImages) {
+          v.detailImages.forEach(addUnique);
+        }
+      });
+    }
+
+    // 3) Product main image
+    if (product.imageUrl) {
+      addUnique(product.imageUrl);
+    }
+
+    // 4) Pad with existing images if less than 7 so all 7 slots are filled
+    if (list.length > 0 && list.length < 7) {
+      const originalCount = list.length;
+      let i = 0;
+      while (list.length < 7) {
+        list.push(list[i % originalCount]);
+        i++;
+      }
+    }
+
+    return list.slice(0, 7);
+  }, [product, selectedVariant, selectedColor]);
 
   // Handle color change
   const handleColorChange = (color) => {
@@ -125,7 +188,7 @@ export default function ProductDetailPage() {
       (v) => v.color === color && v.imageUrl
     );
     if (variantWithImage?.imageUrl) {
-      setDisplayedImage(variantWithImage.imageUrl);
+      setDisplayedImage(normalizeImageUrl(variantWithImage.imageUrl));
       setActiveThumbIndex(0);
     }
   };
@@ -139,7 +202,7 @@ export default function ProductDetailPage() {
       return;
     }
 
-    const currentPrice = selectedVariant?.price || 490;
+    const currentPrice = selectedVariant?.price ?? 490;
 
     const variantPayload = {
       ...selectedVariant,
@@ -170,14 +233,23 @@ export default function ProductDetailPage() {
     if (!allProducts || allProducts.length === 0) return [];
     const oppCat = product?.category === "tops" ? "bottoms" : "tops";
     const filtered = allProducts.filter((p) => p.category === oppCat);
-    const list = filtered.length >= 4 ? filtered : allProducts.filter((p) => p._id !== product?._id);
-    return list.slice(0, 4);
+    const list =
+      filtered.length >= 4
+        ? filtered
+        : allProducts.filter((p) => p._id !== product?._id);
+    return list.slice(0, 4).map((p) => ({
+      ...p,
+      imageUrl: normalizeImageUrl(p.imageUrl),
+    }));
   }, [allProducts, product]);
 
   // Occasion Looks
   const looksList = useMemo(() => {
     const rawLooks = lookData?.looks || [];
-    return rawLooks.slice(0, 4);
+    return rawLooks.slice(0, 4).map((l) => ({
+      ...l,
+      image: normalizeImageUrl(l.image),
+    }));
   }, []);
 
   if (loading) {
@@ -215,7 +287,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  const currentPrice = selectedVariant?.price || 490;
+  const currentPrice = selectedVariant?.price ?? 490;
 
   return (
     <main className="flex-1 bg-background py-6 md:py-10">
@@ -283,5 +355,4 @@ export default function ProductDetailPage() {
     </main>
   );
 }
-
-export { ProductDetailPage };
+

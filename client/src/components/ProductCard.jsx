@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { normalizeImageUrl } from "../utils/imageUtils.js";
 
 export default function ProductCard({ product }) {
   const targetId = product._id || product.productId;
@@ -9,6 +10,7 @@ export default function ProductCard({ product }) {
     : 590;
 
   const categoryLabel = product.category === "tops" ? "เสื้อ" : "กางเกง";
+  const imgUrl = normalizeImageUrl(product.imageUrl);
 
   return (
     <Link
@@ -18,7 +20,7 @@ export default function ProductCard({ product }) {
       {/* Product Image Box */}
       <div className="relative w-full flex-1 overflow-hidden rounded-xl bg-white/95 p-3 flex items-center justify-center">
         <img
-          src={product.imageUrl}
+          src={imgUrl}
           alt={product.name}
           className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
           loading="lazy"

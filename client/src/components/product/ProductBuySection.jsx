@@ -18,7 +18,10 @@ export const ProductBuySection = ({
   isWishlisted = false,
   onToggleWishlist,
 }) => {
-  const getColorHex = (colorName = "") => {
+  const getColorHex = (colorName = "", colorCode = "") => {
+    // If colorCode is a hex value, use it directly
+    if (colorCode && colorCode.startsWith("#")) return colorCode;
+    // Fallback: derive from color name
     const c = colorName.toLowerCase();
     if (c.includes("white")) return "#f8f9fa";
     if (c.includes("charcoal")) return "#374151";
@@ -28,6 +31,11 @@ export const ProductBuySection = ({
     if (c.includes("taupe")) return "#a8a29e";
     if (c.includes("black")) return "#111827";
     if (c.includes("olive")) return "#65a30d";
+    if (c.includes("navy")) return "#1e3a5f";
+    if (c.includes("sand")) return "#c2b280";
+    if (c.includes("red")) return "#dc2626";
+    if (c.includes("terracotta")) return "#c87941";
+    if (c.includes("gray") || c.includes("grey")) return "#9ca3af";
     return "#0046a7";
   };
 
@@ -73,10 +81,13 @@ export const ProductBuySection = ({
         {/* Color Selection */}
         <div className="mt-5">
           <p className="text-sm font-bold text-primary mb-2">
-            สี : <span className="font-semibold text-secondary">{selectedColor || "01 OFF WHITE"}</span>
+            สี : <span className="font-semibold text-secondary">{selectedColor || "เลือกสี"}</span>
           </p>
           <div className="flex items-center gap-2.5">
-            {colors.map((color) => {
+            {colors.map((colorObj) => {
+              const { color, colorCode } = typeof colorObj === "string"
+                ? { color: colorObj, colorCode: "" }
+                : colorObj;
               const isSelected = selectedColor === color;
               return (
                 <button
@@ -88,7 +99,7 @@ export const ProductBuySection = ({
                       ? "border-primary ring-2 ring-accent scale-110"
                       : "border-gray-300 hover:scale-105"
                   }`}
-                  style={{ backgroundColor: getColorHex(color) }}
+                  style={{ backgroundColor: getColorHex(color, colorCode) }}
                   title={color}
                   aria-label={`เลือกสี ${color}`}
                 />

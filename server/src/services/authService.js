@@ -181,16 +181,6 @@ export const loginAdmin = async ({ email, password }) => {
       return { user: admin, token: generateToken(admin) };
     }
 
-    if (email === 'admin@occasion.dev' && password === 'Occasion1234!') {
-      const admin = {
-        id: 'admin-1',
-        username: 'OccasionAdmin',
-        email: 'admin@occasion.dev',
-        role: 'admin'
-      };
-      return { user: admin, token: generateToken(admin) };
-    }
-
     throw new Error('Invalid admin credentials');
   }
 };

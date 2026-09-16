@@ -195,7 +195,7 @@ export const Navbar = () => {
                       setIsProductsHovered(false);
                       setIsMobileMenuOpen(false);
                     }}
-                    className="w-full text-center rounded-lg bg-accent px-4 py-1.5 text-xs sm:text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                    className="w-full text-center rounded-lg bg-[#2d568c] px-4 py-1.5 text-xs sm:text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
                   >
                     Tops
                   </Link>
@@ -205,7 +205,7 @@ export const Navbar = () => {
                       setIsProductsHovered(false);
                       setIsMobileMenuOpen(false);
                     }}
-                    className="w-full text-center rounded-lg bg-[#2d568c] px-4 py-1.5 text-xs sm:text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                    className="w-full text-center rounded-lg bg-accent px-4 py-1.5 text-xs sm:text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
                   >
                     Bottoms
                   </Link>

@@ -195,13 +195,12 @@ export const CartPage = () => {
             </div>
 
             <div className="mt-6 space-y-3">
-              <button
-                type="button"
-                onClick={() => alert("ระบบชำระเงินอยู่ในระหว่างการพัฒนาสำหรับ Sprint ถัดไป!")}
-                className="w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-white shadow-md hover:bg-primary-hover active:scale-98 transition-all cursor-pointer"
+              <Link
+                to="/checkout"
+                className="block text-center w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-white shadow-md hover:bg-primary-hover active:scale-98 transition-all cursor-pointer"
               >
                 ดำเนินการชำระเงิน
-              </button>
+              </Link>
             </div>
 
             <div className="mt-4 rounded-xl bg-background/60 p-3 text-[11px] text-secondary text-center">
@@ -215,3 +214,4 @@ export const CartPage = () => {
 };
 
 export default CartPage;
+

@@ -10,7 +10,7 @@ const fallbackProducts = [
     category: "tops",
     gender: "unisex",
     tags: ["casual", "minimal", "relaxed"],
-    imageUrl: "/collection-2026/products/top-01-off-white.png",
+    imageUrl: "/collection-2026/all-images/top-01-off-white.png",
     variants: [
       {
         _id: "top-001-ow-s",
@@ -20,7 +20,7 @@ const fallbackProducts = [
         size: "S",
         price: 590,
         stockQuantity: 15,
-        imageUrl: "/collection-2026/products/top-01-off-white.png",
+        imageUrl: "/collection-2026/all-images/top-01-off-white.png",
       },
       {
         _id: "top-001-ow-m",
@@ -30,7 +30,7 @@ const fallbackProducts = [
         size: "M",
         price: 590,
         stockQuantity: 12,
-        imageUrl: "/collection-2026/products/top-01-off-white.png",
+        imageUrl: "/collection-2026/all-images/top-01-off-white.png",
       },
       {
         _id: "top-001-ow-l",
@@ -40,7 +40,7 @@ const fallbackProducts = [
         size: "L",
         price: 590,
         stockQuantity: 8,
-        imageUrl: "/collection-2026/products/top-01-off-white.png",
+        imageUrl: "/collection-2026/all-images/top-01-off-white.png",
       },
       {
         _id: "top-001-ch-s",
@@ -50,7 +50,7 @@ const fallbackProducts = [
         size: "S",
         price: 590,
         stockQuantity: 10,
-        imageUrl: "/collection-2026/products/top-01-charcoal.png",
+        imageUrl: "/collection-2026/all-images/top-01-charcoal.png",
       },
     ],
   },
@@ -62,7 +62,7 @@ const fallbackProducts = [
     category: "tops",
     gender: "unisex",
     tags: ["classic", "casual", "linen"],
-    imageUrl: "/collection-2026/products/top-02-white.png",
+    imageUrl: "/collection-2026/all-images/top-02-white.png",
     variants: [
       {
         _id: "top-002-wh-s",
@@ -72,7 +72,7 @@ const fallbackProducts = [
         size: "S",
         price: 790,
         stockQuantity: 10,
-        imageUrl: "/collection-2026/products/top-02-white.png",
+        imageUrl: "/collection-2026/all-images/top-02-white.png",
       },
       {
         _id: "top-002-sb-s",
@@ -82,7 +82,7 @@ const fallbackProducts = [
         size: "S",
         price: 790,
         stockQuantity: 7,
-        imageUrl: "/collection-2026/products/top-02-sky-blue.png",
+        imageUrl: "/collection-2026/all-images/top-02-sky-blue.png",
       },
     ],
   },
@@ -94,7 +94,7 @@ const fallbackProducts = [
     category: "tops",
     gender: "unisex",
     tags: ["smart-casual", "retro", "knit"],
-    imageUrl: "/collection-2026/products/top-03-forest.png",
+    imageUrl: "/collection-2026/all-images/top-03-forest.png",
     variants: [
       {
         _id: "top-003-fg-s",
@@ -104,7 +104,7 @@ const fallbackProducts = [
         size: "S",
         price: 690,
         stockQuantity: 14,
-        imageUrl: "/collection-2026/products/top-03-forest.png",
+        imageUrl: "/collection-2026/all-images/top-03-forest.png",
       },
       {
         _id: "top-003-sd-s",
@@ -114,7 +114,7 @@ const fallbackProducts = [
         size: "S",
         price: 690,
         stockQuantity: 9,
-        imageUrl: "/collection-2026/products/top-03-sand.png",
+        imageUrl: "/collection-2026/all-images/top-03-sand.png",
       },
     ],
   },
@@ -126,7 +126,7 @@ const fallbackProducts = [
     category: "tops",
     gender: "unisex",
     tags: ["utility", "layering", "jacket"],
-    imageUrl: "/collection-2026/products/top-04-navy.png",
+    imageUrl: "/collection-2026/all-images/top-04-navy.png",
     variants: [
       {
         _id: "top-004-nv-s",
@@ -136,7 +136,7 @@ const fallbackProducts = [
         size: "S",
         price: 990,
         stockQuantity: 12,
-        imageUrl: "/collection-2026/products/top-04-navy.png",
+        imageUrl: "/collection-2026/all-images/top-04-navy.png",
       },
       {
         _id: "top-004-ol-s",
@@ -146,7 +146,7 @@ const fallbackProducts = [
         size: "S",
         price: 990,
         stockQuantity: 8,
-        imageUrl: "/collection-2026/products/top-04-olive.png",
+        imageUrl: "/collection-2026/all-images/top-04-olive.png",
       },
     ],
   },
@@ -158,7 +158,7 @@ const fallbackProducts = [
     category: "tops",
     gender: "unisex",
     tags: ["casual", "stripes", "nautical"],
-    imageUrl: "/collection-2026/products/top-05-navy-stripe.png",
+    imageUrl: "/collection-2026/all-images/top-05-navy-stripe.png",
     variants: [
       {
         _id: "top-005-ns-s",
@@ -168,7 +168,7 @@ const fallbackProducts = [
         size: "S",
         price: 590,
         stockQuantity: 16,
-        imageUrl: "/collection-2026/products/top-05-navy-stripe.png",
+        imageUrl: "/collection-2026/all-images/top-05-navy-stripe.png",
       },
       {
         _id: "top-005-rs-s",
@@ -178,7 +178,7 @@ const fallbackProducts = [
         size: "S",
         price: 590,
         stockQuantity: 11,
-        imageUrl: "/collection-2026/products/top-05-red-stripe.png",
+        imageUrl: "/collection-2026/all-images/top-05-red-stripe.png",
       },
     ],
   },
@@ -190,7 +190,7 @@ const fallbackProducts = [
     category: "bottoms",
     gender: "unisex",
     tags: ["denim", "relaxed", "classic"],
-    imageUrl: "/collection-2026/products/bottom-01-indigo.png",
+    imageUrl: "/collection-2026/all-images/bottom-01-indigo.png",
     variants: [
       {
         _id: "bottom-001-in-s",
@@ -200,7 +200,7 @@ const fallbackProducts = [
         size: "S",
         price: 990,
         stockQuantity: 15,
-        imageUrl: "/collection-2026/products/bottom-01-indigo.png",
+        imageUrl: "/collection-2026/all-images/bottom-01-indigo.png",
       },
       {
         _id: "bottom-001-bk-s",
@@ -210,7 +210,7 @@ const fallbackProducts = [
         size: "S",
         price: 990,
         stockQuantity: 10,
-        imageUrl: "/collection-2026/products/bottom-01-black.png",
+        imageUrl: "/collection-2026/all-images/bottom-01-black.png",
       },
     ],
   },
@@ -222,7 +222,7 @@ const fallbackProducts = [
     category: "bottoms",
     gender: "unisex",
     tags: ["smart-casual", "pleated", "minimal"],
-    imageUrl: "/collection-2026/products/bottom-02-taupe.png",
+    imageUrl: "/collection-2026/all-images/bottom-02-taupe.png",
     variants: [
       {
         _id: "bottom-002-tp-s",
@@ -232,7 +232,7 @@ const fallbackProducts = [
         size: "S",
         price: 890,
         stockQuantity: 12,
-        imageUrl: "/collection-2026/products/bottom-02-taupe.png",
+        imageUrl: "/collection-2026/all-images/bottom-02-taupe.png",
       },
       {
         _id: "bottom-002-ch-s",
@@ -242,7 +242,7 @@ const fallbackProducts = [
         size: "S",
         price: 890,
         stockQuantity: 9,
-        imageUrl: "/collection-2026/products/bottom-02-charcoal.png",
+        imageUrl: "/collection-2026/all-images/bottom-02-charcoal.png",
       },
     ],
   },
@@ -254,7 +254,7 @@ const fallbackProducts = [
     category: "bottoms",
     gender: "unisex",
     tags: ["cargo", "utility", "street"],
-    imageUrl: "/collection-2026/products/bottom-03-olive.png",
+    imageUrl: "/collection-2026/all-images/bottom-03-olive.png",
     variants: [
       {
         _id: "bottom-003-ol-s",
@@ -264,7 +264,7 @@ const fallbackProducts = [
         size: "S",
         price: 990,
         stockQuantity: 14,
-        imageUrl: "/collection-2026/products/bottom-03-olive.png",
+        imageUrl: "/collection-2026/all-images/bottom-03-olive.png",
       },
       {
         _id: "bottom-003-bk-s",
@@ -274,7 +274,7 @@ const fallbackProducts = [
         size: "S",
         price: 990,
         stockQuantity: 11,
-        imageUrl: "/collection-2026/products/bottom-03-black.png",
+        imageUrl: "/collection-2026/all-images/bottom-03-black.png",
       },
     ],
   },
@@ -286,7 +286,7 @@ const fallbackProducts = [
     category: "bottoms",
     gender: "unisex",
     tags: ["shorts", "summer", "lightweight"],
-    imageUrl: "/collection-2026/products/bottom-04-navy.png",
+    imageUrl: "/collection-2026/all-images/bottom-04-navy.png",
     variants: [
       {
         _id: "bottom-004-nv-s",
@@ -296,7 +296,7 @@ const fallbackProducts = [
         size: "S",
         price: 590,
         stockQuantity: 18,
-        imageUrl: "/collection-2026/products/bottom-04-navy.png",
+        imageUrl: "/collection-2026/all-images/bottom-04-navy.png",
       },
       {
         _id: "bottom-004-tc-s",
@@ -306,7 +306,7 @@ const fallbackProducts = [
         size: "S",
         price: 590,
         stockQuantity: 8,
-        imageUrl: "/collection-2026/products/bottom-04-terracotta.png",
+        imageUrl: "/collection-2026/all-images/bottom-04-terracotta.png",
       },
     ],
   },
@@ -318,7 +318,7 @@ const fallbackProducts = [
     category: "bottoms",
     gender: "unisex",
     tags: ["sweatpants", "lounge", "comfort"],
-    imageUrl: "/collection-2026/products/bottom-05-forest.png",
+    imageUrl: "/collection-2026/all-images/bottom-05-forest.png",
     variants: [
       {
         _id: "bottom-005-fg-s",
@@ -328,7 +328,7 @@ const fallbackProducts = [
         size: "S",
         price: 890,
         stockQuantity: 10,
-        imageUrl: "/collection-2026/products/bottom-05-forest.png",
+        imageUrl: "/collection-2026/all-images/bottom-05-forest.png",
       },
       {
         _id: "bottom-005-gy-s",
@@ -338,7 +338,7 @@ const fallbackProducts = [
         size: "S",
         price: 890,
         stockQuantity: 12,
-        imageUrl: "/collection-2026/products/bottom-05-gray.png",
+        imageUrl: "/collection-2026/all-images/bottom-05-gray.png",
       },
     ],
   },
