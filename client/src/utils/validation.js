@@ -29,3 +29,5 @@ export const validateRegisterForm = (formData) => {
 
   return errors;
 };
+
+export const validateForm = validateRegisterForm;

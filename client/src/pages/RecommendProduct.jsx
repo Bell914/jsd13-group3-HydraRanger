@@ -1,10 +1,13 @@
+import React from "react";
+import { Link } from "react-router-dom";
+
 export const RecommendProduct = ({ product, index }) => {
   return (
     <div
       key={index}
       className="group relative aspect-[3/4] mx-auto w-full max-w-sm overflow-hidden rounded-xl shadow-md"
     >
-      <a href="Product_Page.html?category=tops" className="block h-full w-full">
+      <Link to="/products?category=tops" className="block h-full w-full">
         <img
           src={product.image || product.items?.[0]?.image}
           alt={product.title || product.nameTh || product.name}
@@ -16,7 +19,7 @@ export const RecommendProduct = ({ product, index }) => {
           </h4>
           <h6 className="text-sm font-normal opacity-90">สำรวจหมวดหมู่</h6>
         </div>
-      </a>
+      </Link>
     </div>
   );
 };
