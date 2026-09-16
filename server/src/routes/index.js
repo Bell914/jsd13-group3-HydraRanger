@@ -3,6 +3,9 @@ import authRoutes from './authRoutes.js';
 import adminAuthRoutes from './adminAuthRoutes.js';
 import userRoutes from './userRoutes.js';
 import itemRoutes from './itemRoutes.js';
+import productRoutes from './productRoutes.js';
+import adminProductRoutes from './adminProductRoutes.js';
+import adminDashboardRoutes from './adminDashboardRoutes.js';
 import { getDBStatus } from '../config/db.js';
 
 const router = Router();
@@ -14,11 +17,7 @@ router.get('/health', (req, res) => {
     message: 'Server is running',
     status: 'online',
     timestamp: new Date().toISOString(),
-<<<<<<< HEAD
     service: 'OCCASION API Server (Sprint 2)',
-=======
-    service: 'OCCASION API Server',
->>>>>>> develop
     database: getDBStatus()
   });
 });
@@ -28,5 +27,8 @@ router.use('/auth', authRoutes);
 router.use('/admin/auth', adminAuthRoutes);
 router.use('/users', userRoutes);
 router.use('/items', itemRoutes);
+router.use('/products', productRoutes);
+router.use('/admin/products', adminProductRoutes);
+router.use('/admin/dashboard', adminDashboardRoutes);
 
 export default router;
