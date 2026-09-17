@@ -1,3 +1,5 @@
+import { X } from 'lucide-react';
+
 const menuItems = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'products', label: 'Products' },
@@ -15,7 +17,7 @@ export function AdminSidebar({ activePage, isOpen, onClose, onNavigate, onLogout
           <small>Admin Control Panel</small>
         </div>
         <button type="button" className="sidebar-close" onClick={onClose} aria-label="ปิดเมนู">
-          ปิด
+          <X size={22} />
         </button>
       </header>
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Bell, Menu, Package, PackageCheck, PackageX, Users } from 'lucide-react';
+import { Menu, Package, PackageCheck, PackageX, Users } from 'lucide-react';
+import { AdminNotifications } from '../components/AdminNotifications.jsx';
 import { getDashboardSummary } from '../services/dashboardService.js';
 
 function SummaryCard({ label, value, detail, Icon }) {
@@ -11,6 +12,22 @@ function SummaryCard({ label, value, detail, Icon }) {
       <small>{detail}</small>
     </article>
   );
+}
+
+function createLinePoints(items, highestValue) {
+  const startX = 35;
+  const endX = 525;
+  const chartBottom = 190;
+  const chartHeight = 140;
+  const spaceBetweenPoints = items.length > 1 ? (endX - startX) / (items.length - 1) : 0;
+
+  return items.map((item, index) => {
+    return {
+      ...item,
+      x: startX + (spaceBetweenPoints * index),
+      y: chartBottom - ((item.count / highestValue) * chartHeight)
+    };
+  });
 }
 
 export function AdminDashboardPage({ user, onOpenSidebar }) {
@@ -40,6 +57,15 @@ export function AdminDashboardPage({ user, onOpenSidebar }) {
   const monthlyProducts = summary?.monthlyProducts || [];
   const highestStock = Math.max(1, ...categoryStock.map((item) => item.stock));
   const highestMonthlyCount = Math.max(1, ...monthlyProducts.map((item) => item.count));
+  const linePoints = createLinePoints(monthlyProducts, highestMonthlyCount);
+  const linePath = linePoints.map((point) => `${point.x},${point.y}`).join(' ');
+  const notifications = [];
+  if (summary?.lowStockCount > 0) {
+    notifications.push(`มีสินค้าใกล้หมด ${summary.lowStockCount} รายการ`);
+  }
+  if (summary?.inactiveProductCount > 0) {
+    notifications.push(`มีสินค้าที่ไม่แสดง ${summary.inactiveProductCount} รายการ`);
+  }
 
   return (
     <div className="admin-content">
@@ -49,11 +75,8 @@ export function AdminDashboardPage({ user, onOpenSidebar }) {
         </button>
         <strong className="topbar-title">ภาพรวมร้านค้า</strong>
         <div className="admin-profile">
-          <button type="button" className="notification" aria-label="การแจ้งเตือน">
-            <Bell size={18} />
-            <span />
-          </button>
-          <strong>{user?.username ?? 'Admin'} (Super Admin)</strong>
+          <AdminNotifications items={notifications} />
+          <strong>{user?.username ?? 'Admin'} (Admin Supervisor)</strong>
         </div>
       </header>
 
@@ -112,18 +135,22 @@ export function AdminDashboardPage({ user, onOpenSidebar }) {
                     <h2>สินค้าที่เพิ่มใน 6 เดือนล่าสุด</h2>
                     <p>จำนวนสินค้าใหม่แยกตามเดือน</p>
                   </div>
-                  <span className="chart-type">Horizontal Bar</span>
+                  <span className="chart-type">Line Chart</span>
                 </header>
-                <div className="monthly-chart" role="img" aria-label="กราฟจำนวนสินค้าที่เพิ่มในหกเดือนล่าสุด">
-                  {monthlyProducts.map((item) => (
-                    <div className="monthly-row" key={item.label}>
-                      <span>{item.label}</span>
-                      <div className="monthly-track">
-                        <div style={{ width: `${(item.count / highestMonthlyCount) * 100}%` }} />
-                      </div>
-                      <strong>{item.count}</strong>
-                    </div>
-                  ))}
+                <div className="line-chart" role="img" aria-label="กราฟเส้นจำนวนสินค้าที่เพิ่มในหกเดือนล่าสุด">
+                  <svg viewBox="0 0 560 230" aria-hidden="true">
+                    <line className="line-grid" x1="35" y1="50" x2="525" y2="50" />
+                    <line className="line-grid" x1="35" y1="120" x2="525" y2="120" />
+                    <line className="line-grid" x1="35" y1="190" x2="525" y2="190" />
+                    <polyline className="order-line" points={linePath} />
+                    {linePoints.map((point) => (
+                      <g key={point.label}>
+                        <circle className="line-point" cx={point.x} cy={point.y} r="7" />
+                        <text className="line-value" x={point.x} y={point.y - 14}>{point.count}</text>
+                        <text className="line-month" x={point.x} y="218">{point.label}</text>
+                      </g>
+                    ))}
+                  </svg>
                 </div>
               </article>
             </section>
