@@ -86,6 +86,30 @@ export default function LookbookListPage() {
 
   return (
     <main className="min-h-screen bg-background py-8 px-4 sm:px-6">
+      {/* Hero Section: video banner */}
+      <section className="relative mb-8 overflow-hidden rounded-2xl">
+        <video
+          src="/collection-2026/hero-media/Model_changing_outfits_for_campaign_20260917022750.mp4"
+          className="h-[40vh] w-full object-cover md:h-[50vh]"
+          autoPlay
+          muted
+          playsInline
+          loop
+        />
+        <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/75 via-black/35 to-transparent p-6 md:p-10">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-white drop-shadow-md">
+              occasion mix and match style by ai
+            </p>
+            <h1 className="mt-2 font-display text-4xl uppercase leading-[1.05] tracking-[0.02em] text-white drop-shadow-lg md:text-6xl">
+              LOOKBOOK
+              <br />
+              CAPSULE
+            </h1>
+          </div>
+        </div>
+      </section>
+
       <div className="max-w-2xl mx-auto flex flex-col gap-6">
         {/* Wireframe Header: LOOKBOOK Title */}
         <header className="text-center pt-2">

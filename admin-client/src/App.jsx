@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LockKeyhole } from 'lucide-react';
+import { Eye, EyeOff, LockKeyhole } from 'lucide-react';
 import { AdminSidebar } from './components/AdminSidebar.jsx';
 import { AdminProductsPage } from './pages/AdminProductsPage.jsx';
 import { AdminDashboardPage } from './pages/AdminDashboardPage.jsx';
@@ -23,6 +23,7 @@ function validateLogin(credentials) {
 
 function Login({ onLogin }) {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -55,13 +56,17 @@ function Login({ onLogin }) {
     }
   }
 
+  function togglePassword() {
+    setShowPassword(!showPassword);
+  }
+
   return (
     <main className="login-shell">
       <section className="login-card">
         <div className="brand-mark"><LockKeyhole size={26} /></div>
-        <p className="eyebrow">SECURE BACK OFFICE</p>
+        <p className="eyebrow">BACK-OFFICE ADMIN</p>
         <h1>OCCASION Admin</h1>
-        <p className="muted">สำหรับผู้ดูแลระบบเท่านั้น ลูกค้าไม่สามารถเข้าสู่ระบบจากหน้านี้ได้</p>
+        <p className="muted">สำหรับผู้ดูแลระบบเท่านั้น</p>
         {apiError && <p className="error" role="alert">{apiError}</p>}
         <form onSubmit={submitLogin} noValidate>
           <label>Admin email</label>
@@ -75,14 +80,26 @@ function Login({ onLogin }) {
           />
           {errors.email && <small className="field-error">{errors.email}</small>}
           <label>Password</label>
-          <input
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            value={credentials.password}
-            onChange={updateCredential}
-            aria-invalid={Boolean(errors.password)}
-          />
+          <div className="password-field">
+            <input
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              value={credentials.password}
+              onChange={updateCredential}
+              aria-invalid={Boolean(errors.password)}
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={togglePassword}
+              aria-label={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
+              aria-pressed={showPassword}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              <span>{showPassword ? 'ซ่อน' : 'แสดง'}</span>
+            </button>
+          </div>
           {errors.password && <small className="field-error">{errors.password}</small>}
           <button type="submit" disabled={loading}>
             {loading ? 'กำลังตรวจสอบ…' : 'เข้าสู่ระบบ Admin'}

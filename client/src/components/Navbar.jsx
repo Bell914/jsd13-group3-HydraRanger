@@ -11,7 +11,7 @@ export const Navbar = () => {
   const searchQuery = useCounterStore((state) => state.searchQuery);
   const setSearchQuery = useCounterStore((state) => state.setSearchQuery);
   const totalCartItems = useCartStore((state) =>
-    state.cartItems.reduce((acc, item) => acc + item.quantity, 0)
+    state.cartItems.reduce((acc, item) => acc + item.quantity, 0),
   );
   const navigate = useNavigate();
   const location = useLocation();
@@ -177,7 +177,7 @@ export const Navbar = () => {
                       : ""
                   }`}
                 >
-                  Products
+                  PRODUCTS
                 </Link>
 
                 {/* Dropdown on hover: Tops & Bottoms matching user screenshot */}
@@ -196,7 +196,7 @@ export const Navbar = () => {
                     }}
                     className="w-full text-center rounded-lg bg-[#2d568c] px-4 py-1.5 text-xs sm:text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
                   >
-                    Tops
+                    TOPS
                   </Link>
                   <Link
                     to="/products?category=bottoms"
@@ -206,7 +206,7 @@ export const Navbar = () => {
                     }}
                     className="w-full text-center rounded-lg bg-accent px-4 py-1.5 text-xs sm:text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
                   >
-                    Bottoms
+                    BOTTOMS
                   </Link>
                 </div>
               </li>
@@ -217,7 +217,7 @@ export const Navbar = () => {
                   aria-current={isActive("/lookbook") ? "page" : undefined}
                   className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/lookbook") ? "bg-accent/10 font-bold text-accent" : ""}`}
                 >
-                  FEATURES
+                  LOOKBOOKS
                 </Link>
               </li>
 
