@@ -9,6 +9,7 @@ import {
   UiKitPage,
   ArticleDetail,
   ArticlePages,
+  ProfilePage,
   ProductListPage,
   ProductDetailPage,
   CartPage,
@@ -41,6 +42,16 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Protected Profile Route */}
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
           </ProtectedRoute>
         }
       />

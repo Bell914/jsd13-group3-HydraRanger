@@ -28,6 +28,8 @@ const sizeChartSchema = new mongoose.Schema(
 
 const productSchema = new mongoose.Schema(
   {
+    // Kept for compatibility with existing product URLs and the productId_1 index.
+    productId: { type: String, unique: true, trim: true },
     category_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category',
@@ -41,6 +43,10 @@ const productSchema = new mongoose.Schema(
     description: {
       type: String,
       trim: true
+    },
+    tags: {
+      type: [String],
+      default: []
     },
     is_active: {
       type: Boolean,
