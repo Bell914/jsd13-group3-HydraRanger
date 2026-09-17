@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import { LoadingSpinner } from "../components/LoadingSpinner.jsx";
 import { getLookbookData } from "../services/lookbookService.js";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
+import { SlidersHorizontal, ChevronDown, Check, X, Sparkles } from "lucide-react";
 
 export default function LookbookListPage() {
   const [collectionInfo, setCollectionInfo] = useState(null);
@@ -12,6 +13,19 @@ export default function LookbookListPage() {
   
   // Filter state (matching FILTER dropdown in wireframe)
   const [selectedFilter, setSelectedFilter] = useState("all");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Pagination state (matching PREV 1/2 NEXT in wireframe, 5 items per page)
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,6 +67,18 @@ export default function LookbookListPage() {
     return ["all", ...Array.from(tags)];
   }, [looks]);
 
+  // Count items per tag for badge display
+  const tagCounts = useMemo(() => {
+    const counts = { all: looks.length };
+    looks.forEach((l) => {
+      const combined = new Set([...(l.styleTags || []), ...(l.occasion || [])]);
+      combined.forEach((tag) => {
+        counts[tag] = (counts[tag] || 0) + 1;
+      });
+    });
+    return counts;
+  }, [looks]);
+
   // Filtered looks
   const filteredLooks = useMemo(() => {
     if (selectedFilter === "all") return looks;
@@ -86,6 +112,30 @@ export default function LookbookListPage() {
 
   return (
     <main className="min-h-screen bg-background py-8 px-4 sm:px-6">
+      {/* Hero Section: video banner */}
+      <section className="relative mb-8 overflow-hidden rounded-2xl">
+        <video
+          src="/collection-2026/hero-media/Model_changing_outfits_for_campaign_20260917022750.mp4"
+          className="h-[40vh] w-full object-cover md:h-[50vh]"
+          autoPlay
+          muted
+          playsInline
+          loop
+        />
+        <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/75 via-black/35 to-transparent p-6 md:p-10">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-white drop-shadow-md">
+              occasion mix and match style by ai
+            </p>
+            <h1 className="mt-2 font-display text-4xl uppercase leading-[1.05] tracking-[0.02em] text-white drop-shadow-lg md:text-6xl">
+              LOOKBOOK
+              <br />
+              CAPSULE
+            </h1>
+          </div>
+        </div>
+      </section>
+
       <div className="max-w-2xl mx-auto flex flex-col gap-6">
         {/* Wireframe Header: LOOKBOOK Title */}
         <header className="text-center pt-2">
@@ -97,33 +147,133 @@ export default function LookbookListPage() {
           </p>
         </header>
 
-        {/* Wireframe Filter Dropdown: [ FILTER ˅ ] */}
-        <div className="w-full">
-          <label htmlFor="lookbook-filter" className="sr-only">
-            กรองตามสไตล์หรือโอกาส
-          </label>
-          <div className="relative">
-            <select
-              id="lookbook-filter"
-              value={selectedFilter}
-              onChange={(e) => setSelectedFilter(e.target.value)}
-              className="w-full appearance-none rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm font-semibold text-primary shadow-xs transition-colors hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
-            >
-              <option value="all">FILTER: ทุกลุค (ALL LOOKS)</option>
-              {filterOptions
-                .filter((opt) => opt !== "all")
-                .map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt.toUpperCase()}
-                  </option>
-                ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-stone-500">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-              </svg>
+        {/* Custom Filter Dropdown */}
+        <div className="w-full relative" ref={dropdownRef}>
+          {/* Custom Select Trigger */}
+          <button
+            type="button"
+            onClick={() => setIsDropdownOpen((prev) => !prev)}
+            className={`w-full flex items-center justify-between rounded-2xl border bg-white px-4 py-3.5 text-sm font-semibold shadow-xs transition-all cursor-pointer ${
+              isDropdownOpen
+                ? "border-primary ring-2 ring-primary/20 shadow-md"
+                : "border-stone-300 hover:border-primary/70"
+            }`}
+            aria-haspopup="listbox"
+            aria-expanded={isDropdownOpen}
+          >
+            <div className="flex items-center gap-2.5 truncate">
+              <SlidersHorizontal className="w-4 h-4 text-primary shrink-0" />
+              <span className="font-bold text-primary truncate">
+                {selectedFilter === "all"
+                  ? "ALL LOOKS"
+                  : selectedFilter.toUpperCase()}
+              </span>
+              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-secondary">
+                {filteredLooks.length} ลุค
+              </span>
             </div>
-          </div>
+
+            <div className="flex items-center gap-1.5 shrink-0 ml-2">
+              {selectedFilter !== "all" && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedFilter("all");
+                  }}
+                  className="p-1 rounded-full text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition-colors"
+                  title="ล้างตัวกรอง"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <ChevronDown
+                className={`w-4 h-4 text-stone-500 transition-transform duration-200 ${
+                  isDropdownOpen ? "rotate-180 text-primary" : ""
+                }`}
+              />
+            </div>
+          </button>
+
+          {/* Custom Animated Popover Menu */}
+          {isDropdownOpen && (
+            <div
+              className="absolute left-0 right-0 top-full mt-2 z-40 overflow-hidden rounded-2xl border border-stone-200 bg-white/95 backdrop-blur-md p-2 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150"
+              role="listbox"
+            >
+              <div className="px-3 py-2 text-[11px] font-extrabold uppercase tracking-wider text-secondary/70 border-b border-stone-100 flex items-center justify-between">
+                <span>เลือกสไตล์หรือโอกาส</span>
+                <span>{filterOptions.length - 1} หมวด</span>
+              </div>
+
+              <div className="max-h-60 overflow-y-auto py-1 space-y-1">
+                {/* Option All */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedFilter("all");
+                    setIsDropdownOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer ${
+                    selectedFilter === "all"
+                      ? "bg-primary text-white font-bold"
+                      : "text-primary hover:bg-stone-100"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>ALL LOOKS</span>
+                  </span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full ${
+                      selectedFilter === "all"
+                        ? "bg-white/20 text-white"
+                        : "bg-stone-100 text-secondary"
+                    }`}
+                  >
+                    {looks.length}
+                  </span>
+                </button>
+
+                {/* Options List */}
+                {filterOptions
+                  .filter((opt) => opt !== "all")
+                  .map((opt) => {
+                    const isSelected = selectedFilter.toLowerCase() === opt.toLowerCase();
+                    const count = tagCounts[opt] || 0;
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => {
+                          setSelectedFilter(opt);
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer ${
+                          isSelected
+                            ? "bg-primary text-white font-bold"
+                            : "text-primary hover:bg-stone-100"
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                          <span>{opt.toUpperCase()}</span>
+                        </span>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full ${
+                            isSelected
+                              ? "bg-white/20 text-white"
+                              : "bg-stone-100 text-secondary"
+                          }`}
+                        >
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Loading State */}

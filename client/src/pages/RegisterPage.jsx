@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus, Shield, AlertCircle } from 'lucide-react';
-import { authService } from '../services/authService.js';
-import { Button, Card, FormInput } from '../components/index.js';
-import { validateForm } from '../utils/validation.js';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { UserPlus, Shield, AlertCircle } from "lucide-react";
+import { Button, Card, FormInput } from "../components/index.js";
+import { validateRegisterForm } from "../utils/validation.js";
+import { authService } from "../services/authService.js";
+import { useAuth } from "../context/Auth/useAuth.jsx";
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ export const RegisterPage = () => {
     setApiError("");
 
     // 2. ตรวจสอบข้อมูลก่อนส่ง (Validation Check)
-    const errors = validateForm(formData);
+    const errors = validateRegisterForm(formData);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;

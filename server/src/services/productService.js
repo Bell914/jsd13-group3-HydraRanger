@@ -62,7 +62,11 @@ async function prepareProductData(productData) {
     category_id: await findCategoryId(productData),
     title: productData.title || productData.name,
     description: productData.description || '',
-    tags: Array.isArray(productData.tags) ? productData.tags : [],
+    gender: productData.gender || 'unisex',
+    tags: Array.isArray(productData.tags)
+      ? productData.tags.map((tag) => (typeof tag === 'string' ? tag.trim() : tag)).filter(Boolean)
+      : [],
+    availableDate: productData.availableDate ? new Date(productData.availableDate) : undefined,
     is_active: productData.is_active ?? productData.isActive ?? true,
     images: prepareImages(productData),
     variants: prepareVariants(productData.variants),

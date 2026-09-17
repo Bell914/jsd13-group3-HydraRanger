@@ -61,6 +61,7 @@ export default function ProductDetailPage() {
   }, [sizeOptions, selectedSize]);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     let isMounted = true;
 
     async function loadData() {
