@@ -19,19 +19,35 @@ const productImageFolder = path.resolve(
   "../../client/public/collection-2026",
 );
 
+const allowedOrigins = [
+  ENV.CLIENT_URL?.replace(/\/+$/, ""),
+  "https://jsd13-group3-hydra-ranger.vercel.app",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:5174",
+  "http://localhost:5176",
+  "http://127.0.0.1:5174",
+].filter(Boolean);
+
 // Global Middlewares
 app.use(
   cors({
-    origin: [
-      ENV.CLIENT_URL,
-      "https://jsd13-group3-hydra-ranger.vercel.app",
-      /\.vercel\.app$/,
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
-      "http://localhost:5174",
-      "http://localhost:5176",
-      "http://127.0.0.1:5174",
-    ].filter(Boolean),
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, postman)
+      if (!origin) return callback(null, true);
+
+      const cleanOrigin = origin.replace(/\/+$/, "");
+      const isAllowed =
+        allowedOrigins.includes(cleanOrigin) ||
+        cleanOrigin.endsWith(".vercel.app");
+
+      if (isAllowed) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   }),
 );
