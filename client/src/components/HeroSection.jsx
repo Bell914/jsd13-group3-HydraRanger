@@ -4,20 +4,24 @@ import { CheckCircle2 } from "lucide-react";
 export const HeroSection = ({ bgimage }) => {
   return (
     <section className="relative" id="new">
-      <img
-        src={bgimage}
+      <video
+        src="/collection-2026/hero-media/Friends_comparing_clothing_in_café_20260916215659.mp4"
         alt="Two models wearing black and white minimal tailoring in a concrete studio"
         className="h-[78vh] w-full object-cover"
+        autoPlay
+        muted
+        playsInline
+        loop
       />
-      <div className="absolute inset-0 flex items-end justify-center bg-foreground/35">
+      <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/75 via-black/35 to-transparent">
         <div className="absolute w-full max-w-7xl px-6 pb-14">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-white">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-white drop-shadow-md">
             occasion mix and match style by ai
           </p>
-          <h1 className="animate-gradient mt-4 max-w-3xl font-display text-5xl uppercase leading-[1.02] tracking-[0.02em] text-background md:text-7xl">
+          <h1 className="animate-gradient mt-4 max-w-3xl font-display text-5xl uppercase leading-[1.02] tracking-[0.02em] text-white drop-shadow-lg md:text-7xl">
             CREATE YOUR LOOK SMOOTH
           </h1>
-          <p className="mt-8 text-[11px] uppercase tracking-[0.02em] text-white">
+          <p className="mt-8 text-[11px] uppercase tracking-[0.02em] text-white drop-shadow-md">
             Lorem ipsum dolor sit amet consectetur adipisicing elit.
             <br />
             Rerum iure eaque voluptatum voluptas eius illum.
