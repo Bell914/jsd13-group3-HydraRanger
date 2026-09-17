@@ -36,6 +36,11 @@ form label { margin-top: 8px; color: #374151; font-size: 13px; font-weight: 700;
 form input { width: 100%; padding: 13px 14px; border: 1px solid #d1d5db; border-radius: 10px; outline: none; }
 form input:focus { border-color: #e2156d; box-shadow: 0 0 0 3px #ffd6e7; }
 form button { margin-top: 14px; padding: 14px; border: 0; border-radius: 10px; background: #e2156d; color: #fff; font-weight: 800; }
+.password-field { position: relative; }
+.password-field input { padding-right: 92px; }
+form .password-toggle { position: absolute; top: 50%; right: 8px; display: inline-flex; align-items: center; gap: 5px; min-height: 34px; margin: 0; padding: 6px 8px; transform: translateY(-50%); border: 0; border-radius: 7px; background: transparent; color: #6b7280; font-size: 12px; font-weight: 700; }
+form .password-toggle:hover { background: #fff0f6; color: #e2156d; }
+form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset: 1px; }
 
 .admin-shell { min-height: 100vh; display: grid; grid-template-columns: 256px minmax(0, 1fr); }
 .admin-sidebar { position: sticky; top: 0; z-index: 30; height: 100vh; display: flex; flex-direction: column; background: #fff; border-right: 1px solid #e5e7eb; }
