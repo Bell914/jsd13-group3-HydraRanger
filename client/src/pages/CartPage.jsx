@@ -8,7 +8,8 @@ import {
   ShieldCheck,
   Truck,
 } from "lucide-react";
-import useCartStore from "../store/cartStore";
+import useCartStore from "../store/cartStore.js";
+import { normalizeImageUrl } from "../utils/imageUtils.js";
 
 export default function CartPage() {
   const { cartItems, updateQuantity, removeFromCart, getTotalPrice } =
@@ -80,7 +81,7 @@ export default function CartPage() {
                     <div className="flex items-start gap-4">
                       {item.imageUrl ? (
                         <img
-                          src={item.imageUrl}
+                          src={normalizeImageUrl(item.imageUrl) || item.imageUrl}
                           alt={item.name}
                           className="w-20 h-24 sm:w-24 sm:h-28 object-cover rounded-xl bg-gray-100 border border-gray-100 flex-shrink-0"
                         />
