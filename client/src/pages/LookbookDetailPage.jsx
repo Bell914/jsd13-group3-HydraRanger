@@ -141,7 +141,7 @@ export default function LookbookDetailPage() {
             {/* Wireframe Item Cards Stack (Tops and Bottoms) */}
             <div className="flex flex-col gap-4">
               <h2 className="text-sm font-extrabold text-primary uppercase tracking-wider">
-                สินค้าในลุคนี้ (ITEMS IN LOOK)
+                สินค้าในลุคนี้
               </h2>
 
               {items.map((item, idx) => {
@@ -202,9 +202,6 @@ export default function LookbookDetailPage() {
                             </span>
                           );
                         })}
-                        <span className="text-[11px] text-accent font-bold ml-auto group-hover:translate-x-1 transition-transform">
-                          ดูสินค้า &rarr;
-                        </span>
                       </div>
                     </div>
                   </Link>
