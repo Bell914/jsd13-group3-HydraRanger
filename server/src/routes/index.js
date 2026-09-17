@@ -7,6 +7,7 @@ import productRoutes from "./productRoutes.js";
 import adminProductRoutes from "./adminProductRoutes.js";
 import adminDashboardRoutes from "./adminDashboardRoutes.js";
 import adminAuthRoutes from "./adminAuthRoutes.js";
+
 const router = Router();
 
 // Health check endpoint
