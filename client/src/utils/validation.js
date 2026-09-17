@@ -20,11 +20,7 @@ export const validateRegisterForm = (formData) => {
     errors.password = "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร";
   }
 
-<<<<<<< HEAD
-  // ตรวจสอบ การยืนยันรหัสผ่าน
-=======
   // ตรวจสอบการยืนยันรหัสผ่าน
->>>>>>> develop
   if (!formData.confirmPassword) {
     errors.confirmPassword = "กรุณายืนยันรหัสผ่าน";
   } else if (formData.password !== formData.confirmPassword) {
@@ -34,9 +30,4 @@ export const validateRegisterForm = (formData) => {
   return errors;
 };
 
-<<<<<<< HEAD
-// alias ไว้เพื่อรองรับไฟล์เดิมที่ยังเรียกใช้ validateForm
 export const validateForm = validateRegisterForm;
-=======
-export const validateForm = validateRegisterForm;
->>>>>>> develop
