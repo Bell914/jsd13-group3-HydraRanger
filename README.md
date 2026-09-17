@@ -6,9 +6,11 @@
 
 | ส่วน | URL |
 | --- | --- |
-| หน้าร้านที่ Deploy แล้ว | [เปิด OCCASION](https://jsd13-group3-hydra-ranger.vercel.app/) |
+| หน้าร้านระหว่างพัฒนา (ยังไม่ใช่ Final) | [เปิด OCCASION](https://jsd13-group3-hydra-ranger.vercel.app/) |
 | API ที่ตั้งค่าไว้ในโค้ดหน้าร้าน | https://jsd13-group3-hydraranger.onrender.com/api |
 | ตรวจสถานะ API และฐานข้อมูล | [API Health](https://jsd13-group3-hydraranger.onrender.com/api/health) |
+
+**สถานะ Deployment: เวอร์ชันระหว่างพัฒนา ยังไม่ใช่ Final version** ฟีเจอร์และข้อมูลบนเว็บไซต์อาจยังไม่ตรงกับโค้ดล่าสุดใน develop จึงควรตรวจเวอร์ชันที่ Deploy ก่อนใช้ผลทดสอบประเมินงานส่งสุดท้าย
 
 ยังไม่มี URL ของ Admin ที่ยืนยันในเอกสารนี้ ลิงก์ API อ้างอิงจากการตั้งค่าในโค้ด ไม่ใช่การรับรองว่าระบบออนไลน์และทุกฟีเจอร์ผ่านการทดสอบแล้ว
 
