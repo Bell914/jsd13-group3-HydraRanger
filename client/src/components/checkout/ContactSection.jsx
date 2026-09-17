@@ -33,13 +33,13 @@ export default function ContactSection({
           <button
             type="button"
             onClick={onEdit}
-            className="text-sm font-semibold text-gray-900 underline hover:text-gray-600 transition-colors"
+            className="text-sm font-semibold text-gray-900 underline hover:text-gray-600 transition-colors cursor-pointer"
           >
             Edit
           </button>
         </div>
         <p className="mt-2 text-sm text-gray-600 font-medium break-all">
-          {email || "No email provided"}
+          {email || "ยังไม่ได้ระบุอีเมล"}
         </p>
       </div>
     );
@@ -59,12 +59,12 @@ export default function ContactSection({
           <input
             id="contact-email"
             type="email"
-            value={email}
+            value={email || ""}
             onChange={(e) => {
               onChangeEmail(e.target.value);
               if (error) setError("");
             }}
-            placeholder="example@domain.com"
+            placeholder="กรอกอีเมลสำหรับรับข้อมูลการจัดส่ง (เช่น example@mail.com)"
             className={`w-full px-3.5 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 ${
               error
                 ? "border-red-500 focus:ring-red-200"
@@ -79,14 +79,14 @@ export default function ContactSection({
             <button
               type="button"
               onClick={onBack}
-              className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold text-sm rounded transition-colors"
+              className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold text-sm rounded transition-colors cursor-pointer"
             >
               ย้อนกลับ
             </button>
           )}
           <button
             type="submit"
-            className="flex-1 py-3 bg-[#D0021B] hover:bg-[#b00217] text-white font-bold text-sm tracking-wider uppercase rounded transition-colors shadow-xs"
+            className="flex-1 py-3 bg-[#D0021B] hover:bg-[#b00217] text-white font-bold text-sm tracking-wider uppercase rounded transition-colors shadow-xs cursor-pointer"
           >
             CONTINUE
           </button>
@@ -95,4 +95,3 @@ export default function ContactSection({
     </div>
   );
 }
-
