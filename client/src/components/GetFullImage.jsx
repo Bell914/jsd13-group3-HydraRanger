@@ -1,13 +1,19 @@
 import { useEffect, useState } from "react";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api";
-const IMAGE_SERVER_URL = API_BASE_URL.replace(/\/api\/?$/, "");
-export const GetFullImage = () => {
+const rawApiUrl =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  "https://jsd13-group3-hydraranger.onrender.com/api";
+
+const IMAGE_SERVER_URL = rawApiUrl.replace(/\/api\/?$/, "");
+
+export const getFullImageUrl = (imageUrl) => {
   if (!imageUrl) return "";
   if (imageUrl.startsWith("http")) return imageUrl;
   return `${IMAGE_SERVER_URL}${imageUrl}`;
 };
+
+export const GetFullImage = getFullImageUrl;
 
 export function ImagePreview({ imageUrl, label }) {
   const [imageFailed, setImageFailed] = useState(false);

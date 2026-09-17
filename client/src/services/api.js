@@ -1,5 +1,14 @@
-const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://jsd13-group3-hydraranger.onrender.com/api";
+const rawBaseUrl =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  "https://jsd13-group3-hydraranger.onrender.com/api";
+
+const cleanBaseUrl = rawBaseUrl.replace(/\/+$/, "");
+const BASE_URL = cleanBaseUrl.endsWith("/api")
+  ? cleanBaseUrl
+  : `${cleanBaseUrl}/api`;
+
+export const API_URL = BASE_URL;
 
 class ApiClient {
   constructor(baseUrl) {
