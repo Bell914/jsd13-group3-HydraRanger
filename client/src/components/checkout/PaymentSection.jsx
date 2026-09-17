@@ -73,7 +73,7 @@ export default function PaymentSection({
   if (isCollapsed) {
     const last4 = paymentData.cardNumber
       ? paymentData.cardNumber.replace(/\s/g, "").slice(-4)
-      : "1172";
+      : "";
 
     return (
       <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-xs mb-6">
@@ -82,13 +82,12 @@ export default function PaymentSection({
           <button
             type="button"
             onClick={onEdit}
-            className="text-sm font-semibold text-gray-900 underline hover:text-gray-600 transition-colors"
+            className="text-sm font-semibold text-gray-900 underline hover:text-gray-600 transition-colors cursor-pointer"
           >
             Edit
           </button>
         </div>
         <div className="flex items-center gap-3">
-          {/* Mastercard styled circle icon */}
           <div className="flex items-center">
             <span className="w-5 h-5 rounded-full bg-[#EB001B] inline-block -mr-2" />
             <span className="w-5 h-5 rounded-full bg-[#F79E1B]/90 inline-block" />
@@ -98,7 +97,9 @@ export default function PaymentSection({
               ? "PayPal"
               : paymentData.method === "promptpay"
               ? "PromptPay QR"
-              : `Mastercard ending in ${last4}`}
+              : last4
+              ? `Mastercard / Visa (ลงท้ายด้วย ${last4})`
+              : "ชำระผ่านบัตรเครดิต/เดบิต"}
           </span>
         </div>
       </div>
@@ -117,7 +118,7 @@ export default function PaymentSection({
             <span className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center text-xs font-serif font-extrabold">
               Ω
             </span>
-            <span>Use my Gift Card</span>
+            <span>ใช้งาน Gift Card / โค้ดส่วนลด</span>
           </div>
         </div>
 
@@ -129,14 +130,14 @@ export default function PaymentSection({
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-800 hover:text-black transition-colors underline cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Add a gift card</span>
+              <span>ใส่รหัส Gift Card</span>
             </button>
 
             {giftCardOpen && (
               <div className="mt-3 flex gap-2">
                 <input
                   type="text"
-                  placeholder="Enter gift card code"
+                  placeholder="กรอกรหัส Gift Card หรือคูปองส่วนลด"
                   value={giftCardCode}
                   onChange={(e) => setGiftCardCode(e.target.value)}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-black"
@@ -146,7 +147,7 @@ export default function PaymentSection({
                   onClick={handleApplyGiftCard}
                   className="px-4 py-2 bg-black text-white text-xs font-semibold rounded hover:bg-gray-800 transition-colors cursor-pointer"
                 >
-                  Apply
+                  ใช้งาน
                 </button>
               </div>
             )}
@@ -154,7 +155,7 @@ export default function PaymentSection({
         ) : (
           <div className="mt-2 text-xs font-medium text-green-600 flex items-center gap-1">
             <Check className="w-4 h-4" />
-            <span>Gift card applied: {giftCardCode}</span>
+            <span>ใช้ส่วนลดรหัส: {giftCardCode} เรียบร้อยแล้ว</span>
           </div>
         )}
       </div>
@@ -186,7 +187,7 @@ export default function PaymentSection({
           </button>
           {expandedOption === "paypal" && (
             <div className="p-4 bg-gray-50 border-t border-gray-200 text-xs text-gray-600">
-              You will be redirected to PayPal to complete your purchase securely.
+              ระบบจะนำคุณไปยังหน้าชำระเงินของ PayPal เพื่อทำรายการอย่างปลอดภัย
             </div>
           )}
         </div>
@@ -210,7 +211,7 @@ export default function PaymentSection({
                   Afterpay
                 </span>
                 <span className="text-xs text-gray-500">
-                  4 payments, every two weeks
+                  แบ่งชำระ 4 งวด ทุกๆ 2 สัปดาห์
                 </span>
               </div>
             </div>
@@ -222,7 +223,7 @@ export default function PaymentSection({
           </button>
           {expandedOption === "afterpay" && (
             <div className="p-4 bg-gray-50 border-t border-gray-200 text-xs text-gray-600">
-              Pay in 4 interest-free installments every 2 weeks.
+              ผ่อนชำระ 4 งวดโดยไม่มีดอกเบี้ย จ่ายทุกๆ 2 สัปดาห์
             </div>
           )}
         </div>
@@ -246,7 +247,7 @@ export default function PaymentSection({
                   Klarna
                 </span>
                 <span className="text-xs text-gray-500">
-                  4 payments, every two weeks
+                  แบ่งชำระ 4 งวดดอกเบี้ย 0%
                 </span>
               </div>
             </div>
@@ -258,7 +259,7 @@ export default function PaymentSection({
           </button>
           {expandedOption === "klarna" && (
             <div className="p-4 bg-gray-50 border-t border-gray-200 text-xs text-gray-600">
-              Split into 4 interest-free payments with Klarna.
+              แบ่งชำระแบบสบายๆ ดอกเบี้ย 0% ผ่านบริการของ Klarna
             </div>
           )}
         </div>
@@ -276,7 +277,7 @@ export default function PaymentSection({
             <div className="flex items-center gap-3">
               <CreditCard className="w-5 h-5 text-gray-700" />
               <span className="text-sm font-semibold text-gray-900">
-                Credit card
+                Credit / Debit Card
               </span>
             </div>
             <Plus
@@ -294,7 +295,7 @@ export default function PaymentSection({
                 </label>
                 <input
                   type="text"
-                  placeholder="xxxx xxxx xxxx 1172"
+                  placeholder="4541 1234 5678 9012"
                   value={paymentData.cardNumber || ""}
                   onChange={(e) => handleCardNumberChange(e.target.value)}
                   className={`w-full px-3 py-2 bg-white border rounded text-sm focus:outline-none focus:ring-1 ${
@@ -315,7 +316,7 @@ export default function PaymentSection({
                   </label>
                   <input
                     type="text"
-                    placeholder="MM/YY"
+                    placeholder="ดด/ปป (เช่น 12/28)"
                     maxLength={5}
                     value={paymentData.cardExp || ""}
                     onChange={(e) => handleExpChange(e.target.value)}
@@ -336,7 +337,7 @@ export default function PaymentSection({
                   </label>
                   <input
                     type="password"
-                    placeholder="123"
+                    placeholder="รหัส 3 หลักหลังบัตร"
                     maxLength={4}
                     value={paymentData.cardCvv || ""}
                     onChange={(e) => {
@@ -382,4 +383,3 @@ export default function PaymentSection({
     </div>
   );
 }
-
