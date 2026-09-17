@@ -20,14 +20,17 @@ export const validateRegisterForm = (formData) => {
     errors.password = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
   }
 
-  // ตรวจสอบการยืนยันรหัสผ่าน
-  if (!formData.confirmPassword) {
-    errors.confirmPassword = 'กรุณายืนยันรหัสผ่าน';
-  } else if (formData.password !== formData.confirmPassword) {
-    errors.confirmPassword = 'รหัสผ่านไม่ตรงกัน';
+  // ตรวจสอบ ยืนยันรหัสผ่าน (Confirm Password)
+  if (formData.confirmPassword !== undefined) {
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = 'กรุณากรอกยืนยันรหัสผ่าน';
+    } else if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'รหัสผ่านไม่ตรงกัน';
+    }
   }
 
   return errors;
 };
 
+// Export validateForm as alias for backward compatibility
 export const validateForm = validateRegisterForm;
