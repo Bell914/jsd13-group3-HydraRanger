@@ -24,34 +24,32 @@ export default function CheckoutPage() {
   const [currentStep, setCurrentStep] = useState(2);
 
   // Contact Form State
-  const [email, setEmail] = useState(
-    currentUser?.email || "pathsharasakon@gmail.com"
-  );
+  const [email, setEmail] = useState(currentUser?.email || "");
 
   // Shipping Form State (pre-populated with wireframe sample values for seamless demo)
   const [shippingData, setShippingData] = useState({
-    location: "United States",
-    firstName: "Pathsharasakon",
-    lastName: "Po",
-    phone: "(202) 459-1879",
-    address: "738 Beall Ave",
-    deliveryNote: "",
-    city: "Rockville",
-    state: "MD",
-    zipCode: "20850",
-    saveAddress: true,
-    shippingMethod: "standard",
-    isGift: false,
-    giftMessage: "",
-  });
+  location: "Thailand",
+  firstName: "",
+  lastName: "",
+  phone: "",
+  address: "",
+  deliveryNote: "",
+  city: "",
+  state: "",
+  zipCode: "",
+  saveAddress: false,
+  shippingMethod: "standard",
+  isGift: false,
+  giftMessage: "",
+});
 
   // Payment Form State
   const [paymentData, setPaymentData] = useState({
-    method: "credit-card",
-    cardNumber: "5412 7534 8921 1172",
-    cardExp: "08/28",
-    cardCvv: "345",
-  });
+  method: "credit-card",
+  cardNumber: "",
+  cardExp: "",
+  cardCvv: "",
+});
 
   // Order Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
