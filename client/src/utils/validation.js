@@ -1,16 +1,12 @@
-<<<<<<< HEAD
-export const validateForm = (formData) => {
-=======
 export const validateRegisterForm = (formData) => {
->>>>>>> develop
   const errors = {};
 
-  // ตรวจสอบชื่อ (Required)
+  // ตรวจสอบชื่อผู้ใช้งาน
   if (!formData.username?.trim()) {
     errors.username = 'กรุณากรอกชื่อผู้ใช้งาน';
   }
 
-  // ตรวจสอบ Email
+  // ตรวจสอบ อีเมล
   if (!formData.email?.trim()) {
     errors.email = 'กรุณากรอกอีเมล';
   } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -24,11 +20,7 @@ export const validateRegisterForm = (formData) => {
     errors.password = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
   }
 
-<<<<<<< HEAD
-  return errors;
-};
-=======
-  // ตรวจสอบการยืนยันรหัสผ่าน
+  // ตรวจสอบ การยืนยันรหัสผ่าน
   if (!formData.confirmPassword) {
     errors.confirmPassword = 'กรุณายืนยันรหัสผ่าน';
   } else if (formData.password !== formData.confirmPassword) {
@@ -38,5 +30,5 @@ export const validateRegisterForm = (formData) => {
   return errors;
 };
 
+// alias ไว้เพื่อรองรับไฟล์เดิมที่ยังเรียกใช้ validateForm
 export const validateForm = validateRegisterForm;
->>>>>>> develop
