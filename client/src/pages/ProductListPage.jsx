@@ -69,6 +69,30 @@ export default function ProductListPage() {
   return (
     <main className="flex-1 bg-background py-6 md:py-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* HERO SECTION: video banner on top of products */}
+        <section className="relative mb-8 overflow-hidden rounded-2xl">
+          <video
+            src="/collection-2026/hero-media/Friends_walking_in_urban_setting_20260916215654.mp4"
+            className="h-[45vh] w-full object-cover md:h-[55vh]"
+            autoPlay
+            muted
+            playsInline
+            loop
+          />
+          <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/75 via-black/35 to-transparent p-6 md:p-10">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-white drop-shadow-md">
+                occasion mix and match style by ai
+              </p>
+              <h1 className="mt-2 font-display text-4xl uppercase leading-[1.05] tracking-[0.02em] text-white drop-shadow-lg md:text-6xl">
+                EXPLORE THE
+                <br />
+                COLLECTION
+              </h1>
+            </div>
+          </div>
+        </section>
+
         {/* HERO SECTION: Auto-sliding Recommended Products Carousel */}
         <RecommendedSlider products={products} />
 
