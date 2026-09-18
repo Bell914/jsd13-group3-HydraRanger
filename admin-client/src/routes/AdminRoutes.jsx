@@ -7,6 +7,7 @@ import { AdminProductsPage } from '../pages/AdminProductsPage.jsx';
 import { AdminOrdersPage } from '../pages/AdminOrdersPage.jsx';
 import { AdminCustomersPage } from '../pages/AdminCustomersPage.jsx';
 import { AdminReviewsPage } from '../pages/AdminReviewsPage.jsx';
+import { AdminLookbooksPage } from '../pages/AdminLookbooksPage.jsx';
 
 export function AdminRoutes() {
   return (
@@ -19,6 +20,7 @@ export function AdminRoutes() {
         <Route path="/orders" element={<AdminOrdersPage />} />
         <Route path="/customers" element={<AdminCustomersPage />} />
         <Route path="/reviews" element={<AdminReviewsPage />} />
+        <Route path="/lookbooks" element={<AdminLookbooksPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

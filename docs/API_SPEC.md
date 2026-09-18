@@ -30,6 +30,10 @@ API ที่ต้อง Login ส่ง `Authorization: Bearer <token>`
 | GET | `/reviews/product/:productId` | รีวิวที่แสดงอยู่ คะแนนเฉลี่ย และจำนวนรีวิว |
 | GET | `/admin/reviews` | Admin Token; รีวิวทั้งหมดรวมที่ถูกซ่อน |
 | PATCH | `/admin/reviews/:id/visibility` | Admin Token; `{isVisible}` |
+| GET | `/lookbooks`, `/lookbooks/:id` | Lookbook ที่เปิดแสดง พร้อมข้อมูลสินค้า |
+| GET, POST | `/admin/lookbooks` | Admin Token; ดูทั้งหมด / เพิ่ม Lookbook |
+| PUT | `/admin/lookbooks/:id` | Admin Token; แก้ไข Lookbook |
+| PATCH | `/admin/lookbooks/:id/status` | Admin Token; `{isActive}` ซ่อน/เปิดแสดง |
 
 ### เพิ่ม / แก้ Product
 
@@ -93,6 +97,28 @@ Server อ่านราคาและสต็อกจาก Product ใน 
 ```
 
 ลูกค้าต้องเป็นเจ้าของ Order ซึ่งมีสินค้านี้ และ Order ต้องอยู่ในสถานะ `paid`, `processing`, `shipped` หรือ `completed` ลูกค้ารีวิวสินค้าเดิมได้หนึ่งครั้งต่อ Order
+
+### เพิ่ม / แก้ Lookbook
+
+```json
+{
+  "lookbookId": "LOOK-011",
+  "name": "Sunday Brunch",
+  "nameTh": "มื้อสายวันอาทิตย์",
+  "concept": "ลุคสบายสำหรับวันหยุด",
+  "occasion": ["Brunch", "Weekend"],
+  "styleTags": ["casual", "relaxed"],
+  "imageUrl": "/collection-2026/lookbook/look-11.png",
+  "items": [
+    {"product": "PRODUCT_MONGODB_ID", "defaultVariantSku": "TOP001-OW-S"}
+  ],
+  "regularPrice": 1480,
+  "setPrice": 1290,
+  "isActive": true
+}
+```
+
+Server คำนวณ `saving` จาก `regularPrice - setPrice` และตรวจว่า Product กับ Variant SKU มีอยู่จริงก่อนบันทึก
 
 ## Cart API ที่เสนอ — ยังไม่มี Route
 
