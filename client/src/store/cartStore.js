@@ -25,7 +25,10 @@ export const useCartStore = create((set, get) => ({
 
   addToCart: ({ product, variant, quantity = 1 }) => {
     const currentItems = get().cartItems;
-    const variantId = variant._id || variant.sku || `${product._id}-${variant.color}-${variant.size}`;
+    const prodId = product._id || product.productId || "product";
+    const colorKey = variant.color || "std";
+    const sizeKey = variant.size || "std";
+    const variantId = `${prodId}-${colorKey}-${sizeKey}`;
 
     const existingIndex = currentItems.findIndex(
       (item) => item.variantId === variantId

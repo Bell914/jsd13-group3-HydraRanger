@@ -33,10 +33,11 @@ export const ArticleCard = ({ article }) => {
         </h2>
 
         <div className="card-actions justify-end mt-auto pt-4">
-          <Link to={`/article/${article.id}`} className="w-full sm:w-auto">
-            <button className="btn btn-primary btn-sm w-full text-white">
-              อ่านเพิ่มเติม
-            </button>
+          <Link
+            to={`/article/${article.id}`}
+            className="btn btn-primary btn-sm w-full sm:w-auto text-white"
+          >
+            อ่านเพิ่มเติม
           </Link>
         </div>
       </div>
