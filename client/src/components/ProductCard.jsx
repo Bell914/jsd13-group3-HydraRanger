@@ -5,13 +5,23 @@ import { normalizeImageUrl } from "../utils/imageUtils.js";
 export default function ProductCard({ product }) {
   const targetId = product._id || product.productId;
   const variants = product.variants || [];
-  const minPrice = variants.length > 0 
-    ? Math.min(...variants.map((v) => v.price)) 
-    : 590;
+  const validPrices = variants
+    .map((v) => Number(v.price))
+    .filter((p) => !isNaN(p) && p > 0);
+  const minPrice =
+    validPrices.length > 0
+      ? Math.min(...validPrices)
+      : (Number(product.price) || 590);
 
   const title = product.title || product.name || "";
   const categoryName = product.category_id?.name || product.category || "";
-  const categoryLabel = categoryName === "tops" ? "เสื้อ" : categoryName === "bottoms" ? "กางเกง" : categoryName || "เสื้อ";
+  const catLower = categoryName.toLowerCase();
+  const categoryLabel =
+    catLower.includes("top")
+      ? "เสื้อ"
+      : catLower.includes("bottom")
+      ? "กางเกง"
+      : categoryName || "เสื้อ";
   const rawImg =
     product.images?.[0]?.image_url ||
     product.imageUrl ||

@@ -13,6 +13,14 @@ export const SpecialProducts = ({ product, index }) => {
     "";
   const imgUrl = normalizeImageUrl(rawImg) || rawImg;
 
+  const targetUrl =
+    product.link ||
+    (product.id
+      ? String(product.id).toUpperCase().startsWith("LOOK")
+        ? `/lookbook/${product.id}`
+        : `/products/${product.id}`
+      : "/products");
+
   return (
     <div
       key={index}
@@ -24,7 +32,7 @@ export const SpecialProducts = ({ product, index }) => {
         className="h-[400px] w-full object-cover transition-transform duration-300 group-hover:scale-105"
       />
       <Link
-        to={product.link || "/products"}
+        to={targetUrl}
         className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
       >
         <span className="rounded-full bg-white px-6 py-2 font-bold text-gray-900 shadow-lg transition-colors hover:bg-gray-100">
@@ -32,7 +40,7 @@ export const SpecialProducts = ({ product, index }) => {
         </span>
       </Link>
       <span className="absolute top-0 left-1">
-        <img src={assets.newtag} alt="new-icon" className="h-12 w-13" />
+        <img src={assets.newtag} alt="new-icon" className="h-12 w-12 object-contain" />
       </span>
       <div className="absolute bottom-4 left-4 font-bold text-white drop-shadow-lg pr-4">
         <h4 className="text-2xl sm:text-3xl line-clamp-1">

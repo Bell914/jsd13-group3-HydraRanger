@@ -12,12 +12,17 @@ export const RecommendProduct = ({ product, index }) => {
     "";
   const imgUrl = normalizeImageUrl(rawImg) || rawImg;
 
+  const targetUrl =
+    product.link ||
+    (product.id
+      ? String(product.id).toUpperCase().startsWith("LOOK")
+        ? `/lookbook/${product.id}`
+        : `/products/${product.id}`
+      : "/lookbook");
+
   return (
-    <div
-      key={index}
-      className="group relative aspect-[3/4] mx-auto w-full max-w-sm overflow-hidden rounded-xl shadow-md"
-    >
-      <Link to="/products?category=tops" className="block h-full w-full">
+    <div className="group relative aspect-[3/4] mx-auto w-full max-w-sm overflow-hidden rounded-xl shadow-md">
+      <Link to={targetUrl} className="block h-full w-full">
         <img
           src={imgUrl}
           alt={product.title || product.nameTh || product.name}
@@ -27,7 +32,7 @@ export const RecommendProduct = ({ product, index }) => {
           <h4 className="text-3xl">
             {product.title || product.nameTh || product.name}
           </h4>
-          <h6 className="text-sm font-normal opacity-90">สำรวจหมวดหมู่</h6>
+          <h6 className="text-sm font-normal opacity-90">ดูลุคนี้ &rarr;</h6>
         </div>
       </Link>
     </div>

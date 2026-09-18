@@ -7,6 +7,7 @@ import productRoutes from "./productRoutes.js";
 import adminProductRoutes from "./adminProductRoutes.js";
 import adminDashboardRoutes from "./adminDashboardRoutes.js";
 import adminAuthRoutes from "./adminAuthRoutes.js";
+import contactRoutes from "./contact.route.js";
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use("/items", itemRoutes);
 router.use("/products", productRoutes);
 router.use("/admin/products", adminProductRoutes);
 router.use("/admin/dashboard", adminDashboardRoutes);
+router.use("/contact", contactRoutes);
 
 export default router;
