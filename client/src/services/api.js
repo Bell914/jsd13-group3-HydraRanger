@@ -83,6 +83,13 @@ class ApiClient {
         `API Error on [${options.method || "GET"} ${endpoint}]:`,
         error,
       );
+      if (error.name === "TypeError" && error.message === "Failed to fetch") {
+        const netError = new Error(
+          "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ (เซิร์ฟเวอร์อาจกำลังเริ่มต้นทำงานบน Render กรุณารอประมาณ 30-60 วินาทีแล้วลองใหม่อีกครั้ง)",
+        );
+        netError.originalError = error;
+        throw netError;
+      }
       throw error;
     }
   }

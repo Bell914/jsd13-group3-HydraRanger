@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, Heart, BookOpen, MapPin, Package, AlertCircle } from 'lucide-react';
 import { Card } from '../components';
+import { useAuth } from '../context/Auth/useAuth.jsx';
 
 // Component แสดงผลเมื่อไม่มีข้อมูล (Empty State)
 const EmptyState = ({ message, subtitle }) => (
@@ -11,11 +12,12 @@ const EmptyState = ({ message, subtitle }) => (
 );
 
 export const ProfilePage = () => {
+  const { user: authUser } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [error, setError] = useState(''); // Error state สำหรับกรณี fetch ข้อมูลล้มเหลว
 
-  // Mock Data (เปลี่ยนเป็น fetch จาก API/store ได้ภายหลัง)
-  const user = { username: 'ranger01', email: 'customer@example.com' };
+  // ข้อมูลผู้ใช้จาก Auth context พร้อม fallback
+  const user = authUser || { username: 'Customer', email: 'user@example.com' };
   const wishlist = [];
   const lookbooks = [];
   const addresses = [];
