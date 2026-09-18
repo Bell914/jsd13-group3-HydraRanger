@@ -1,5 +1,3 @@
-import nodemailer from "nodemailer";
-
 export const submitContactForm = async (req, res) => {
   try {
     const { name, email, phone, topic, message } = req.body;
@@ -12,6 +10,19 @@ export const submitContactForm = async (req, res) => {
           success: false,
           message: "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน",
         });
+    }
+
+    // โหลด nodemailer แบบ dynamic เพื่อป้องกัน server crash ตอนเริ่มต้นหาก package ยังไม่ได้ติดตั้งบน cloud
+    let nodemailer;
+    try {
+      const nodemailerModule = await import("nodemailer");
+      nodemailer = nodemailerModule.default || nodemailerModule;
+    } catch (loadError) {
+      console.error("⚠️ Nodemailer is not installed or failed to load:", loadError.message);
+      return res.status(503).json({
+        success: false,
+        message: "ระบบส่งอีเมลยังไม่พร้อมใช้งาน กรุณาติดต่อผ่านช่องทางอื่น",
+      });
     }
 
     // 1. ตั้งค่า transporter (ผู้ส่ง)
