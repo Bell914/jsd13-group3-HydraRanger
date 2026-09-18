@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useMemo, useRef } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import React, { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard.jsx";
 import RecommendedSlider from "../components/RecommendedSlider.jsx";
 import { getProducts } from "../services/productService.js";
 
 export default function ProductListPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -48,9 +48,13 @@ export default function ProductListPage() {
   }, [selectedCategory, searchKeyword]);
 
 
-  // Ensure the grid looks rich and full like the wireframe mockup (32 items across 4 columns)
+  // Display products: do not duplicate when user is searching or filtering by category
   const displayedProducts = useMemo(() => {
     if (!products || products.length === 0) return [];
+    const isFiltered = Boolean(searchKeyword || (selectedCategory && selectedCategory !== "all"));
+    if (isFiltered) {
+      return products;
+    }
     if (products.length < 32) {
       const list = [];
       while (list.length < 32) {
@@ -59,7 +63,7 @@ export default function ProductListPage() {
       return list.slice(0, 32);
     }
     return products.slice(0, 32);
-  }, [products]);
+  }, [products, searchKeyword, selectedCategory]);
 
   const handlePageClick = (pageNum) => {
     setCurrentPage(pageNum);

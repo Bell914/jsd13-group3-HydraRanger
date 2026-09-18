@@ -11,17 +11,17 @@ export const SHIPPING_METHODS = [
   },
   {
     id: "express",
-    name: "EXPRESS SHIPPING ($20.00)",
+    name: "EXPRESS SHIPPING (฿50.00)",
     duration: "in 2-4 business days",
-    price: 20,
-    estimatedDelivery: "Thu, Aug 6",
+    price: 50,
+    estimatedDelivery: "2-4 วันทำการ",
   },
   {
     id: "priority",
-    name: "PRIORITY SHIPPING ($30.00)",
-    duration: "in 2-3 business days",
-    price: 30,
-    estimatedDelivery: "Wed, Aug 5",
+    name: "PRIORITY SHIPPING (฿100.00)",
+    duration: "in 1-2 business days",
+    price: 100,
+    estimatedDelivery: "1-2 วันทำการ",
   },
 ];
 
