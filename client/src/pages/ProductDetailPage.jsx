@@ -106,7 +106,13 @@ export default function ProductDetailPage() {
           }
         }
       } catch (err) {
-        if (isMounted) setError("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์เพื่อโหลดข้อมูลได้");
+        if (isMounted) {
+          setError(
+            err.message
+              ? `เกิดข้อผิดพลาดในการโหลดข้อมูลสินค้าจาก Product API (${err.message})`
+              : "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์เพื่อโหลดข้อมูลได้ กรุณาตรวจสอบการเชื่อมต่อ"
+          );
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
