@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Menu, Package, PackageCheck, PackageX, Users } from 'lucide-react';
+import { Banknote, Menu, Package, PackageCheck, ShoppingCart, Users } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
 import { AdminNotifications } from '../components/AdminNotifications.jsx';
+import { useAdminAuth } from '../context/useAdminAuth.js';
 import { getDashboardSummary } from '../services/dashboardService.js';
 
 function SummaryCard({ label, value, detail, Icon }) {
@@ -30,8 +32,19 @@ function createLinePoints(items, highestValue) {
   });
 }
 
-export function AdminDashboardPage({ user, onOpenSidebar }) {
+function formatMoney(value) {
+  return new Intl.NumberFormat('th-TH', {
+    style: 'currency',
+    currency: 'THB',
+    maximumFractionDigits: 0
+  }).format(value || 0);
+}
+
+export function AdminDashboardPage() {
+  const { user } = useAdminAuth();
+  const { openSidebar } = useOutletContext();
   const [summary, setSummary] = useState(null);
+  const [notificationDate, setNotificationDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -42,6 +55,7 @@ export function AdminDashboardPage({ user, onOpenSidebar }) {
     try {
       const dashboardData = await getDashboardSummary();
       setSummary(dashboardData);
+      setNotificationDate(new Date());
     } catch (loadError) {
       setError(loadError.message);
     } finally {
@@ -54,23 +68,38 @@ export function AdminDashboardPage({ user, onOpenSidebar }) {
   }, []);
 
   const categoryStock = summary?.stockByCategory || [];
-  const monthlyProducts = summary?.monthlyProducts || [];
+  const monthlyOrders = summary?.monthlyOrders || [];
   const highestStock = Math.max(1, ...categoryStock.map((item) => item.stock));
-  const highestMonthlyCount = Math.max(1, ...monthlyProducts.map((item) => item.count));
-  const linePoints = createLinePoints(monthlyProducts, highestMonthlyCount);
+  const highestMonthlyCount = Math.max(1, ...monthlyOrders.map((item) => item.count));
+  const linePoints = createLinePoints(monthlyOrders, highestMonthlyCount);
   const linePath = linePoints.map((point) => `${point.x},${point.y}`).join(' ');
   const notifications = [];
   if (summary?.lowStockCount > 0) {
-    notifications.push(`มีสินค้าใกล้หมด ${summary.lowStockCount} รายการ`);
+    notifications.push({
+      message: `มีสินค้าใกล้หมด ${summary.lowStockCount} รายการ`,
+      date: notificationDate,
+      path: '/products',
+    });
   }
   if (summary?.inactiveProductCount > 0) {
-    notifications.push(`มีสินค้าที่ไม่แสดง ${summary.inactiveProductCount} รายการ`);
+    notifications.push({
+      message: `มีสินค้าที่ไม่แสดง ${summary.inactiveProductCount} รายการ`,
+      date: notificationDate,
+      path: '/products',
+    });
+  }
+  if (summary?.pendingOrderCount > 0) {
+    notifications.push({
+      message: `มี Order รอตรวจสอบ ${summary.pendingOrderCount} รายการ`,
+      date: notificationDate,
+      path: '/orders',
+    });
   }
 
   return (
     <div className="admin-content">
       <header className="admin-topbar">
-        <button type="button" className="mobile-menu" onClick={onOpenSidebar} aria-label="เปิดเมนู">
+        <button type="button" className="mobile-menu" onClick={openSidebar} aria-label="เปิดเมนู">
           <Menu size={20} />
         </button>
         <strong className="topbar-title">ภาพรวมร้านค้า</strong>
@@ -84,7 +113,7 @@ export function AdminDashboardPage({ user, onOpenSidebar }) {
         <header className="page-heading">
           <div>
             <h1>Admin Dashboard</h1>
-            <p>ข้อมูลสินค้าและลูกค้าจริงจาก MongoDB</p>
+            <p>ข้อมูลสินค้า ลูกค้า และคำสั่งซื้อจริงจาก MongoDB</p>
           </div>
           <button type="button" className="refresh-button" onClick={loadDashboard} disabled={loading}>
             {loading ? 'กำลังโหลด…' : 'อัปเดตข้อมูล'}
@@ -105,8 +134,9 @@ export function AdminDashboardPage({ user, onOpenSidebar }) {
             <section className="summary-grid" aria-label="ข้อมูลสรุปของร้านค้า">
               <SummaryCard label="สินค้าทั้งหมด" value={summary.totalProducts} detail={`พร้อมขาย ${summary.activeProductCount} รายการ`} Icon={Package} />
               <SummaryCard label="สต็อกรวม" value={summary.totalStock} detail={`สต็อกต่ำ ${summary.lowStockCount} รายการ`} Icon={PackageCheck} />
-              <SummaryCard label="สินค้าที่ไม่แสดง" value={summary.inactiveProductCount} detail="รวมสินค้าที่ปิดการขาย" Icon={PackageX} />
               <SummaryCard label="ลูกค้าทั้งหมด" value={summary.customerCount} detail="เฉพาะบัญชีประเภทลูกค้า" Icon={Users} />
+              <SummaryCard label="คำสั่งซื้อทั้งหมด" value={summary.totalOrders} detail={`รอตรวจสอบ ${summary.pendingOrderCount} รายการ`} Icon={ShoppingCart} />
+              <SummaryCard label="รายได้จาก Orders" value={formatMoney(summary.totalRevenue)} detail="ไม่รวม Order ที่ยกเลิก" Icon={Banknote} />
             </section>
 
             <section className="chart-grid">
@@ -132,12 +162,12 @@ export function AdminDashboardPage({ user, onOpenSidebar }) {
               <article className="chart-card">
                 <header>
                   <div>
-                    <h2>สินค้าที่เพิ่มใน 6 เดือนล่าสุด</h2>
-                    <p>จำนวนสินค้าใหม่แยกตามเดือน</p>
+                    <h2>Orders ใน 6 เดือนล่าสุด</h2>
+                    <p>จำนวนคำสั่งซื้อแยกตามเดือน</p>
                   </div>
                   <span className="chart-type">Line Chart</span>
                 </header>
-                <div className="line-chart" role="img" aria-label="กราฟเส้นจำนวนสินค้าที่เพิ่มในหกเดือนล่าสุด">
+                <div className="line-chart" role="img" aria-label="กราฟเส้นจำนวนคำสั่งซื้อในหกเดือนล่าสุด">
                   <svg viewBox="0 0 560 230" aria-hidden="true">
                     <line className="line-grid" x1="35" y1="50" x2="525" y2="50" />
                     <line className="line-grid" x1="35" y1="120" x2="525" y2="120" />

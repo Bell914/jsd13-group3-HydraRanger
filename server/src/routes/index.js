@@ -7,6 +7,11 @@ import productRoutes from "./productRoutes.js";
 import adminProductRoutes from "./adminProductRoutes.js";
 import adminDashboardRoutes from "./adminDashboardRoutes.js";
 import adminAuthRoutes from "./adminAuthRoutes.js";
+import orderRoutes from "./orderRoutes.js";
+import adminOrderRoutes from "./adminOrderRoutes.js";
+import adminCustomerRoutes from "./adminCustomerRoutes.js";
+import reviewRoutes from "./reviewRoutes.js";
+import adminReviewRoutes from "./adminReviewRoutes.js";
 
 const router = Router();
 
@@ -30,5 +35,10 @@ router.use("/items", itemRoutes);
 router.use("/products", productRoutes);
 router.use("/admin/products", adminProductRoutes);
 router.use("/admin/dashboard", adminDashboardRoutes);
+router.use("/orders", orderRoutes);
+router.use("/admin/orders", adminOrderRoutes);
+router.use("/admin/customers", adminCustomerRoutes);
+router.use("/reviews", reviewRoutes);
+router.use("/admin/reviews", adminReviewRoutes);
 
 export default router;

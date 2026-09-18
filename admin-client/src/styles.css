@@ -51,7 +51,7 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
 .sidebar-close { display: none; margin-left: auto; padding: 7px; border: 0; background: transparent; color: #6b7280; }
 .sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 22px 16px; }
 .nav-group-label { margin: 0 0 5px; padding: 0 12px; color: #9ca3af; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.sidebar-link, .sidebar-logout { width: 100%; display: flex; align-items: center; gap: 12px; padding: 11px 12px; border: 0; border-radius: 9px; background: transparent; color: #4b5563; font-size: 14px; font-weight: 600; text-align: left; }
+.sidebar-link, .sidebar-logout { width: 100%; display: flex; align-items: center; gap: 12px; padding: 11px 12px; border: 0; border-radius: 9px; background: transparent; color: #4b5563; font-size: 14px; font-weight: 600; text-align: left; text-decoration: none; }
 .sidebar-link:hover:not(:disabled) { background: #fff0f6; color: #e2156d; }
 .sidebar-link.active { background: #fff0f6; color: #e2156d; }
 .sidebar-link:disabled { color: #9ca3af; }
@@ -77,8 +77,11 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
 .notification-panel p { margin: 10px 0 0; color: #6b7280; font-size: 12px; }
 .notification-panel ul { display: grid; gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; }
 .notification-panel li { padding: 9px 10px; border-radius: 7px; background: #fff0f6; color: #4b5563; font-size: 12px; }
+.notification-item { display: grid; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; }
+.notification-item:hover { color: #e2156d; }
+.notification-item time { margin-top: 4px; color: #6b7280; font-size: 11px; }
 
-.products-page, .dashboard-page { padding: 30px 32px; }
+.products-page, .dashboard-page, .data-page { padding: 30px 32px; }
 .topbar-title { color: #374151; font-size: 15px; }
 .page-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
 .page-heading h1 { color: #1f2937; font-size: 24px; }
@@ -107,12 +110,30 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
 .product-thumbnail-placeholder { color: #9ca3af; }
 .product-name { display: block; color: #1f2937; font-size: 14px; }
 .product-table small { display: block; margin-top: 4px; color: #9ca3af; font-size: 10px; }
+.data-table { width: 100%; min-width: 760px; border-collapse: collapse; color: #4b5563; font-size: 13px; text-align: left; }
+.data-table th { padding: 12px 20px; background: #f9fafb; border-bottom: 1px solid #f3f4f6; color: #9ca3af; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.data-table td { padding: 14px 20px; border-bottom: 1px solid #f3f4f6; }
+.data-table tbody tr:hover { background: #f9fafb; }
+.data-table small { display: block; margin-top: 4px; color: #9ca3af; font-size: 10px; }
+.status-select { min-width: 140px; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; color: #374151; font-size: 12px; }
+.status-select:focus { border-color: #e2156d; outline: none; box-shadow: 0 0 0 2px #ffd6e7; }
+.review-list { display: grid; gap: 14px; }
+.review-card { padding: 18px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; }
+.review-card.is-hidden { background: #f9fafb; opacity: .75; }
+.review-card > header, .review-card > footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.review-card header strong { display: block; color: #1f2937; }
+.review-card header small, .review-card footer small { display: block; margin-top: 4px; color: #6b7280; }
+.review-card > p { margin: 10px 0 16px; color: #374151; line-height: 1.6; }
+.review-rating { display: flex; gap: 3px; margin-top: 12px; color: #f59e0b; }
+.review-card footer button { min-width: 96px; padding: 8px 11px; border: 1px solid #a6afc4; border-radius: 8px; background: #f3f5fa; color: #0046a7; font-size: 11px; font-weight: 700; }
+.review-card footer button.danger { border-color: #fecaca; background: #fef2f2; color: #dc2626; }
 .capitalize { text-transform: capitalize; font-weight: 600; }
 .price { color: #1f2937; font-weight: 800; }
 .stock { color: #374151; font-weight: 700; }
 .stock.low { display: inline-block; padding: 3px 8px; border-radius: 5px; background: #fef2f2; color: #dc2626; }
 .status { display: inline-block; padding: 5px 10px; border-radius: 999px; font-size: 10px; font-weight: 700; }
 .status.active { background: #ecfdf5; color: #059669; }
+.status.suspended { background: #fef2f2; color: #dc2626; }
 .status.empty { background: #fef2f2; color: #dc2626; }
 .align-right { text-align: right; }
 .row-actions { display: flex; justify-content: flex-end; gap: 7px; }
@@ -162,6 +183,11 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
 .modal-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 22px; overflow-y: auto; background: rgba(17, 24, 39, .55); }
 .product-modal { width: min(880px, 100%); max-height: calc(100vh - 44px); overflow-y: auto; border-radius: 14px; background: #fff; box-shadow: 0 24px 70px rgba(15, 23, 42, .24); }
 .confirm-modal { width: min(460px, 100%); overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 24px 70px rgba(15, 23, 42, .24); }
+.customer-modal { width: min(560px, 100%); overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 24px 70px rgba(15, 23, 42, .24); }
+.customer-form { display: grid; gap: 16px; padding: 22px 24px; }
+.customer-form .field small:not(.field-error) { color: #6b7280; font-size: 10px; }
+.customer-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin: 6px -24px -22px; padding: 16px 24px; border-top: 1px solid #e5e7eb; }
+.customer-modal-actions button { min-width: 112px; min-height: 40px; margin: 0; }
 .confirm-content { display: flex; align-items: flex-start; gap: 14px; padding: 24px; color: #374151; }
 .confirm-content p { margin: 0 0 6px; line-height: 1.6; }
 .confirm-content small { color: #6b7280; }
@@ -214,8 +240,7 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
   .topbar-search { display: none; }
   .topbar-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .admin-profile strong { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .products-page { padding: 22px 18px; }
-  .dashboard-page { padding: 22px 18px; }
+  .products-page, .dashboard-page, .data-page { padding: 22px 18px; }
   .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .chart-grid { grid-template-columns: 1fr; }
   .chart-card > header { flex-wrap: wrap; }
@@ -236,7 +261,7 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
   .primary-action, .filter-button, .filters select, .refresh-button { min-height: 44px; }
   .filters { align-items: stretch; flex-direction: column; }
   .admin-profile strong { display: none; }
-  .products-page, .dashboard-page { padding: 18px 12px; }
+  .products-page, .dashboard-page, .data-page { padding: 18px 12px; }
   .filter-toolbar { gap: 12px; padding: 12px; }
   .product-search { width: 100%; }
   .error-panel, .dashboard-error { align-items: stretch; flex-direction: column; }
@@ -251,6 +276,16 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
   .product-table tr { overflow: hidden; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .04); }
   .product-table td { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; text-align: right; }
   .product-table td::before { content: attr(data-label); flex: 0 0 42%; color: #6b7280; font-size: 11px; font-weight: 800; text-align: left; }
+  .data-table { min-width: 0; }
+  .data-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+  .data-table, .data-table tbody, .data-table tr, .data-table td { display: block; width: 100%; }
+  .data-table tbody { display: grid; gap: 12px; }
+  .data-table tr { overflow: hidden; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; }
+  .data-table td { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; text-align: right; }
+  .data-table td::before { content: attr(data-label); flex: 0 0 38%; color: #6b7280; font-size: 11px; font-weight: 800; text-align: left; }
+  .data-table td:last-child { border-bottom: 0; }
+  .status-select { max-width: 58%; }
+  .review-card > header, .review-card > footer { align-items: flex-start; }
   .product-table td:first-child { padding-top: 14px; }
   .product-table td:last-child { padding-bottom: 14px; border-bottom: 0; }
   .product-table td:nth-child(2) { align-items: flex-start; }
@@ -279,6 +314,9 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
   .monthly-row { grid-template-columns: 38px minmax(0, 1fr) 26px; gap: 7px; }
   .confirm-actions { padding: 14px 16px; }
   .confirm-actions > button { flex: 1; min-width: 0; min-height: 44px; }
+  .customer-form { padding: 18px 16px; }
+  .customer-modal-actions { margin: 4px -16px -18px; padding: 14px 16px; }
+  .customer-modal-actions button { flex: 1; min-width: 0; }
 }
 
 @media (max-width: 420px) {
@@ -286,7 +324,7 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
   .login-card { padding: 24px 16px; }
   .brand-mark { width: 46px; height: 46px; }
   .admin-sidebar { width: min(280px, 90vw); }
-  .products-page, .dashboard-page { padding: 16px 10px; }
+  .products-page, .dashboard-page, .data-page { padding: 16px 10px; }
   .page-heading h1 { font-size: 19px; }
   .modal-backdrop { padding: 0; }
   .product-modal { width: 100%; min-height: 100dvh; max-height: 100dvh; border-radius: 0; }
@@ -302,6 +340,9 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
   .row-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .row-actions button { width: 100%; }
   .table-footer { align-items: flex-start; gap: 8px; }
+  .review-card { padding: 14px; }
+  .review-card > header { flex-direction: column; }
+  .review-card footer button { min-height: 40px; }
 }
 
 @media (max-height: 520px) and (orientation: landscape) {

@@ -46,7 +46,8 @@ const buildUserSession = (user) => {
     username: user.username,
     email: user.email,
     role: user.role,
-    createdAt: user.createdAt
+    createdAt: user.createdAt,
+    isActive: user.isActive !== false
   };
   return {
     user: sessionUser,
@@ -129,12 +130,16 @@ export const loginUser = async ({ email, password }) => {
         'This account is not a customer account. Please sign in from the admin portal instead.'
       );
     }
+    if (user.isActive === false) {
+      throw new Error('This customer account has been suspended. Please contact support.');
+    }
 
     return buildUserSession(user);
   } catch (dbError) {
     if (
       dbError.message === 'Invalid email or password' ||
-      dbError.message?.includes('admin portal')
+      dbError.message?.includes('admin portal') ||
+      dbError.message?.includes('suspended')
     ) {
       throw dbError;
     }
