@@ -1,12 +1,12 @@
 export const validateRegisterForm = (formData) => {
   const errors = {};
 
-  // ตรวจสอบชื่อ (Required)
+  // ตรวจสอบชื่อผู้ใช้งาน
   if (!formData.username?.trim()) {
     errors.username = "กรุณากรอกชื่อผู้ใช้งาน";
   }
 
-  // ตรวจสอบ Email
+  // ตรวจสอบ อีเมล
   if (!formData.email?.trim()) {
     errors.email = "กรุณากรอกอีเมล";
   } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
