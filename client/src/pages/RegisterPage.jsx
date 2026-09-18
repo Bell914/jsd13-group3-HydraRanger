@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus, Shield, AlertCircle } from 'lucide-react';
+import { UserPlus, Shield, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { authService } from '../services/authService.js';
+import { useAuth } from '../context/Auth/useAuth.jsx';
 import { Button, Card, FormInput } from '../components/index.js';
 import { validateForm } from '../utils/validation.js';
 
@@ -16,15 +17,18 @@ export const RegisterPage = () => {
     confirmPassword: "",
   });
 
-  const [fieldErrors, setFieldErrors] = useState({}); // เก็บ error รายช่อง
-  const [apiError, setApiError] = useState(""); // เก็บ error จาก API
+  // 1. เพิ่ม State สำหรับเปิด-ปิดรหัสผ่านทั้ง 2 ช่อง
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [apiError, setApiError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // เคลียร์ error ของช่องนั้นๆ เมื่อผู้ใช้เริ่มพิมพ์แก้ไข
     if (fieldErrors[name]) {
       setFieldErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -34,7 +38,6 @@ export const RegisterPage = () => {
     e.preventDefault();
     setApiError("");
 
-    // 2. ตรวจสอบข้อมูลก่อนส่ง (Validation Check)
     const errors = validateForm(formData);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -67,11 +70,10 @@ export const RegisterPage = () => {
             Join <span className="text-accent">OCCASION</span>
           </h2>
           <p className="mt-2 text-xs text-secondary sm:text-sm">
-            Create an account to start contributing to Sprint 2
+            Create an account
           </p>
         </div>
 
-        {/* แสดงเฉพาะ API/Server Error Alert */}
         {apiError && (
           <div
             className="mb-6 flex items-center gap-3 rounded-xl border border-accent/35 bg-accent/10 p-3.5 text-sm text-accent"
@@ -105,27 +107,47 @@ export const RegisterPage = () => {
             error={fieldErrors.email}
           />
 
-          <FormInput
-            id="register-password"
-            name="password"
-            label="Password"
-            type="password"
-            placeholder="At least 6 characters"
-            value={formData.password}
-            onChange={handleChange}
-            error={fieldErrors.password}
-          />
+          {/* 2. ช่อง Password: สลับ type ตาม State showPassword */}
+          <div className="relative">
+            <FormInput
+              id="register-password"
+              name="password"
+              label="Password"
+              type={showPassword ? "text" : "password"}
+              placeholder="At least 6 characters"
+              value={formData.password}
+              onChange={handleChange}
+              error={fieldErrors.password}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-[38px] text-slate-500 hover:text-black focus:outline-none"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
 
-          <FormInput
-            id="register-confirm-password"
-            name="confirmPassword"
-            label="Confirm Password"
-            type="password"
-            placeholder="Re-enter password"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            error={fieldErrors.confirmPassword}
-          />
+          {/* 3. ช่อง Confirm Password: สลับ type ตาม State showConfirmPassword */}
+          <div className="relative">
+            <FormInput
+              id="register-confirm-password"
+              name="confirmPassword"
+              label="Confirm Password"
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Re-enter password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              error={fieldErrors.confirmPassword}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-[38px] text-slate-500 hover:text-black focus:outline-none"
+            >
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
 
           <Button
             type="submit"

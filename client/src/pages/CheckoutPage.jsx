@@ -1,70 +1,201 @@
-import React from "react";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import useCartStore from "../store/cartStore";
+import { authService } from "../services/authService";
+import {
+  CheckoutStepper,
+  ContactSection,
+  ShippingSection,
+  PaymentSection,
+  ReviewSection,
+  OrderSummary,
+  OrderSuccessModal,
+  OrderConfirmationScreen,
+  SHIPPING_METHODS,
+} from "../components/checkout";
 
 export default function CheckoutPage() {
-  // 1. ดึง State/Action จาก cartStore ให้ถูกชื่อ
-  const { cartItems, getTotalPrice } = useCartStore();
+  const navigate = useNavigate();
+  const { cartItems, getTotalPrice, clearCart } = useCartStore();
+  const currentUser = authService.getCurrentUser();
 
-  const total = getTotalPrice();
+  // Current Step: 1 = Contact, 2 = Shipping, 3 = Payment, 4 = Review
+  // Default to step 2 as shown in the primary wireframe, or step 1 if no email
+  const [currentStep, setCurrentStep] = useState(2);
+
+  // Contact Form State
+  const [email, setEmail] = useState(currentUser?.email || "");
+
+  // Shipping Form State (pre-populated with wireframe sample values for seamless demo)
+  const [shippingData, setShippingData] = useState({
+  location: "Thailand",
+  firstName: "",
+  lastName: "",
+  phone: "",
+  address: "",
+  deliveryNote: "",
+  city: "",
+  state: "",
+  zipCode: "",
+  saveAddress: false,
+  shippingMethod: "standard",
+  isGift: false,
+  giftMessage: "",
+});
+
+  // Payment Form State
+  const [paymentData, setPaymentData] = useState({
+  method: "credit-card",
+  cardNumber: "",
+  cardExp: "",
+  cardCvv: "",
+});
+
+  // Order Submission State
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [completedOrder, setCompletedOrder] = useState(null);
+
+  const subtotal = getTotalPrice();
+
+  // Calculate order total for final order placement
+  const selectedShipping =
+    SHIPPING_METHODS.find((m) => m.id === shippingData.shippingMethod) ||
+    SHIPPING_METHODS[0];
+  const shippingCost = selectedShipping ? selectedShipping.price : 0;
+  const taxAmount = currentStep >= 3 ? Math.round(subtotal * 0.06 * 100) / 100 : 0;
+  const totalAmount = subtotal + shippingCost + taxAmount;
+
+  // Handle Place Order
+  const handlePlaceOrder = () => {
+    setIsSubmitting(true);
+    const itemsSnapshot = [...cartItems];
+    setTimeout(() => {
+      const orderId = `OCC-${Math.floor(100000 + Math.random() * 900000)}`;
+      setCompletedOrder({
+        orderId,
+        shippingData,
+        email,
+        items: itemsSnapshot,
+        subtotal,
+        shippingCost,
+        taxAmount,
+        totalAmount,
+      });
+      clearCart();
+      setIsSubmitting(false);
+    }, 800);
+  };
+
+  // If order is completed, show full Order Confirmation Screen (Receipt Screen from Image 1)
+  if (completedOrder) {
+    return <OrderConfirmationScreen orderData={completedOrder} />;
+  }
+
+  // If cart is empty and no completed order, show empty cart view
+  if (!cartItems || cartItems.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center">
+        <h1 className="text-3xl font-bold mb-4">Your Cart is Empty</h1>
+        <p className="text-gray-500 mb-8">
+          Please add items to your cart before proceeding to checkout.
+        </p>
+        <Link
+          to="/products"
+          className="inline-block bg-black text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+        >
+          Explore Products
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Checkout</h1>
+    <div className="min-h-screen bg-gray-50/50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Stepper Header */}
+        <CheckoutStepper
+          currentStep={currentStep}
+          onStepClick={(step) => setCurrentStep(step)}
+        />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* ฟอร์มกรอกข้อมูลจัดส่ง */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="p-6 border rounded-lg bg-white shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Shipping Information</h2>
-            <form className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Full Name</label>
-                <input
-                  type="text"
-                  className="w-full border p-2 rounded"
-                  placeholder="John Doe"
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Multi-Step Forms */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* STEP 1: Contact (Active when step 1) */}
+            {currentStep === 1 && (
+              <ContactSection
+                email={email}
+                onChangeEmail={setEmail}
+                isCollapsed={false}
+                onContinue={() => setCurrentStep(2)}
+                onBack={() => navigate("/cart")}
+              />
+            )}
+
+            {/* STEP 2: Shipping (Active when step 2) */}
+            {currentStep === 2 && (
+              <>
+                <ContactSection
+                  email={email}
+                  isCollapsed={true}
+                  onEdit={() => setCurrentStep(1)}
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Address</label>
-                <textarea
-                  className="w-full border p-2 rounded"
-                  rows="3"
-                  placeholder="123 Street..."
-                ></textarea>
-              </div>
-            </form>
-          </div>
-        </div>
+                <ShippingSection
+                  shippingData={shippingData}
+                  onChangeShipping={setShippingData}
+                  isCollapsed={false}
+                  onContinue={() => setCurrentStep(3)}
+                  onBack={() => navigate("/cart")}
+                />
+              </>
+            )}
 
-        {/* Order Summary */}
-        <div className="p-6 border rounded-lg h-fit bg-gray-50">
-          <h2 className="text-xl font-bold mb-4">Order Summary</h2>
-          <div className="space-y-2 mb-4">
-            {/* 2. เปลี่ยนมา map จาก cartItems */}
-            {cartItems && cartItems.length > 0 ? (
-              cartItems.map((item) => (
-                <div
-                  key={item.variantId || item._id}
-                  className="flex justify-between text-sm"
-                >
-                  <span>
-                    {item.name || "Product"} x {item.quantity}
-                  </span>
-                  <span>฿{item.price * item.quantity}</span>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-gray-500">No items in cart.</p>
+            {/* STEP 3: Payment (Active when step 3) */}
+            {currentStep === 3 && (
+              <>
+                <ContactSection
+                  email={email}
+                  isCollapsed={true}
+                  onEdit={() => setCurrentStep(1)}
+                />
+                <ShippingSection
+                  shippingData={shippingData}
+                  isCollapsed={true}
+                  onEdit={() => setCurrentStep(2)}
+                />
+                <PaymentSection
+                  paymentData={paymentData}
+                  onChangePayment={setPaymentData}
+                  isCollapsed={false}
+                  onContinue={() => setCurrentStep(4)}
+                  onBack={() => setCurrentStep(2)}
+                />
+              </>
+            )}
+
+            {/* STEP 4: Review (Active when step 4) */}
+            {currentStep === 4 && (
+              <ReviewSection
+                email={email}
+                shippingData={shippingData}
+                paymentData={paymentData}
+                onEditStep={(step) => setCurrentStep(step)}
+                onBack={() => setCurrentStep(3)}
+                onPlaceOrder={handlePlaceOrder}
+                isSubmitting={isSubmitting}
+              />
             )}
           </div>
-          <div className="border-t pt-4 flex justify-between font-bold text-lg">
-            <span>Total</span>
-            <span>฿{total}</span>
+
+          {/* Right Column: Order Summary */}
+          <div className="lg:col-span-1">
+            <OrderSummary
+              cartItems={cartItems}
+              subtotal={subtotal}
+              shippingMethodId={shippingData.shippingMethod}
+              currentStep={currentStep}
+            />
           </div>
-          <button className="w-full mt-6 bg-black text-white py-3 rounded hover:bg-gray-800 transition-colors">
-            Place Order
-          </button>
         </div>
       </div>
     </div>

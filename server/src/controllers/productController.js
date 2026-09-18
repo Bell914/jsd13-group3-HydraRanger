@@ -19,7 +19,9 @@ export async function getProducts(req, res, next) {
 
 export async function getAdminProducts(req, res, next) {
   try {
-    const products = await productService.getProducts({ includeInactive: true });
+    // Deleted products have is_active set to false. Do not send them back to
+    // the admin table when the page is refreshed.
+    const products = await productService.getProducts();
     res.status(HTTP_STATUS.OK).json({ success: true, data: products });
   } catch (error) {
     next(error);

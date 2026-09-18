@@ -7,11 +7,20 @@ import {
   RegisterPage,
   NotFoundPage,
   UiKitPage,
+  ProductListPage,
   ArticleDetail,
   ArticlePages,
+  ProductDetailPage,
+  CheckoutPage,
   ProfilePage,
+  CartPage,
+  LookbookListPage,
+  LookbookDetailPage,
 } from "../pages/index.js";
 import { ProtectedRoute } from "../components/index.js";
+import CustomerService from "../pages/CustomerService.jsx";
+import { TermAndCondition } from "../pages/TermAndCondition.jsx";
+import PrivacyPolicy from "../pages/PrivacyPage.jsx";
 
 export const AppRoutes = () => {
   return (
@@ -20,6 +29,8 @@ export const AppRoutes = () => {
       <Route path="/" element={<HomePage />} />
       <Route path="/products" element={<ProductListPage />} />
       <Route path="/products/:productId" element={<ProductDetailPage />} />
+      <Route path="/lookbook" element={<LookbookListPage />} />
+      <Route path="/lookbook/:lookId" element={<LookbookDetailPage />} />
       <Route path="/cart" element={<CartPage />} />
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route path="/login" element={<LoginPage />} />
@@ -27,6 +38,9 @@ export const AppRoutes = () => {
       <Route path="/ui-kit" element={<UiKitPage />} />
       <Route path="/article" element={<ArticlePages />} />
       <Route path="/article/:id" element={<ArticleDetail />} />
+      <Route path="/customerservice" element={<CustomerService />} />
+      <Route path="/termsconditions" element={<TermAndCondition />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
 
       {/* Protected Dashboard Route */}
       <Route

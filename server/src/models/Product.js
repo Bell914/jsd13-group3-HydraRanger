@@ -44,6 +44,18 @@ const productSchema = new mongoose.Schema(
       type: String,
       trim: true
     },
+    tags: {
+      type: [String],
+      default: []
+    },
+    gender: {
+      type: String,
+      trim: true,
+      default: 'unisex'
+    },
+    availableDate: {
+      type: Date
+    },
     is_active: {
       type: Boolean,
       default: true

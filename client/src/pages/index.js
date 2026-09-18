@@ -6,9 +6,11 @@ export { NotFoundPage } from "./NotFoundPage.jsx";
 export { UiKitPage } from "./UiKitPage.jsx";
 export { ArticleDetail } from "./ArticleDetail.jsx";
 export { ArticlePages } from "./ArticlePages.jsx";
-export { default as ProductListPage } from "./ProductListPage.jsx";
 export { default as ProductDetailPage } from "./ProductDetailPage.jsx";
 export { default as CartPage } from "./CartPage.jsx";
 export { default as CheckoutPage } from "./CheckoutPage.jsx";
+export { default as ProductListPage } from "./ProductListPage.jsx"
 
 export { ProfilePage } from './ProfilePage.jsx';
+export { default as LookbookListPage } from "./LookbookListPage.jsx";
+export { default as LookbookDetailPage } from "./LookbookDetailPage.jsx";
