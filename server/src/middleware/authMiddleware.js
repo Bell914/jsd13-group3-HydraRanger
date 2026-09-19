@@ -45,6 +45,12 @@ export const protect = async (req, res, next) => {
       try {
         const user = await User.findById(decoded.id).select('-password');
         if (user) {
+          if (user.isActive === false) {
+            return res.status(HTTP_STATUS.FORBIDDEN).json({
+              success: false,
+              message: 'This customer account has been suspended'
+            });
+          }
           req.user = user;
         } else {
           // DB is up but user no longer exists (deleted/banned) → reject

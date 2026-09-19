@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import morgan from "morgan";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,15 +22,27 @@ const productImageFolder = path.resolve(
 
 const allowedOrigins = [
   ENV.CLIENT_URL?.replace(/\/+$/, ""),
-  "https://jsd13-group3-hydra-ranger.vercel.app",
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-  "http://localhost:5174",
-  "http://localhost:5176",
-  "http://127.0.0.1:5174",
+  ENV.ADMIN_CLIENT_URL?.replace(/\/+$/, ""),
 ].filter(Boolean);
 
+if (ENV.NODE_ENV === "development") {
+  allowedOrigins.push(
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:5175",
+    "http://localhost:5176",
+  );
+}
+
 // Global Middlewares
+app.use(
+  helmet({
+    // Product images are served by the API and displayed by both websites.
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }),
+);
 app.use(
   cors({
     origin: (origin, callback) => {
