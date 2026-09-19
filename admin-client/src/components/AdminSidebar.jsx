@@ -8,6 +8,7 @@ const menuItems = [
   { path: '/orders', label: 'Orders' },
   { path: '/customers', label: 'Customers' },
   { path: '/reviews', label: 'Reviews' },
+  { path: '/lookbooks', label: 'Lookbooks' },
 ];
 
 export function AdminSidebar({ isOpen, onClose }) {

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { LogIn, UserRound, AlertCircle, Eye, EyeOff } from "lucide-react"; 
+import { LogIn, UserRound, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../context/Auth/useAuth.jsx";
 import { Button, Card } from "../components/index.js";

@@ -197,8 +197,10 @@ export const loginAdmin = async ({ email, password }) => {
     }
   }
 
-  // Bootstrap admin defined via env vars — works regardless of DB state
+  // The environment admin is only a convenience for local development.
+  // Production admins must exist in MongoDB.
   if (
+    ENV.NODE_ENV === 'development' &&
     ENV.ADMIN_EMAIL &&
     ENV.ADMIN_PASSWORD &&
     email.toLowerCase() === ENV.ADMIN_EMAIL.toLowerCase() &&
