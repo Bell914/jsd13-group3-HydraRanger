@@ -9,22 +9,23 @@
 | User | username, email, password, role, avatar |
 | Product | productId, name, description, category, gender, tags[], availableDate, imageUrl, variants[], isActive |
 | Lookbook | lookbookId, name, nameTh, concept, occasion[], styleTags[], imageUrl, items[], regularPrice, setPrice, saving, isActive |
+| Order | orderNumber, user, customerEmail, items[], shippingAddress, subtotal, shippingCost, taxAmount, totalAmount, status |
+| Review | user, product, order, rating, comment, isVisible |
 
 ทุก Model ข้างต้นมี `_id`, `createdAt`, `updatedAt`
 
-- **User:** username/email ไม่ซ้ำ; password เก็บแบบ hash; ผู้สมัครทั่วไปเป็น role `user`
+- **User:** username/email ไม่ซ้ำ; password เก็บแบบ hash; ผู้สมัครทั่วไปเป็น role `user`; `isActive=false` หมายถึงบัญชีถูกระงับและ Login ไม่ได้
 - **Product:** `productId` เป็นรหัสธุรกิจไม่ซ้ำ; API ใช้ `_id`; ลบด้วย `isActive=false`
 - **Variant:** เก็บใน `variants[]` อย่างน้อย 1 รายการ มี `_id`, sku, color, size, price, stockQuantity และข้อมูลเสริม colorCode, imageUrl, detailImages[]
 - **Lookbook Item:** `product` อ้าง Product `_id`; `defaultVariantSku` ระบุ Variant
 - **ข้อจำกัด:** Schema กำหนดราคา/Stock ≥ 0; API กำหนดราคา > 0 และ Stock เป็นจำนวนเต็ม มี unique index ที่ `variants.sku`; ต้องตรวจ SKU ซ้ำภายในสินค้าเพิ่มเติม
 
-## Cart / Order ที่เสนอ — ยังไม่มี Model
+## Cart ที่เสนอ — ยังไม่มี Model
 
 | ส่วน | ฟิลด์ที่เสนอ |
 |---|---|
 | Cart | user อ้าง User, items[], createdAt, updatedAt |
 | Cart Item | _id, product อ้าง Product, variantId, quantity |
-| Order (หากทำ) | user, items พร้อมราคาตอนซื้อ, total, shippingAddress, status, purchasedAt |
 
 Server ตรวจเจ้าของ Cart, Variant และ Stock; quantity เป็นจำนวนเต็ม ≥ 1 ราคาและยอดรวมมาจากฐานข้อมูล
 

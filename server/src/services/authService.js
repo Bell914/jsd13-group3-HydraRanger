@@ -46,7 +46,8 @@ const buildUserSession = (user) => {
     username: user.username,
     email: user.email,
     role: user.role,
-    createdAt: user.createdAt
+    createdAt: user.createdAt,
+    isActive: user.isActive !== false
   };
   return {
     user: sessionUser,
@@ -129,12 +130,16 @@ export const loginUser = async ({ email, password }) => {
         'This account is not a customer account. Please sign in from the admin portal instead.'
       );
     }
+    if (user.isActive === false) {
+      throw new Error('This customer account has been suspended. Please contact support.');
+    }
 
     return buildUserSession(user);
   } catch (dbError) {
     if (
       dbError.message === 'Invalid email or password' ||
-      dbError.message?.includes('admin portal')
+      dbError.message?.includes('admin portal') ||
+      dbError.message?.includes('suspended')
     ) {
       throw dbError;
     }
@@ -192,8 +197,10 @@ export const loginAdmin = async ({ email, password }) => {
     }
   }
 
-  // Bootstrap admin defined via env vars — works regardless of DB state
+  // The environment admin is only a convenience for local development.
+  // Production admins must exist in MongoDB.
   if (
+    ENV.NODE_ENV === 'development' &&
     ENV.ADMIN_EMAIL &&
     ENV.ADMIN_PASSWORD &&
     email.toLowerCase() === ENV.ADMIN_EMAIL.toLowerCase() &&
