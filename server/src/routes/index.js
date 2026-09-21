@@ -19,8 +19,26 @@ import uploadRoutes from "./uploadRoutes.js";
 
 const router = Router();
 
+// API base endpoint
+router.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "OCCASION API Server (Sprint 2)",
+    health: "/api/health",
+    endpoints: {
+      health: "/api/health",
+      auth: "/api/auth",
+      products: "/api/products",
+      lookbooks: "/api/lookbooks",
+      users: "/api/users",
+      orders: "/api/orders",
+    },
+  });
+});
+
 // Health check endpoint
 router.get("/health", (req, res) => {
+
   res.status(200).json({
     success: true,
     message: "Server is running",

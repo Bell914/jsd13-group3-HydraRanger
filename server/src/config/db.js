@@ -3,8 +3,20 @@ import { ENV } from "./env.js";
 
 let isConnected = false;
 
+// Track connection events
+mongoose.connection.on("connected", () => {
+  isConnected = true;
+  console.log("✅ MongoDB Connection established");
+});
+
+mongoose.connection.on("disconnected", () => {
+  isConnected = false;
+  console.warn("⚠️ MongoDB Connection lost");
+});
+
 export const connectDB = async () => {
-  if (isConnected) {
+  if (mongoose.connection.readyState === 1) {
+    isConnected = true;
     return;
   }
 
@@ -29,9 +41,14 @@ export const connectDB = async () => {
   }
 };
 
-export const getDBStatus = () => ({
-  isConnected,
-  uri: ENV.MONGODB_URI
-    ? `${ENV.MONGODB_URI.split("@").pop()}`
-    : "Not configured",
-});
+export const getDBStatus = () => {
+  const readyState = mongoose.connection.readyState;
+  return {
+    isConnected: readyState === 1,
+    readyState, // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+    uri: ENV.MONGODB_URI
+      ? `${ENV.MONGODB_URI.split("@").pop()}`
+      : "Not configured",
+  };
+};
+

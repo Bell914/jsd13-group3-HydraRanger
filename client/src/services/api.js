@@ -23,11 +23,22 @@ const detectSameOriginApi = () => {
 };
 
 export const resolveApiUrl = () => {
+  const isLocalhost =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1");
+
   // 1. Runtime override (switchable without rebuilding)
   if (typeof window !== "undefined") {
     try {
       const override = localStorage.getItem(OVERRIDE_KEY);
-      if (override) return normalizeApiUrl(override);
+      if (override) {
+        const normalized = normalizeApiUrl(override);
+        // Only accept localhost override if actually on localhost
+        if (isLocalhost || (!normalized.includes("localhost") && !normalized.includes("127.0.0.1"))) {
+          return normalized;
+        }
+      }
     } catch {
       /* ignore storage access errors */
     }
@@ -35,15 +46,26 @@ export const resolveApiUrl = () => {
 
   // 2. Build-time env: VITE_API_BASE_URL / VITE_API_URL
   const envUrl = normalizeApiUrl(ENV_BASE_URL);
-  if (envUrl) return envUrl;
+  if (envUrl) {
+    // If running in production (Vercel/Render), never use localhost
+    if (isLocalhost || (!envUrl.includes("localhost") && !envUrl.includes("127.0.0.1"))) {
+      return envUrl;
+    }
+  }
 
   // 3. Same-origin detection when deployed on the Render backend host
   const sameOrigin = detectSameOriginApi();
   if (sameOrigin) return sameOrigin;
 
-  // 4. Fallback: the deployed (real) backend
+  // 4. If on localhost and no envUrl specified, use local server
+  if (isLocalhost) {
+    return "http://localhost:5001/api";
+  }
+
+  // 5. Fallback: the deployed (real) backend on Render
   return REMOTE_API_URL;
 };
+
 
 export const API_URL = resolveApiUrl();
 
