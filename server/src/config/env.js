@@ -26,6 +26,7 @@ export const ENV = {
   JWT_SECRET: getRequiredEnv("JWT_SECRET"),
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
   CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
+  ADMIN_CLIENT_URL: process.env.ADMIN_CLIENT_URL || "http://localhost:5174",
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || "",
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || "",
 };

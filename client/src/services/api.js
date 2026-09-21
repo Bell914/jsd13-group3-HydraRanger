@@ -1,9 +1,23 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
 =======
 const BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api";
 >>>>>>> 89ab9d3324a753d378a1a5bc445c18dff071923d
+=======
+const rawBaseUrl =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  "https://jsd13-group3-hydraranger.onrender.com/api";
+
+const cleanBaseUrl = rawBaseUrl.replace(/\/+$/, "");
+const BASE_URL = cleanBaseUrl.endsWith("/api")
+  ? cleanBaseUrl
+  : `${cleanBaseUrl}/api`;
+
+export const API_URL = BASE_URL;
+>>>>>>> 96d562dd94b566746f23f20c7745cb64d5903f20
 
 class ApiClient {
   constructor(baseUrl) {
@@ -78,6 +92,13 @@ class ApiClient {
         `API Error on [${options.method || "GET"} ${endpoint}]:`,
         error,
       );
+      if (error.name === "TypeError" && error.message === "Failed to fetch") {
+        const netError = new Error(
+          "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ (เซิร์ฟเวอร์อาจกำลังเริ่มต้นทำงานบน Render กรุณารอประมาณ 30-60 วินาทีแล้วลองใหม่อีกครั้ง)",
+        );
+        netError.originalError = error;
+        throw netError;
+      }
       throw error;
     }
   }

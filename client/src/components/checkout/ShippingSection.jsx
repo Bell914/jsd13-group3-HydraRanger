@@ -11,17 +11,17 @@ export const SHIPPING_METHODS = [
   },
   {
     id: "express",
-    name: "EXPRESS SHIPPING ($20.00)",
+    name: "EXPRESS SHIPPING (฿50.00)",
     duration: "in 2-4 business days",
-    price: 20,
-    estimatedDelivery: "Thu, Aug 6",
+    price: 50,
+    estimatedDelivery: "2-4 วันทำการ",
   },
   {
     id: "priority",
-    name: "PRIORITY SHIPPING ($30.00)",
-    duration: "in 2-3 business days",
-    price: 30,
-    estimatedDelivery: "Wed, Aug 5",
+    name: "PRIORITY SHIPPING (฿100.00)",
+    duration: "in 1-2 business days",
+    price: 100,
+    estimatedDelivery: "1-2 วันทำการ",
   },
 ];
 
@@ -71,21 +71,21 @@ export default function ShippingSection({
           <button
             type="button"
             onClick={onEdit}
-            className="text-sm font-semibold text-gray-900 underline hover:text-gray-600 transition-colors"
+            className="text-sm font-semibold text-gray-900 underline hover:text-gray-600 transition-colors cursor-pointer"
           >
             Edit
           </button>
         </div>
         <div className="text-sm text-gray-700 space-y-1">
           <p className="font-semibold text-gray-900">
-            {shippingData.firstName} {shippingData.lastName}
+            {shippingData.firstName || "-"} {shippingData.lastName || ""}
           </p>
           <p>
-            {shippingData.address}, {shippingData.city},{" "}
-            {shippingData.state} {shippingData.zipCode},{" "}
-            {shippingData.location}
+            {shippingData.address || "-"}, {shippingData.city || ""},{" "}
+            {shippingData.state || ""} {shippingData.zipCode || ""},{" "}
+            {shippingData.location || "Thailand"}
           </p>
-          <p className="text-gray-600">{shippingData.phone}</p>
+          <p className="text-gray-600">{shippingData.phone || "-"}</p>
           <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col">
             <span className="font-bold text-xs uppercase tracking-wider text-gray-900">
               {selectedMethod.name}
@@ -116,18 +116,18 @@ export default function ShippingSection({
           <div className="relative">
             <select
               id="shipping-location"
-              value={shippingData.location}
+              value={shippingData.location || "Thailand"}
               onChange={(e) =>
                 onChangeShipping({ ...shippingData, location: e.target.value })
               }
               className="w-full appearance-none px-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 cursor-pointer pr-10"
             >
-              <option value="United States">United States</option>
-              <option value="Thailand">Thailand</option>
-              <option value="Singapore">Singapore</option>
-              <option value="Japan">Japan</option>
-              <option value="United Kingdom">United Kingdom</option>
-              <option value="Australia">Australia</option>
+              <option value="Thailand">ประเทศไทย (Thailand)</option>
+              <option value="United States">สหรัฐอเมริกา (United States)</option>
+              <option value="Singapore">สิงคโปร์ (Singapore)</option>
+              <option value="Japan">ญี่ปุ่น (Japan)</option>
+              <option value="United Kingdom">สหราชอาณาจักร (United Kingdom)</option>
+              <option value="Australia">ออสเตรเลีย (Australia)</option>
             </select>
             <ChevronDown className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -145,7 +145,8 @@ export default function ShippingSection({
             <input
               id="shipping-first-name"
               type="text"
-              value={shippingData.firstName}
+              value={shippingData.firstName || ""}
+              placeholder="สมชาย"
               onChange={(e) => {
                 onChangeShipping({ ...shippingData, firstName: e.target.value });
                 if (errors.firstName) setErrors({ ...errors, firstName: null });
@@ -171,7 +172,8 @@ export default function ShippingSection({
             <input
               id="shipping-last-name"
               type="text"
-              value={shippingData.lastName}
+              value={shippingData.lastName || ""}
+              placeholder="ใจดี"
               onChange={(e) => {
                 onChangeShipping({ ...shippingData, lastName: e.target.value });
                 if (errors.lastName) setErrors({ ...errors, lastName: null });
@@ -199,12 +201,12 @@ export default function ShippingSection({
           <input
             id="shipping-phone"
             type="tel"
-            value={shippingData.phone}
+            value={shippingData.phone || ""}
+            placeholder="0812345678"
             onChange={(e) => {
               onChangeShipping({ ...shippingData, phone: e.target.value });
               if (errors.phone) setErrors({ ...errors, phone: null });
             }}
-            placeholder="(202) 459-1879"
             className={`w-full px-3.5 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 ${
               errors.phone
                 ? "border-red-500 focus:ring-red-200"
@@ -212,7 +214,7 @@ export default function ShippingSection({
             }`}
           />
           <p className="text-xs text-gray-500 mt-1">
-            This will be only used for delivery related issues.
+            ใช้สำหรับการติดต่อเรื่องการจัดส่งสินค้าเท่านั้น
           </p>
           {errors.phone && (
             <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
@@ -230,12 +232,12 @@ export default function ShippingSection({
           <input
             id="shipping-address"
             type="text"
-            value={shippingData.address}
+            value={shippingData.address || ""}
+            placeholder="123/45 ซอยสุขุมวิท 21 ถนนสุขุมวิท อาคาร/หมู่บ้าน (ถ้ามี)"
             onChange={(e) => {
               onChangeShipping({ ...shippingData, address: e.target.value });
               if (errors.address) setErrors({ ...errors, address: null });
             }}
-            placeholder="Include apt, suite, or floor number here"
             className={`w-full px-3.5 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 ${
               errors.address
                 ? "border-red-500 focus:ring-red-200"
@@ -255,7 +257,7 @@ export default function ShippingSection({
             className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-800 hover:text-black transition-colors underline cursor-pointer"
           >
             {showDeliveryNote ? <Minus className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-            <span>{showDeliveryNote ? "Hide delivery note" : "Add delivery note"}</span>
+            <span>{showDeliveryNote ? "ซ่อนโน้ตถึงพนักงานจัดส่ง" : "เพิ่มโน้ตถึงพนักงานจัดส่ง"}</span>
           </button>
 
           {showDeliveryNote && (
@@ -265,7 +267,7 @@ export default function ShippingSection({
               onChange={(e) =>
                 onChangeShipping({ ...shippingData, deliveryNote: e.target.value })
               }
-              placeholder="Gate code, drop-off instructions, etc."
+              placeholder="รหัสเข้าหมู่บ้าน, จุดวางพัสดุ หรือคำแนะนำเพิ่มเติมสำหรับพนักงานส่ง"
               className="mt-2 w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600"
             />
           )}
@@ -283,7 +285,8 @@ export default function ShippingSection({
             <input
               id="shipping-city"
               type="text"
-              value={shippingData.city}
+              value={shippingData.city || ""}
+              placeholder="เขตวัฒนา / อำเภอเมือง"
               onChange={(e) => {
                 onChangeShipping({ ...shippingData, city: e.target.value });
                 if (errors.city) setErrors({ ...errors, city: null });
@@ -309,7 +312,7 @@ export default function ShippingSection({
             <div className="relative">
               <select
                 id="shipping-state"
-                value={shippingData.state}
+                value={shippingData.state || ""}
                 onChange={(e) => {
                   onChangeShipping({ ...shippingData, state: e.target.value });
                   if (errors.state) setErrors({ ...errors, state: null });
@@ -320,15 +323,13 @@ export default function ShippingSection({
                     : "border-gray-300 focus:ring-blue-100 focus:border-blue-600"
                 }`}
               >
-                <option value="">Select...</option>
-                <option value="Bangkok">Bangkok</option>
-                <option value="Chiang Mai">Chiang Mai</option>
-                <option value="Phuket">Phuket</option>
-                <option value="MD">MD (Maryland)</option>
-                <option value="CA">CA (California)</option>
-                <option value="NY">NY (New York)</option>
-                <option value="TX">TX (Texas)</option>
-                <option value="Other">Other</option>
+                <option value="">เลือกจังหวัด...</option>
+                <option value="Bangkok">กรุงเทพมหานคร</option>
+                <option value="Chiang Mai">เชียงใหม่</option>
+                <option value="Phuket">ภูเก็ต</option>
+                <option value="Nonthaburi">นนทบุรี</option>
+                <option value="Samut Prakan">สมุทรปราการ</option>
+                <option value="Other">จังหวัดอื่นๆ</option>
               </select>
               <ChevronDown className="w-4 h-4 text-gray-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -347,7 +348,8 @@ export default function ShippingSection({
             <input
               id="shipping-zip"
               type="text"
-              value={shippingData.zipCode}
+              value={shippingData.zipCode || ""}
+              placeholder="10110"
               onChange={(e) => {
                 onChangeShipping({ ...shippingData, zipCode: e.target.value });
                 if (errors.zipCode) setErrors({ ...errors, zipCode: null });
@@ -369,7 +371,7 @@ export default function ShippingSection({
           <label className="flex items-center gap-2 text-sm text-gray-800 cursor-pointer select-none">
             <input
               type="checkbox"
-              checked={shippingData.saveAddress}
+              checked={Boolean(shippingData.saveAddress)}
               onChange={(e) =>
                 onChangeShipping({
                   ...shippingData,
@@ -378,7 +380,7 @@ export default function ShippingSection({
               }
               className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black cursor-pointer accent-black"
             />
-            <span>Save address to my account</span>
+            <span>บันทึกที่อยู่นี้ลงในบัญชีของฉัน</span>
           </label>
         </div>
 
@@ -422,7 +424,7 @@ export default function ShippingSection({
           <label className="flex items-center gap-2 text-sm font-medium text-gray-800 cursor-pointer select-none">
             <input
               type="checkbox"
-              checked={shippingData.isGift}
+              checked={Boolean(shippingData.isGift)}
               onChange={(e) =>
                 onChangeShipping({
                   ...shippingData,
@@ -432,7 +434,7 @@ export default function ShippingSection({
               className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black cursor-pointer accent-black"
             />
             <Gift className="w-4 h-4 text-gray-700" />
-            <span>Add a gift message</span>
+            <span>เพิ่มข้อความอวยพร / การ์ดของขวัญ</span>
           </label>
 
           {shippingData.isGift && (
@@ -445,7 +447,7 @@ export default function ShippingSection({
                   giftMessage: e.target.value,
                 })
               }
-              placeholder="Write your special gift note here..."
+              placeholder="พิมพ์ข้อความอวยพรพิเศษที่คุณต้องการแนบไปกับพัสดุ..."
               className="mt-2 w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600"
             />
           )}
@@ -471,4 +473,3 @@ export default function ShippingSection({
     </div>
   );
 }
-

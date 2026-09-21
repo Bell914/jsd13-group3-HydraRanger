@@ -1,13 +1,19 @@
 import { X } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+import { useAdminAuth } from '../context/useAdminAuth.js';
 
 const menuItems = [
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'products', label: 'Products' },
-  { id: 'orders', label: 'Orders', disabled: true },
-  { id: 'customers', label: 'Customers', disabled: true },
+  { path: '/dashboard', label: 'Dashboard' },
+  { path: '/products', label: 'Products' },
+  { path: '/orders', label: 'Orders' },
+  { path: '/customers', label: 'Customers' },
+  { path: '/reviews', label: 'Reviews' },
+  { path: '/lookbooks', label: 'Lookbooks' },
 ];
 
-export function AdminSidebar({ activePage, isOpen, onClose, onNavigate, onLogout }) {
+export function AdminSidebar({ isOpen, onClose }) {
+  const { logout } = useAdminAuth();
+
   return (
     <aside className={`admin-sidebar ${isOpen ? 'is-open' : ''}`} aria-label="เมนูผู้ดูแลระบบ">
       <header className="sidebar-brand">
@@ -23,21 +29,19 @@ export function AdminSidebar({ activePage, isOpen, onClose, onNavigate, onLogout
 
       <nav className="sidebar-nav" aria-label="เมนูหลัก">
         <p className="nav-group-label">ภาพรวม (Overview)</p>
-        {menuItems.map(({ id, label, disabled }) => (
-          <button
-            key={id}
-            type="button"
-            className={`sidebar-link ${activePage === id ? 'active' : ''}`}
-            onClick={() => !disabled && onNavigate(id)}
-            disabled={disabled}
-            aria-current={activePage === id ? 'page' : undefined}
+        {menuItems.map(({ path, label }) => (
+          <NavLink
+            key={path}
+            to={path}
+            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+            onClick={onClose}
           >
             <span>{label}</span>
-          </button>
+          </NavLink>
         ))}
       </nav>
 
-      <button type="button" className="sidebar-logout" onClick={onLogout}>
+      <button type="button" className="sidebar-logout" onClick={logout}>
         ออกจากระบบ
       </button>
     </aside>

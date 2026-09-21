@@ -1,12 +1,16 @@
 import { Filter, Menu, Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { AdminNotifications } from '../components/AdminNotifications.jsx';
 import { ProductTable } from '../components/ProductTable.jsx';
 import { ProductFormModal } from '../components/ProductFormModal.jsx';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal.jsx';
 import { productService } from '../services/productService.js';
+import { useAdminAuth } from '../context/useAdminAuth.js';
 
-export function AdminProductsPage({ user, onOpenSidebar }) {
+export function AdminProductsPage() {
+  const { user } = useAdminAuth();
+  const { openSidebar } = useOutletContext();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -18,6 +22,7 @@ export function AdminProductsPage({ user, onOpenSidebar }) {
   const [successMessage, setSuccessMessage] = useState('');
   const [productToDelete, setProductToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [notificationDate, setNotificationDate] = useState(new Date());
 
   const loadProducts = async () => {
     setLoading(true);
@@ -25,6 +30,7 @@ export function AdminProductsPage({ user, onOpenSidebar }) {
     try {
       const result = await productService.getProducts();
       setProductList(result);
+      setNotificationDate(new Date());
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
@@ -40,6 +46,7 @@ export function AdminProductsPage({ user, onOpenSidebar }) {
       try {
         const result = await productService.getProducts();
         setProductList(result);
+        setNotificationDate(new Date());
       } catch (error) {
         setErrorMessage(error.message);
       } finally {
@@ -72,7 +79,11 @@ export function AdminProductsPage({ user, onOpenSidebar }) {
 
   const notifications = [];
   if (lowStockCount > 0) {
-    notifications.push(`มีสินค้าใกล้หมด ${lowStockCount} รายการ`);
+    notifications.push({
+      message: `มีสินค้าใกล้หมด ${lowStockCount} รายการ`,
+      date: notificationDate,
+      path: '/products',
+    });
   }
 
   const saveProduct = async (product) => {
@@ -162,7 +173,7 @@ export function AdminProductsPage({ user, onOpenSidebar }) {
   return (
     <div className="admin-content">
       <header className="admin-topbar">
-        <button type="button" className="mobile-menu" onClick={onOpenSidebar} aria-label="เปิดเมนู">
+        <button type="button" className="mobile-menu" onClick={openSidebar} aria-label="เปิดเมนู">
           <Menu size={20} />
         </button>
         <div className="topbar-search">
