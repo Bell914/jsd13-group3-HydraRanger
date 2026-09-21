@@ -61,6 +61,18 @@ export const AuthProvider = ({ children }) => {
     return sessionUser;
   }, []);
 
+  const updateProfile = useCallback(async (userData) => {
+    const res = await authService.updateProfile(userData);
+    const updated = res?.data?.data || res?.data?.user || res?.data;
+    setUser(updated);
+    localStorage.setItem("occasion_user", JSON.stringify(updated));
+    return updated;
+  }, []);
+
+  const changePassword = useCallback(async (data) => {
+    return await authService.changePassword(data);
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -70,8 +82,10 @@ export const AuthProvider = ({ children }) => {
       register,
       logout,
       refreshUser,
+      updateProfile,
+      changePassword,
     }),
-    [user, loading, login, register, logout, refreshUser]
+    [user, loading, login, register, logout, refreshUser, updateProfile, changePassword]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

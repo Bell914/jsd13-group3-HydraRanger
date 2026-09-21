@@ -31,7 +31,11 @@ export default function ProductListPage() {
         }
       } catch (err) {
         if (isMounted) {
-          setError("ไม่สามารถโหลดรายการสินค้าจากเซิร์ฟเวอร์ได้");
+          setError(
+            err.message
+              ? `เกิดข้อผิดพลาดในการเชื่อมต่อ Product API (${err.message})`
+              : "ไม่สามารถโหลดรายการสินค้าจากเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่อ"
+          );
         }
       } finally {
         if (isMounted) {

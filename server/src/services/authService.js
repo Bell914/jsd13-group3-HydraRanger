@@ -269,6 +269,67 @@ export const changePassword = async ({ userId, currentPassword, newPassword }) =
   return { success: true, message: 'Password updated successfully' };
 };
 
+export const updateProfile = async ({ userId, username, email, avatar }) => {
+  const validatedUsername = (username || '').trim();
+  const validatedEmail = (email || '').trim().toLowerCase();
+
+  if (!isSyntheticId(userId)) {
+    try {
+      const user = await User.findById(userId);
+      if (!user) throw new Error('User not found');
+
+      const changedUsername =
+        validatedUsername && validatedUsername !== user.username;
+      const changedEmail = validatedEmail && validatedEmail !== user.email;
+
+      if (changedUsername || changedEmail) {
+        const existing = await User.findOne({
+          _id: { $ne: user._id },
+          $or: [
+            ...(changedEmail ? [{ email: validatedEmail }] : []),
+            ...(changedUsername ? [{ username: validatedUsername }] : [])
+          ]
+        });
+        if (existing) throw new Error('Email or username is already in use');
+      }
+
+      if (validatedUsername) user.username = validatedUsername;
+      if (validatedEmail) user.email = validatedEmail;
+      if (typeof avatar === 'string') user.avatar = avatar.trim();
+      await user.save();
+      return user;
+    } catch (error) {
+      if (
+        error.message === 'Email or username is already in use' ||
+        error.message === 'User not found'
+      ) {
+        throw error;
+      }
+      if (isMongoDuplicateKeyError(error)) {
+        throw new Error('Email or username is already in use');
+      }
+      if (!isDbUnavailableError(error)) throw error;
+    }
+  }
+
+  // In-memory fallback (only when DB is offline or synthetic user)
+  const mockUser = inMemoryUsers.find((u) => u.id === userId);
+  if (!mockUser) throw new Error('User not found');
+
+  const taken = inMemoryUsers.find(
+    (u) =>
+      u.id !== userId &&
+      (u.email === validatedEmail || u.username === validatedUsername)
+  );
+  if (taken) throw new Error('Email or username is already in use');
+
+  if (validatedUsername) mockUser.username = validatedUsername;
+  if (validatedEmail) mockUser.email = validatedEmail;
+  if (typeof avatar === 'string') mockUser.avatar = avatar.trim();
+  const { password, ...safeUser } = mockUser;
+  return safeUser;
+};
+
 export const refreshToken = (currentToken) => {
   try {
     const decoded = jwt.verify(currentToken, ENV.JWT_SECRET);

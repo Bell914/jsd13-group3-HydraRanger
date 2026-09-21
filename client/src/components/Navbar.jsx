@@ -61,11 +61,15 @@ export const Navbar = () => {
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
-    const keyword = searchQuery.trim();
+    // Read the current value straight from the input so the latest typed text
+    // is never lost even if the store state update has not committed yet.
+    const formValue = event.currentTarget?.elements?.search?.value;
+    const keyword = (formValue !== undefined ? formValue : searchQuery).trim();
     if (!keyword) return;
     setIsSearchOpen(false);
     setIsMobileMenuOpen(false);
     navigate(`/products?search=${encodeURIComponent(keyword)}`);
+    setSearchQuery("");
   };
 
   const isActive = (path) => location.pathname === path;
@@ -274,7 +278,7 @@ export const Navbar = () => {
           </div>
         </div>
       </nav>
-
+      {/*เมื่อ isSearchOpen เป็นจริง แล้วmodal จะทำงาน*/}
       {isSearchOpen && (
         <SearchModal
           query={searchQuery}

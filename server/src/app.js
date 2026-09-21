@@ -50,12 +50,19 @@ app.use(
       if (!origin) return callback(null, true);
 
       const cleanOrigin = origin.replace(/\/+$/, "");
-      const isAllowed = allowedOrigins.includes(cleanOrigin);
+      const isAllowed =
+        allowedOrigins.includes(cleanOrigin) ||
+        cleanOrigin.endsWith(".vercel.app") ||
+        cleanOrigin.includes("vercel.app") ||
+        cleanOrigin.includes("localhost") ||
+        cleanOrigin.includes("127.0.0.1") ||
+        cleanOrigin.includes("onrender.com");
 
       if (isAllowed) {
         return callback(null, true);
       }
-      return callback(new Error(`CORS blocked for origin: ${origin}`));
+      // Allow all origins during Sprint 2 demo to prevent blocking
+      return callback(null, true);
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
