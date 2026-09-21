@@ -1,5 +1,5 @@
 import React from 'react';
-import { Crown, Sparkles, Award, Shield, CheckCircle, ArrowRight, X } from 'lucide-react';
+import { Crown, Sparkles, Award, Shield, Medal, CheckCircle, ArrowRight, X } from 'lucide-react';
 import { getRankTheme, RANK_BENEFITS } from '../../utils/loyaltyUtils.js';
 
 export const RankUpgradeModal = ({ isOpen, onClose, newRank = 'SILVER', previousRank = 'MEMBER' }) => {
@@ -15,6 +15,8 @@ export const RankUpgradeModal = ({ isOpen, onClose, newRank = 'SILVER', previous
         return <Crown size={36} className="text-amber-300" />;
       case 'SILVER':
         return <Sparkles size={36} className="text-slate-200" />;
+      case 'BRONZE':
+        return <Medal size={36} className="text-amber-500" />;
       default:
         return <Shield size={36} className="text-blue-300" />;
     }

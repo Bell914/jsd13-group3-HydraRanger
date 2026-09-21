@@ -15,7 +15,7 @@ describe('Customer Experience & Benefits (ประสบการณ์ลู�
         username: 'TestMember',
         membership: {
           rank: 'MEMBER',
-          accumulatedSpending: 1500
+          accumulatedSpending: 500
         }
       };
 
@@ -23,14 +23,14 @@ describe('Customer Experience & Benefits (ประสบการณ์ลู�
 
       // Verify current rank & spending
       expect(screen.getByText('MEMBER')).toBeInTheDocument();
-      expect(screen.getAllByText('฿1,500').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('฿500').length).toBeGreaterThanOrEqual(1);
 
       // Verify Next Rank Benefits Preview (Item 6)
       expect(
-        screen.getByText(/สิทธิประโยชน์ที่จะได้รับเมื่อเลื่อนเป็น SILVER:/i)
+        screen.getByText(/สิทธิประโยชน์ที่จะได้รับเมื่อเลื่อนเป็น BRONZE:/i)
       ).toBeInTheDocument();
       expect(
-        screen.getByText('ปลดล็อกส่วนลด On-top 5% ทุกคำสั่งซื้อ')
+        screen.getByText('ปลดล็อกส่วนลด On-top 3% ทุกคำสั่งซื้อ')
       ).toBeInTheDocument();
     });
   });
@@ -112,6 +112,7 @@ describe('Customer Experience & Benefits (ประสบการณ์ลู�
   describe('Early Access for Eligible Ranks', () => {
     it('correctly determines early access capability by rank', () => {
       expect(hasEarlyAccess('MEMBER')).toBe(false);
+      expect(hasEarlyAccess('BRONZE')).toBe(false);
       expect(hasEarlyAccess('SILVER')).toBe(true);
       expect(hasEarlyAccess('GOLD')).toBe(true);
       expect(hasEarlyAccess('PLATINUM')).toBe(true);

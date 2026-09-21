@@ -15,7 +15,9 @@ describe("Membership Rank & Loyalty Program", () => {
   describe("loyaltyUtils calculation", () => {
     it("correctly determines membership ranks across spending thresholds", () => {
       expect(calculateRankFromSpending(0)).toBe(MEMBERSHIP_RANKS.MEMBER);
-      expect(calculateRankFromSpending(2999)).toBe(MEMBERSHIP_RANKS.MEMBER);
+      expect(calculateRankFromSpending(999)).toBe(MEMBERSHIP_RANKS.MEMBER);
+      expect(calculateRankFromSpending(1000)).toBe(MEMBERSHIP_RANKS.BRONZE);
+      expect(calculateRankFromSpending(2999)).toBe(MEMBERSHIP_RANKS.BRONZE);
       expect(calculateRankFromSpending(3000)).toBe(MEMBERSHIP_RANKS.SILVER);
       expect(calculateRankFromSpending(7999)).toBe(MEMBERSHIP_RANKS.SILVER);
       expect(calculateRankFromSpending(8000)).toBe(MEMBERSHIP_RANKS.GOLD);
@@ -25,18 +27,33 @@ describe("Membership Rank & Loyalty Program", () => {
     });
 
     it("calculates progress toward next rank accurately", () => {
-      // 0 spending -> 0% to SILVER (needs 3000)
+      // 0 spending -> 0% to BRONZE (needs 1000)
       const prog0 = calculateProgress(0);
       expect(prog0.currentRank).toBe(MEMBERSHIP_RANKS.MEMBER);
-      expect(prog0.nextRank).toBe(MEMBERSHIP_RANKS.SILVER);
-      expect(prog0.amountNeeded).toBe(3000);
+      expect(prog0.nextRank).toBe(MEMBERSHIP_RANKS.BRONZE);
+      expect(prog0.amountNeeded).toBe(1000);
       expect(prog0.progressPercentage).toBe(0);
 
-      // 1500 spending -> 50% to SILVER (needs 1500)
-      const progHalf = calculateProgress(1500);
+      // 500 spending -> 50% to BRONZE (needs 500)
+      const progHalf = calculateProgress(500);
       expect(progHalf.currentRank).toBe(MEMBERSHIP_RANKS.MEMBER);
-      expect(progHalf.amountNeeded).toBe(1500);
+      expect(progHalf.nextRank).toBe(MEMBERSHIP_RANKS.BRONZE);
+      expect(progHalf.amountNeeded).toBe(500);
       expect(progHalf.progressPercentage).toBe(50);
+
+      // 1000 spending -> BRONZE (next is SILVER, target 3000, needs 2000)
+      const progBronze = calculateProgress(1000);
+      expect(progBronze.currentRank).toBe(MEMBERSHIP_RANKS.BRONZE);
+      expect(progBronze.nextRank).toBe(MEMBERSHIP_RANKS.SILVER);
+      expect(progBronze.amountNeeded).toBe(2000);
+      expect(progBronze.progressPercentage).toBe(0);
+
+      // 2000 spending -> BRONZE (50% to SILVER)
+      const progBronzeMid = calculateProgress(2000);
+      expect(progBronzeMid.currentRank).toBe(MEMBERSHIP_RANKS.BRONZE);
+      expect(progBronzeMid.nextRank).toBe(MEMBERSHIP_RANKS.SILVER);
+      expect(progBronzeMid.amountNeeded).toBe(1000);
+      expect(progBronzeMid.progressPercentage).toBe(50);
 
       // 3000 spending -> SILVER (next is GOLD, target 8000, needs 5000)
       const progSilver = calculateProgress(3000);
@@ -70,7 +87,7 @@ describe("Membership Rank & Loyalty Program", () => {
       expect(screen.getByText("SILVER")).toBeInTheDocument();
       expect(screen.getByText("฿4,500")).toBeInTheDocument();
       expect(screen.getByText("ช้อปอีก", { exact: false })).toBeInTheDocument();
-      expect(screen.getByText("GOLD", { exact: false })).toBeInTheDocument();
+      expect(screen.getAllByText(/GOLD/).length).toBeGreaterThanOrEqual(1);
     });
 
     it("toggles benefits list on button click", async () => {

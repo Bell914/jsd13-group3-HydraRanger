@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Crown, Sparkles, Award, Shield, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
+import { Crown, Sparkles, Award, Shield, Medal, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
 import {
   calculateProgress,
   getRankTheme,
@@ -25,6 +25,8 @@ export const MembershipCard = ({ user }) => {
         return <Crown size={20} className="text-amber-300" />;
       case 'SILVER':
         return <Sparkles size={20} className="text-slate-200" />;
+      case 'BRONZE':
+        return <Medal size={20} className="text-amber-500" />;
       default:
         return <Shield size={20} className="text-blue-300" />;
     }
@@ -126,7 +128,7 @@ export const MembershipCard = ({ user }) => {
         <div className="col-span-2 sm:col-span-1 rounded-xl bg-white/5 p-2.5 border border-white/5 backdrop-blur-xs">
           <span className="text-[10px] text-white/60 block font-medium">สิทธิ์วันเกิด</span>
           <span className="text-sm font-extrabold text-white">
-            {currentRank === 'PLATINUM' ? 'ลด 25% + Gift' : currentRank === 'GOLD' ? 'ลด 20%' : currentRank === 'SILVER' ? 'ลด 15%' : 'สิทธิ์พิเศษ'}
+            {currentRank === 'PLATINUM' ? 'ลด 25% + Gift' : currentRank === 'GOLD' ? 'ลด 20%' : currentRank === 'SILVER' ? 'ลด 15%' : currentRank === 'BRONZE' ? 'ลด 10%' : 'ลด 5%'}
           </span>
         </div>
       </div>

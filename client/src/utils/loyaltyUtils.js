@@ -1,5 +1,6 @@
 export const MEMBERSHIP_RANKS = {
   MEMBER: 'MEMBER',
+  BRONZE: 'BRONZE',
   SILVER: 'SILVER',
   GOLD: 'GOLD',
   PLATINUM: 'PLATINUM'
@@ -7,6 +8,7 @@ export const MEMBERSHIP_RANKS = {
 
 export const RANK_THRESHOLDS = {
   [MEMBERSHIP_RANKS.MEMBER]: 0,
+  [MEMBERSHIP_RANKS.BRONZE]: 1000,
   [MEMBERSHIP_RANKS.SILVER]: 3000,
   [MEMBERSHIP_RANKS.GOLD]: 8000,
   [MEMBERSHIP_RANKS.PLATINUM]: 20000
@@ -14,6 +16,7 @@ export const RANK_THRESHOLDS = {
 
 export const RANK_DISCOUNT_PERCENT = {
   [MEMBERSHIP_RANKS.MEMBER]: 0,
+  [MEMBERSHIP_RANKS.BRONZE]: 3,
   [MEMBERSHIP_RANKS.SILVER]: 5,
   [MEMBERSHIP_RANKS.GOLD]: 10,
   [MEMBERSHIP_RANKS.PLATINUM]: 15
@@ -21,6 +24,7 @@ export const RANK_DISCOUNT_PERCENT = {
 
 export const FREE_SHIPPING_MINIMUM = {
   [MEMBERSHIP_RANKS.MEMBER]: 1000,
+  [MEMBERSHIP_RANKS.BRONZE]: 850,
   [MEMBERSHIP_RANKS.SILVER]: 700,
   [MEMBERSHIP_RANKS.GOLD]: 0,
   [MEMBERSHIP_RANKS.PLATINUM]: 0
@@ -32,10 +36,16 @@ export const RANK_BENEFITS = {
     'สะสมยอดซื้ออัตโนมัติเพื่อปลดล็อกระดับถัดไป',
     'บันทึกรายการสินค้าโปรด (Wishlist) & Favorite Lookbooks'
   ],
+  [MEMBERSHIP_RANKS.BRONZE]: [
+    'ส่วนลด On-top 3% ทุกคำสั่งซื้อ',
+    'คูปองวันเกิด ลด 10% (1 สิทธิ์ในเดือนเกิด)',
+    'ส่งฟรีเมื่อซื้อครบ 850 บาท (ปกติ 1,000 บาท)'
+  ],
   [MEMBERSHIP_RANKS.SILVER]: [
     'ส่วนลด On-top 5% ทุกคำสั่งซื้อ',
     'คูปองวันเกิด ลด 15% (1 สิทธิ์ในเดือนเกิด)',
-    'ส่งฟรีเมื่อซื้อครบ 700 บาท (ปกติ 1,000 บาท)'
+    'ส่งฟรีเมื่อซื้อครบ 700 บาท (ปกติ 1,000 บาท)',
+    'Early Access สิทธิ์ซื้อสินค้าคอลเลกชันใหม่ก่อนใคร 12 ชม.'
   ],
   [MEMBERSHIP_RANKS.GOLD]: [
     'ส่วนลด On-top 10% ทุกคำสั่งซื้อ',
@@ -57,6 +67,7 @@ export const calculateRankFromSpending = (spending = 0) => {
   if (amount >= RANK_THRESHOLDS[MEMBERSHIP_RANKS.PLATINUM]) return MEMBERSHIP_RANKS.PLATINUM;
   if (amount >= RANK_THRESHOLDS[MEMBERSHIP_RANKS.GOLD]) return MEMBERSHIP_RANKS.GOLD;
   if (amount >= RANK_THRESHOLDS[MEMBERSHIP_RANKS.SILVER]) return MEMBERSHIP_RANKS.SILVER;
+  if (amount >= RANK_THRESHOLDS[MEMBERSHIP_RANKS.BRONZE]) return MEMBERSHIP_RANKS.BRONZE;
   return MEMBERSHIP_RANKS.MEMBER;
 };
 
@@ -76,10 +87,13 @@ export const calculateProgress = (spending = 0) => {
     };
   }
 
-  let nextRank = MEMBERSHIP_RANKS.SILVER;
-  let targetThreshold = RANK_THRESHOLDS[MEMBERSHIP_RANKS.SILVER];
+  let nextRank = MEMBERSHIP_RANKS.BRONZE;
+  let targetThreshold = RANK_THRESHOLDS[MEMBERSHIP_RANKS.BRONZE];
 
-  if (currentRank === MEMBERSHIP_RANKS.SILVER) {
+  if (currentRank === MEMBERSHIP_RANKS.BRONZE) {
+    nextRank = MEMBERSHIP_RANKS.SILVER;
+    targetThreshold = RANK_THRESHOLDS[MEMBERSHIP_RANKS.SILVER];
+  } else if (currentRank === MEMBERSHIP_RANKS.SILVER) {
     nextRank = MEMBERSHIP_RANKS.GOLD;
     targetThreshold = RANK_THRESHOLDS[MEMBERSHIP_RANKS.GOLD];
   } else if (currentRank === MEMBERSHIP_RANKS.GOLD) {
@@ -136,6 +150,16 @@ export const getRankTheme = (rank = MEMBERSHIP_RANKS.MEMBER) => {
         accentColor: 'text-slate-200',
         barColor: 'bg-gradient-to-r from-slate-300 to-white'
       };
+    case MEMBERSHIP_RANKS.BRONZE:
+      return {
+        name: 'BRONZE',
+        labelTh: 'ระดับบรอนซ์',
+        cardGradient: 'from-[#1c120c] via-[#2d1b0f] to-[#422213]',
+        cardBorder: 'border-amber-700/40',
+        badgeBg: 'bg-gradient-to-r from-amber-700/20 to-orange-800/20 text-amber-300 border border-amber-600/40',
+        accentColor: 'text-amber-400',
+        barColor: 'bg-gradient-to-r from-amber-600 to-amber-400'
+      };
     default:
       return {
         name: 'MEMBER',
@@ -155,11 +179,19 @@ export const hasEarlyAccess = (rank = MEMBERSHIP_RANKS.MEMBER) => {
 
 export const NEXT_RANK_PERKS = {
   [MEMBERSHIP_RANKS.MEMBER]: {
+    targetRank: MEMBERSHIP_RANKS.BRONZE,
+    highlights: [
+      'ปลดล็อกส่วนลด On-top 3% ทุกคำสั่งซื้อ',
+      'ลดเกณฑ์ส่งฟรีเหลือเพียง ฿850 (จากเดิม ฿1,000)',
+      'สิทธิ์ส่วนลดวันเกิด 10%'
+    ]
+  },
+  [MEMBERSHIP_RANKS.BRONZE]: {
     targetRank: MEMBERSHIP_RANKS.SILVER,
     highlights: [
-      'ปลดล็อกส่วนลด On-top 5% ทุกคำสั่งซื้อ',
-      'ลดเกณฑ์ส่งฟรีเหลือเพียง ฿700 (จากเดิม ฿1,000)',
-      'สิทธิ์ส่วนลดวันเกิดเพิ่มเป็น 15%'
+      'อัปเกรดส่วนลด On-top เป็น 5% ทุกคำสั่งซื้อ',
+      'ลดเกณฑ์ส่งฟรีเหลือเพียง ฿700',
+      'Early Access ช้อปคอลเลกชันใหม่ก่อนใคร 12 ชม.'
     ]
   },
   [MEMBERSHIP_RANKS.SILVER]: {
@@ -229,10 +261,19 @@ export const getCouponsForUser = (rank = MEMBERSHIP_RANKS.MEMBER, birthMonth = 8
     },
     {
       id: 'c-tier',
-      code: rank === MEMBERSHIP_RANKS.PLATINUM ? 'PLATINUMVIP15' : rank === MEMBERSHIP_RANKS.GOLD ? 'GOLDVIP10' : rank === MEMBERSHIP_RANKS.SILVER ? 'SILVERVIP5' : 'MEMBERPERK',
+      code:
+        rank === MEMBERSHIP_RANKS.PLATINUM
+          ? 'PLATINUMVIP15'
+          : rank === MEMBERSHIP_RANKS.GOLD
+            ? 'GOLDVIP10'
+            : rank === MEMBERSHIP_RANKS.SILVER
+              ? 'SILVERVIP5'
+              : rank === MEMBERSHIP_RANKS.BRONZE
+                ? 'BRONZEVIP3'
+                : 'MEMBERPERK',
       title: `ส่วนลดพิเศษประจำเดือน (${rank})`,
       discountType: 'percent',
-      discountValue: RANK_DISCOUNT_PERCENT[rank] || 5,
+      discountValue: RANK_DISCOUNT_PERCENT[rank] || 3,
       minSpend: 0,
       expiresAt: 'สิ้นเดือนนี้',
       category: 'monthly',
@@ -244,7 +285,16 @@ export const getCouponsForUser = (rank = MEMBERSHIP_RANKS.MEMBER, birthMonth = 8
       code: `BDAY${rank}2026`,
       title: 'Birthday Celebration Privilege',
       discountType: 'percent',
-      discountValue: rank === MEMBERSHIP_RANKS.PLATINUM ? 25 : rank === MEMBERSHIP_RANKS.GOLD ? 20 : rank === MEMBERSHIP_RANKS.SILVER ? 15 : 10,
+      discountValue:
+        rank === MEMBERSHIP_RANKS.PLATINUM
+          ? 25
+          : rank === MEMBERSHIP_RANKS.GOLD
+            ? 20
+            : rank === MEMBERSHIP_RANKS.SILVER
+              ? 15
+              : rank === MEMBERSHIP_RANKS.BRONZE
+                ? 10
+                : 5,
       minSpend: 0,
       expiresAt: isBirthMonth ? 'สิ้นสุดเดือนเกิดของคุณ' : 'ใช้ได้ในเดือนเกิด',
       category: 'birthday',

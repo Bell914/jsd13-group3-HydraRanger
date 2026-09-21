@@ -77,7 +77,7 @@ export const CouponsSection = ({ user }) => {
               <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
                 <span>สิทธิ์ส่วนลดเดือนเกิด (Birthday Reward Privilege)</span>
                 <span className="px-2 py-0.5 rounded-md bg-pink-100 text-pink-700 text-[10px] font-extrabold uppercase">
-                  {currentRank === 'PLATINUM' ? 'ลด 25% + Gift Set' : currentRank === 'GOLD' ? 'ลด 20%' : currentRank === 'SILVER' ? 'ลด 15%' : 'ลด 10%'}
+                  {currentRank === 'PLATINUM' ? 'ลด 25% + Gift Set' : currentRank === 'GOLD' ? 'ลด 20%' : currentRank === 'SILVER' ? 'ลด 15%' : currentRank === 'BRONZE' ? 'ลด 10%' : 'ลด 5%'}
                 </span>
               </h4>
               <p className="text-xs text-gray-600 mt-0.5">

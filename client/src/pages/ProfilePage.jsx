@@ -385,9 +385,17 @@ export const ProfilePage = () => {
                             <td className="p-3 font-bold text-slate-800">MEMBER</td>
                             <td className="p-3">฿0</td>
                             <td className="p-3">-</td>
-                            <td className="p-3">สิทธิ์พิเศษ</td>
+                            <td className="p-3">ลด 5%</td>
                             <td className="p-3">ครบ ฿1,000</td>
                             <td className="p-3">Welcome Coupon ลด 10%</td>
+                          </tr>
+                          <tr className={user?.membership?.rank === 'BRONZE' ? 'bg-amber-100/40 font-semibold' : ''}>
+                            <td className="p-3 font-bold text-amber-700">BRONZE</td>
+                            <td className="p-3">฿1,000</td>
+                            <td className="p-3 text-emerald-600 font-bold">ลด 3%</td>
+                            <td className="p-3">ลด 10%</td>
+                            <td className="p-3">ครบ ฿850</td>
+                            <td className="p-3">สะสมยอดต่อเนื่อง</td>
                           </tr>
                           <tr className={user?.membership?.rank === 'SILVER' ? 'bg-slate-100/70 font-semibold' : ''}>
                             <td className="p-3 font-bold text-slate-600">SILVER</td>
@@ -395,7 +403,7 @@ export const ProfilePage = () => {
                             <td className="p-3 text-emerald-600 font-bold">ลด 5%</td>
                             <td className="p-3">ลด 15%</td>
                             <td className="p-3">ครบ ฿700</td>
-                            <td className="p-3">สะสมยอดต่อเนื่อง</td>
+                            <td className="p-3">Early Access 12 ชม.</td>
                           </tr>
                           <tr className={user?.membership?.rank === 'GOLD' ? 'bg-amber-50/70 font-semibold' : ''}>
                             <td className="p-3 font-bold text-amber-600">GOLD</td>
