@@ -1,6 +1,5 @@
 import fallbackData from '../data/look-data.json';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+import { API_URL } from './api.js';
 
 function normalizeItem(item) {
   const product = item.product || {};
@@ -30,7 +29,7 @@ function normalizeLookbook(lookbook) {
 }
 
 async function request(path) {
-  const response = await fetch(`${API_BASE_URL}${path}`);
+  const response = await fetch(`${API_URL}${path}`);
   const result = await response.json().catch(() => ({}));
 
   if (!response.ok) {

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getProductById, getProducts } from "../services/productService.js";
 import { useCartStore } from "../store/cartStore.js";
+import { useWishlistStore } from "../store/wishlistStore.js";
 import lookData from "../data/look-data.json";
 import {
   ProductGallery,
@@ -18,6 +19,8 @@ import { normalizeImageUrl, getDetailImageSet } from "../utils/imageUtils.js";
 export default function ProductDetailPage() {
   const { productId } = useParams();
   const addToCart = useCartStore((state) => state.addToCart);
+  const wishlist = useWishlistStore((state) => state.wishlist);
+  const toggleWishlist = useWishlistStore((state) => state.toggleWishlist);
 
   const [product, setProduct] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
@@ -31,7 +34,6 @@ export default function ProductDetailPage() {
   const [error, setError] = useState("");
   const [validationError, setValidationError] = useState("");
   const [addedSuccessModal, setAddedSuccessModal] = useState(null);
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
 
   // Accordion state (Details & Materials)
@@ -342,8 +344,12 @@ export default function ProductDetailPage() {
             onQuantityChange={setQuantity}
             validationError={validationError}
             onAddToCart={handleAddToCart}
-            isWishlisted={isWishlisted}
-            onToggleWishlist={() => setIsWishlisted(!isWishlisted)}
+            isWishlisted={wishlist.some(
+              (item) =>
+                item._id ===
+                (product._id || product.productId || product.id || product.sku)
+            )}
+            onToggleWishlist={() => toggleWishlist(product)}
           />
         </div>
 
