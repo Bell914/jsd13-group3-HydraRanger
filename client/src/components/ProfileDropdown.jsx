@@ -2,7 +2,13 @@ import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { assets } from "../assets/assets.js";
 
-export const ProfileDropdown = ({ username, isOpen, onToggle, onClose, onLogout }) => {
+export const ProfileDropdown = ({
+  username,
+  isOpen,
+  onToggle,
+  onClose,
+  onLogout,
+}) => {
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -46,7 +52,11 @@ export const ProfileDropdown = ({ username, isOpen, onToggle, onClose, onLogout 
       </button>
 
       {isOpen && (
-        <div id="profile-dropdown-menu" role="menu" className="absolute left-1/2 top-full z-[100] mt-2 h-auto -translate-x-1/2 md:left-auto md:right-0 md:translate-x-0">
+        <div
+          id="profile-dropdown-menu"
+          role="menu"
+          className="absolute left-1/2 top-full z-[100] mt-2 h-auto -translate-x-1/2 md:left-auto md:right-0 md:translate-x-0"
+        >
           <div className="flex min-h-fit w-48 flex-col gap-2 rounded-2xl border border-occasion-border/55 bg-surface p-3 shadow-2xl">
             <Link
               to="/profile"
@@ -54,7 +64,12 @@ export const ProfileDropdown = ({ username, isOpen, onToggle, onClose, onLogout 
               onClick={onClose}
               className="flex items-center gap-3 rounded-lg p-2 font-medium text-secondary transition hover:bg-background hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
             >
-              <img src={assets.userimg} alt="" aria-hidden="true" className="w-5 h-5 shrink-0" />
+              <img
+                src={assets.userimg}
+                alt=""
+                aria-hidden="true"
+                className="w-5 h-5 shrink-0"
+              />
               <span className="text-sm">Profile</span>
             </Link>
             <hr className="my-1 border-occasion-border/45" />
@@ -64,8 +79,15 @@ export const ProfileDropdown = ({ username, isOpen, onToggle, onClose, onLogout 
               onClick={onLogout}
               className="flex w-full cursor-pointer items-center gap-3 rounded-lg border-0 bg-transparent p-2 text-left font-medium text-accent transition hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
             >
-              <img src={assets.logout} alt="" aria-hidden="true" className="h-5 w-5 shrink-0" />
-              <span className="text-base font-semibold text-accent">Logout</span>
+              <img
+                src={assets.logout}
+                alt=""
+                aria-hidden="true"
+                className="h-5 w-5 shrink-0"
+              />
+              <span className="text-base font-semibold text-accent">
+                Logout
+              </span>
             </button>
           </div>
         </div>
