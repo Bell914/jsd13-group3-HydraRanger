@@ -13,6 +13,7 @@ import {
   OrderConfirmationScreen,
   SHIPPING_METHODS,
 } from "../components/checkout";
+import { createOrder } from "../services/orderService";
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -55,6 +56,8 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
 
+  const [submitError, setSubmitError] = useState(null);
+
   const subtotal = getTotalPrice();
 
   // Calculate order total for final order placement
@@ -66,24 +69,64 @@ export default function CheckoutPage() {
   const totalAmount = subtotal + shippingCost + taxAmount;
 
   // Handle Place Order
-  const handlePlaceOrder = () => {
+  // ✏️ HIGHLIGHT: ปรับปรุง handlePlaceOrder จาก setTimeout เป็น async/await ยิง POST /api/orders จริง
+const handlePlaceOrder = async () => {
     setIsSubmitting(true);
-    const itemsSnapshot = [...cartItems];
-    setTimeout(() => {
-      const orderId = `OCC-${Math.floor(100000 + Math.random() * 900000)}`;
-      setCompletedOrder({
-        orderId,
+    setSubmitError(null); // ➕ ล้างข้อความ Error เก่าก่อนยิง Request ใหม่
+
+    try {
+      // ➕ 1. จัดเตรียม Payload ทั้ง 6 ส่วนตามโครงสร้างที่ Backend กำหนด
+      const orderPayload = {
+        email: email,
+        items: cartItems.map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId,
+          sku: item.sku || "",
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        shippingAddress: {
+          firstName: shippingData.firstName,
+          lastName: shippingData.lastName,
+          phone: shippingData.phone,
+          address: shippingData.address,
+          city: shippingData.city,
+          state: shippingData.state,
+          zipCode: shippingData.zipCode,
+          location: shippingData.location,
+        },
+        shippingMethod: shippingData.shippingMethod,
+        paymentMethod: paymentData.method,
+        shippingCost: shippingCost,
+      };
+
+      // ➕ 2. ยิง API POST /api/orders
+      const responseData = await createOrder(orderPayload);
+
+      // ➕ 3. เมื่อสั่งซื้อสำเร็จ: เก็บข้อมูล Order ที่ได้จาก Server และล้างตะกร้าสินค้า
+      setCompletedOrder(responseData?.order || responseData || {
+        orderId: responseData?.orderId || `OCC-${Math.floor(100000 + Math.random() * 900000)}`,
         shippingData,
         email,
-        items: itemsSnapshot,
+        items: [...cartItems],
         subtotal,
         shippingCost,
         taxAmount,
         totalAmount,
       });
-      clearCart();
-      setIsSubmitting(false);
-    }, 800);
+
+      clearCart(); // ล้างตะกร้าใน Zustand & LocalStorage
+
+    } catch (err) {
+      // ➕ 4. แสดงข้อความแจ้งเตือนเมื่อเกิดปัญหา (Error Handling)
+      console.error("Failed to place order:", err);
+      setSubmitError(
+        err.response?.data?.message || 
+        "เกิดข้อผิดพลาดในการบันทึกคำสั่งซื้อ กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง"
+      );
+    } finally {
+      setIsSubmitting(false); // ปิดสถานะ Loading
+    }
   };
 
   // If order is completed, show full Order Confirmation Screen (Receipt Screen from Image 1)
@@ -117,6 +160,19 @@ export default function CheckoutPage() {
           currentStep={currentStep}
           onStepClick={(step) => setCurrentStep(step)}
         />
+
+{/* ➕ HIGHLIGHT: แสดงกล่อง Error Message หากยิง API ไม่สำเร็จ */}
+{submitError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex justify-between items-center">
+            <span>{submitError}</span>
+            <button 
+              onClick={() => setSubmitError(null)}
+              className="text-red-500 font-bold hover:text-red-800"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Multi-Step Forms */}
