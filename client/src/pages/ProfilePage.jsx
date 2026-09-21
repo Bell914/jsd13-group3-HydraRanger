@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { User, Heart, BookOpen, MapPin, Package, AlertCircle, Save, KeyRound, Plus, Pencil, Trash2, Crown, Check } from 'lucide-react';
-import { Card, WishlistSection, MembershipCard } from '../components';
+import { User, Heart, BookOpen, MapPin, Package, AlertCircle, Save, KeyRound, Plus, Pencil, Trash2, Crown, Check, Ticket, Sparkles, Tag } from 'lucide-react';
+import { Card, WishlistSection, MembershipCard, CouponsSection } from '../components';
 import { useAuth } from '../context/Auth/useAuth.jsx';
 import { useWishlistStore } from '../store/wishlistStore.js';
 import { useAddressStore, emptyAddress } from '../store/addressStore.js';
 import { useLookbookStore } from '../store/lookbookStore.js';
 import { normalizeImageUrl } from '../utils/imageUtils.js';
+import { MEMBER_PROMOTIONS } from '../utils/loyaltyUtils.js';
 
 // Component แสดงผลเมื่อไม่มีข้อมูล (Empty State)
 const EmptyState = ({ message, subtitle }) => (
@@ -162,6 +163,7 @@ export const ProfilePage = () => {
   const tabs = [
     { id: 'profile', label: 'ข้อมูลส่วนตัว', icon: User },
     { id: 'membership', label: 'Membership & Loyalty', icon: Crown },
+    { id: 'coupons', label: 'คูปองและรางวัล (Vouchers)', icon: Ticket },
     { id: 'wishlist', label: 'Wishlist', icon: Heart },
     { id: 'lookbooks', label: 'Favorite Lookbooks', icon: BookOpen },
     { id: 'addresses', label: 'Shipping Addresses', icon: MapPin },
@@ -415,9 +417,57 @@ export const ProfilePage = () => {
                       </table>
                     </div>
                   </div>
+
+                  {/* Member Exclusive Promotions (Item 10) */}
+                  <div className="mt-8 pt-6 border-t border-gray-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-base font-bold text-primary flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-amber-500" />
+                          <span>โปรโมชั่นพิเศษสำหรับสมาชิก (Member Exclusive Campaigns)</span>
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          สิทธิประโยชน์และแคมเปญพิเศษที่จัดขึ้นสำหรับสมาชิก OCCASION LOYALTY CLUB โดยเฉพาะ
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {MEMBER_PROMOTIONS.map((promo) => (
+                        <div
+                          key={promo.id}
+                          className="rounded-2xl border border-gray-200 p-4 bg-gradient-to-br from-white to-gray-50/80 shadow-2xs hover:shadow-xs transition flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-primary text-white">
+                                {promo.tag}
+                              </span>
+                              <span className="text-[10px] font-semibold text-gray-500">
+                                {promo.period}
+                              </span>
+                            </div>
+                            <h4 className="text-sm font-bold text-gray-900 mt-1">
+                              {promo.title}
+                            </h4>
+                            <p className="text-xs text-gray-600 mt-1 line-clamp-3">
+                              {promo.description}
+                            </p>
+                          </div>
+                          <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
+                            <span className="font-semibold text-amber-700">{promo.badge}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
+          )}
+
+          {activeTab === 'coupons' && (
+            <CouponsSection user={user} />
           )}
 
           {activeTab === 'wishlist' && (

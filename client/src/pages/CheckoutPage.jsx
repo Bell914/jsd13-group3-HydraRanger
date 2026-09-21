@@ -99,19 +99,25 @@ export default function CheckoutPage() {
     }
     const itemsSnapshot = [...cartItems];
 
+    let upgradedRank = null;
     // Update user loyalty points/spending and rank
-    if (currentUser && updateProfile) {
+    if (currentUser) {
       const currentSpending = Number(currentUser.membership?.accumulatedSpending || 0);
       const newSpending = currentSpending + discountedSubtotal;
       const newRank = calculateRankFromSpending(newSpending);
-      updateProfile({
-        membership: {
-          ...currentUser.membership,
-          accumulatedSpending: newSpending,
-          rank: newRank,
-          rankUpdatedAt: new Date()
-        }
-      }).catch((err) => console.warn("Could not update loyalty rank:", err));
+      if (newRank !== userRank) {
+        upgradedRank = newRank;
+      }
+      if (updateProfile) {
+        updateProfile({
+          membership: {
+            ...currentUser.membership,
+            accumulatedSpending: newSpending,
+            rank: newRank,
+            rankUpdatedAt: new Date()
+          }
+        }).catch((err) => console.warn("Could not update loyalty rank:", err));
+      }
     }
 
     setTimeout(() => {
@@ -124,6 +130,7 @@ export default function CheckoutPage() {
         subtotal,
         rankDiscountAmount,
         userRank,
+        upgradedRank,
         shippingCost,
         taxAmount,
         totalAmount,

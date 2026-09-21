@@ -148,3 +148,123 @@ export const getRankTheme = (rank = MEMBERSHIP_RANKS.MEMBER) => {
       };
   }
 };
+
+export const hasEarlyAccess = (rank = MEMBERSHIP_RANKS.MEMBER) => {
+  return rank === MEMBERSHIP_RANKS.SILVER || rank === MEMBERSHIP_RANKS.GOLD || rank === MEMBERSHIP_RANKS.PLATINUM;
+};
+
+export const NEXT_RANK_PERKS = {
+  [MEMBERSHIP_RANKS.MEMBER]: {
+    targetRank: MEMBERSHIP_RANKS.SILVER,
+    highlights: [
+      'ปลดล็อกส่วนลด On-top 5% ทุกคำสั่งซื้อ',
+      'ลดเกณฑ์ส่งฟรีเหลือเพียง ฿700 (จากเดิม ฿1,000)',
+      'สิทธิ์ส่วนลดวันเกิดเพิ่มเป็น 15%'
+    ]
+  },
+  [MEMBERSHIP_RANKS.SILVER]: {
+    targetRank: MEMBERSHIP_RANKS.GOLD,
+    highlights: [
+      'อัปเกรดส่วนลด On-top เป็น 10% ทุกคำสั่งซื้อ',
+      'สิทธิ์ส่งฟรีไม่มีขั้นต่ำทุกออเดอร์',
+      'Early Access ช้อปคอลเลกชันใหม่ก่อนใคร 24 ชม.'
+    ]
+  },
+  [MEMBERSHIP_RANKS.GOLD]: {
+    targetRank: MEMBERSHIP_RANKS.PLATINUM,
+    highlights: [
+      'ส่วนลด On-top สูงสุด 15% ทุกคำสั่งซื้อ',
+      'จัดส่งด่วนพิเศษฟรี (Priority Free Shipping)',
+      'Early Access 48 ชม. + VIP Care & Gift Set วันเกิด'
+    ]
+  }
+};
+
+export const MEMBER_PROMOTIONS = [
+  {
+    id: 'promo-1',
+    title: 'OCCASION Member Days',
+    tag: 'EXCLUSIVE',
+    badge: 'สำหรับทุกระดับสมาชิก',
+    description: 'รับส่วนลด On-top ประจำระดับสมาชิกเพิ่มทันทีเมื่อช้อปเสื้อผ้าคอลเลกชัน Seasonal ล่าสุด',
+    period: 'ตลอดเดือนนี้',
+    color: 'from-blue-600/20 to-indigo-600/10 border-blue-500/30 text-blue-800'
+  },
+  {
+    id: 'promo-2',
+    title: 'Double Spending Weekend',
+    tag: 'VIP TIER',
+    badge: 'สำหรับ GOLD & PLATINUM',
+    description: 'ช้อปสุดสัปดาห์นี้นับยอดซื้อสะสม x2 เพื่อการรักษาระดับและปลดล็อกรีวอร์ดเร็วยิ่งขึ้น',
+    period: 'ทุกวันเสาร์ - อาทิตย์',
+    color: 'from-amber-600/20 to-yellow-600/10 border-amber-500/30 text-amber-900'
+  },
+  {
+    id: 'promo-3',
+    title: 'New Lookbook Early Drop',
+    tag: 'EARLY ACCESS',
+    badge: 'สำหรับ SILVER ขึ้นไป',
+    description: 'เปิดให้พรีออเดอร์และสั่งซื้อไอเทม Lookbook ใหม่ล่วงหน้าก่อนเปิดขายทั่วไป',
+    period: '24 - 48 ชม. ก่อนเปิดตัว',
+    color: 'from-purple-600/20 to-pink-600/10 border-purple-500/30 text-purple-900'
+  }
+];
+
+export const getCouponsForUser = (rank = MEMBERSHIP_RANKS.MEMBER, birthMonth = 8) => {
+  const currentMonth = new Date().getMonth() + 1;
+  const isBirthMonth = currentMonth === birthMonth;
+
+  const coupons = [
+    {
+      id: 'c-welcome',
+      code: 'OCCWELCOME10',
+      title: 'คูปองต้อนรับสมาชิกใหม่',
+      discountType: 'percent',
+      discountValue: 10,
+      minSpend: 500,
+      expiresAt: '2026-12-31',
+      category: 'welcome',
+      badge: 'Welcome Reward',
+      usable: true
+    },
+    {
+      id: 'c-tier',
+      code: rank === MEMBERSHIP_RANKS.PLATINUM ? 'PLATINUMVIP15' : rank === MEMBERSHIP_RANKS.GOLD ? 'GOLDVIP10' : rank === MEMBERSHIP_RANKS.SILVER ? 'SILVERVIP5' : 'MEMBERPERK',
+      title: `ส่วนลดพิเศษประจำเดือน (${rank})`,
+      discountType: 'percent',
+      discountValue: RANK_DISCOUNT_PERCENT[rank] || 5,
+      minSpend: 0,
+      expiresAt: 'สิ้นเดือนนี้',
+      category: 'monthly',
+      badge: `Tier Perk: ${rank}`,
+      usable: true
+    },
+    {
+      id: 'c-bday',
+      code: `BDAY${rank}2026`,
+      title: 'Birthday Celebration Privilege',
+      discountType: 'percent',
+      discountValue: rank === MEMBERSHIP_RANKS.PLATINUM ? 25 : rank === MEMBERSHIP_RANKS.GOLD ? 20 : rank === MEMBERSHIP_RANKS.SILVER ? 15 : 10,
+      minSpend: 0,
+      expiresAt: isBirthMonth ? 'สิ้นสุดเดือนเกิดของคุณ' : 'ใช้ได้ในเดือนเกิด',
+      category: 'birthday',
+      badge: 'Birthday Reward',
+      usable: isBirthMonth,
+      isBirthdayReward: true
+    },
+    {
+      id: 'c-ship',
+      code: 'OCCFREESHIP',
+      title: 'คูปองส่งฟรีไม่มีขั้นต่ำ',
+      discountType: 'shipping',
+      discountValue: 50,
+      minSpend: 0,
+      expiresAt: '2026-12-31',
+      category: 'shipping',
+      badge: 'Free Shipping',
+      usable: true
+    }
+  ];
+
+  return coupons;
+};

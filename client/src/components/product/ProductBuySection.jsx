@@ -1,5 +1,5 @@
 import React from "react";
-import { Heart, Share2, Ruler, Minus, Plus, ShoppingBag } from "lucide-react";
+import { Heart, Share2, Ruler, Minus, Plus, ShoppingBag, Sparkles } from "lucide-react";
 
 export const ProductBuySection = ({
   product,
@@ -53,17 +53,29 @@ export const ProductBuySection = ({
             <h1 className="text-2xl sm:text-3xl font-black text-primary tracking-tight">
               {product.name}
             </h1>
-            {/* Product Tags */}
-            {product.tags && product.tags.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {product.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200"
-                  >
-                    #{tag}
-                  </span>
-                ))}
+            {/* Product Tags & Early Access */}
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              {product.isEarlyAccess && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-400 to-yellow-400 px-2 py-0.5 text-xs font-black uppercase text-gray-950 shadow-xs">
+                  <Sparkles size={12} className="text-gray-950" />
+                  <span>EARLY ACCESS</span>
+                </span>
+              )}
+              {product.tags && product.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+            {product.isEarlyAccess && (
+              <div className="mt-2.5 flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                <Sparkles size={14} className="text-amber-600 shrink-0" />
+                <span>
+                  <strong>Early Access Exclusive:</strong> สิทธิพิเศษช้อปสินค้าคอลเลกชันใหม่ก่อนใคร สำหรับสมาชิก <strong>SILVER</strong> ขึ้นไป
+                </span>
               </div>
             )}
           </div>

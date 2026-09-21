@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Heart } from "lucide-react";
+import { Heart, Sparkles } from "lucide-react";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
 import { useWishlistStore } from "../store/wishlistStore.js";
 import { useAuth } from "../context/Auth/useAuth.jsx";
@@ -55,7 +55,7 @@ export default function ProductCard({ product }) {
     product.image ||
     product.variants?.[0]?.imageUrl ||
     "";
-  const imgUrl = normalizeImageUrl(rawImg);
+  const imgUrl = normalizeImageUrl(rawImg) || undefined;
 
   return (
     <Link
@@ -70,11 +70,16 @@ export default function ProductCard({ product }) {
           className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
         />
-        {categoryName && (
+        {product.isEarlyAccess ? (
+          <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-400 to-yellow-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-gray-950 shadow-sm">
+            <Sparkles size={11} className="text-gray-950" />
+            <span>EARLY ACCESS</span>
+          </span>
+        ) : categoryName ? (
           <span className="absolute top-2 left-2 rounded-md bg-[#0046a7] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
             {categoryName}
           </span>
-        )}
+        ) : null}
 
         {/* Wishlist Button */}
         <button

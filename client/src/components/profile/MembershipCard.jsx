@@ -5,7 +5,8 @@ import {
   getRankTheme,
   RANK_BENEFITS,
   RANK_DISCOUNT_PERCENT,
-  FREE_SHIPPING_MINIMUM
+  FREE_SHIPPING_MINIMUM,
+  NEXT_RANK_PERKS
 } from '../../utils/loyaltyUtils.js';
 
 export const MembershipCard = ({ user }) => {
@@ -88,6 +89,24 @@ export const MembershipCard = ({ user }) => {
           )}
           <span className="font-bold text-white/60">{progress.progressPercentage}%</span>
         </div>
+
+        {/* Next Rank Benefits Preview (Item 6) */}
+        {!progress.isMaxRank && NEXT_RANK_PERKS[currentRank] && (
+          <div className="mt-3.5 rounded-xl bg-black/25 p-3.5 border border-white/10 backdrop-blur-xs">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 mb-1.5">
+              <Sparkles size={14} className="text-amber-300" />
+              <span>สิทธิประโยชน์ที่จะได้รับเมื่อเลื่อนเป็น {progress.nextRank}:</span>
+            </div>
+            <ul className="space-y-1 text-xs text-white/90">
+              {NEXT_RANK_PERKS[currentRank].highlights.map((highlight, idx) => (
+                <li key={idx} className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-300 shrink-0" />
+                  <span>{highlight}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {/* Key Highlights */}

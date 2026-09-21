@@ -26,3 +26,5 @@ export { default as LookbookCard } from "./lookbook/LookbookCard.jsx";
 export { default as MixAndMatchSection } from "./MixAndMatchSection.jsx";
 export { default as ImageDropzone } from "./ImageDropzone.jsx";
 export { MembershipCard } from "./profile/MembershipCard.jsx";
+export { CouponsSection } from "./profile/CouponsSection.jsx";
+export { RankUpgradeModal } from "./profile/RankUpgradeModal.jsx";
