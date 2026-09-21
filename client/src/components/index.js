@@ -22,10 +22,7 @@ export { LookbooksSection } from "./profile/LookbooksSection.jsx";
 export { AddressSection } from "./profile/AddressSection.jsx";
 export { OrderHistorySection } from "./profile/OrderHistorySection.jsx";
 export { EmptyState } from "./profile/EmptyState.jsx";
-<<<<<<< HEAD
-=======
 export { default as LookbookCard } from "./lookbook/LookbookCard.jsx";
->>>>>>> 56b00f16af251790acce27700f444422e21f5e80
 export { default as MixAndMatchSection } from "./MixAndMatchSection.jsx";
 export { default as ImageDropzone } from "./ImageDropzone.jsx";
 
