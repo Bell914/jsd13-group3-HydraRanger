@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import morgan from "morgan";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,17 +20,45 @@ const productImageFolder = path.resolve(
   "../../client/public/collection-2026",
 );
 
+const allowedOrigins = [
+  ENV.CLIENT_URL?.replace(/\/+$/, ""),
+  ENV.ADMIN_CLIENT_URL?.replace(/\/+$/, ""),
+].filter(Boolean);
+
+if (ENV.NODE_ENV === "development") {
+  allowedOrigins.push(
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:5175",
+    "http://localhost:5176",
+  );
+}
+
 // Global Middlewares
 app.use(
+  helmet({
+    // Product images are served by the API and displayed by both websites.
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }),
+);
+app.use(
   cors({
-    origin: [
-      ENV.CLIENT_URL,
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
-      "http://localhost:5174",
-      "http://localhost:5176",
-      "http://127.0.0.1:5174",
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, postman)
+      if (!origin) return callback(null, true);
+
+      const cleanOrigin = origin.replace(/\/+$/, "");
+      const isAllowed = allowedOrigins.includes(cleanOrigin);
+
+      if (isAllowed) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   }),
 );

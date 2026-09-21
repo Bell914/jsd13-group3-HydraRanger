@@ -1,5 +1,6 @@
 import { Product } from '../models/Product.js';
 import { User } from '../models/User.js';
+import { Order } from '../models/Order.js';
 
 function getTotalStock(product) {
   return product.variants.reduce((total, variant) => {
@@ -25,13 +26,30 @@ function getLastSixMonths() {
 }
 
 export async function getDashboardSummary() {
-  const products = await Product.find().populate('category_id').lean();
-  const customerCount = await User.countDocuments({ role: 'user' });
+  const [products, customerCount, orders] = await Promise.all([
+    Product.find().populate('category_id').lean(),
+    User.countDocuments({ role: 'user' }),
+    Order.find().lean()
+  ]);
   const monthlyProducts = getLastSixMonths();
   const categoryMap = {};
   let totalStock = 0;
   let lowStockCount = 0;
   let activeProductCount = 0;
+  let totalRevenue = 0;
+  let pendingOrderCount = 0;
+
+  const monthlyOrders = getLastSixMonths();
+
+  orders.forEach((order) => {
+    if (order.status !== 'cancelled') totalRevenue += order.totalAmount || 0;
+    if (order.status === 'pending') pendingOrderCount += 1;
+
+    const createdDate = new Date(order.createdAt);
+    const monthKey = `${createdDate.getFullYear()}-${createdDate.getMonth()}`;
+    const matchingMonth = monthlyOrders.find((month) => month.key === monthKey);
+    if (matchingMonth) matchingMonth.count += 1;
+  });
 
   products.forEach((product) => {
     const productStock = getTotalStock(product);
@@ -58,7 +76,11 @@ export async function getDashboardSummary() {
     totalStock,
     lowStockCount,
     customerCount,
+    totalOrders: orders.length,
+    pendingOrderCount,
+    totalRevenue,
     stockByCategory,
-    monthlyProducts: monthlyProducts.map(({ label, count }) => ({ label, count }))
+    monthlyProducts: monthlyProducts.map(({ label, count }) => ({ label, count })),
+    monthlyOrders: monthlyOrders.map(({ label, count }) => ({ label, count }))
   };
 }
