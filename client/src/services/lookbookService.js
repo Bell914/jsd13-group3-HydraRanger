@@ -1,7 +1,5 @@
 import fallbackData from '../data/look-data.json';
 import { API_URL } from './api.js';
-<<<<<<< HEAD
-=======
 
 export function normalizeProductId(id) {
   if (id === undefined || id === null) return '';
@@ -12,7 +10,6 @@ export function normalizeProductId(id) {
   }
   return str;
 }
->>>>>>> 56b00f16af251790acce27700f444422e21f5e80
 
 function normalizeItem(item) {
   const product = item.product || {};

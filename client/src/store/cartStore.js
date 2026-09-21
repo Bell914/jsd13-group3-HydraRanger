@@ -27,6 +27,7 @@ export const useCartStore = create((set, get) => ({
     const currentItems = get().cartItems;
     const prodId = product._id || product.productId || "product";
     const colorKey = variant.color || "std";
+    const sizeKey = variant.size || "std";
     const realVariantId = variant._id || variant.variant_id;
     const variantId = realVariantId
       ? String(realVariantId)
