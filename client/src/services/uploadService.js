@@ -1,18 +1,10 @@
-const rawBaseUrl =
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  "https://jsd13-group3-hydraranger.onrender.com/api";
-
-const cleanBaseUrl = rawBaseUrl.replace(/\/+$/, "");
-const BASE_URL = cleanBaseUrl.endsWith("/api")
-  ? cleanBaseUrl
-  : `${cleanBaseUrl}/api`;
+import { API_URL } from "./api.js";
 
 export async function uploadImage(file) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${BASE_URL}/uploads`, {
+  const response = await fetch(`${API_URL}/uploads`, {
     method: "POST",
     body: formData,
   });
