@@ -7,9 +7,7 @@ import { useLookbookStore } from "../../store/lookbookStore.js";
 export default function LookbookCard({ look }) {
   if (!look) return null;
 
-  const isFavorite = useLookbookStore((state) =>
-    state.isFavorite(look.id)
-  );
+  const isFavorite = useLookbookStore((state) => state.isFavorite(look.id));
   const toggleFavorite = useLookbookStore((state) => state.toggleFavorite);
 
   const imgUrl = normalizeImageUrl(look.image);
@@ -32,8 +30,7 @@ export default function LookbookCard({ look }) {
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
         />
-<<<<<<< HEAD
-=======
+
         <span className="absolute top-3 left-3 rounded-md bg-black/65 backdrop-blur-xs px-2.5 py-1 text-[11px] font-bold text-white uppercase">
           {look.id}
         </span>
@@ -43,14 +40,31 @@ export default function LookbookCard({ look }) {
           </span>
         )}
       </Link>
->>>>>>> 56b00f16af251790acce27700f444422e21f5e80
 
-        {/* Set Saving Badge + Favorite Button */}
-        <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
+      {/* Card Image with Badges & Favorite Button */}
+      <div className="relative mb-4">
+        <Link
+          to={`/lookbook/${look.id}`}
+          className="block relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-stone-100 group cursor-pointer"
+          aria-label={`ดูลุค ${look.nameTh || look.name}`}
+        >
+          <img
+            src={imgUrl}
+            alt={look.nameTh || look.name}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+          <span className="absolute top-3 left-3 rounded-md bg-black/65 backdrop-blur-xs px-2.5 py-1 text-[11px] font-bold text-white uppercase">
+            {look.id}
+          </span>
+        </Link>
+
+        {/* Set Saving Badge + Favorite Button (วางทับบนรูปภาพอย่างถูกต้อง ไม่ซ้ำซ้อน) */}
+        <div className="absolute top-3 right-3 flex flex-col items-end gap-2 z-10 pointer-events-none">
           {look.saving > 0 && (
-            <div className="rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-white shadow-md">
+            <span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-bold text-white shadow-sm pointer-events-auto">
               ประหยัด ฿{look.saving.toLocaleString()}
-            </div>
+            </span>
           )}
 
           <button
@@ -60,7 +74,7 @@ export default function LookbookCard({ look }) {
               e.stopPropagation();
               toggleFavorite(look);
             }}
-            className={`rounded-full bg-white/90 p-2 text-secondary shadow-md backdrop-blur-sm transition cursor-pointer hover:scale-110 ${
+            className={`rounded-full bg-white/90 p-2 text-secondary shadow-md backdrop-blur-sm transition cursor-pointer hover:scale-110 pointer-events-auto ${
               isFavorite ? "text-red-500" : "hover:text-red-500"
             }`}
             title={isFavorite ? "ลบออกจากลุคโปรด" : "บันทึกเป็นลุคโปรด"}
@@ -69,8 +83,7 @@ export default function LookbookCard({ look }) {
             <Heart size={16} fill={isFavorite ? "currentColor" : "none"} />
           </button>
         </div>
-<<<<<<< HEAD
-=======
+      </div>
 
       {/* Card Text Content (Title & Concept description) */}
       <div className="flex flex-col gap-2 mb-4">
@@ -105,7 +118,6 @@ export default function LookbookCard({ look }) {
             ))}
           </div>
         )}
->>>>>>> 56b00f16af251790acce27700f444422e21f5e80
 
         {/* Price and set info */}
         <div className="flex items-baseline gap-2 pt-1">
@@ -134,4 +146,3 @@ export default function LookbookCard({ look }) {
     </article>
   );
 }
-
