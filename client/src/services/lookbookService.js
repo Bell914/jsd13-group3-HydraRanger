@@ -1,5 +1,18 @@
 import fallbackData from '../data/look-data.json';
 import { API_URL } from './api.js';
+<<<<<<< HEAD
+=======
+
+export function normalizeProductId(id) {
+  if (id === undefined || id === null) return '';
+  const str = String(id).trim();
+  if (/^\d+$/.test(str)) {
+    const num = Number(str);
+    return num <= 5 ? `top-00${num}` : `bottom-00${num - 5}`;
+  }
+  return str;
+}
+>>>>>>> 56b00f16af251790acce27700f444422e21f5e80
 
 export function normalizeProductId(id) {
   if (id === undefined || id === null) return '';

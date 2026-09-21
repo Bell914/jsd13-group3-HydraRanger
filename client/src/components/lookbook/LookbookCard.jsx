@@ -32,9 +32,24 @@ export default function LookbookCard({ look }) {
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
         />
+<<<<<<< HEAD
         <span className="absolute top-3 left-3 rounded-md bg-black/65 backdrop-blur-xs px-2.5 py-1 text-[11px] font-bold text-white uppercase">
           {look.id}
         </span>
+=======
+<<<<<<< HEAD
+=======
+        <span className="absolute top-3 left-3 rounded-md bg-black/65 backdrop-blur-xs px-2.5 py-1 text-[11px] font-bold text-white uppercase">
+          {look.id}
+        </span>
+        {look.saving > 0 && (
+          <span className="absolute top-3 right-3 rounded-full bg-accent px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
+            ประหยัด ฿{look.saving.toLocaleString()}
+          </span>
+        )}
+      </Link>
+>>>>>>> 56b00f16af251790acce27700f444422e21f5e80
+>>>>>>> adc1b0d0f1855724d1bee03f4a5751ba49d2ee1f
 
         {/* Set Saving Badge + Favorite Button */}
         <div className="absolute top-3 right-3 flex flex-col items-end gap-2 z-10">
@@ -60,9 +75,15 @@ export default function LookbookCard({ look }) {
             <Heart size={16} fill={isFavorite ? "currentColor" : "none"} />
           </button>
         </div>
+<<<<<<< HEAD
       </Link>
 
 
+=======
+<<<<<<< HEAD
+=======
+
+>>>>>>> adc1b0d0f1855724d1bee03f4a5751ba49d2ee1f
       {/* Card Text Content (Title & Concept description) */}
       <div className="flex flex-col gap-2 mb-4">
         <div className="flex items-baseline justify-between gap-2">
@@ -96,6 +117,10 @@ export default function LookbookCard({ look }) {
             ))}
           </div>
         )}
+<<<<<<< HEAD
+=======
+>>>>>>> 56b00f16af251790acce27700f444422e21f5e80
+>>>>>>> adc1b0d0f1855724d1bee03f4a5751ba49d2ee1f
 
         {/* Price and set info */}
         <div className="flex items-baseline gap-2 pt-1">
