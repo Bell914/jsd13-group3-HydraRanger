@@ -36,7 +36,7 @@ export default function LookbookCard({ look }) {
           {look.id}
         </span>
 
-        {/* Set Saving Badge + Favorite Button */}
+        {/* Set Saving Badge + Favorite Button (อยู่ในกรอบรูป ไม่หลุดกรอบ และไม่ซ้ำซ้อน) */}
         <div className="absolute top-3 right-3 flex flex-col items-end gap-2 z-10">
           {look.saving > 0 && (
             <span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
@@ -61,7 +61,6 @@ export default function LookbookCard({ look }) {
           </button>
         </div>
       </Link>
-
 
       {/* Card Text Content (Title & Concept description) */}
       <div className="flex flex-col gap-2 mb-4">
@@ -124,4 +123,3 @@ export default function LookbookCard({ look }) {
     </article>
   );
 }
-
