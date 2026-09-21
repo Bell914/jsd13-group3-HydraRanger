@@ -62,6 +62,7 @@ export default function LookbookCard({ look }) {
         </div>
       </Link>
 
+
       {/* Card Text Content (Title & Concept description) */}
       <div className="flex flex-col gap-2 mb-4">
         <div className="flex items-baseline justify-between gap-2">
