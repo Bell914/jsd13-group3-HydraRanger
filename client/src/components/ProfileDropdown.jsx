@@ -4,6 +4,7 @@ import { assets } from "../assets/assets.js";
 
 export const ProfileDropdown = ({
   username,
+  membership,
   isOpen,
   onToggle,
   onClose,
@@ -29,6 +30,8 @@ export const ProfileDropdown = ({
     };
   }, [isOpen, onClose]);
 
+  const rank = membership?.rank || "MEMBER";
+
   return (
     <li
       ref={containerRef}
@@ -43,6 +46,9 @@ export const ProfileDropdown = ({
         className="flex w-full cursor-pointer select-none items-center justify-center gap-2 whitespace-nowrap rounded-lg border-0 bg-transparent px-3 py-2 text-base font-medium text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto"
       >
         <span>{username || "Admin"}</span>
+        <span className="rounded-md bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black px-1.5 py-0.5 uppercase tracking-wider">
+          {rank}
+        </span>
         <img
           src={assets.down}
           alt=""
@@ -58,6 +64,13 @@ export const ProfileDropdown = ({
           className="absolute left-1/2 top-full z-[100] mt-2 h-auto -translate-x-1/2 md:left-auto md:right-0 md:translate-x-0"
         >
           <div className="flex min-h-fit w-48 flex-col gap-2 rounded-2xl border border-occasion-border/55 bg-surface p-3 shadow-2xl">
+            <div className="px-2 py-1.5 border-b border-occasion-border/40 text-xs">
+              <span className="text-secondary block text-[10px]">ระดับสมาชิก</span>
+              <span className="font-extrabold text-primary flex items-center gap-1.5 mt-0.5">
+                <span className="h-2 w-2 rounded-full bg-amber-500 inline-block" />
+                {rank}
+              </span>
+            </div>
             <Link
               to="/profile"
               role="menuitem"

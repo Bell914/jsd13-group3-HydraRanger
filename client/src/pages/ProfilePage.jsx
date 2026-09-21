@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { User, Heart, BookOpen, MapPin, Package, AlertCircle, Save, KeyRound, Plus, Pencil, Trash2 } from 'lucide-react';
-import { Card, WishlistSection } from '../components';
+import { User, Heart, BookOpen, MapPin, Package, AlertCircle, Save, KeyRound, Plus, Pencil, Trash2, Crown, Check } from 'lucide-react';
+import { Card, WishlistSection, MembershipCard } from '../components';
 import { useAuth } from '../context/Auth/useAuth.jsx';
 import { useWishlistStore } from '../store/wishlistStore.js';
 import { useAddressStore, emptyAddress } from '../store/addressStore.js';
@@ -161,6 +161,7 @@ export const ProfilePage = () => {
 
   const tabs = [
     { id: 'profile', label: 'ข้อมูลส่วนตัว', icon: User },
+    { id: 'membership', label: 'Membership & Loyalty', icon: Crown },
     { id: 'wishlist', label: 'Wishlist', icon: Heart },
     { id: 'lookbooks', label: 'Favorite Lookbooks', icon: BookOpen },
     { id: 'addresses', label: 'Shipping Addresses', icon: MapPin },
@@ -212,6 +213,7 @@ export const ProfilePage = () => {
                 <EmptyState message="ยังไม่ได้เข้าสู่ระบบ" subtitle="เข้าสู่ระบบเพื่อดูและแก้ไขข้อมูลส่วนตัวของคุณ" />
               ) : (
                 <>
+                  <MembershipCard user={user} />
                   <form onSubmit={handleSaveProfile} className="space-y-4">
                     {success && (
                       <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
@@ -349,6 +351,71 @@ export const ProfilePage = () => {
                     </div>
                   </form>
                 </>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'membership' && (
+            <div>
+              <h2 className="text-lg font-semibold mb-4">ระดับสมาชิกและสิทธิพิเศษ (Membership & Loyalty)</h2>
+              {!authUser ? (
+                <EmptyState message="ยังไม่ได้เข้าสู่ระบบ" subtitle="เข้าสู่ระบบเพื่อตรวจสอบระดับสมาชิกและสิทธิพิเศษของคุณ" />
+              ) : (
+                <div>
+                  <MembershipCard user={user} />
+
+                  <div className="mt-8">
+                    <h3 className="text-base font-bold text-primary mb-3">เปรียบเทียบสิทธิประโยชน์แต่ละระดับ (Membership Tiers)</h3>
+                    <div className="overflow-x-auto rounded-xl border border-gray-200">
+                      <table className="w-full text-left text-xs sm:text-sm">
+                        <thead className="bg-slate-50 text-gray-700 font-bold border-b border-gray-200">
+                          <tr>
+                            <th className="p-3">ระดับสมาชิก</th>
+                            <th className="p-3">ยอดซื้อสะสม</th>
+                            <th className="p-3">ส่วนลด On-top</th>
+                            <th className="p-3">คูปองวันเกิด</th>
+                            <th className="p-3">สิทธิ์ส่งฟรี</th>
+                            <th className="p-3">สิทธิพิเศษเพิ่มเติม</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 text-gray-600">
+                          <tr className={user?.membership?.rank === 'MEMBER' ? 'bg-blue-50/50 font-semibold' : ''}>
+                            <td className="p-3 font-bold text-slate-800">MEMBER</td>
+                            <td className="p-3">฿0</td>
+                            <td className="p-3">-</td>
+                            <td className="p-3">สิทธิ์พิเศษ</td>
+                            <td className="p-3">ครบ ฿1,000</td>
+                            <td className="p-3">Welcome Coupon ลด 10%</td>
+                          </tr>
+                          <tr className={user?.membership?.rank === 'SILVER' ? 'bg-slate-100/70 font-semibold' : ''}>
+                            <td className="p-3 font-bold text-slate-600">SILVER</td>
+                            <td className="p-3">฿3,000</td>
+                            <td className="p-3 text-emerald-600 font-bold">ลด 5%</td>
+                            <td className="p-3">ลด 15%</td>
+                            <td className="p-3">ครบ ฿700</td>
+                            <td className="p-3">สะสมยอดต่อเนื่อง</td>
+                          </tr>
+                          <tr className={user?.membership?.rank === 'GOLD' ? 'bg-amber-50/70 font-semibold' : ''}>
+                            <td className="p-3 font-bold text-amber-600">GOLD</td>
+                            <td className="p-3">฿8,000</td>
+                            <td className="p-3 text-emerald-600 font-bold">ลด 10%</td>
+                            <td className="p-3">ลด 20%</td>
+                            <td className="p-3 text-blue-600 font-bold">ส่งฟรี ไม่มีขั้นต่ำ</td>
+                            <td className="p-3">Early Access 24 ชม.</td>
+                          </tr>
+                          <tr className={user?.membership?.rank === 'PLATINUM' ? 'bg-purple-50/70 font-semibold' : ''}>
+                            <td className="p-3 font-bold text-purple-700">PLATINUM</td>
+                            <td className="p-3">฿20,000</td>
+                            <td className="p-3 text-emerald-600 font-bold">ลด 15%</td>
+                            <td className="p-3">ลด 25% + Gift</td>
+                            <td className="p-3 text-blue-600 font-bold">ส่งฟรี + Priority</td>
+                            <td className="p-3">Early Access 48 ชม. + VIP Care</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           )}

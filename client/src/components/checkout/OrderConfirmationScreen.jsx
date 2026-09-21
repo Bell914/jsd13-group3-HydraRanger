@@ -37,6 +37,8 @@ export default function OrderConfirmationScreen({ orderData }) {
     email = "customer@example.com",
     items = [],
     subtotal = 0,
+    rankDiscountAmount = 0,
+    userRank = "MEMBER",
     shippingCost = 0,
     taxAmount = 0,
     totalAmount = 0,
@@ -217,15 +219,21 @@ export default function OrderConfirmationScreen({ orderData }) {
           <div className="mt-6 pt-4 border-t border-gray-200 space-y-1.5 text-xs sm:text-sm">
             <div className="flex justify-between text-gray-600">
               <span>Subtotal</span>
-              <span>฿{subtotal}</span>
+              <span>฿{subtotal.toLocaleString()}</span>
             </div>
+            {rankDiscountAmount > 0 && (
+              <div className="flex justify-between text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-lg">
+                <span>Member Discount ({userRank})</span>
+                <span>-฿{rankDiscountAmount.toLocaleString()}</span>
+              </div>
+            )}
             <div className="flex justify-between text-gray-600">
               <span>Shipping</span>
               <span>{shippingCost === 0 ? "FREE" : `฿${shippingCost}`}</span>
             </div>
             <div className="flex justify-between text-gray-600">
               <span>Tax (Included)</span>
-              <span>฿{taxAmount}</span>
+              <span>฿{taxAmount.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-base font-extrabold text-gray-950 pt-3 border-t border-gray-200">
               <span>Total Paid</span>
