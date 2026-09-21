@@ -5,3 +5,8 @@ import { toHaveNoViolations } from "jest-axe";
 
 expect.extend(toHaveNoViolations);
 afterEach(cleanup);
+
+if (typeof URL.createObjectURL !== "function") {
+  URL.createObjectURL = () => "blob:mock";
+  URL.revokeObjectURL = () => {};
+}

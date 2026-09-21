@@ -23,6 +23,10 @@ export const authService = {
     return await api.get("/auth/me");
   },
 
+  async updateProfile(userData) {
+    return await api.put("/auth/profile", userData);
+  },
+
   async changePassword({ currentPassword, newPassword }) {
     return await api.post("/auth/change-password", {
       currentPassword,

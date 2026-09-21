@@ -1,9 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { Heart } from "lucide-react";
 import { normalizeImageUrl } from "../../utils/imageUtils.js";
+import { useLookbookStore } from "../../store/lookbookStore.js";
 
 export default function LookbookCard({ look }) {
   if (!look) return null;
+
+  const isFavorite = useLookbookStore((state) =>
+    state.isFavorite(look.id)
+  );
+  const toggleFavorite = useLookbookStore((state) => state.toggleFavorite);
 
   const imgUrl = normalizeImageUrl(look.image);
   const itemsCount = look.items?.length || 2;
@@ -23,12 +30,30 @@ export default function LookbookCard({ look }) {
           loading="lazy"
         />
 
-        {/* Set Saving Badge */}
-        {look.saving > 0 && (
-          <div className="absolute top-3 right-3 rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-white shadow-md">
-            ประหยัด ฿{look.saving.toLocaleString()}
-          </div>
-        )}
+        {/* Set Saving Badge + Favorite Button */}
+        <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
+          {look.saving > 0 && (
+            <div className="rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-white shadow-md">
+              ประหยัด ฿{look.saving.toLocaleString()}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleFavorite(look);
+            }}
+            className={`rounded-full bg-white/90 p-2 text-secondary shadow-md backdrop-blur-sm transition cursor-pointer hover:scale-110 ${
+              isFavorite ? "text-red-500" : "hover:text-red-500"
+            }`}
+            title={isFavorite ? "ลบออกจากลุคโปรด" : "บันทึกเป็นลุคโปรด"}
+            aria-label={isFavorite ? "ลบออกจากลุคโปรด" : "บันทึกเป็นลุคโปรด"}
+          >
+            <Heart size={16} fill={isFavorite ? "currentColor" : "none"} />
+          </button>
+        </div>
 
         {/* Look Number Badge */}
         <div className="absolute top-3 left-3 rounded-md bg-black/60 backdrop-blur-sm px-2.5 py-1 text-xs font-bold text-white uppercase tracking-wider">

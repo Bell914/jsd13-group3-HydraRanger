@@ -37,6 +37,30 @@ export const validateLoginInput = ({ email, password }) => {
   };
 };
 
+export const validateUpdateProfileInput = ({ username, email }) => {
+  const errors = [];
+
+  if (
+    username !== undefined &&
+    (typeof username !== 'string' || username.trim().length < 3)
+  ) {
+    errors.push('Username must be at least 3 characters');
+  }
+
+  const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+  if (
+    email !== undefined &&
+    (typeof email !== 'string' || !emailRegex.test(email.trim()))
+  ) {
+    errors.push('A valid email address is required');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
 export const validateChangePasswordInput = ({ currentPassword, newPassword }) => {
   const errors = [];
 
