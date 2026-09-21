@@ -1,9 +1,36 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Heart } from "lucide-react";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
+import { useWishlistStore } from "../store/wishlistStore.js";
+import { useAuth } from "../context/Auth/useAuth.jsx";
 
 export default function ProductCard({ product }) {
+  const navigate = useNavigate();
   const targetId = product._id || product.productId;
+  const isSaved = useWishlistStore((state) =>
+    state.wishlist.some((item) => String(item._id) === String(targetId))
+  );
+  const toggleWishlist = useWishlistStore((state) => state.toggleWishlist);
+
+  let isAuthenticated = false;
+  try {
+    const auth = useAuth();
+    isAuthenticated = Boolean(auth?.isAuthenticated);
+  } catch {
+    isAuthenticated = false;
+  }
+
+  const handleWishlistClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    toggleWishlist(product);
+  };
+
   const variants = product.variants || [];
   const validPrices = variants
     .map((v) => Number(v.price))
@@ -48,6 +75,21 @@ export default function ProductCard({ product }) {
             {categoryName}
           </span>
         )}
+
+        {/* Wishlist Button */}
+        <button
+          type="button"
+          onClick={handleWishlistClick}
+          className={`absolute top-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full transition-all shadow-sm cursor-pointer ${
+            isSaved
+              ? "bg-white text-red-500 hover:bg-red-50 shadow-md scale-105"
+              : "bg-white/80 text-gray-400 hover:bg-white hover:text-red-500"
+          }`}
+          title={isSaved ? "ลบออกจากรายการโปรด" : "บันทึกในรายการโปรด"}
+          aria-label={isSaved ? "ลบออกจากรายการโปรด" : "บันทึกในรายการโปรด"}
+        >
+          <Heart size={16} fill={isSaved ? "currentColor" : "none"} />
+        </button>
       </div>
 
       {/* Bottom Info Bar matching wireframe */}

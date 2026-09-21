@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { User, Heart, BookOpen, MapPin, Package, AlertCircle, Save, KeyRound, Plus, Pencil, Trash2 } from 'lucide-react';
-import { Card } from '../components';
+import { Card, WishlistSection } from '../components';
 import { useAuth } from '../context/Auth/useAuth.jsx';
 import { useWishlistStore } from '../store/wishlistStore.js';
 import { useAddressStore, emptyAddress } from '../store/addressStore.js';
@@ -17,8 +17,10 @@ const EmptyState = ({ message, subtitle }) => (
 );
 
 export const ProfilePage = () => {
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'profile';
   const { user: authUser, updateProfile, changePassword } = useAuth();
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [error, setError] = useState(''); // Error state สำหรับกรณี fetch ข้อมูลล้มเหลว
   const [success, setSuccess] = useState('');
   const wishlist = useWishlistStore((state) => state.wishlist);
@@ -352,49 +354,7 @@ export const ProfilePage = () => {
           )}
 
           {activeTab === 'wishlist' && (
-            <div>
-              <h2 className="text-lg font-semibold mb-4">รายการโปรด (Wishlist)</h2>
-              {wishlist.length === 0 ? (
-                <EmptyState message="ยังไม่มีรายการสินค้าโปรด" subtitle="กดหัวใจที่สินค้าที่คุณชอบเพื่อบันทึกไว้ดูภายหลัง" />
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {wishlist.map((item) => (
-                    <div
-                      key={item._id}
-                      className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-3"
-                    >
-                      <Link to={`/products/${item._id}`} className="shrink-0">
-                        <img
-                          src={normalizeImageUrl(item.imageUrl)}
-                          alt={item.name}
-                          className="h-20 w-16 rounded-lg object-cover"
-                        />
-                      </Link>
-                      <div className="min-w-0 flex-1">
-                        <Link
-                          to={`/products/${item._id}`}
-                          className="line-clamp-2 block text-sm font-bold text-primary hover:text-accent transition"
-                        >
-                          {item.name}
-                        </Link>
-                        <p className="mt-1 text-sm font-semibold text-secondary">
-                          ฿{item.price.toLocaleString()}.00
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeFromWishlist(item._id)}
-                        className="rounded-full p-2 text-red-500 hover:bg-red-50 transition cursor-pointer"
-                        title="ลบออกจากรายการโปรด"
-                        aria-label="ลบออกจากรายการโปรด"
-                      >
-                        <Heart size={18} fill="currentColor" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <WishlistSection items={wishlist} onRemove={removeFromWishlist} />
           )}
 
           {activeTab === 'lookbooks' && (

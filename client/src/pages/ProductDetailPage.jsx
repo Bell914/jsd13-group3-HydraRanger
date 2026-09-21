@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { getProductById, getProducts } from "../services/productService.js";
 import { useCartStore } from "../store/cartStore.js";
 import { useWishlistStore } from "../store/wishlistStore.js";
+import { useAuth } from "../context/Auth/useAuth.jsx";
 import lookData from "../data/look-data.json";
 import {
   ProductGallery,
@@ -18,9 +19,27 @@ import { normalizeImageUrl, getDetailImageSet } from "../utils/imageUtils.js";
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const addToCart = useCartStore((state) => state.addToCart);
   const wishlist = useWishlistStore((state) => state.wishlist);
   const toggleWishlist = useWishlistStore((state) => state.toggleWishlist);
+
+  let isAuthenticated = false;
+  try {
+    const auth = useAuth();
+    isAuthenticated = Boolean(auth?.isAuthenticated);
+  } catch {
+    isAuthenticated = false;
+  }
+
+  const handleToggleWishlist = () => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    toggleWishlist(product);
+  };
 
   const [product, setProduct] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
@@ -352,10 +371,10 @@ export default function ProductDetailPage() {
             onAddToCart={handleAddToCart}
             isWishlisted={wishlist.some(
               (item) =>
-                item._id ===
-                (product._id || product.productId || product.id || product.sku)
+                String(item._id) ===
+                String(product?._id || product?.productId || productId)
             )}
-            onToggleWishlist={() => toggleWishlist(product)}
+            onToggleWishlist={handleToggleWishlist}
           />
         </div>
 
