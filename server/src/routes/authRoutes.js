@@ -6,7 +6,8 @@ import { validate } from '../middleware/validatorMiddleware.js';
 import {
   validateRegisterInput,
   validateLoginInput,
-  validateChangePasswordInput
+  validateChangePasswordInput,
+  validateUpdateProfileInput
 } from '../validators/authValidator.js';
 
 const router = Router();
@@ -27,6 +28,7 @@ router.post('/register', registerLimiter, validate(validateRegisterInput), authC
 router.post('/login', loginLimiter, validate(validateLoginInput), authController.login);
 router.post('/refresh', authController.refresh);
 router.post('/change-password', protect, validate(validateChangePasswordInput), authController.changePassword);
+router.put('/profile', protect, validate(validateUpdateProfileInput), authController.updateProfile);
 router.get('/me', protect, authController.getMe);
 
 export default router;

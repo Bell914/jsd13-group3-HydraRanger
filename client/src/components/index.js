@@ -23,3 +23,6 @@ export { AddressSection } from "./profile/AddressSection.jsx";
 export { OrderHistorySection } from "./profile/OrderHistorySection.jsx";
 export { EmptyState } from "./profile/EmptyState.jsx";
 export { default as LookbookCard } from "./lookbook/LookbookCard.jsx";
+export { default as MixAndMatchSection } from "./MixAndMatchSection.jsx";
+export { default as ImageDropzone } from "./ImageDropzone.jsx";
+
