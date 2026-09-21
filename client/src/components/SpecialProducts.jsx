@@ -13,23 +13,29 @@ export const SpecialProducts = ({ product, index }) => {
     "";
   const imgUrl = normalizeImageUrl(rawImg) || rawImg;
 
+  const fullName = product.nameTh || product.name || product.title || "";
+  const englishName =
+    String(fullName).replace(/^[^a-zA-Z0-9]+/, "").trim() || fullName;
+
   const targetUrl =
     product.link ||
     (product.id
       ? String(product.id).toUpperCase().startsWith("LOOK")
         ? `/lookbook/${product.id}`
         : `/products/${product.id}`
-      : "/products");
+      : product._id
+        ? `/products/${product._id}`
+        : "/products");
 
   return (
     <div
       key={index}
-      className="group relative shrink-0 overflow-hidden rounded-xl cursor-pointer w-full max-w-sm mx-auto"
+      className="group relative shrink-0 overflow-hidden rounded-xl cursor-pointer w-full max-w-sm mx-auto bg-[#0046a7] p-2.5 shadow-md transition-shadow duration-300 group-hover:shadow-xl"
     >
       <img
         src={imgUrl}
         alt={product.nameTh || product.name || product.title}
-        className="h-[400px] w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        className="h-[400px] w-full rounded-lg object-cover transition-transform duration-300 group-hover:scale-105"
       />
       <Link
         to={targetUrl}
@@ -42,11 +48,8 @@ export const SpecialProducts = ({ product, index }) => {
       <span className="absolute top-0 left-1">
         <img src={assets.newtag} alt="new-icon" className="h-12 w-12 object-contain" />
       </span>
-      <div className="absolute bottom-4 left-4 font-bold text-white drop-shadow-lg pr-4">
-        <h4 className="text-2xl sm:text-3xl line-clamp-1">
-          {product.nameTh || product.name}
-        </h4>
-        <h6 className="text-sm font-normal opacity-90">สำรวจหมวดหมู่</h6>
+      <div className="absolute bottom-4 left-4 font-bold text-white drop-shadow-lg pr-4 z-10">
+        <h4 className="text-2xl sm:text-3xl line-clamp-2">{englishName}</h4>
       </div>
     </div>
   );
