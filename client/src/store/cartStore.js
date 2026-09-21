@@ -27,11 +27,13 @@ export const useCartStore = create((set, get) => ({
     const currentItems = get().cartItems;
     const prodId = product._id || product.productId || "product";
     const colorKey = variant.color || "std";
-    const sizeKey = variant.size || "std";
-    const variantId = `${prodId}-${colorKey}-${sizeKey}`;
+    const realVariantId = variant._id || variant.variant_id;
+    const variantId = realVariantId
+      ? String(realVariantId)
+      : `${prodId}-${colorKey}-${sizeKey}`;
 
     const existingIndex = currentItems.findIndex(
-      (item) => item.variantId === variantId
+      (item) => item.variantId === variantId || (realVariantId && item.variant_id === realVariantId)
     );
 
     let updatedItems;
@@ -39,7 +41,7 @@ export const useCartStore = create((set, get) => ({
       updatedItems = currentItems.map((item, idx) => {
         if (idx === existingIndex) {
           const newQty = item.quantity + quantity;
-          const maxStock = variant.stockQuantity || 99;
+          const maxStock = variant.stockQuantity || variant.stock_quantity || 99;
           return {
             ...item,
             quantity: Math.min(newQty, maxStock),
@@ -49,16 +51,18 @@ export const useCartStore = create((set, get) => ({
       });
     } else {
       const newItem = {
-        productId: product._id,
+        productId: product._id || product.productId,
+        product_id: product._id || product.productId,
         variantId,
+        variant_id: realVariantId || variantId,
         sku: variant.sku || "",
-        name: product.name,
+        name: product.name || product.title,
         color: variant.color,
         size: variant.size,
         price: variant.price,
         imageUrl: variant.imageUrl || product.imageUrl,
         quantity,
-        stockQuantity: variant.stockQuantity || 99,
+        stockQuantity: variant.stockQuantity || variant.stock_quantity || 99,
       };
       updatedItems = [...currentItems, newItem];
     }
