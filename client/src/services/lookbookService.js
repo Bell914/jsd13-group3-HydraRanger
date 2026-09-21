@@ -1,8 +1,8 @@
-import fallbackData from '../data/look-data.json';
-import { resolveApiUrl } from './api.js';
+import fallbackData from "../data/look-data.json";
+import { resolveApiUrl, API_URL } from "./api.js";
 
 export function normalizeProductId(id) {
-  if (id === undefined || id === null) return '';
+  if (id === undefined || id === null) return "";
   const str = String(id).trim();
   if (/^\d+$/.test(str)) {
     const num = Number(str);
@@ -14,9 +14,12 @@ export function normalizeProductId(id) {
 function normalizeItem(item) {
   const product = item.product || {};
   const variants = product.variants || [];
-  const selectedVariant = variants.find((variant) => {
-    return variant.sku === item.defaultVariantSku;
-  }) || variants[0] || {};
+  const selectedVariant =
+    variants.find((variant) => {
+      return variant.sku === item.defaultVariantSku;
+    }) ||
+    variants[0] ||
+    {};
 
   const rawId = product.productId || product._id || item.productId;
   const productId = normalizeProductId(rawId);
@@ -24,13 +27,27 @@ function normalizeItem(item) {
   return {
     productId,
     sku: selectedVariant.sku || item.defaultVariantSku || item.sku,
-    name: product.title || product.name || item.name || 'Product',
-    color: selectedVariant.color || selectedVariant.size_or_color || item.color || 'Standard',
-    sizes: variants.map((variant) => variant.size || variant.size_or_color).filter(Boolean).length > 0
-      ? variants.map((variant) => variant.size || variant.size_or_color).filter(Boolean)
-      : (item.sizes || ['S', 'M', 'L']),
+    name: product.title || product.name || item.name || "Product",
+    color:
+      selectedVariant.color ||
+      selectedVariant.size_or_color ||
+      item.color ||
+      "Standard",
+    sizes:
+      variants
+        .map((variant) => variant.size || variant.size_or_color)
+        .filter(Boolean).length > 0
+        ? variants
+            .map((variant) => variant.size || variant.size_or_color)
+            .filter(Boolean)
+        : item.sizes || ["S", "M", "L"],
     price: selectedVariant.price || item.price || 0,
-    image: selectedVariant.imageUrl || product.imageUrl || product.images?.[0]?.image_url || item.image || '',
+    image:
+      selectedVariant.imageUrl ||
+      product.imageUrl ||
+      product.images?.[0]?.image_url ||
+      item.image ||
+      "",
   };
 }
 
@@ -48,7 +65,7 @@ async function request(path) {
   const result = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const error = new Error(result.message || 'โหลดข้อมูล Lookbook ไม่สำเร็จ');
+    const error = new Error(result.message || "โหลดข้อมูล Lookbook ไม่สำเร็จ");
     error.status = response.status;
     throw error;
   }
@@ -58,13 +75,13 @@ async function request(path) {
 
 export async function getLookbookData() {
   try {
-    const lookbooks = await request('/lookbooks');
+    const lookbooks = await request("/lookbooks");
     return {
       collection: fallbackData.collection,
       looks: lookbooks.map(normalizeLookbook),
     };
   } catch (error) {
-    console.warn('Lookbook API unavailable, using local data:', error.message);
+    console.warn("Lookbook API unavailable, using local data:", error.message);
     return {
       collection: fallbackData.collection,
       looks: (fallbackData.looks || []).map(normalizeLookbook),
@@ -83,20 +100,26 @@ export async function getLookbookById(lookId) {
     return normalizeLookbook(lookbook);
   } catch (error) {
     if (error.status === 404) return null;
-    console.warn('Lookbook detail API unavailable, using local data:', error.message);
+    console.warn(
+      "Lookbook detail API unavailable, using local data:",
+      error.message,
+    );
     const target = String(lookId).trim().toLowerCase();
     const found = fallbackData.looks.find((lookbook) => {
-      const id = String(lookbook.id || '').toLowerCase();
-      const name = String(lookbook.name || '').toLowerCase().replace(/\s+/g, '-');
-      return id === target || name === target || id.replace('look-', '') === target;
+      const id = String(lookbook.id || "").toLowerCase();
+      const name = String(lookbook.name || "")
+        .toLowerCase()
+        .replace(/\s+/g, "-");
+      return (
+        id === target || name === target || id.replace("look-", "") === target
+      );
     });
     return found ? normalizeLookbook(found) : null;
   }
 }
 
 export function getProductDetailUrl(productId) {
-  if (!productId) return '/products';
+  if (!productId) return "/products";
   const resolved = normalizeProductId(productId);
   return `/products/${resolved}`;
 }
-
