@@ -109,8 +109,13 @@ export async function getProductById(id) {
     product = await Product.findById(id).populate('category_id');
   }
   if (!product) {
+    let altId = id;
+    if (/^\d+$/.test(String(id || '').trim())) {
+      const num = Number(id);
+      altId = num <= 5 ? `top-00${num}` : `bottom-00${num - 5}`;
+    }
     product = await Product.findOne({
-      $or: [{ productId: id }, { 'variants.sku': id }]
+      $or: [{ productId: id }, { productId: altId }, { 'variants.sku': id }]
     }).populate('category_id');
   }
   if (!product || product.is_active === false) {
@@ -118,6 +123,7 @@ export async function getProductById(id) {
   }
   return product;
 }
+
 
 export async function createProduct(productData) {
   const data = await prepareProductData(productData);

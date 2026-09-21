@@ -363,12 +363,16 @@ export async function getProducts(params = {}) {
   }
 
   const queryString = query.toString() ? `?${query.toString()}` : "";
-  const response = await api.get(`/products${queryString}`);
-
-  if (response && response.data) {
-    return response.data;
+  try {
+    const response = await api.get(`/products${queryString}`);
+    if (response && response.data) {
+      return response.data;
+    }
+    if (Array.isArray(response)) return response;
+  } catch (err) {
+    console.warn("Products API unavailable or error:", err.message);
   }
-  return Array.isArray(response) ? response : [];
+  return fallbackProducts;
 }
 
 /**
@@ -377,9 +381,32 @@ export async function getProducts(params = {}) {
  * @returns {Promise<Object|null>} Product object
  */
 export async function getProductById(productId) {
-  const response = await api.get(`/products/${productId}`);
-  if (response && response.data) {
-    return response.data;
+  let resolvedId = productId;
+  if (typeof productId === "number" || /^\d+$/.test(String(productId || "").trim())) {
+    const num = Number(productId);
+    resolvedId = num <= 5 ? `top-00${num}` : `bottom-00${num - 5}`;
   }
-  return response || null;
-}
+
+  try {
+    const response = await api.get(`/products/${resolvedId}`);
+    if (response && response.data) {
+      return response.data;
+    }
+    if (response && (response.title || response.name || response._id)) {
+      return response;
+    }
+  } catch (err) {
+    console.warn("Product API unavailable or error:", err.message);
+  }
+
+  // Fallback to local fallbackProducts
+  const target = String(resolvedId || "").toLowerCase();
+  return (
+    fallbackProducts.find(
+      (p) =>
+        p._id?.toLowerCase() === target ||
+        p.productId?.toLowerCase() === target ||
+        p.variants?.some((v) => v.sku?.toLowerCase() === target)
+    ) || null
+  );
+}
