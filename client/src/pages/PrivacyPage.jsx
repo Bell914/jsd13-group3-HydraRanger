@@ -323,7 +323,7 @@ export default function PrivacyPolicy() {
                       href="mailto:customerservice@uniqlo.co.th"
                       className="text-blue-600 underline"
                     >
-                      customerservice@uniqlo.co.th
+                      customerservice@occasion.co.th
                     </a>
                   </p>
                   <p>
@@ -343,7 +343,7 @@ export default function PrivacyPolicy() {
                       href="mailto:dpo_th@uniqlo.co.th"
                       className="text-blue-600 underline"
                     >
-                      dpo_th@uniqlo.co.th
+                      dpo_th@occasion.co.th
                     </a>
                   </p>
                 </div>

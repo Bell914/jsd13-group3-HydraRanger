@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useCartStore from "../store/cartStore";
+import { useAddressStore } from "../store/addressStore.js";
 import { authService } from "../services/authService";
 import {
   CheckoutStepper,
@@ -18,6 +19,7 @@ import { createOrder } from "../services/orderService";
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { cartItems, getTotalPrice, clearCart } = useCartStore();
+  const addAddress = useAddressStore((state) => state.addAddress);
   const currentUser = authService.getCurrentUser();
 
   // Current Step: 1 = Contact, 2 = Shipping, 3 = Payment, 4 = Review
@@ -72,40 +74,15 @@ export default function CheckoutPage() {
   // ✏️ HIGHLIGHT: ปรับปรุง handlePlaceOrder จาก setTimeout เป็น async/await ยิง POST /api/orders จริง
 const handlePlaceOrder = async () => {
     setIsSubmitting(true);
-    setSubmitError(null); // ➕ ล้างข้อความ Error เก่าก่อนยิง Request ใหม่
-
-    try {
-      // ➕ 1. จัดเตรียม Payload ทั้ง 6 ส่วนตามโครงสร้างที่ Backend กำหนด
-      const orderPayload = {
-        email: email,
-        items: cartItems.map((item) => ({
-          productId: item.productId,
-          variantId: item.variantId,
-          sku: item.sku || "",
-          quantity: item.quantity,
-          price: item.price,
-        })),
-        shippingAddress: {
-          firstName: shippingData.firstName,
-          lastName: shippingData.lastName,
-          phone: shippingData.phone,
-          address: shippingData.address,
-          city: shippingData.city,
-          state: shippingData.state,
-          zipCode: shippingData.zipCode,
-          location: shippingData.location,
-        },
-        shippingMethod: shippingData.shippingMethod,
-        paymentMethod: paymentData.method,
-        shippingCost: shippingCost,
-      };
-
-      // ➕ 2. ยิง API POST /api/orders
-      const responseData = await createOrder(orderPayload);
-
-      // ➕ 3. เมื่อสั่งซื้อสำเร็จ: เก็บข้อมูล Order ที่ได้จาก Server และล้างตะกร้าสินค้า
-      setCompletedOrder(responseData?.order || responseData || {
-        orderId: responseData?.orderId || `OCC-${Math.floor(100000 + Math.random() * 900000)}`,
+    if (shippingData.saveAddress) {
+      const { firstName, lastName, phone, address, city, state, zipCode, location } = shippingData;
+      addAddress({ firstName, lastName, phone, address, city, state, zipCode, location });
+    }
+    const itemsSnapshot = [...cartItems];
+    setTimeout(() => {
+      const orderId = `OCC-${Math.floor(100000 + Math.random() * 900000)}`;
+      setCompletedOrder({
+        orderId,
         shippingData,
         email,
         items: [...cartItems],

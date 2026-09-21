@@ -49,9 +49,24 @@ export const ProductBuySection = ({
       <div>
         {/* Title & Share / Wishlist */}
         <div className="flex items-start justify-between gap-4">
-          <h1 className="text-2xl sm:text-3xl font-black text-primary tracking-tight">
-            {product.name}
-          </h1>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black text-primary tracking-tight">
+              {product.name}
+            </h1>
+            {/* Product Tags */}
+            {product.tags && product.tags.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {product.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <button
               type="button"

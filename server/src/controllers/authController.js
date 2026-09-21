@@ -111,6 +111,37 @@ export const changePassword = async (req, res, next) => {
   }
 };
 
+export const updateProfile = async (req, res, next) => {
+  try {
+    const { username, email, avatar } = req.body;
+    const user = await authService.updateProfile({
+      userId: req.user.id || req.user._id,
+      username,
+      email,
+      avatar
+    });
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: user
+    });
+  } catch (error) {
+    if (error.message === 'User not found') {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
+        success: false,
+        message: error.message
+      });
+    }
+    if (error.message === 'Email or username is already in use') {
+      return res.status(HTTP_STATUS.CONFLICT).json({
+        success: false,
+        message: error.message
+      });
+    }
+    next(error);
+  }
+};
+
 export const refresh = async (req, res, next) => {
   try {
     const { token } = req.body;
