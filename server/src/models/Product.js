@@ -12,11 +12,24 @@ const variantSchema = new mongoose.Schema(
   {
     sku: { type: String, required: true, trim: true },
     size_or_color: { type: String, required: true, trim: true },
+    color: { type: String, trim: true },
+    colorCode: { type: String, trim: true },
+    size: { type: String, trim: true },
     price: { type: Number, required: true, min: 0 },
-    stock_quantity: { type: Number, default: 0, min: 0 }
+    stock_quantity: { type: Number, default: 0, min: 0 },
+    imageUrl: { type: String, trim: true },
+    detailImages: [{ type: String, trim: true }]
   },
-  { _id: true }
+  {
+    _id: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
+
+variantSchema.virtual('stockQuantity').get(function () {
+  return this.stock_quantity;
+});
 
 const sizeChartSchema = new mongoose.Schema(
   {

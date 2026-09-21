@@ -20,11 +20,11 @@ export default function LookbookCard({ look }) {
       className="overflow-hidden rounded-2xl border border-stone-300 bg-white p-4 sm:p-5 shadow-xs transition-all duration-200 hover:border-primary/50 hover:shadow-md"
       id={`lookbook-card-${look.id}`}
     >
-      {/* Card Image with Badges */}
-      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-stone-100 mb-4 group">
+      {/* Card Image with Badges & Favorite Button */}
+      <div className="relative mb-4">
         <Link
           to={`/lookbook/${look.id}`}
-          className="block w-full h-full cursor-pointer"
+          className="block relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-stone-100 group cursor-pointer"
           aria-label={`ดูลุค ${look.nameTh || look.name}`}
         >
           <img
@@ -38,10 +38,10 @@ export default function LookbookCard({ look }) {
           </span>
         </Link>
 
-        {/* Set Saving Badge + Favorite Button */}
-        <div className="absolute top-3 right-3 flex flex-col items-end gap-2 z-10">
+        {/* Set Saving Badge + Favorite Button (วางทับบนรูปภาพอย่างถูกต้อง ไม่ซ้ำซ้อน) */}
+        <div className="absolute top-3 right-3 flex flex-col items-end gap-2 z-10 pointer-events-none">
           {look.saving > 0 && (
-            <span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
+            <span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-bold text-white shadow-sm pointer-events-auto">
               ประหยัด ฿{look.saving.toLocaleString()}
             </span>
           )}
@@ -53,7 +53,7 @@ export default function LookbookCard({ look }) {
               e.stopPropagation();
               toggleFavorite(look);
             }}
-            className={`rounded-full bg-white/90 p-2 text-secondary shadow-md backdrop-blur-sm transition cursor-pointer hover:scale-110 ${
+            className={`rounded-full bg-white/90 p-2 text-secondary shadow-md backdrop-blur-sm transition cursor-pointer hover:scale-110 pointer-events-auto ${
               isFavorite ? "text-red-500" : "hover:text-red-500"
             }`}
             title={isFavorite ? "ลบออกจากลุคโปรด" : "บันทึกเป็นลุคโปรด"}
@@ -125,4 +125,3 @@ export default function LookbookCard({ look }) {
     </article>
   );
 }
-

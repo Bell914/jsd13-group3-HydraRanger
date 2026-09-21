@@ -51,9 +51,14 @@ function prepareImages(productData) {
 function prepareVariants(variants = []) {
   return variants.map((variant) => ({
     sku: variant.sku,
-    size_or_color: variant.size_or_color || variant.size || variant.color,
+    size_or_color: variant.size_or_color || variant.size || variant.color || 'Standard',
+    color: variant.color || (variant.size_or_color && !['S', 'M', 'L', 'XL'].includes(variant.size_or_color) ? variant.size_or_color : 'Standard'),
+    colorCode: variant.colorCode || '',
+    size: variant.size || (['S', 'M', 'L', 'XL'].includes(variant.size_or_color) ? variant.size_or_color : 'S'),
     price: variant.price,
-    stock_quantity: variant.stock_quantity ?? variant.stockQuantity ?? 0
+    stock_quantity: variant.stock_quantity ?? variant.stockQuantity ?? 0,
+    imageUrl: variant.imageUrl || '',
+    detailImages: variant.detailImages || []
   }));
 }
 
