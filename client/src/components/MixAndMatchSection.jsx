@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ImageDropzone from "./ImageDropzone.jsx";
 import { RecommendProduct } from "../pages/RecommendProduct.jsx";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
@@ -14,6 +14,7 @@ const MixAndMatchSection = ({ assets }) => {
   const [recommending, setRecommending] = useState(false);
   const [aiRanked, setAiRanked] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const recommendationRequestId = useRef(0);
 
   useEffect(() => {
     let mounted = true;
@@ -38,8 +39,10 @@ const MixAndMatchSection = ({ assets }) => {
   const hasFiles = Boolean(topFile || bottomFile);
 
   const resetRecommendation = () => {
+    recommendationRequestId.current += 1;
     setConfirmed(false);
     setAiRanked(false);
+    setRecommending(false);
   };
 
   const handleTopFileChange = (file) => {
@@ -58,10 +61,13 @@ const MixAndMatchSection = ({ assets }) => {
     if (bottomFile) files.push({ name: "bottom", file: bottomFile });
     if (files.length === 0) return;
 
+    const requestId = recommendationRequestId.current + 1;
+    recommendationRequestId.current = requestId;
     setConfirmed(true);
     setRecommending(true);
     recommendLookbooks(files)
       .then(({ lookbooks }) => {
+        if (requestId !== recommendationRequestId.current) return;
         if (lookbooks.length > 0) {
           setRecommendedLooks(
             lookbooks.map((look) => ({
@@ -72,8 +78,16 @@ const MixAndMatchSection = ({ assets }) => {
           setAiRanked(true);
         }
       })
-      .catch(() => setAiRanked(false))
-      .finally(() => setRecommending(false));
+      .catch(() => {
+        if (requestId === recommendationRequestId.current) {
+          setAiRanked(false);
+        }
+      })
+      .finally(() => {
+        if (requestId === recommendationRequestId.current) {
+          setRecommending(false);
+        }
+      });
   };
 
   const hasAnyUpload = Boolean(topUrl || bottomUrl);
