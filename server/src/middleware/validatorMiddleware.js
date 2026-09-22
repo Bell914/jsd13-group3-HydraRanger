@@ -13,3 +13,17 @@ export const validate = (validatorFn) => {
     next();
   };
 };
+
+export const validateParams = (validatorFn) => {
+  return (req, res, next) => {
+    const { isValid, errors } = validatorFn(req.params);
+    if (!isValid) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: 'Validation failed',
+        errors
+      });
+    }
+    next();
+  };
+};

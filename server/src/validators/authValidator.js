@@ -81,3 +81,11 @@ export const validateChangePasswordInput = ({ currentPassword, newPassword }) =>
     errors
   };
 };
+
+export const validateRefreshToken = ({ token }) => {
+  const isValid = typeof token === 'string' && token.trim().length > 0;
+  return {
+    isValid,
+    errors: isValid ? [] : ['Token is required']
+  };
+};
