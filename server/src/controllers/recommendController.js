@@ -151,6 +151,12 @@ export async function recommendLookbooks(req, res, next) {
       });
     }
 
+    console.log(
+      `🎯 [Mix & Match] เริ่มใช้งาน recommend | ${new Date().toISOString()} | ` +
+        `top: ${topFile ? `${topFile.originalname} (${topFile.size} bytes)` : "—"} | ` +
+        `bottom: ${bottomFile ? `${bottomFile.originalname} (${bottomFile.size} bytes)` : "—"}`,
+    );
+
     const images = [];
     if (topFile) {
       images.push({
@@ -181,6 +187,23 @@ export async function recommendLookbooks(req, res, next) {
       garmentTypes: analysis.garment_types,
       colors: analysis.colors,
     };
+
+    console.log(
+      `✅ [Mix & Match] ประมวลผลเสร็จ | ${new Date().toISOString()} | ` +
+        `AI ตรวจจับ: styles=${JSON.stringify(analysisSummary.styles)} ` +
+        `types=${JSON.stringify(analysisSummary.garmentTypes)} ` +
+        `colors=${JSON.stringify(analysisSummary.colors)}`,
+    );
+    console.log(
+      `  🔍 [Mix & Match] ลุคที่แนะนำ (top 3): ` +
+        ranked
+          .map(
+            (look, i) =>
+              `${i + 1}. ${look.id} "${look.name}" score=${look.matchScore} ` +
+              `reasons=[${(look.matchReasons || []).join(", ")}]`,
+          )
+          .join(" | "),
+    );
 
     res.status(HTTP_STATUS.OK).json({
       success: true,

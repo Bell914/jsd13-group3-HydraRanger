@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 
 export const ArticleCard = ({ article }) => {
@@ -35,6 +34,7 @@ export const ArticleCard = ({ article }) => {
         <div className="card-actions justify-end mt-auto pt-4">
           <Link
             to={`/article/${article.id}`}
+            state={{ from: "/article" }}
             className="btn btn-primary btn-sm w-full sm:w-auto text-white"
           >
             อ่านเพิ่มเติม
