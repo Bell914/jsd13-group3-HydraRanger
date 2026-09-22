@@ -13,6 +13,8 @@ import {
   OrderConfirmationScreen,
   SHIPPING_METHODS,
 } from "../components/checkout";
+
+// ➕ HIGHLIGHT: Import createOrder จาก orderService (ซึ่งภายในใช้ api.post ของทีม เพื่อส่ง token อัตโนมัติ)[cite: 6, 12]
 import { createOrder } from "../services/orderService";
 
 export default function CheckoutPage() {
@@ -69,12 +71,12 @@ export default function CheckoutPage() {
   const totalAmount = subtotal + shippingCost + taxAmount;
 
   // Handle Place Order
-  // ✏️ HIGHLIGHT: ปรับปรุง handlePlaceOrder จาก setTimeout เป็น async/await ยิง POST /api/orders จริง
+  // ✏️ HIGHLIGHT (UPDATE): ปรับแก้ไข Syntax try/catch ให้ถูกต้อง และเรียกใช้ createOrder ผ่าน api.post
 const handlePlaceOrder = async () => {
     setIsSubmitting(true);
     setSubmitError(null); // ➕ ล้างข้อความ Error เก่าก่อนยิง Request ใหม่
 
-    try {
+try {
       // ➕ 1. จัดเตรียม Payload ทั้ง 6 ส่วนตามโครงสร้างที่ Backend กำหนด
       const orderPayload = {
         email: email,
@@ -104,21 +106,24 @@ const handlePlaceOrder = async () => {
       const responseData = await createOrder(orderPayload);
 
       // ➕ 3. เมื่อสั่งซื้อสำเร็จ: เก็บข้อมูล Order ที่ได้จาก Server และล้างตะกร้าสินค้า
-      setCompletedOrder(responseData?.order || responseData || {
-        orderId: responseData?.orderId || `OCC-${Math.floor(100000 + Math.random() * 900000)}`,
-        shippingData,
-        email,
-        items: [...cartItems],
-        subtotal,
-        shippingCost,
-        taxAmount,
-        totalAmount,
-      });
+      setCompletedOrder(
+        responseData?.order ||
+        responseData || {
+          orderId: responseData?.orderId || `OCC-${Math.floor(100000 + Math.random() * 900000)}`,
+          shippingData,
+          email,
+          items: [...cartItems],
+          subtotal,
+          shippingCost,
+          taxAmount,
+          totalAmount,
+        }
+      );
 
       clearCart(); // ล้างตะกร้าใน Zustand & LocalStorage
 
     } catch (err) {
-      // ➕ 4. แสดงข้อความแจ้งเตือนเมื่อเกิดปัญหา (Error Handling)
+     // ➕ 4. แสดงข้อความแจ้งเตือนเมื่อเกิดปัญหา (Corrected try/catch syntax)
       console.error("Failed to place order:", err);
       setSubmitError(
         err.response?.data?.message || 
@@ -162,7 +167,7 @@ const handlePlaceOrder = async () => {
         />
 
 {/* ➕ HIGHLIGHT: แสดงกล่อง Error Message หากยิง API ไม่สำเร็จ */}
-{submitError && (
+        {submitError && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex justify-between items-center">
             <span>{submitError}</span>
             <button 

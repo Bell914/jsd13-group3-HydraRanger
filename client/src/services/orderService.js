@@ -1,17 +1,12 @@
-import axios from 'axios';
+import api from "./api"; // 💡 ใช้ api instance ของทีมที่มี Interceptor/Token ในตัว
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
-
+/**
+ * ยิง POST /orders เพื่อสร้างคำสั่งซื้อใหม่ลง MongoDB
+ * @param {Object} orderData 
+ * @returns {Promise<Object>}
+ */
 export const createOrder = async (orderData) => {
-  // ดึง Token ของลูกค้าจาก localStorage หรือ Auth Store
-  const token = localStorage.getItem('token'); 
-
-  const response = await axios.post(`${API_URL}/orders`, orderData, {
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`, // ส่ง Token ไปตามที่เพื่อนแจ้ง
-    },
-  });
-
+  // 💡 ใช้ api.post เพื่อให้ส่ง Token ใน Authorization Header ตรงตามระบบ Login ของทีม
+  const response = await api.post("/orders", orderData);
   return response.data;
 };
