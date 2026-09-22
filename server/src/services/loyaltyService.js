@@ -116,62 +116,64 @@ import { sendRankUpgradeEmail } from './emailService.js';
  * @param {number} netAmount - ยอดเงินจริงของออเดอร์ (ไม่รวมค่าส่ง)
  * @param {'ADD'|'SUBTRACT'} action - การกระทำ ('ADD' เมื่อจ่ายสำเร็จ, 'SUBTRACT' เมื่อยกเลิก/คืนเงิน)
  */
-export const processOrderSpending = async (userId, netAmount, action = 'ADD') => {
-  if (!userId || isNaN(netAmount) || netAmount <= 0) return null;
-
-  try {
-    const user = await User.findById(userId);
-    if (!user) return null;
-
-    const currentSpending = Number(user.membership?.accumulatedSpending || 0);
-    const currentOrderCount = Number(user.membership?.orderCount || 0);
-    const amount = Number(netAmount);
-
-    let newSpending = currentSpending;
-    let newOrderCount = currentOrderCount;
-
-    if (action === 'ADD') {
-      newSpending = currentSpending + amount;
-      newOrderCount = currentOrderCount + 1;
-    } else if (action === 'SUBTRACT') {
-      newSpending = Math.max(0, currentSpending - amount);
-      newOrderCount = Math.max(0, currentOrderCount - 1);
-    }
-
-    const previousRank = user.membership?.rank || MEMBERSHIP_RANKS.MEMBER;
-    const newRank = calculateRankFromSpending(newSpending);
-    const isRankChanged = previousRank !== newRank;
-
-    // คำนวณวันหมดอายุของ Rank (12 เดือนข้างหน้า)
-    const expiresAt = new Date();
-    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-
-    user.membership = {
-      rank: newRank,
-      accumulatedSpending: newSpending,
-      orderCount: newOrderCount,
-      rankUpdatedAt: isRankChanged ? new Date() : (user.membership?.rankUpdatedAt || new Date()),
-      rankExpiresAt: newRank === MEMBERSHIP_RANKS.MEMBER ? null : (user.membership?.rankExpiresAt || expiresAt)
-    };
-
-    await user.save();
-
-    // Trigger email notification on rank upgrade
-    if (isRankChanged && action === 'ADD') {
-      const benefits = RANK_BENEFITS[newRank] || [];
-      sendRankUpgradeEmail(user, previousRank, newRank, benefits).catch((err) =>
-        console.warn('Could not send rank upgrade email:', err.message)
-      );
-    }
-
-    return {
-      membership: user.membership,
-      isRankChanged,
-      previousRank,
-      newRank
-    };
-  } catch (error) {
-    console.error('Failed to process order spending for loyalty:', error);
-    return null;
+export const processOrderSpending = async (userId, netAmount, action = 'ADD', session = null) => {
+  if (!userId || isNaN(netAmount) || netAmount <= 0) {
+    throw new Error('Invalid userId or netAmount for loyalty update');
   }
+
+  const query = User.findById(userId);
+  if (session) query.session(session);
+  const user = await query;
+  if (!user) {
+    throw new Error(`User not found for loyalty update: ${userId}`);
+  }
+
+  const currentSpending = Number(user.membership?.accumulatedSpending || 0);
+  const currentOrderCount = Number(user.membership?.orderCount || 0);
+  const amount = Number(netAmount);
+
+  let newSpending = currentSpending;
+  let newOrderCount = currentOrderCount;
+
+  if (action === 'ADD') {
+    newSpending = currentSpending + amount;
+    newOrderCount = currentOrderCount + 1;
+  } else if (action === 'SUBTRACT') {
+    newSpending = Math.max(0, currentSpending - amount);
+    newOrderCount = Math.max(0, currentOrderCount - 1);
+  }
+
+  const previousRank = user.membership?.rank || MEMBERSHIP_RANKS.MEMBER;
+  const newRank = calculateRankFromSpending(newSpending);
+  const isRankChanged = previousRank !== newRank;
+
+  // คำนวณวันหมดอายุของ Rank (12 เดือนข้างหน้า)
+  const expiresAt = new Date();
+  expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+  user.membership = {
+    rank: newRank,
+    accumulatedSpending: newSpending,
+    orderCount: newOrderCount,
+    rankUpdatedAt: isRankChanged ? new Date() : (user.membership?.rankUpdatedAt || new Date()),
+    rankExpiresAt: newRank === MEMBERSHIP_RANKS.MEMBER ? null : (user.membership?.rankExpiresAt || expiresAt)
+  };
+
+  await user.save(session ? { session } : undefined);
+
+  // Trigger email notification on rank upgrade
+  if (isRankChanged && action === 'ADD') {
+    const benefits = RANK_BENEFITS[newRank] || [];
+    sendRankUpgradeEmail(user, previousRank, newRank, benefits).catch((err) =>
+      console.warn('Could not send rank upgrade email:', err.message)
+    );
+  }
+
+  return {
+    membership: user.membership,
+    isRankChanged,
+    previousRank,
+    newRank
+  };
 };
+

@@ -10,6 +10,7 @@ import {
   calculateRankFromSpending
 } from "../utils/loyaltyUtils.js";
 import { getAddresses } from "../services/userService";
+import { createOrder } from "../services/orderService.js";
 import {
   CheckoutStepper,
   ContactSection,
@@ -74,6 +75,7 @@ export default function CheckoutPage() {
 
   // Order Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderError, setOrderError] = useState("");
   const [completedOrder, setCompletedOrder] = useState(null);
 
   // ดึงข้อมูลที่อยู่จัดส่งของผู้ใช้ที่บันทึกไว้เมื่อเปิดหน้า Checkout
@@ -131,53 +133,77 @@ export default function CheckoutPage() {
   const totalAmount = discountedSubtotal + shippingCost + taxAmount;
 
   // Handle Place Order
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     setIsSubmitting(true);
+    setOrderError("");
+
     if (shippingData.saveAddress) {
       const { firstName, lastName, phone, address, city, state, zipCode, location } = shippingData;
       addAddress({ firstName, lastName, phone, address, city, state, zipCode, location });
     }
     const itemsSnapshot = [...cartItems];
 
-    let upgradedRank = null;
-    // Update user loyalty points/spending and rank
-    if (currentUser) {
-      const currentSpending = Number(currentUser.membership?.accumulatedSpending || 0);
-      const newSpending = currentSpending + discountedSubtotal;
-      const newRank = calculateRankFromSpending(newSpending);
-      if (newRank !== userRank) {
-        upgradedRank = newRank;
-      }
-      if (updateProfile) {
-        updateProfile({
-          membership: {
-            ...currentUser.membership,
-            accumulatedSpending: newSpending,
-            rank: newRank,
-            rankUpdatedAt: new Date()
-          }
-        }).catch((err) => console.warn("Could not update loyalty rank:", err));
-      }
-    }
+    const orderPayload = {
+      email: email || currentUser?.email,
+      items: cartItems.map((item) => ({
+        productId: item.productId || item._id || item.product_id,
+        variantId: item.variantId || item.variant_id,
+        sku: item.sku,
+        quantity: item.quantity
+      })),
+      shippingAddress: {
+        firstName: shippingData.firstName,
+        lastName: shippingData.lastName,
+        phone: shippingData.phone,
+        address: shippingData.address,
+        city: shippingData.city,
+        state: shippingData.state || '',
+        zipCode: shippingData.zipCode,
+        location: shippingData.location || 'Thailand',
+        deliveryNote: shippingData.deliveryNote || ''
+      },
+      shippingMethod: shippingData.shippingMethod || 'standard',
+      paymentMethod: paymentData.method || 'credit-card',
+      couponCode: shippingData.couponCode || ''
+    };
 
-    setTimeout(() => {
-      const orderId = `OCC-${Math.floor(100000 + Math.random() * 900000)}`;
+    try {
+      const res = await createOrder(orderPayload);
+      const created = res?.data || res;
+
+      let upgradedRank = null;
+      if (currentUser) {
+        const currentSpending = Number(currentUser.membership?.accumulatedSpending || 0);
+        const newSpending = currentSpending + (created?.subtotal ?? discountedSubtotal);
+        const newRank = calculateRankFromSpending(newSpending);
+        if (newRank !== userRank) {
+          upgradedRank = newRank;
+        }
+      }
+
       setCompletedOrder({
-        orderId,
+        orderId: created.orderNumber || created._id || `OCC-${Math.floor(100000 + Math.random() * 900000)}`,
         shippingData,
-        email,
+        email: orderPayload.email,
         items: itemsSnapshot,
-        subtotal,
-        rankDiscountAmount,
+        subtotal: created.subtotal ?? subtotal,
+        rankDiscountAmount: created.discountAmount ?? rankDiscountAmount,
         userRank,
         upgradedRank,
-        shippingCost,
-        taxAmount,
-        totalAmount,
+        shippingCost: created.shippingCost ?? shippingCost,
+        taxAmount: created.taxAmount ?? taxAmount,
+        totalAmount: created.totalAmount ?? totalAmount,
       });
+
       clearCart();
+    } catch (err) {
+      console.error("Order creation failed:", err);
+      const msg = err.response?.data?.message || err.message || "Failed to place order. Please try again.";
+      setOrderError(msg);
+      alert(msg);
+    } finally {
       setIsSubmitting(false);
-    }, 100);
+    }
   };
 
   // If order is completed, show full Order Confirmation Screen
@@ -270,15 +296,22 @@ export default function CheckoutPage() {
 
             {/* STEP 4: Review (Active when step 4) */}
             {currentStep === 4 && (
-              <ReviewSection
-                email={email}
-                shippingData={shippingData}
-                paymentData={paymentData}
-                onEditStep={(step) => setCurrentStep(step)}
-                onBack={() => setCurrentStep(3)}
-                onPlaceOrder={handlePlaceOrder}
-                isSubmitting={isSubmitting}
-              />
+              <>
+                {orderError && (
+                  <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+                    {orderError}
+                  </div>
+                )}
+                <ReviewSection
+                  email={email}
+                  shippingData={shippingData}
+                  paymentData={paymentData}
+                  onEditStep={(step) => setCurrentStep(step)}
+                  onBack={() => setCurrentStep(3)}
+                  onPlaceOrder={handlePlaceOrder}
+                  isSubmitting={isSubmitting}
+                />
+              </>
             )}
           </div>
 

@@ -7,6 +7,7 @@ import { useAuth } from "../context/Auth/useAuth.jsx";
 
 export default function ProductCard({ product }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const targetId = product._id || product.productId;
   const isSaved = useWishlistStore((state) =>
     state.wishlist.some((item) => String(item._id) === String(targetId))
@@ -58,34 +59,38 @@ export default function ProductCard({ product }) {
   const imgUrl = normalizeImageUrl(rawImg) || undefined;
 
   return (
-    <Link
-      to={`/products/${targetId}`}
-      className="group flex flex-col justify-between overflow-hidden rounded-2xl bg-[#0046a7] text-white shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 aspect-[3/4] p-3"
-    >
+    <div className="relative group flex flex-col justify-between overflow-hidden rounded-2xl bg-[#0046a7] text-white shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl focus-within:ring-3 focus-within:ring-accent/45 aspect-[3/4] p-3">
       {/* Product Image Box */}
       <div className="relative w-full flex-1 overflow-hidden rounded-xl bg-white/95 p-3 flex items-center justify-center">
-        <img
-          src={imgUrl}
-          alt={title}
-          className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-        />
+        <Link
+          to={`/products/${targetId}`}
+          className="absolute inset-0 flex items-center justify-center p-3"
+          aria-label={title}
+        >
+          <img
+            src={imgUrl}
+            alt={title}
+            className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        </Link>
+
         {product.isEarlyAccess ? (
-          <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-400 to-yellow-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-gray-950 shadow-sm">
+          <span className="pointer-events-none absolute top-2 left-2 z-10 inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-400 to-yellow-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-gray-950 shadow-sm">
             <Sparkles size={11} className="text-gray-950" />
             <span>EARLY ACCESS</span>
           </span>
         ) : categoryName ? (
-          <span className="absolute top-2 left-2 rounded-md bg-[#0046a7] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
+          <span className="pointer-events-none absolute top-2 left-2 z-10 rounded-md bg-[#0046a7] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
             {categoryName}
           </span>
         ) : null}
 
-        {/* Wishlist Button */}
+        {/* Wishlist Button - outside the Link */}
         <button
           type="button"
           onClick={handleWishlistClick}
-          className={`absolute top-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full transition-all shadow-sm cursor-pointer ${
+          className={`absolute top-2 right-2 z-20 flex h-8 w-8 items-center justify-center rounded-full transition-all shadow-sm cursor-pointer ${
             isSaved
               ? "bg-white text-red-500 hover:bg-red-50 shadow-md scale-105"
               : "bg-white/80 text-gray-400 hover:bg-white hover:text-red-500"
@@ -98,7 +103,10 @@ export default function ProductCard({ product }) {
       </div>
 
       {/* Bottom Info Bar matching wireframe */}
-      <div className="pt-3 pb-1 flex items-center justify-between text-white">
+      <Link
+        to={`/products/${targetId}`}
+        className="pt-3 pb-1 flex items-center justify-between text-white hover:opacity-95"
+      >
         <div className="flex flex-col">
           <span className="text-sm sm:text-base font-extrabold tracking-wide text-white drop-shadow-sm">
             {categoryLabel}
@@ -122,8 +130,8 @@ export default function ProductCard({ product }) {
             ฿{minPrice.toLocaleString()}
           </span>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }
 

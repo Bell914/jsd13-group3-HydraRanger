@@ -2,6 +2,12 @@ import mongoose from 'mongoose';
 import { Order, ORDER_STATUSES } from '../models/Order.js';
 import { Product } from '../models/Product.js';
 import * as loyaltyService from './loyaltyService.js';
+import {
+  RANK_DISCOUNT_PERCENT,
+  FREE_SHIPPING_MINIMUM,
+  VALID_COUPONS,
+  SHIPPING_METHODS_CONFIG
+} from '../config/membershipConfig.js';
 
 function createOrderNumber() {
   const date = new Date().toISOString().slice(0, 10).replaceAll('-', '');
@@ -77,10 +83,44 @@ export async function createOrder(user, orderData) {
   validateShippingAddress(orderData.shippingAddress);
   const items = await prepareOrderItems(orderData.items);
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
-  const discountAmount = Number(orderData.discountAmount) || 0;
-  const couponCode = orderData.couponCode ? String(orderData.couponCode).trim() : '';
+
+  // 1. Calculate discount from member tier
   const membershipTierAtPurchase = user?.membership?.rank || 'MEMBER';
-  const shippingCost = Number(orderData.shippingCost) || 0;
+  const rankPercent = RANK_DISCOUNT_PERCENT[membershipTierAtPurchase] || 0;
+  let calculatedDiscount = rankPercent > 0 ? Math.round((subtotal * rankPercent) / 100) : 0;
+
+  // 2. Validate coupon if provided
+  const couponCode = orderData.couponCode ? String(orderData.couponCode).trim().toUpperCase() : '';
+  if (couponCode) {
+    const coupon = VALID_COUPONS[couponCode];
+    if (coupon) {
+      if (subtotal >= (coupon.minSpend || 0)) {
+        if (coupon.type === 'percent') {
+          const couponDiscount = Math.round((subtotal * coupon.value) / 100);
+          calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
+        } else if (coupon.type === 'fixed') {
+          calculatedDiscount = Math.max(calculatedDiscount, coupon.value);
+        }
+      }
+    }
+  }
+  const discountAmount = Math.min(subtotal, calculatedDiscount);
+
+  // 3. Calculate shipping cost based on shipping method and free shipping rules
+  const methodKey = String(orderData.shippingMethod || 'standard').toLowerCase();
+  const selectedMethod = SHIPPING_METHODS_CONFIG[methodKey] || SHIPPING_METHODS_CONFIG.standard;
+  const baseShippingCost = selectedMethod.price;
+
+  const freeShippingThreshold = FREE_SHIPPING_MINIMUM[membershipTierAtPurchase] ?? 1000;
+  const isFreeShipping = freeShippingThreshold === 0 || subtotal >= freeShippingThreshold;
+
+  let shippingCost = baseShippingCost;
+  if (methodKey === 'standard') {
+    shippingCost = isFreeShipping ? 0 : 50;
+  } else if (membershipTierAtPurchase === 'PLATINUM' && methodKey === 'priority') {
+    shippingCost = 0; // Platinum priority shipping is free
+  }
+
   const taxableSubtotal = Math.max(0, subtotal - discountAmount);
   const taxAmount = Math.round(taxableSubtotal * 0.06 * 100) / 100;
   const totalAmount = taxableSubtotal + shippingCost + taxAmount;
@@ -148,23 +188,42 @@ export async function updateOrderStatus(orderId, status) {
   const previousStatus = existingOrder.status;
   existingOrder.status = status;
 
-  // Trigger Loyalty Program rank and spending update with duplicate protection (Idempotency)
-  try {
-    const userId = existingOrder.user?._id || existingOrder.user?.id || existingOrder.user;
-    const netSpend = Math.max(0, existingOrder.subtotal - (existingOrder.discountAmount || 0));
+  const userId = existingOrder.user?._id || existingOrder.user?.id || existingOrder.user;
+  const netSpend = Math.max(0, existingOrder.subtotal - (existingOrder.discountAmount || 0));
 
-    if (userId && !existingOrder.loyaltyProcessed && ['paid', 'completed'].includes(status)) {
-      await loyaltyService.processOrderSpending(userId, netSpend, 'ADD');
-      existingOrder.loyaltyProcessed = true;
-    } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {
-      await loyaltyService.processOrderSpending(userId, netSpend, 'SUBTRACT');
-      existingOrder.loyaltyProcessed = false;
-    }
-  } catch (err) {
-    console.error('Failed to trigger loyalty update for order:', err);
+  let session = null;
+  try {
+    session = await mongoose.startSession();
+    session.startTransaction();
+  } catch {
+    session = null;
   }
 
-  await existingOrder.save();
+  try {
+    if (userId && !existingOrder.loyaltyProcessed && ['paid', 'completed'].includes(status)) {
+      await loyaltyService.processOrderSpending(userId, netSpend, 'ADD', session);
+      existingOrder.loyaltyProcessed = true;
+    } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {
+      await loyaltyService.processOrderSpending(userId, netSpend, 'SUBTRACT', session);
+      existingOrder.loyaltyProcessed = false;
+    }
+
+    if (session) {
+      await existingOrder.save({ session });
+      await session.commitTransaction();
+    } else {
+      await existingOrder.save();
+    }
+  } catch (err) {
+    if (session) {
+      await session.abortTransaction();
+    }
+    throw err;
+  } finally {
+    if (session) {
+      session.endSession();
+    }
+  }
 
   const order = await Order.findById(orderId).populate('user', 'username email');
   return order;

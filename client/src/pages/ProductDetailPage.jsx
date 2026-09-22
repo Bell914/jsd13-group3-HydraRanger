@@ -18,9 +18,9 @@ import {
 import { normalizeImageUrl, getDetailImageSet } from "../utils/imageUtils.js";
 import { getSizeRecommendation } from '../utils/sizeRecommendation.js';
 import { userService } from '../services/userService.js';
-import { useAuth } from '../context/Auth/useAuth.jsx';
 
 export default function ProductDetailPage() {
+  const { productId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();

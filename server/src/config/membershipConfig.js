@@ -61,3 +61,22 @@ export const RANK_BENEFITS = {
     'VIP Customer Care บริการดูแลและช่วยเหลือพิเศษแบบส่วนตัว'
   ]
 };
+
+export const VALID_COUPONS = {
+  OCCWELCOME10: { code: 'OCCWELCOME10', type: 'percent', value: 10, minSpend: 500 },
+  BRONZEVIP3: { code: 'BRONZEVIP3', type: 'percent', value: 3, minSpend: 0, minRank: 'BRONZE' },
+  SILVERVIP5: { code: 'SILVERVIP5', type: 'percent', value: 5, minSpend: 0, minRank: 'SILVER' },
+  GOLDVIP10: { code: 'GOLDVIP10', type: 'percent', value: 10, minSpend: 0, minRank: 'GOLD' },
+  PLATINUMVIP15: { code: 'PLATINUMVIP15', type: 'percent', value: 15, minSpend: 0, minRank: 'PLATINUM' },
+  BDAY10: { code: 'BDAY10', type: 'percent', value: 10, minSpend: 0 },
+  BDAY15: { code: 'BDAY15', type: 'percent', value: 15, minSpend: 0 },
+  BDAY20: { code: 'BDAY20', type: 'percent', value: 20, minSpend: 0 },
+  BDAY25: { code: 'BDAY25', type: 'percent', value: 25, minSpend: 0 }
+};
+
+export const SHIPPING_METHODS_CONFIG = {
+  standard: { id: 'standard', name: 'STANDARD SHIPPING', price: 0 },
+  express: { id: 'express', name: 'EXPRESS SHIPPING', price: 50 },
+  priority: { id: 'priority', name: 'PRIORITY SHIPPING', price: 100 }
+};
+
