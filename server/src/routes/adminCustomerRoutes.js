@@ -5,12 +5,15 @@ import {
   updateCustomer,
   updateCustomerStatus
 } from '../controllers/customerController.js';
+import { validate, validateParams } from '../middleware/validatorMiddleware.js';
+import { validateIdParam } from '../validators/commonValidator.js';
+import { validateCustomerStatus, validateCustomerUpdate } from '../validators/customerValidator.js';
 
 const router = Router();
 
 router.use(protect, authorize('admin'));
 router.get('/', getCustomers);
-router.put('/:id', updateCustomer);
-router.patch('/:id/status', updateCustomerStatus);
+router.put('/:id', validateParams(validateIdParam), validate(validateCustomerUpdate), updateCustomer);
+router.patch('/:id/status', validateParams(validateIdParam), validate(validateCustomerStatus), updateCustomerStatus);
 
 export default router;
