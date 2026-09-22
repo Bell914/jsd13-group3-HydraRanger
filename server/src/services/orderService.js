@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { Order, ORDER_STATUSES } from '../models/Order.js';
 import { Product } from '../models/Product.js';
+import * as loyaltyService from './loyaltyService.js';
 
 function createOrderNumber() {
   const date = new Date().toISOString().slice(0, 10).replaceAll('-', '');
@@ -76,8 +77,13 @@ export async function createOrder(user, orderData) {
   validateShippingAddress(orderData.shippingAddress);
   const items = await prepareOrderItems(orderData.items);
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
+  const discountAmount = Number(orderData.discountAmount) || 0;
+  const couponCode = orderData.couponCode ? String(orderData.couponCode).trim() : '';
+  const membershipTierAtPurchase = user?.membership?.rank || 'MEMBER';
   const shippingCost = Number(orderData.shippingCost) || 0;
-  const taxAmount = Math.round(subtotal * 0.06 * 100) / 100;
+  const taxableSubtotal = Math.max(0, subtotal - discountAmount);
+  const taxAmount = Math.round(taxableSubtotal * 0.06 * 100) / 100;
+  const totalAmount = taxableSubtotal + shippingCost + taxAmount;
 
   const order = await Order.create({
     orderNumber: createOrderNumber(),
@@ -98,9 +104,13 @@ export async function createOrder(user, orderData) {
     shippingMethod: orderData.shippingMethod || 'standard',
     paymentMethod: orderData.paymentMethod || 'credit-card',
     subtotal,
+    discountAmount,
+    couponCode,
+    membershipTierAtPurchase,
     shippingCost,
     taxAmount,
-    totalAmount: subtotal + shippingCost + taxAmount
+    totalAmount,
+    loyaltyProcessed: false
   });
 
   return Order.findById(order._id).populate('user', 'username email');
@@ -117,12 +127,30 @@ export function getAllOrders() {
 export async function updateOrderStatus(orderId, status) {
   if (!ORDER_STATUSES.includes(status)) throw new Error('Invalid order status');
 
-  const order = await Order.findByIdAndUpdate(
-    orderId,
-    { status },
-    { new: true, runValidators: true }
-  ).populate('user', 'username email');
+  const existingOrder = await Order.findById(orderId);
+  if (!existingOrder) throw new Error('Order not found');
 
-  if (!order) throw new Error('Order not found');
+  const previousStatus = existingOrder.status;
+  existingOrder.status = status;
+
+  // Trigger Loyalty Program rank and spending update with duplicate protection (Idempotency)
+  try {
+    const userId = existingOrder.user?._id || existingOrder.user?.id || existingOrder.user;
+    const netSpend = Math.max(0, existingOrder.subtotal - (existingOrder.discountAmount || 0));
+
+    if (userId && !existingOrder.loyaltyProcessed && ['paid', 'completed'].includes(status)) {
+      await loyaltyService.processOrderSpending(userId, netSpend, 'ADD');
+      existingOrder.loyaltyProcessed = true;
+    } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {
+      await loyaltyService.processOrderSpending(userId, netSpend, 'SUBTRACT');
+      existingOrder.loyaltyProcessed = false;
+    }
+  } catch (err) {
+    console.error('Failed to trigger loyalty update for order:', err);
+  }
+
+  await existingOrder.save();
+
+  const order = await Order.findById(orderId).populate('user', 'username email');
   return order;
 }

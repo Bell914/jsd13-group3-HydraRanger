@@ -6,7 +6,8 @@ export const ORDER_STATUSES = [
   'processing',
   'shipped',
   'completed',
-  'cancelled'
+  'cancelled',
+  'refunded'
 ];
 
 const orderItemSchema = new mongoose.Schema(
@@ -55,10 +56,14 @@ const orderSchema = new mongoose.Schema(
     shippingMethod: { type: String, default: 'standard', trim: true },
     paymentMethod: { type: String, default: 'credit-card', trim: true },
     subtotal: { type: Number, required: true, min: 0 },
+    discountAmount: { type: Number, default: 0, min: 0 },
+    couponCode: { type: String, default: '', trim: true },
+    membershipTierAtPurchase: { type: String, default: 'MEMBER', trim: true },
     shippingCost: { type: Number, required: true, min: 0 },
     taxAmount: { type: Number, required: true, min: 0 },
     totalAmount: { type: Number, required: true, min: 0 },
-    status: { type: String, enum: ORDER_STATUSES, default: 'pending', index: true }
+    status: { type: String, enum: ORDER_STATUSES, default: 'pending', index: true },
+    loyaltyProcessed: { type: Boolean, default: false, index: true }
   },
   { timestamps: true }
 );

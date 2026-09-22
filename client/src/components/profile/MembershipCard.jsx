@@ -49,7 +49,13 @@ export const MembershipCard = ({ user }) => {
           <h3 className="mt-1 text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
             <span>{user?.username || 'Customer'}</span>
           </h3>
-          <p className="text-xs text-white/70 mt-0.5">{theme.labelTh}</p>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-white/70 mt-0.5">
+            <span>{theme.labelTh}</span>
+            <span>•</span>
+            <span className="font-mono font-medium text-amber-200/90">
+              Member ID: {user?._id ? `OCC-${String(user._id).slice(-6).toUpperCase()}` : (user?.memberId || 'OCC-M88219')}
+            </span>
+          </div>
         </div>
 
         <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full ${theme.badgeBg} text-xs font-black tracking-wider uppercase shadow-inner`}>

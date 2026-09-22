@@ -84,6 +84,7 @@ describe("Membership Rank & Loyalty Program", () => {
       render(<MembershipCard user={user} />);
 
       expect(screen.getByText("Somchai")).toBeInTheDocument();
+      expect(screen.getByText(/Member ID:/i)).toBeInTheDocument();
       expect(screen.getByText("SILVER")).toBeInTheDocument();
       expect(screen.getByText("฿4,500")).toBeInTheDocument();
       expect(screen.getByText("ช้อปอีก", { exact: false })).toBeInTheDocument();

@@ -41,6 +41,30 @@ const userSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true
+    },
+    membership: {
+      rank: {
+        type: String,
+        enum: ['MEMBER', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM'],
+        default: 'MEMBER'
+      },
+      accumulatedSpending: {
+        type: Number,
+        default: 0,
+        min: 0
+      },
+      rankUpdatedAt: {
+        type: Date,
+        default: Date.now
+      },
+      rankExpiresAt: {
+        type: Date
+      },
+      orderCount: {
+        type: Number,
+        default: 0,
+        min: 0
+      }
     }
   },
   {
