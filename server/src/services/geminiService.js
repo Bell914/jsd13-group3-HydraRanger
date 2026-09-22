@@ -116,7 +116,7 @@ function parseAnalysisJson(text) {
     };
   } catch {
     const match = cleaned.match(/\{[\s\S]*\}/);
-    if (match) return parseAnalysisJson(match[0]);
+    if (match && match[0] !== cleaned) return parseAnalysisJson(match[0]);
     const error = new Error("Gemini response was not valid JSON");
     error.code = "GEMINI_INVALID";
     throw error;
