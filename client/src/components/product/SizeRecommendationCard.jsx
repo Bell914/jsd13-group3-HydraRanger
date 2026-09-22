@@ -26,6 +26,17 @@ export function SizeRecommendationCard({ isLoggedIn, isLoading, recommendation, 
     );
   }
 
+  if (recommendation.status === 'no-match') {
+    return (
+      <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4" role="status">
+        <p className="font-bold text-primary">ยังไม่พบไซส์ที่เหมาะสม</p>
+        <p className="mt-2 text-sm text-secondary">{recommendation.reason}</p>
+      </div>
+    );
+  }
+
+  const canApply = recommendation.status === 'available';
+
   return (
     <div className="mt-5 rounded-2xl border border-pink-200 bg-gradient-to-br from-pink-50 to-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-4">
@@ -37,7 +48,14 @@ export function SizeRecommendationCard({ isLoggedIn, isLoading, recommendation, 
       </div>
       <p className="mt-2 text-sm text-secondary">{recommendation.reason}</p>
       <p className="mt-1 text-xs text-gray-500">อ้างอิงจาก: {recommendation.source} • คำแนะนำอาจแตกต่างตามทรงสินค้า</p>
-      <button type="button" onClick={() => onApply(recommendation.size)} className="mt-3 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white hover:opacity-90">
+      {!canApply && (
+        <p className="mt-2 text-sm text-amber-800" role="status">
+          {recommendation.status === 'out-of-stock'
+            ? 'ไซส์ที่แนะนำในสีที่เลือกหมดสต็อก กรุณาลองเลือกสีอื่น'
+            : 'ยังไม่พบสินค้าพร้อมซื้อในไซส์และสีนี้ กรุณาตรวจสอบตัวเลือกสินค้า'}
+        </p>
+      )}
+      <button type="button" disabled={!canApply} onClick={() => onApply(recommendation.size)} className="mt-3 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
         เลือกไซส์ {recommendation.size}
       </button>
     </div>
