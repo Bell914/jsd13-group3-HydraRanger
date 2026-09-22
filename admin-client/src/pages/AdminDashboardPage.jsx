@@ -115,7 +115,7 @@ export function AdminDashboardPage() {
             <h1>Admin Dashboard</h1>
             <p>ข้อมูลสินค้า ลูกค้า และคำสั่งซื้อจริงจาก MongoDB</p>
           </div>
-          <button type="button" className="refresh-button" onClick={loadDashboard} disabled={loading}>
+          <button type="button" className="primary-action" onClick={loadDashboard} disabled={loading}>
             {loading ? 'กำลังโหลด…' : 'อัปเดตข้อมูล'}
           </button>
         </header>
