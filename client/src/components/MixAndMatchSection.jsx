@@ -1,22 +1,72 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ImageDropzone from "./ImageDropzone.jsx";
 import { RecommendProduct } from "../pages/RecommendProduct.jsx";
-import lookData from "../data/look-data.json";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
-
-const looksData =
-  lookData?.looks || lookData?.default?.looks || [];
+import { getLookbooks } from "../services/lookbookService.js";
+import { recommendLookbooks } from "../services/recommendService.js";
 
 const MixAndMatchSection = ({ assets }) => {
   const [topUrl, setTopUrl] = useState("");
   const [bottomUrl, setBottomUrl] = useState("");
+  const [topFile, setTopFile] = useState(null);
+  const [bottomFile, setBottomFile] = useState(null);
+  const [recommendedLooks, setRecommendedLooks] = useState([]);
+  const [recommending, setRecommending] = useState(false);
+  const [aiRanked, setAiRanked] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    getLookbooks()
+      .then((lookbooks) => {
+        if (!mounted) return;
+        setRecommendedLooks(
+          (Array.isArray(lookbooks) ? lookbooks : []).map((look) => ({
+            ...look,
+            image: normalizeImageUrl(look?.image),
+          })),
+        );
+      })
+      .catch(() => {
+        if (mounted) setRecommendedLooks([]);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const files = [];
+    if (topFile) files.push({ name: "top", file: topFile });
+    if (bottomFile) files.push({ name: "bottom", file: bottomFile });
+    if (files.length === 0) return;
+
+    let cancelled = false;
+    setRecommending(true);
+    recommendLookbooks(files)
+      .then(({ lookbooks }) => {
+        if (cancelled) return;
+        if (lookbooks.length > 0) {
+          setRecommendedLooks(
+            lookbooks.map((look) => ({
+              ...look,
+              image: normalizeImageUrl(look?.imageUrl || look?.image),
+            })),
+          );
+          setAiRanked(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAiRanked(false);
+      })
+      .finally(() => {
+        if (!cancelled) setRecommending(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [topFile, bottomFile]);
 
   const hasAnyUpload = Boolean(topUrl || bottomUrl);
-
-  const recommendedLooks = looksData.slice(0, 3).map((look) => ({
-    ...look,
-    image: normalizeImageUrl(look?.image),
-  }));
 
   return (
     <div className="my-12 flex flex-col gap-8 rounded-2xl bg-accent p-6 sm:p-10">
@@ -71,13 +121,19 @@ const MixAndMatchSection = ({ assets }) => {
           assets={assets}
           label="อัปโหลดเสื้อ / ท่อนบน"
           onChange={setTopUrl}
+          onFileChange={setTopFile}
         />
         <ImageDropzone
           assets={assets}
           label="อัปโหลดกางเกง / ท่อนล่าง"
           onChange={setBottomUrl}
+          onFileChange={setBottomFile}
         />
-        {topUrl && bottomUrl ? (
+        {recommending ? (
+          <p className="text-center text-xs text-white/80">
+            กำลังวิเคราะห์รูปด้วย AI หาลุคใกล้เคียง...
+          </p>
+        ) : topUrl && bottomUrl ? (
           <p className="text-center text-xs text-white/80">
             อัปโหลดครบทั้ง 2 ชิ้น! ดูเซ็ตแนะนำด้านล่าง
           </p>
@@ -103,11 +159,16 @@ const MixAndMatchSection = ({ assets }) => {
             <h3 className="mt-1 text-2xl font-bold text-white">
               เซ็ตแนะนำที่แมตช์กับชิ้นส่วนที่คุณเลือก
             </h3>
+            {aiRanked && !recommending && (
+              <p className="mt-1 text-xs text-white/70">
+                จัดอันดับโดย AI จากรูปที่คุณอัปโหลด
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-1 gap-6 sm:px-0 md:grid-cols-3">
-            {recommendedLooks.map((look, index) => (
+            {recommendedLooks.slice(0, 3).map((look, index) => (
               <RecommendProduct
-                key={look.id || `lookbook-${index}`}
+                key={look._id || look.id || `lookbook-${index}`}
                 product={look}
                 index={index}
               />

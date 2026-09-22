@@ -16,6 +16,7 @@ import contactRoutes from "./contact.route.js";
 import lookbookRoutes from "./lookbookRoutes.js";
 import adminLookbookRoutes from "./adminLookbookRoutes.js";
 import uploadRoutes from "./uploadRoutes.js";
+import recommendRoutes from "./recommendRoutes.js";
 
 const router = Router();
 
@@ -48,5 +49,6 @@ router.use("/contact", contactRoutes);
 router.use("/lookbooks", lookbookRoutes);
 router.use("/admin/lookbooks", adminLookbookRoutes);
 router.use("/uploads", uploadRoutes);
+router.use("/recommend", recommendRoutes);
 
 export default router;

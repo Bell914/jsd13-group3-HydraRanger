@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useCartStore from "../store/cartStore";
 import { useAddressStore } from "../store/addressStore.js";
 import { authService } from "../services/authService";
+import { getAddresses } from "../services/userService";
 import {
   CheckoutStepper,
   ContactSection,
@@ -25,36 +26,38 @@ export default function CheckoutPage() {
   const currentUser = authService.getCurrentUser();
 
   // Current Step: 1 = Contact, 2 = Shipping, 3 = Payment, 4 = Review
-  // Default to step 2 as shown in the primary wireframe, or step 1 if no email
   const [currentStep, setCurrentStep] = useState(2);
 
   // Contact Form State
   const [email, setEmail] = useState(currentUser?.email || "");
 
-  // Shipping Form State (pre-populated with wireframe sample values for seamless demo)
+  // Shipping Form State
   const [shippingData, setShippingData] = useState({
-  location: "Thailand",
-  firstName: "",
-  lastName: "",
-  phone: "",
-  address: "",
-  deliveryNote: "",
-  city: "",
-  state: "",
-  zipCode: "",
-  saveAddress: false,
-  shippingMethod: "standard",
-  isGift: false,
-  giftMessage: "",
-});
+    location: "Thailand",
+    firstName: "",
+    lastName: "",
+    phone: "",
+    address: "",
+    deliveryNote: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    saveAddress: false,
+    shippingMethod: "standard",
+    isGift: false,
+    giftMessage: "",
+  });
+
+  // Saved addresses list from Backend
+  const [savedAddresses, setSavedAddresses] = useState([]);
 
   // Payment Form State
   const [paymentData, setPaymentData] = useState({
-  method: "credit-card",
-  cardNumber: "",
-  cardExp: "",
-  cardCvv: "",
-});
+    method: "credit-card",
+    cardNumber: "",
+    cardExp: "",
+    cardCvv: "",
+  });
 
   // Order Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -136,7 +139,7 @@ try {
     }
   };
 
-  // If order is completed, show full Order Confirmation Screen (Receipt Screen from Image 1)
+  // If order is completed, show full Order Confirmation Screen
   if (completedOrder) {
     return <OrderConfirmationScreen orderData={completedOrder} />;
   }
@@ -205,6 +208,7 @@ try {
                 />
                 <ShippingSection
                   shippingData={shippingData}
+                  savedAddresses={savedAddresses}
                   onChangeShipping={setShippingData}
                   isCollapsed={false}
                   onContinue={() => setCurrentStep(3)}

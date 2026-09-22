@@ -5,6 +5,7 @@ import {
   DashboardPage,
   LoginPage,
   RegisterPage,
+  ForgotPasswordPage,
   NotFoundPage,
   UiKitPage,
   ProductListPage,
@@ -16,6 +17,7 @@ import {
   CartPage,
   LookbookListPage,
   LookbookDetailPage,
+  MixAndMatchPage,
 } from "../pages/index.js";
 import { ProtectedRoute } from "../components/index.js";
 import CustomerService from "../pages/CustomerService.jsx";
@@ -31,10 +33,12 @@ export const AppRoutes = () => {
       <Route path="/products/:productId" element={<ProductDetailPage />} />
       <Route path="/lookbook" element={<LookbookListPage />} />
       <Route path="/lookbook/:lookId" element={<LookbookDetailPage />} />
+      <Route path="/mix-and-match" element={<MixAndMatchPage />} />
       <Route path="/cart" element={<CartPage />} />
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/ui-kit" element={<UiKitPage />} />
       <Route path="/article" element={<ArticlePages />} />
       <Route path="/article/:id" element={<ArticleDetail />} />

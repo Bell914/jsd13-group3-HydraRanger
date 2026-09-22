@@ -4,7 +4,7 @@ import { Heart } from "lucide-react";
 import { normalizeImageUrl } from "../../utils/imageUtils.js";
 import { useLookbookStore } from "../../store/lookbookStore.js";
 
-export default function LookbookCard({ look }) {
+export default function LookbookCard({ look, isInitialFavorited = false }) {
   if (!look) return null;
 
   const isFavorite = useLookbookStore((state) => state.isFavorite(look.id));
@@ -13,34 +13,34 @@ export default function LookbookCard({ look }) {
   const imgUrl = normalizeImageUrl(look.image);
   const itemsCount = look.items?.length || 2;
 
+  const handleFavoriteClick = async (e) => {
+    e.preventDefault(); // ป้องกันการเปลี่ยนหน้าเมื่อกดปุ่ม Bookmark
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      alert("กรุณาเข้าสู่ระบบก่อนบันทึก Lookbook");
+      navigate("/login");
+      return;
+    }
+
+    if (loading) return;
+
+    try {
+      setLoading(true);
+      const res = await toggleFavoriteLookbook(look.id || look._id);
+      setIsFavorited(res.isFavorited);
+    } catch (error) {
+      console.error("Failed to toggle favorite lookbook:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <article
       className="overflow-hidden rounded-2xl border border-stone-300 bg-white p-4 sm:p-5 shadow-xs transition-all duration-200 hover:border-primary/50 hover:shadow-md"
       id={`lookbook-card-${look.id}`}
     >
-      {/* Card Image with Badges */}
-      <Link
-        to={`/lookbook/${look.id}`}
-        className="block relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-stone-100 mb-4 group cursor-pointer"
-        aria-label={`ดูลุค ${look.nameTh || look.name}`}
-      >
-        <img
-          src={imgUrl}
-          alt={look.nameTh || look.name}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-        />
-
-        <span className="absolute top-3 left-3 rounded-md bg-black/65 backdrop-blur-xs px-2.5 py-1 text-[11px] font-bold text-white uppercase">
-          {look.id}
-        </span>
-        {look.saving > 0 && (
-          <span className="absolute top-3 right-3 rounded-full bg-accent px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
-            ประหยัด ฿{look.saving.toLocaleString()}
-          </span>
-        )}
-      </Link>
-
       {/* Card Image with Badges & Favorite Button */}
       <div className="relative mb-4">
         <Link
