@@ -1,6 +1,10 @@
 import { Router } from 'express';
 import { protect } from '../middleware/authMiddleware.js';
-import { getLookbooks, getLookbookById, toggleFavoriteLookbook } from '../controllers/lookbookController.js';
+import {
+  getLookbooks,
+  getLookbookById,
+  toggleFavoriteLookbook
+} from '../controllers/lookbookController.js';
 
 const router = Router();
 
