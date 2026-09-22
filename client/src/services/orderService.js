@@ -1,20 +1,20 @@
-import api from './api';
+import { api } from "./api";
+
+// สร้าง Order ใหม่
+export const createOrder = async (orderData) => {
+  const response = await api.post("/orders", orderData);
+  return response.data;
+};
 
 // ดึงรายการคำสั่งซื้อทั้งหมดของผู้ใช้
 export const getMyOrders = async () => {
-  const response = await api.get('/orders/my');
+  const response = await api.get("/orders/my");
   return response.data;
 };
 
 // ดึงรายละเอียด Order รายการเดียว
 export const getOrderDetail = async (orderId) => {
   const response = await api.get(`/orders/my/${orderId}`);
-  return response.data;
-};
-
-// สร้าง Order ใหม่
-export const createOrder = async (orderData) => {
-  const response = await api.post('/orders', orderData);
   return response.data;
 };
 

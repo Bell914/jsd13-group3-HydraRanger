@@ -34,8 +34,8 @@ export default function CheckoutStepper({ currentStep, onStepClick }) {
                     isCompleted
                       ? "bg-[#0055aa] text-white cursor-pointer hover:bg-[#004488]"
                       : isActive
-                      ? "border-2 border-[#0055aa] text-[#0055aa] bg-white ring-2 ring-[#0055aa]/20"
-                      : "border-2 border-gray-300 text-gray-400 bg-white cursor-default"
+                        ? "border-2 border-[#0055aa] text-[#0055aa] bg-white ring-2 ring-[#0055aa]/20"
+                        : "border-2 border-gray-300 text-gray-400 bg-white cursor-default"
                   }`}
                 >
                   {step.id}
@@ -45,8 +45,8 @@ export default function CheckoutStepper({ currentStep, onStepClick }) {
                     isActive
                       ? "font-bold text-gray-900"
                       : isCompleted
-                      ? "font-medium text-gray-700"
-                      : "text-gray-400"
+                        ? "font-medium text-gray-700"
+                        : "text-gray-400"
                   }`}
                 >
                   {step.label}
@@ -68,4 +68,3 @@ export default function CheckoutStepper({ currentStep, onStepClick }) {
     </div>
   );
 }
-

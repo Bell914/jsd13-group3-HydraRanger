@@ -141,3 +141,17 @@ export async function updateOrderStatus(orderId, status) {
   if (!order) throw new Error('Order not found');
   return order;
 }
+
+export async function cancelOrder(userId, orderId) {
+  const order = await getOrderById(orderId, userId);
+
+  if (order.status === 'cancelled') {
+    throw new Error('Order already cancelled');
+  }
+  if (!['pending', 'paid'].includes(order.status)) {
+    throw new Error('Cannot cancel order in current status');
+  }
+
+  order.status = 'cancelled';
+  return order.save();
+}
