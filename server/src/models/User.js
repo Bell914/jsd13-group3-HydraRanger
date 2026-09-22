@@ -18,6 +18,19 @@ const sizeProfileSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const shippingAddressSchema = new mongoose.Schema(
+  {
+    recipientName: { type: String, required: true },
+    phone: { type: String, required: true },
+    addressLine: { type: String, required: true },
+    district: { type: String, default: '' },
+    province: { type: String, default: '' },
+    postalCode: { type: String, required: true },
+    isDefault: { type: Boolean, default: false }
+  },
+  { _id: true }
+);
+
 const userSchema = new mongoose.Schema(
   {
     username: {
@@ -85,6 +98,10 @@ const userSchema = new mongoose.Schema(
     sizeProfile: {
       type: sizeProfileSchema,
       default: undefined
+    },
+    shippingAddresses: {
+      type: [shippingAddressSchema],
+      default: []
     }
   },
   {

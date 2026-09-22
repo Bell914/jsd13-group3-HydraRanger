@@ -120,6 +120,21 @@ export function getMyOrders(userId) {
   return Order.find({ user: userId }).sort({ createdAt: -1 });
 }
 
+export async function getOrderById(orderId, userId) {
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    throw new Error('Order not found');
+  }
+
+  const order = await Order.findOne({ _id: orderId, user: userId })
+    .populate('user', 'username email');
+
+  if (!order) {
+    throw new Error('Order not found');
+  }
+
+  return order;
+}
+
 export function getAllOrders() {
   return Order.find().populate('user', 'username email').sort({ createdAt: -1 });
 }

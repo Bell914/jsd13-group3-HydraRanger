@@ -25,3 +25,11 @@ export function validateLookbookInput(lookbook) {
 
   return { isValid: errors.length === 0, errors };
 }
+
+export function validateLookbookStatus({ isActive }) {
+  const isValid = typeof isActive === 'boolean';
+  return {
+    isValid,
+    errors: isValid ? [] : ['isActive must be true or false']
+  };
+}

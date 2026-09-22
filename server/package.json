@@ -10,7 +10,7 @@
     "seed": "node src/scripts/seed.js",
     "test:conn": "node src/scripts/testConnection.js",
     "test:loyalty": "node src/scripts/testLoyaltyBackend.js",
-    "test:security": "node --test src/tests/security.test.js"
+    "test:security": "node --test src/tests/security.test.js src/tests/validation.test.js"
   },
   "keywords": [
     "express",
