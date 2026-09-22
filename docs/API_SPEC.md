@@ -34,6 +34,9 @@ API ที่ต้อง Login ส่ง `Authorization: Bearer <token>`
 | GET, POST | `/admin/lookbooks` | Admin Token; ดูทั้งหมด / เพิ่ม Lookbook |
 | PUT | `/admin/lookbooks/:id` | Admin Token; แก้ไข Lookbook |
 | PATCH | `/admin/lookbooks/:id/status` | Admin Token; `{isActive}` ซ่อน/เปิดแสดง |
+| GET | `/users/me/size-profile` | Customer Token; อ่านข้อมูล Size & Fit ของตนเอง |
+| PUT | `/users/me/size-profile` | Customer Token; บันทึกสัดส่วนพร้อม Consent |
+| DELETE | `/users/me/size-profile` | Customer Token; ลบข้อมูลสัดส่วนของตนเอง |
 
 ### เพิ่ม / แก้ Product
 
@@ -119,6 +122,26 @@ Server อ่านราคาและสต็อกจาก Product ใน 
 ```
 
 Server คำนวณ `saving` จาก `regularPrice - setPrice` และตรวจว่า Product กับ Variant SKU มีอยู่จริงก่อนบันทึก
+
+## Personalized Size Profile API
+
+`PUT /users/me/size-profile`
+
+```json
+{
+  "chestCm": 90,
+  "waistCm": 76,
+  "hipsCm": 96,
+  "preferredFit": "regular",
+  "consentGiven": true
+}
+```
+
+- `preferredFit` รองรับ `fitted`, `regular`, `relaxed`
+- ต้องยืนยัน Consent ก่อนบันทึก
+- ลูกค้าอ่าน แก้ไข และลบได้เฉพาะข้อมูลของตนเอง
+- Admin Customer API ไม่ส่งข้อมูลสัดส่วนรายบุคคล
+- หน้าสินค้าใช้ `size_chart` ก่อน หากไม่มีจะใช้เกณฑ์ S/M/L มาตรฐานและแสดงความมั่นใจระดับปานกลาง
 
 ## Cart API ที่เสนอ — ยังไม่มี Route
 
