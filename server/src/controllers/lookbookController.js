@@ -1,49 +1,7 @@
-<<<<<<< HEAD
+import mongoose from 'mongoose';
+import { HTTP_STATUS } from '../config/constants.js';
+import { Lookbook } from '../models/Lookbook.js';
 import { User } from '../models/User.js';
-import { HTTP_STATUS } from '../config/constants.js';
-
-// POST /api/lookbooks/:id/favorite - บันทึก / ยกเลิกบันทึก Lookbook (Toggle)
-export const toggleFavoriteLookbook = async (req, res, next) => {
-  try {
-    const userId = req.user?._id || req.user?.id;
-    const { id: lookbookId } = req.params;
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'User not found' });
-    }
-
-    if (!user.favoriteLookbooks) {
-      user.favoriteLookbooks = [];
-    }
-
-    const index = user.favoriteLookbooks.indexOf(lookbookId);
-    let isFavorited = false;
-
-    if (index > -1) {
-      // มีอยู่แล้ว -> ลบออก (Unfavorite)
-      user.favoriteLookbooks.splice(index, 1);
-      isFavorited = false;
-    } else {
-      // ยังไม่มี -> เพิ่มเข้า (Favorite)
-      user.favoriteLookbooks.push(lookbookId);
-      isFavorited = true;
-    }
-
-    await user.save();
-
-    res.status(HTTP_STATUS.OK).json({
-      success: true,
-      message: isFavorited ? 'Saved to Favorite Lookbooks' : 'Removed from Favorite Lookbooks',
-      isFavorited,
-      favoriteLookbooks: user.favoriteLookbooks
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-=======
-import { HTTP_STATUS } from '../config/constants.js';
 import * as lookbookService from '../services/lookbookService.js';
 
 function handleLookbookError(error, res, next) {
@@ -109,4 +67,39 @@ export async function updateLookbookStatus(req, res, next) {
     handleLookbookError(error, res, next);
   }
 }
->>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
+
+export async function toggleFavoriteLookbook(req, res, next) {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    const requestedId = req.params.id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'User not found' });
+    }
+
+    const lookbook = mongoose.Types.ObjectId.isValid(requestedId)
+      ? await Lookbook.findById(requestedId)
+      : await Lookbook.findOne({ lookbookId: requestedId.toUpperCase() });
+    if (!lookbook) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Lookbook not found' });
+    }
+
+    const existingIndex = user.favoriteLookbooks.findIndex(
+      (favoriteId) => String(favoriteId) === String(lookbook._id)
+    );
+    const isFavorited = existingIndex === -1;
+
+    if (isFavorited) user.favoriteLookbooks.push(lookbook._id);
+    else user.favoriteLookbooks.splice(existingIndex, 1);
+
+    await user.save();
+    return res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: isFavorited ? 'Saved to Favorite Lookbooks' : 'Removed from Favorite Lookbooks',
+      data: { isFavorited, favoriteLookbooks: user.favoriteLookbooks }
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
