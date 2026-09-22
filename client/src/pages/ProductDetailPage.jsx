@@ -15,9 +15,13 @@ import {
   ProductAddedModal,
 } from "../components/product/index.js";
 import { normalizeImageUrl, getDetailImageSet } from "../utils/imageUtils.js";
+import { getSizeRecommendation } from '../utils/sizeRecommendation.js';
+import { userService } from '../services/userService.js';
+import { useAuth } from '../context/Auth/useAuth.jsx';
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
+  const { user } = useAuth();
   const addToCart = useCartStore((state) => state.addToCart);
   const wishlist = useWishlistStore((state) => state.wishlist);
   const toggleWishlist = useWishlistStore((state) => state.toggleWishlist);
@@ -35,6 +39,8 @@ export default function ProductDetailPage() {
   const [validationError, setValidationError] = useState("");
   const [addedSuccessModal, setAddedSuccessModal] = useState(null);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+  const [sizeProfile, setSizeProfile] = useState(null);
+  const [recommendationLoading, setRecommendationLoading] = useState(false);
 
   // Accordion state (Details & Materials)
   const [isDetailsOpen, setIsDetailsOpen] = useState(true);
@@ -126,6 +132,32 @@ export default function ProductDetailPage() {
       isMounted = false;
     };
   }, [productId]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadSizeProfile() {
+      if (!user) {
+        setSizeProfile(null);
+        return;
+      }
+
+      setRecommendationLoading(true);
+      try {
+        const profile = await userService.getSizeProfile();
+        if (isMounted) setSizeProfile(profile);
+      } catch {
+        if (isMounted) setSizeProfile(null);
+      } finally {
+        if (isMounted) setRecommendationLoading(false);
+      }
+    }
+
+    loadSizeProfile();
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   // Unique list of colors with their colorCode from variants
   const colors = useMemo(() => {
@@ -319,6 +351,7 @@ export default function ProductDetailPage() {
   }
 
   const currentPrice = selectedVariant?.price ?? 490;
+  const sizeRecommendation = getSizeRecommendation(sizeProfile, product, sizeOptions);
 
   return (
     <main className="flex-1 bg-background py-6 md:py-10">
@@ -356,6 +389,9 @@ export default function ProductDetailPage() {
                 (product._id || product.productId || product.id || product.sku)
             )}
             onToggleWishlist={() => toggleWishlist(product)}
+            isLoggedIn={Boolean(user)}
+            recommendationLoading={recommendationLoading}
+            sizeRecommendation={sizeRecommendation}
           />
         </div>
 
@@ -381,6 +417,7 @@ export default function ProductDetailPage() {
       <ProductSizeGuideModal
         isOpen={isSizeGuideOpen}
         onClose={() => setIsSizeGuideOpen(false)}
+        product={product}
       />
 
       <ProductAddedModal
