@@ -1,5 +1,6 @@
 import React from "react";
 import { Heart, Share2, Ruler, Minus, Plus, ShoppingBag, Sparkles } from "lucide-react";
+import { SizeRecommendationCard } from './SizeRecommendationCard.jsx';
 
 export const ProductBuySection = ({
   product,
@@ -17,6 +18,9 @@ export const ProductBuySection = ({
   onAddToCart,
   isWishlisted = false,
   onToggleWishlist,
+  isLoggedIn,
+  recommendationLoading,
+  sizeRecommendation,
 }) => {
   const getColorHex = (colorName = "", colorCode = "") => {
     // If colorCode is a hex value, use it directly
@@ -137,6 +141,12 @@ export const ProductBuySection = ({
 
         {/* Size Selection */}
         <div className="mt-6">
+          <SizeRecommendationCard
+            isLoggedIn={isLoggedIn}
+            isLoading={recommendationLoading}
+            recommendation={sizeRecommendation}
+            onApply={onSizeChange}
+          />
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-bold text-primary">
               ขนาด : <span className="text-secondary font-semibold">{selectedSize}</span>

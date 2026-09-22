@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { User, Heart, BookOpen, MapPin, Package, AlertCircle, Save, KeyRound, Plus, Pencil, Trash2, Crown, Check, Ticket, Sparkles, Tag } from 'lucide-react';
+import { User, Heart, BookOpen, MapPin, Package, AlertCircle, Save, KeyRound, Plus, Pencil, Trash2, Crown, Check, Ticket, Sparkles, Tag, Ruler } from 'lucide-react';
 import { Card, WishlistSection, MembershipCard, CouponsSection } from '../components';
 import { useAuth } from '../context/Auth/useAuth.jsx';
 import { useWishlistStore } from '../store/wishlistStore.js';
@@ -8,6 +8,7 @@ import { useAddressStore, emptyAddress } from '../store/addressStore.js';
 import { useLookbookStore } from '../store/lookbookStore.js';
 import { normalizeImageUrl } from '../utils/imageUtils.js';
 import { MEMBER_PROMOTIONS } from '../utils/loyaltyUtils.js';
+import { SizeProfileSection } from '../components/profile/SizeProfileSection.jsx';
 
 // Component แสดงผลเมื่อไม่มีข้อมูล (Empty State)
 const EmptyState = ({ message, subtitle }) => (
@@ -164,6 +165,7 @@ export const ProfilePage = () => {
     { id: 'profile', label: 'ข้อมูลส่วนตัว', icon: User },
     { id: 'membership', label: 'Membership & Loyalty', icon: Crown },
     { id: 'coupons', label: 'คูปองและรางวัล (Vouchers)', icon: Ticket },
+    { id: 'size-profile', label: 'Size & Fit', icon: Ruler },
     { id: 'wishlist', label: 'Wishlist', icon: Heart },
     { id: 'lookbooks', label: 'Favorite Lookbooks', icon: BookOpen },
     { id: 'addresses', label: 'Shipping Addresses', icon: MapPin },
@@ -356,6 +358,8 @@ export const ProfilePage = () => {
               )}
             </div>
           )}
+
+          {activeTab === 'size-profile' && <SizeProfileSection />}
 
           {activeTab === 'membership' && (
             <div>

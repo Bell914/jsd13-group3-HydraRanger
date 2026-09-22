@@ -5,6 +5,7 @@ import morgan from "morgan";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ENV } from "./config/env.js";
+import { buildAllowedOrigins, isOriginAllowed } from "./config/security.js";
 import apiRouter from "./routes/index.js";
 import {
   requestLogger,
@@ -20,21 +21,7 @@ const productImageFolder = path.resolve(
   "../../client/public/collection-2026",
 );
 
-const allowedOrigins = [
-  ENV.CLIENT_URL?.replace(/\/+$/, ""),
-  ENV.ADMIN_CLIENT_URL?.replace(/\/+$/, ""),
-].filter(Boolean);
-
-if (ENV.NODE_ENV === "development") {
-  allowedOrigins.push(
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
-    "http://localhost:5175",
-    "http://localhost:5176",
-  );
-}
+const allowedOrigins = buildAllowedOrigins(ENV);
 
 // Global Middlewares
 app.use(
@@ -46,23 +33,11 @@ app.use(
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, postman)
-      if (!origin) return callback(null, true);
+      if (isOriginAllowed(origin, allowedOrigins)) return callback(null, true);
 
-      const cleanOrigin = origin.replace(/\/+$/, "");
-      const isAllowed =
-        allowedOrigins.includes(cleanOrigin) ||
-        cleanOrigin.endsWith(".vercel.app") ||
-        cleanOrigin.includes("vercel.app") ||
-        cleanOrigin.includes("localhost") ||
-        cleanOrigin.includes("127.0.0.1") ||
-        cleanOrigin.includes("onrender.com");
-
-      if (isAllowed) {
-        return callback(null, true);
-      }
-      // Allow all origins during Sprint 2 demo to prevent blocking
-      return callback(null, true);
+      const error = new Error(`CORS blocked this origin: ${origin}`);
+      error.status = 403;
+      return callback(error);
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
