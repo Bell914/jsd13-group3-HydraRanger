@@ -351,37 +351,28 @@ const fallbackProducts = [
  * @returns {Promise<Array>} List of products
  */
 export async function getProducts(params = {}) {
+  const query = new URLSearchParams();
+  if (params.category && params.category !== "all") {
+    query.append("category", params.category);
+  }
+  if (params.search) {
+    query.append("search", params.search);
+  }
+  if (params.gender && params.gender !== "all") {
+    query.append("gender", params.gender);
+  }
+
+  const queryString = query.toString() ? `?${query.toString()}` : "";
   try {
-    const query = new URLSearchParams();
-    if (params.category && params.category !== "all") {
-      query.append("category", params.category);
-    }
-    if (params.search) {
-      query.append("search", params.search);
-    }
-    if (params.gender && params.gender !== "all") {
-      query.append("gender", params.gender);
-    }
-
-    const queryString = query.toString() ? `?${query.toString()}` : "";
     const response = await api.get(`/products${queryString}`);
-
     if (response && response.data) {
       return response.data;
     }
-    return Array.isArray(response) ? response : [];
-  } catch (error) {
-    console.warn("API error fetching products from MongoDB, using fallback:", error.message);
-    let filtered = [...fallbackProducts];
-    if (params.category && params.category !== "all") {
-      filtered = filtered.filter((p) => p.category === params.category);
-    }
-    if (params.search) {
-      const term = params.search.toLowerCase();
-      filtered = filtered.filter((p) => p.name.toLowerCase().includes(term));
-    }
-    return filtered;
+    if (Array.isArray(response)) return response;
+  } catch (err) {
+    console.warn("Products API unavailable or error:", err.message);
   }
+  return fallbackProducts;
 }
 
 /**
@@ -390,26 +381,32 @@ export async function getProducts(params = {}) {
  * @returns {Promise<Object|null>} Product object
  */
 export async function getProductById(productId) {
+  let resolvedId = productId;
+  if (typeof productId === "number" || /^\d+$/.test(String(productId || "").trim())) {
+    const num = Number(productId);
+    resolvedId = num <= 5 ? `top-00${num}` : `bottom-00${num - 5}`;
+  }
+
   try {
-    const response = await api.get(`/products/${productId}`);
+    const response = await api.get(`/products/${resolvedId}`);
     if (response && response.data) {
       return response.data;
     }
-    return response || null;
-  } catch (error) {
-    console.warn("API error fetching product by ID from MongoDB, using fallback:", error.message);
-    const num = Number(productId);
-    const mappedSlug = !isNaN(num) && num >= 1 && num <= 10
-      ? (num <= 5 ? `top-00${num}` : `bottom-00${num - 5}`)
-      : null;
-
-    return (
-      fallbackProducts.find(
-        (product) =>
-          product._id === productId ||
-          product.productId === productId ||
-          (mappedSlug && (product._id === mappedSlug || product.productId === mappedSlug))
-      ) || null
-    );
+    if (response && (response.title || response.name || response._id)) {
+      return response;
+    }
+  } catch (err) {
+    console.warn("Product API unavailable or error:", err.message);
   }
-}
+
+  // Fallback to local fallbackProducts
+  const target = String(resolvedId || "").toLowerCase();
+  return (
+    fallbackProducts.find(
+      (p) =>
+        p._id?.toLowerCase() === target ||
+        p.productId?.toLowerCase() === target ||
+        p.variants?.some((v) => v.sku?.toLowerCase() === target)
+    ) || null
+  );
+}

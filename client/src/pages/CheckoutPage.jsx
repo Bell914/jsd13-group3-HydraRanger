@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useCartStore from "../store/cartStore";
+import { useAddressStore } from "../store/addressStore.js";
 import { authService } from "../services/authService";
 import {
   CheckoutStepper,
@@ -20,6 +21,7 @@ import { createOrder } from "../services/orderService";
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { cartItems, getTotalPrice, clearCart } = useCartStore();
+  const addAddress = useAddressStore((state) => state.addAddress);
   const currentUser = authService.getCurrentUser();
 
   // Current Step: 1 = Contact, 2 = Shipping, 3 = Payment, 4 = Review

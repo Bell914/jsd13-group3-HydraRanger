@@ -25,7 +25,7 @@ export const getUser = async (req, res, next) => {
       });
     }
 
-    const user = await userService.getUserById(req.params.id);
+    const user = await userService.getUserById(req.params.id, !isAdmin);
     if (!user) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
@@ -35,6 +35,43 @@ export const getUser = async (req, res, next) => {
     res.status(HTTP_STATUS.OK).json({
       success: true,
       data: user
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getMySizeProfile = async (req, res, next) => {
+  try {
+    const profile = await userService.getSizeProfile(req.user.id || req.user._id);
+    res.status(HTTP_STATUS.OK).json({ success: true, data: profile });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const saveMySizeProfile = async (req, res, next) => {
+  try {
+    const profile = await userService.saveSizeProfile(
+      req.user.id || req.user._id,
+      req.body
+    );
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Size profile saved successfully',
+      data: profile
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteMySizeProfile = async (req, res, next) => {
+  try {
+    await userService.deleteSizeProfile(req.user.id || req.user._id);
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Size profile deleted successfully'
     });
   } catch (error) {
     next(error);

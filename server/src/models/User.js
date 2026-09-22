@@ -2,6 +2,22 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { USER_ROLES } from '../config/constants.js';
 
+const sizeProfileSchema = new mongoose.Schema(
+  {
+    chestCm: { type: Number, min: 60, max: 160, required: true },
+    waistCm: { type: Number, min: 50, max: 160, required: true },
+    hipsCm: { type: Number, min: 60, max: 180, required: true },
+    preferredFit: {
+      type: String,
+      enum: ['fitted', 'regular', 'relaxed'],
+      default: 'regular'
+    },
+    consentGiven: { type: Boolean, required: true },
+    updatedAt: { type: Date, default: Date.now }
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     username: {
@@ -41,6 +57,10 @@ const userSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true
+    },
+    sizeProfile: {
+      type: sizeProfileSchema,
+      default: undefined
     }
   },
   {

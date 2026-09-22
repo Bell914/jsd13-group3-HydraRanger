@@ -42,6 +42,7 @@ export const SearchModal = ({ query, onQueryChange, onClose, onSubmit }) => {
         <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row">
           <input
             ref={inputRef}
+            name="search"
             type="search"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}

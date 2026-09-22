@@ -59,6 +59,15 @@ export default function ProductCard({ product }) {
           <span className="text-[11px] text-white/80 line-clamp-1 max-w-[130px]">
             {title}
           </span>
+          {product.tags && product.tags.length > 0 && (
+            <div className="mt-0.5 flex flex-wrap gap-1">
+              {product.tags.slice(0, 2).map((t) => (
+                <span key={t} className="text-[9px] text-white/70">
+                  #{t}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="text-right">
