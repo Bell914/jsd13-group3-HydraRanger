@@ -1,11 +1,25 @@
-import { api } from "./api"; // เปลี่ยนเป็น destructuring import ให้ตรงกับ export const api
-/**
- * ยิง POST /orders เพื่อสร้างคำสั่งซื้อใหม่ลง MongoDB
- * @param {Object} orderData 
- * @returns {Promise<Object>}
- */
+import { api } from "./api";
+
+// สร้าง Order ใหม่
 export const createOrder = async (orderData) => {
-  // 💡 ใช้ api.post เพื่อให้ส่ง Token ใน Authorization Header ตรงตามระบบ Login ของทีม
   const response = await api.post("/orders", orderData);
+  return response.data;
+};
+
+// ดึงรายการคำสั่งซื้อทั้งหมดของผู้ใช้
+export const getMyOrders = async () => {
+  const response = await api.get("/orders/my");
+  return response.data;
+};
+
+// ดึงรายละเอียด Order รายการเดียว
+export const getOrderDetail = async (orderId) => {
+  const response = await api.get(`/orders/my/${orderId}`);
+  return response.data;
+};
+
+// (Optional) ยกเลิก Order
+export const cancelOrder = async (orderId) => {
+  const response = await api.patch(`/orders/my/${orderId}/cancel`);
   return response.data;
 };

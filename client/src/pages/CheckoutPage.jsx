@@ -51,6 +51,43 @@ export default function CheckoutPage() {
   // Saved addresses list from Backend
   const [savedAddresses, setSavedAddresses] = useState([]);
 
+  // ดึงข้อมูลที่อยู่จัดส่งของผู้ใช้ที่บันทึกไว้เมื่อเปิดหน้า Checkout
+  useEffect(() => {
+    fetchUserAddresses();
+  }, []);
+
+  const fetchUserAddresses = async () => {
+    try {
+      const res = await getAddresses();
+      const addrList = res.data || (Array.isArray(res) ? res : []);
+      setSavedAddresses(addrList);
+
+      if (addrList.length > 0) {
+        // เลือกที่อยู่หลัก (isDefault) หรือที่อยู่อันแรกสุดถ้าไม่มีหลัก
+        const defaultAddr = addrList.find((a) => a.isDefault) || addrList[0];
+        if (defaultAddr) {
+          // แยกชื่อผู้รับถ้าเป็นฟิลด์เดียว
+          const nameParts = (defaultAddr.recipientName || "").trim().split(" ");
+          const firstName = nameParts[0] || "";
+          const lastName = nameParts.slice(1).join(" ") || "";
+
+          setShippingData((prev) => ({
+            ...prev,
+            firstName: firstName || prev.firstName,
+            lastName: lastName || prev.lastName,
+            phone: defaultAddr.phone || prev.phone,
+            address: defaultAddr.addressLine || prev.address,
+            city: defaultAddr.district || prev.city,
+            state: defaultAddr.province || prev.state,
+            zipCode: defaultAddr.postalCode || prev.zipCode,
+          }));
+        }
+      }
+    } catch (err) {
+      console.warn("Could not load saved shipping addresses:", err.message);
+    }
+  };
+
   // Payment Form State
   const [paymentData, setPaymentData] = useState({
     method: "credit-card",
@@ -127,7 +164,11 @@ try {
       setCompletedOrder({
         orderId: responseData?.orderNumber || responseData?.orderId || `OCC-${Math.floor(100000 + Math.random() * 900000)}`,
         email: responseData?.customerEmail || email,
-        shippingData: responseData?.shippingAddress || shippingData,
+        shippingData: {
+          ...(responseData?.shippingAddress || shippingData),
+          shippingMethod:
+            responseData?.shippingMethod || shippingData.shippingMethod,
+        },
         items: (responseData?.items || cartItems).map((item) => ({
           ...item,
           name: item.title || item.name,
