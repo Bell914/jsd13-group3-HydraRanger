@@ -44,6 +44,19 @@ export async function getMyOrders(req, res, next) {
   }
 }
 
+// เพิ่มฟังก์ชันสำหรับกดดู Order Detail รายการเดียว
+export async function getMyOrderDetail(req, res, next) {
+  try {
+    const userId = req.user._id || req.user.id;
+    const orderId = req.params.id;
+    const order = await orderService.getOrderById(orderId, userId);
+    
+    res.status(HTTP_STATUS.OK).json({ success: true, data: order });
+  } catch (error) {
+    sendOrderError(error, res, next);
+  }
+}
+
 export async function getAdminOrders(req, res, next) {
   try {
     const orders = await orderService.getAllOrders();

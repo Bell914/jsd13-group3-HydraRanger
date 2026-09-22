@@ -34,7 +34,6 @@ export const ProfilePage = () => {
   const favoriteLookbooks = useLookbookStore((state) => state.favorites);
   const removeFavoriteLookbook = useLookbookStore((state) => state.removeFavorite);
 
-  // ข้อมูลผู้ใช้จาก Auth context พร้อม fallback
   const user = authUser || { username: 'Customer', email: 'user@example.com' };
   const orders = [];
 
@@ -167,11 +166,19 @@ export const ProfilePage = () => {
     { id: 'orders', label: 'Order History', icon: Package },
   ];
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+        <Loader2 className="animate-spin text-accent" size={32} />
+        <p className="text-sm text-gray-500 font-medium">กำลังโหลดข้อมูลโปรไฟล์...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-5xl mx-auto py-8 px-4">
       <h1 className="text-2xl font-bold mb-6 text-primary">My Profile</h1>
 
-      {/* Error Alert State */}
       {error && (
         <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
           <AlertCircle size={18} className="shrink-0" />
@@ -203,8 +210,9 @@ export const ProfilePage = () => {
           </nav>
         </Card>
 
-        {/* Tab Content Display Area */}
+        {/* Tab Content Area */}
         <Card className="p-6 md:col-span-3">
+          {/* 1. ข้อมูลส่วนตัว */}
           {activeTab === 'profile' && (
             <div>
               <h2 className="text-lg font-semibold mb-4">ข้อมูลส่วนตัว</h2>
@@ -401,6 +409,7 @@ export const ProfilePage = () => {
             </div>
           )}
 
+          {/* 3. Favorite Lookbooks */}
           {activeTab === 'lookbooks' && (
             <div>
               <h2 className="text-lg font-semibold mb-4">Favorite Lookbooks</h2>
@@ -455,6 +464,7 @@ export const ProfilePage = () => {
             </div>
           )}
 
+          {/* 4. Shipping Addresses */}
           {activeTab === 'addresses' && (
             <div>
               <h2 className="text-lg font-semibold mb-4">ที่อยู่จัดส่ง (Shipping Addresses)</h2>
@@ -703,13 +713,44 @@ export const ProfilePage = () => {
             </div>
           )}
 
+          {/* 5. Order History */}
           {activeTab === 'orders' && (
             <div>
               <h2 className="text-lg font-semibold mb-4">ประวัติการสั่งซื้อ (Order History)</h2>
               {orders.length === 0 ? (
                 <EmptyState message="ยังไม่มีประวัติการสั่งซื้อ" subtitle="เริ่มช้อปปิ้งเลยเพื่อดูคำสั่งซื้อของคุณที่นี่" />
               ) : (
-                <div>{/* Map รายการ คำสั่งซื้อ */}</div>
+                <div className="space-y-4">
+                  {orders.map((order) => (
+                    <div key={order._id} className="border rounded-xl p-4 bg-white shadow-sm space-y-3">
+                      <div className="flex justify-between items-center border-b pb-2">
+                        <div>
+                          <p className="font-bold text-sm text-primary">Order #{order.orderNumber || order._id}</p>
+                          <p className="text-xs text-gray-400">
+                            {new Date(order.createdAt).toLocaleDateString('th-TH')}
+                          </p>
+                        </div>
+                        <span className="text-xs px-2.5 py-1 rounded-full font-semibold uppercase bg-blue-50 text-blue-600">
+                          {order.status}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        {order.items?.map((item, idx) => (
+                          <div key={idx} className="flex justify-between items-center text-sm">
+                            <span className="text-gray-700">{item.title} ({item.variant}) x{item.quantity}</span>
+                            <span className="font-medium">฿{item.lineTotal?.toLocaleString() || (item.unitPrice * item.quantity).toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="border-t pt-2 flex justify-between items-center font-bold text-sm">
+                        <span>ยอดรวมสุทธิ</span>
+                        <span className="text-accent text-base">฿{order.totalAmount?.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}

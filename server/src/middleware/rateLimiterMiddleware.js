@@ -1,4 +1,5 @@
 import { HTTP_STATUS } from '../config/constants.js';
+import { ENV } from '../config/env.js';
 
 const buckets = new Map();
 
@@ -21,6 +22,11 @@ export const rateLimit = ({
   message = 'Too many requests, please try again later'
 } = {}) => {
   return (req, res, next) => {
+    //  หากอยู่ในช่วง Development ให้สั่งข้าม (Bypass) ไม่ต้องนับจำนวนครั้ง
+    if (ENV.NODE_ENV !== 'production') {
+      return next();
+    }
+
     const key = req.ip || 'unknown';
     const now = Date.now();
     const bucket = buckets.get(key) || { count: 0, resetAt: now + windowMs };
@@ -29,6 +35,7 @@ export const rateLimit = ({
       bucket.count = 0;
       bucket.resetAt = now + windowMs;
     }
+
     bucket.count += 1;
     buckets.set(key, bucket);
 
@@ -39,6 +46,7 @@ export const rateLimit = ({
         retryAfterMs: bucket.resetAt - now
       });
     }
+
     next();
   };
 };
