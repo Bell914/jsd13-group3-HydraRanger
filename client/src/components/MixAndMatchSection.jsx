@@ -37,6 +37,21 @@ const MixAndMatchSection = ({ assets }) => {
 
   const hasFiles = Boolean(topFile || bottomFile);
 
+  const resetRecommendation = () => {
+    setConfirmed(false);
+    setAiRanked(false);
+  };
+
+  const handleTopFileChange = (file) => {
+    setTopFile(file);
+    resetRecommendation();
+  };
+
+  const handleBottomFileChange = (file) => {
+    setBottomFile(file);
+    resetRecommendation();
+  };
+
   const confirmRecommend = () => {
     const files = [];
     if (topFile) files.push({ name: "top", file: topFile });
@@ -116,13 +131,13 @@ const MixAndMatchSection = ({ assets }) => {
           assets={assets}
           label="อัปโหลดเสื้อ / ท่อนบน"
           onChange={setTopUrl}
-          onFileChange={setTopFile}
+          onFileChange={handleTopFileChange}
         />
         <ImageDropzone
           assets={assets}
           label="อัปโหลดกางเกง / ท่อนล่าง"
           onChange={setBottomUrl}
-          onFileChange={setBottomFile}
+          onFileChange={handleBottomFileChange}
         />
         <button
           type="button"

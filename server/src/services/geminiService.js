@@ -117,7 +117,33 @@ function parseAnalysisJson(text) {
   } catch {
     const match = cleaned.match(/\{[\s\S]*\}/);
     if (match) return parseAnalysisJson(match[0]);
-    throw new Error("Gemini response was not valid JSON");
+    const error = new Error("Gemini response was not valid JSON");
+    error.code = "GEMINI_INVALID";
+    throw error;
+  }
+}
+
+function parseRankingsJson(text) {
+  const cleaned = text.replace(/```json|```/g, "").trim();
+
+  try {
+    const data = JSON.parse(cleaned);
+    const rankings = Array.isArray(data.rankings) ? data.rankings : [];
+
+    return rankings
+      .filter((ranking) => ranking && ranking.lookbookId)
+      .map((ranking) => ({
+        lookbookId: String(ranking.lookbookId),
+        score: Math.min(10, Math.max(1, Number(ranking.score) || 1)),
+        reasons: Array.isArray(ranking.reasons) ? ranking.reasons : [],
+      }));
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (match && match[0] !== cleaned) return parseRankingsJson(match[0]);
+
+    const error = new Error("Gemini rank response was not valid JSON");
+    error.code = "GEMINI_INVALID";
+    throw error;
   }
 }
 
@@ -187,12 +213,5 @@ export async function rankLookbooks(images, lookbooks) {
     throw error;
   }
 
-  const cleaned = text.replace(/```json|```/g, "").trim();
-  const data = JSON.parse(cleaned);
-  const rankings = Array.isArray(data.rankings) ? data.rankings : [];
-  return rankings.map((r) => ({
-    lookbookId: String(r.lookbookId || ""),
-    score: Number(r.score) || 0,
-    reasons: Array.isArray(r.reasons) ? r.reasons : [],
-  }));
+  return parseRankingsJson(text);
 }
