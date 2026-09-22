@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { USER_ROLES } from '../config/constants.js';
 
+// Schema สำหรับ Size Profile
 const sizeProfileSchema = new mongoose.Schema(
   {
     chestCm: { type: Number, min: 60, max: 160, required: true },
@@ -17,6 +18,17 @@ const sizeProfileSchema = new mongoose.Schema(
   },
   { _id: false }
 );
+
+// Schema สำหรับ Shipping Address
+const shippingAddressSchema = new mongoose.Schema({
+  recipientName: { type: String, required: true },
+  phone: { type: String, required: true },
+  addressLine: { type: String, required: true },
+  district: { type: String, required: true },
+  province: { type: String, required: true },
+  postalCode: { type: String, required: true },
+  isDefault: { type: Boolean, default: false }
+});
 
 const userSchema = new mongoose.Schema(
   {
@@ -61,6 +73,29 @@ const userSchema = new mongoose.Schema(
     sizeProfile: {
       type: sizeProfileSchema,
       default: undefined
+    },
+
+    // ==========================================
+    // เพิ่มเติม: Shipping Addresses & Favorite Lookbooks (Sprint 1 & 2)
+    // ==========================================
+    addresses: [shippingAddressSchema],
+    favoriteLookbooks: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Lookbook'
+      }
+    ],
+
+    // ==========================================
+    // เพิ่มเติม: Forgot / Reset Password Fields
+    // ==========================================
+    resetPasswordToken: {
+      type: String,
+      default: null
+    },
+    resetPasswordExpires: {
+      type: Date,
+      default: null
     }
   },
   {
@@ -68,7 +103,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Hash password before saving
+// Hash password ก่อน save
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
@@ -76,7 +111,7 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-// Method to compare entered password with hashed password
+// Method เปรียบเทียบรหัสผ่าน
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };

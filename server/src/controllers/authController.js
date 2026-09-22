@@ -169,3 +169,45 @@ export const refresh = async (req, res, next) => {
     next(error);
   }
 };
+
+// ==========================================
+// Forgot & Reset Password Controllers
+// ==========================================
+
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const result = await authService.forgotPassword(email);
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+    const result = await authService.resetPassword({ token, password });
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    if (
+      error.message === 'Invalid or expired reset token' ||
+      error.message === 'Password must be at least 6 characters'
+    ) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: error.message
+      });
+    }
+    next(error);
+  }
+};

@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { User } from '../models/User.js';
@@ -90,7 +91,7 @@ export const registerUser = async ({ username, email, password }) => {
     }
 
     // Fallback: In-memory simulation (only when DB is offline)
-    console.warn('⚠️  AuthService: Using in-memory fallback for user registration.');
+    console.warn('⚠️ AuthService: Using in-memory fallback for user registration.');
     const userExists = inMemoryUsers.find(
       (u) => u.email === email.toLowerCase() || u.username === username
     );
@@ -197,8 +198,7 @@ export const loginAdmin = async ({ email, password }) => {
     }
   }
 
-  // The environment admin is only a convenience for local development.
-  // Production admins must exist in MongoDB.
+  // Environment admin for development
   if (
     ENV.NODE_ENV === 'development' &&
     ENV.ADMIN_EMAIL &&
@@ -228,7 +228,6 @@ export const getMe = async (userId) => {
     }
   }
 
-  // In-memory fallback (only when DB is offline or synthetic user)
   const mockUser = inMemoryUsers.find((u) => u.id === userId);
   if (!mockUser) return null;
   const { password, ...safeUser } = mockUser;
@@ -258,7 +257,6 @@ export const changePassword = async ({ userId, currentPassword, newPassword }) =
     }
   }
 
-  // In-memory fallback (only when DB is offline or synthetic user)
   const mockUser = inMemoryUsers.find((u) => u.id === userId);
   if (!mockUser) throw new Error('User not found');
 
@@ -284,8 +282,7 @@ export const updateProfile = async ({ userId, username, email, avatar }) => {
 
       if (changedUsername || changedEmail) {
         const existing = await User.findOne({
-          _id: { $ne: user._id },
-          $or: [
+          _id: { $ne: user._id },$or: [
             ...(changedEmail ? [{ email: validatedEmail }] : []),
             ...(changedUsername ? [{ username: validatedUsername }] : [])
           ]
@@ -312,7 +309,6 @@ export const updateProfile = async ({ userId, username, email, avatar }) => {
     }
   }
 
-  // In-memory fallback (only when DB is offline or synthetic user)
   const mockUser = inMemoryUsers.find((u) => u.id === userId);
   if (!mockUser) throw new Error('User not found');
 
@@ -343,4 +339,82 @@ export const refreshToken = (currentToken) => {
   } catch {
     throw new Error('Invalid or expired token');
   }
+};
+
+// ==========================================
+// Forgot & Reset Password Services (พร้อม Fallback)
+// ==========================================
+
+export const forgotPassword = async (email) => {
+  if (!email) throw new Error('Email is required');
+  const targetEmail = email.trim().toLowerCase();
+
+  try {
+    const user = await User.findOne({ email: targetEmail });
+
+    if (user) {
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+      user.resetPasswordToken = hashedToken;
+      user.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // หมดอายุใน 1 ชั่วโมง
+      await user.save();
+
+      const clientUrl = ENV.CLIENT_URL || 'http://localhost:5173';
+      console.log(`\n===========================================\n[RESET PASSWORD LINK]: ${clientUrl}/reset-password/${resetToken}\n===========================================\n`);
+    }
+  } catch (error) {
+    if (!isDbUnavailableError(error)) throw error;
+
+    // In-memory fallback เมื่อ DB ออฟไลน์
+    const mockUser = inMemoryUsers.find((u) => u.email === targetEmail);
+    if (mockUser) {
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      mockUser.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+      mockUser.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
+      console.log(`\n===========================================\n[MOCK RESET PASSWORD LINK]: http://localhost:5173/reset-password/${resetToken}\n===========================================\n`);
+    }
+  }
+
+  return { message: 'If that email address is in our database, we will send you a password reset link.' };
+};
+
+export const resetPassword = async ({ token, password }) => {
+  if (!password || password.length < 6) {
+    throw new Error('Password must be at least 6 characters');
+  }
+
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (user) {
+      user.password = password;
+      user.resetPasswordToken = null;
+      user.resetPasswordExpires = null;
+      await user.save();
+      return { message: 'Password has been reset successfully' };
+    }
+  } catch (error) {
+    if (!isDbUnavailableError(error)) throw error;
+  }
+
+  // In-memory fallback
+  const mockUser = inMemoryUsers.find(
+    (u) => u.resetPasswordToken === hashedToken && u.resetPasswordExpires > Date.now()
+  );
+
+  if (!mockUser) {
+    throw new Error('Invalid or expired reset token');
+  }
+
+  mockUser.password = await bcrypt.hash(password, 10);
+  mockUser.resetPasswordToken = null;
+  mockUser.resetPasswordExpires = null;
+
+  return { message: 'Password has been reset successfully' };
 };

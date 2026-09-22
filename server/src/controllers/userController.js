@@ -42,7 +42,47 @@ export const getUser = async (req, res, next) => {
   }
 };
 
-<<<<<<< HEAD
+// ==========================================
+// Size Profile Controllers
+// ==========================================
+
+export const getMySizeProfile = async (req, res, next) => {
+  try {
+    const profile = await userService.getSizeProfile(req.user.id || req.user._id);
+    res.status(HTTP_STATUS.OK).json({ success: true, data: profile });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const saveMySizeProfile = async (req, res, next) => {
+  try {
+    const profile = await userService.saveSizeProfile(
+      req.user.id || req.user._id,
+      req.body
+    );
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Size profile saved successfully',
+      data: profile
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteMySizeProfile = async (req, res, next) => {
+  try {
+    await userService.deleteSizeProfile(req.user.id || req.user._id);
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Size profile deleted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ==========================================
 // Shipping Address Management Controllers
 // ==========================================
@@ -60,18 +100,11 @@ export const getAddresses = async (req, res, next) => {
       success: true,
       data: user.shippingAddresses || []
     });
-=======
-export const getMySizeProfile = async (req, res, next) => {
-  try {
-    const profile = await userService.getSizeProfile(req.user.id || req.user._id);
-    res.status(HTTP_STATUS.OK).json({ success: true, data: profile });
->>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
   } catch (error) {
     next(error);
   }
 };
 
-<<<<<<< HEAD
 // POST /api/users/addresses - เพิ่มที่อยู่จัดส่งใหม่
 export const addAddress = async (req, res, next) => {
   try {
@@ -87,8 +120,12 @@ export const addAddress = async (req, res, next) => {
     const userId = req.user?.id || req.user?._id;
     const user = await User.findById(userId);
 
+    if (!user.shippingAddresses) {
+      user.shippingAddresses = [];
+    }
+
     // ถ้าตั้งให้เป็นที่อยู่หลัก หรือยังไม่มีที่อยู่เลย ให้เคลียร์ที่อยู่อื่นไม่ให้เป็น default
-    if (isDefault || !user.shippingAddresses || user.shippingAddresses.length === 0) {
+    if (isDefault || user.shippingAddresses.length === 0) {
       user.shippingAddresses.forEach((addr) => (addr.isDefault = false));
     }
 
@@ -122,35 +159,23 @@ export const deleteAddress = async (req, res, next) => {
     const userId = req.user?.id || req.user?._id;
     const user = await User.findById(userId);
 
-    user.shippingAddresses = user.shippingAddresses.filter(
-      (addr) => addr._id.toString() !== addressId
-    );
-
-    await user.save();
+    if (user.shippingAddresses) {
+      user.shippingAddresses = user.shippingAddresses.filter(
+        (addr) => addr._id.toString() !== addressId
+      );
+      await user.save();
+    }
 
     res.status(HTTP_STATUS.OK).json({
       success: true,
       message: 'Address deleted successfully',
-      data: user.shippingAddresses
-=======
-export const saveMySizeProfile = async (req, res, next) => {
-  try {
-    const profile = await userService.saveSizeProfile(
-      req.user.id || req.user._id,
-      req.body
-    );
-    res.status(HTTP_STATUS.OK).json({
-      success: true,
-      message: 'Size profile saved successfully',
-      data: profile
->>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
+      data: user.shippingAddresses || []
     });
   } catch (error) {
     next(error);
   }
 };
 
-<<<<<<< HEAD
 // PATCH /api/users/addresses/:addressId/default - ตั้งค่าเป็นที่อยู่หลัก
 export const setDefaultAddress = async (req, res, next) => {
   try {
@@ -158,30 +183,19 @@ export const setDefaultAddress = async (req, res, next) => {
     const userId = req.user?.id || req.user?._id;
     const user = await User.findById(userId);
 
-    user.shippingAddresses.forEach((addr) => {
-      addr.isDefault = addr._id.toString() === addressId;
-    });
-
-    await user.save();
+    if (user.shippingAddresses) {
+      user.shippingAddresses.forEach((addr) => {
+        addr.isDefault = addr._id.toString() === addressId;
+      });
+      await user.save();
+    }
 
     res.status(HTTP_STATUS.OK).json({
       success: true,
       message: 'Default address updated',
-      data: user.shippingAddresses
-=======
-export const deleteMySizeProfile = async (req, res, next) => {
-  try {
-    await userService.deleteSizeProfile(req.user.id || req.user._id);
-    res.status(HTTP_STATUS.OK).json({
-      success: true,
-      message: 'Size profile deleted successfully'
->>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
+      data: user.shippingAddresses || []
     });
   } catch (error) {
     next(error);
   }
-<<<<<<< HEAD
 };
-=======
-};
->>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
