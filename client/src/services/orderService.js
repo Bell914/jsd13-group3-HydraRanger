@@ -1,5 +1,4 @@
-import api from "./api"; // 💡 ใช้ api instance ของทีมที่มี Interceptor/Token ในตัว
-
+import { api } from "./api"; // เปลี่ยนเป็น destructuring import ให้ตรงกับ export const api
 /**
  * ยิง POST /orders เพื่อสร้างคำสั่งซื้อใหม่ลง MongoDB
  * @param {Object} orderData 

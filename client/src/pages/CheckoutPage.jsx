@@ -111,31 +111,45 @@ try {
       const responseData = await createOrder(orderPayload);
 
       // ➕ 3. เมื่อสั่งซื้อสำเร็จ: เก็บข้อมูล Order ที่ได้จาก Server และล้างตะกร้าสินค้า
-      setCompletedOrder(
-        responseData?.order ||
-        responseData || {
-          orderId: responseData?.orderId || `OCC-${Math.floor(100000 + Math.random() * 900000)}`,
-          shippingData,
-          email,
-          items: [...cartItems],
-          subtotal,
-          shippingCost,
-          taxAmount,
-          totalAmount,
-        }
-      );
+// ➕ เพิ่มการบันทึกที่อยู่หากผู้ใช้เช็คเลือก "Save address"
+      if (shippingData.saveAddress && addAddress) {
+        addAddress({
+          firstName: shippingData.firstName,
+          lastName: shippingData.lastName,
+          phone: shippingData.phone,
+          address: shippingData.address,
+          city: shippingData.city,
+          state: shippingData.state,
+          zipCode: shippingData.zipCode,
+        });
+      }
+
+      setCompletedOrder({
+        orderId: responseData?.orderNumber || responseData?.orderId || `OCC-${Math.floor(100000 + Math.random() * 900000)}`,
+        email: responseData?.customerEmail || email,
+        shippingData: responseData?.shippingAddress || shippingData,
+        items: (responseData?.items || cartItems).map((item) => ({
+          ...item,
+          name: item.title || item.name,
+          price: item.unitPrice || item.price,
+        })),
+        subtotal: responseData?.subtotal || subtotal,
+        shippingCost: responseData?.shippingCost || shippingCost,
+        taxAmount: responseData?.taxAmount || taxAmount,
+        totalAmount: responseData?.totalAmount || totalAmount,
+      });
 
       clearCart(); // ล้างตะกร้าใน Zustand & LocalStorage
 
     } catch (err) {
      // ➕ 4. แสดงข้อความแจ้งเตือนเมื่อเกิดปัญหา (Corrected try/catch syntax)
-      console.error("Failed to place order:", err);
+console.error("Failed to place order:", err);
+      // ✏️ ปรับการอ่าน Error ให้ตรงตาม ApiClient ของทีม
       setSubmitError(
-        err.response?.data?.message || 
-        "เกิดข้อผิดพลาดในการบันทึกคำสั่งซื้อ กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง"
+        err.data?.message || err.message || "เกิดข้อผิดพลาดในการบันทึกคำสั่งซื้อ กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง"
       );
     } finally {
-      setIsSubmitting(false); // ปิดสถานะ Loading
+      setIsSubmitting(false);
     }
   };
 
