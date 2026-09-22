@@ -197,8 +197,10 @@ export const loginAdmin = async ({ email, password }) => {
     }
   }
 
-  // Bootstrap admin defined via env vars — works regardless of DB state
+  // The environment admin is only a convenience for local development.
+  // Production admins must exist in MongoDB.
   if (
+    ENV.NODE_ENV === 'development' &&
     ENV.ADMIN_EMAIL &&
     ENV.ADMIN_PASSWORD &&
     email.toLowerCase() === ENV.ADMIN_EMAIL.toLowerCase() &&
@@ -267,6 +269,7 @@ export const changePassword = async ({ userId, currentPassword, newPassword }) =
   return { success: true, message: 'Password updated successfully' };
 };
 
+<<<<<<< HEAD
 //  ฟังก์ชันใหม่สำหรับ Reset Password โดยใช้อีเมล
 export const resetPassword = async ({ email, newPassword }) => {
   const targetEmail = email.toLowerCase();
@@ -298,6 +301,67 @@ export const resetPassword = async ({ email, newPassword }) => {
     mockUser.password = await bcrypt.hash(newPassword, 10);
     return { success: true, message: 'Password reset successfully' };
   }
+=======
+export const updateProfile = async ({ userId, username, email, avatar }) => {
+  const validatedUsername = (username || '').trim();
+  const validatedEmail = (email || '').trim().toLowerCase();
+
+  if (!isSyntheticId(userId)) {
+    try {
+      const user = await User.findById(userId);
+      if (!user) throw new Error('User not found');
+
+      const changedUsername =
+        validatedUsername && validatedUsername !== user.username;
+      const changedEmail = validatedEmail && validatedEmail !== user.email;
+
+      if (changedUsername || changedEmail) {
+        const existing = await User.findOne({
+          _id: { $ne: user._id },
+          $or: [
+            ...(changedEmail ? [{ email: validatedEmail }] : []),
+            ...(changedUsername ? [{ username: validatedUsername }] : [])
+          ]
+        });
+        if (existing) throw new Error('Email or username is already in use');
+      }
+
+      if (validatedUsername) user.username = validatedUsername;
+      if (validatedEmail) user.email = validatedEmail;
+      if (typeof avatar === 'string') user.avatar = avatar.trim();
+      await user.save();
+      return user;
+    } catch (error) {
+      if (
+        error.message === 'Email or username is already in use' ||
+        error.message === 'User not found'
+      ) {
+        throw error;
+      }
+      if (isMongoDuplicateKeyError(error)) {
+        throw new Error('Email or username is already in use');
+      }
+      if (!isDbUnavailableError(error)) throw error;
+    }
+  }
+
+  // In-memory fallback (only when DB is offline or synthetic user)
+  const mockUser = inMemoryUsers.find((u) => u.id === userId);
+  if (!mockUser) throw new Error('User not found');
+
+  const taken = inMemoryUsers.find(
+    (u) =>
+      u.id !== userId &&
+      (u.email === validatedEmail || u.username === validatedUsername)
+  );
+  if (taken) throw new Error('Email or username is already in use');
+
+  if (validatedUsername) mockUser.username = validatedUsername;
+  if (validatedEmail) mockUser.email = validatedEmail;
+  if (typeof avatar === 'string') mockUser.avatar = avatar.trim();
+  const { password, ...safeUser } = mockUser;
+  return safeUser;
+>>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
 };
 
 export const refreshToken = (currentToken) => {

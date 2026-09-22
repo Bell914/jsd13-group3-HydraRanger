@@ -1,20 +1,75 @@
-const rawBaseUrl =
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  "https://jsd13-group3-hydraranger.onrender.com/api";
+const OVERRIDE_KEY = "occasion_api_url";
+const REMOTE_API_URL = "https://jsd13-group3-hydraranger.onrender.com/api";
 
-const cleanBaseUrl = rawBaseUrl.replace(/\/+$/, "");
-const BASE_URL = cleanBaseUrl.endsWith("/api")
-  ? cleanBaseUrl
-  : `${cleanBaseUrl}/api`;
+const ENV_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "";
 
-export const API_URL = BASE_URL;
+const normalizeApiUrl = (raw) => {
+  if (!raw) return "";
+  const clean = String(raw).replace(/\/+$/, "");
+  return clean.endsWith("/api") ? clean : `${clean}/api`;
+};
 
-class ApiClient {
-  constructor(baseUrl) {
-    this.baseUrl = baseUrl;
+// If the frontend itself is served from the Render backend host,
+// derive the API URL from the current origin automatically.
+const detectSameOriginApi = () => {
+  if (typeof window === "undefined") return "";
+  const { hostname, origin } = window.location;
+  if (!hostname) return "";
+  if (hostname.endsWith(".onrender.com")) {
+    return `${origin}/api`;
+  }
+  return "";
+};
+
+export const resolveApiUrl = () => {
+  // 1. Runtime override (switchable without rebuilding)
+  if (typeof window !== "undefined") {
+    try {
+      const override = localStorage.getItem(OVERRIDE_KEY);
+      if (override) return normalizeApiUrl(override);
+    } catch {
+      /* ignore storage access errors */
+    }
   }
 
+  // 2. Build-time env: VITE_API_BASE_URL / VITE_API_URL
+  const envUrl = normalizeApiUrl(ENV_BASE_URL);
+  if (envUrl) return envUrl;
+
+  // 3. Same-origin detection when deployed on the Render backend host
+  const sameOrigin = detectSameOriginApi();
+  if (sameOrigin) return sameOrigin;
+
+  // 4. Fallback: the deployed (real) backend
+  return REMOTE_API_URL;
+};
+
+export const API_URL = resolveApiUrl();
+
+export const getApiBaseUrl = () => resolveApiUrl();
+
+export const setApiBaseUrl = (url) => {
+  try {
+    if (url) {
+      localStorage.setItem(OVERRIDE_KEY, url);
+    } else {
+      localStorage.removeItem(OVERRIDE_KEY);
+    }
+  } catch {
+    /* ignore storage access errors */
+  }
+};
+
+export const resetApiBaseUrl = () => {
+  try {
+    localStorage.removeItem(OVERRIDE_KEY);
+  } catch {
+    /* ignore storage access errors */
+  }
+};
+
+class ApiClient {
   getToken() {
     return localStorage.getItem("occasion_token");
   }
@@ -42,7 +97,7 @@ class ApiClient {
   }
 
   async request(endpoint, options = {}, _retried = false) {
-    const url = `${this.baseUrl}${endpoint}`;
+    const url = `${resolveApiUrl()}${endpoint}`;
     const headers = this.getHeaders(options.headers);
 
     const config = {
@@ -99,7 +154,7 @@ class ApiClient {
     if (!token) return false;
 
     try {
-      const response = await fetch(`${this.baseUrl}/auth/refresh`, {
+      const response = await fetch(`${resolveApiUrl()}/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),
@@ -155,7 +210,4 @@ class ApiClient {
   }
 }
 
-export const api = new ApiClient(BASE_URL);
-
-// Export default เพื่อรองรับการ import แบบ `import api from './api'`
-export default api;
+export const api = new ApiClient();

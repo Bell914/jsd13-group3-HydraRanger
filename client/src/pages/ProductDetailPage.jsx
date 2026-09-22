@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getProductById, getProducts } from "../services/productService.js";
 import { useCartStore } from "../store/cartStore.js";
+import { useWishlistStore } from "../store/wishlistStore.js";
 import lookData from "../data/look-data.json";
 import {
   ProductGallery,
@@ -14,10 +15,16 @@ import {
   ProductAddedModal,
 } from "../components/product/index.js";
 import { normalizeImageUrl, getDetailImageSet } from "../utils/imageUtils.js";
+import { getSizeRecommendation } from '../utils/sizeRecommendation.js';
+import { userService } from '../services/userService.js';
+import { useAuth } from '../context/Auth/useAuth.jsx';
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
+  const { user } = useAuth();
   const addToCart = useCartStore((state) => state.addToCart);
+  const wishlist = useWishlistStore((state) => state.wishlist);
+  const toggleWishlist = useWishlistStore((state) => state.toggleWishlist);
 
   const [product, setProduct] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
@@ -31,8 +38,9 @@ export default function ProductDetailPage() {
   const [error, setError] = useState("");
   const [validationError, setValidationError] = useState("");
   const [addedSuccessModal, setAddedSuccessModal] = useState(null);
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+  const [sizeProfile, setSizeProfile] = useState(null);
+  const [recommendationLoading, setRecommendationLoading] = useState(false);
 
   // Accordion state (Details & Materials)
   const [isDetailsOpen, setIsDetailsOpen] = useState(true);
@@ -106,7 +114,13 @@ export default function ProductDetailPage() {
           }
         }
       } catch (err) {
-        if (isMounted) setError("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์เพื่อโหลดข้อมูลได้");
+        if (isMounted) {
+          setError(
+            err.message
+              ? `เกิดข้อผิดพลาดในการโหลดข้อมูลสินค้าจาก Product API (${err.message})`
+              : "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์เพื่อโหลดข้อมูลได้ กรุณาตรวจสอบการเชื่อมต่อ"
+          );
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -118,6 +132,32 @@ export default function ProductDetailPage() {
       isMounted = false;
     };
   }, [productId]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadSizeProfile() {
+      if (!user) {
+        setSizeProfile(null);
+        return;
+      }
+
+      setRecommendationLoading(true);
+      try {
+        const profile = await userService.getSizeProfile();
+        if (isMounted) setSizeProfile(profile);
+      } catch {
+        if (isMounted) setSizeProfile(null);
+      } finally {
+        if (isMounted) setRecommendationLoading(false);
+      }
+    }
+
+    loadSizeProfile();
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   // Unique list of colors with their colorCode from variants
   const colors = useMemo(() => {
@@ -311,6 +351,7 @@ export default function ProductDetailPage() {
   }
 
   const currentPrice = selectedVariant?.price ?? 490;
+  const sizeRecommendation = getSizeRecommendation(sizeProfile, product, sizeOptions);
 
   return (
     <main className="flex-1 bg-background py-6 md:py-10">
@@ -342,8 +383,15 @@ export default function ProductDetailPage() {
             onQuantityChange={setQuantity}
             validationError={validationError}
             onAddToCart={handleAddToCart}
-            isWishlisted={isWishlisted}
-            onToggleWishlist={() => setIsWishlisted(!isWishlisted)}
+            isWishlisted={wishlist.some(
+              (item) =>
+                item._id ===
+                (product._id || product.productId || product.id || product.sku)
+            )}
+            onToggleWishlist={() => toggleWishlist(product)}
+            isLoggedIn={Boolean(user)}
+            recommendationLoading={recommendationLoading}
+            sizeRecommendation={sizeRecommendation}
           />
         </div>
 
@@ -369,6 +417,7 @@ export default function ProductDetailPage() {
       <ProductSizeGuideModal
         isOpen={isSizeGuideOpen}
         onClose={() => setIsSizeGuideOpen(false)}
+        product={product}
       />
 
       <ProductAddedModal

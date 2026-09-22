@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { USER_ROLES } from '../config/constants.js';
 
+<<<<<<< HEAD
 // 1. สร้าง Sub-schema สำหรับเก็บที่อยู่จัดส่ง
 const addressSchema = new mongoose.Schema(
   {
@@ -36,6 +37,24 @@ const addressSchema = new mongoose.Schema(
 );
 
 // 2. Main User Schema
+=======
+const sizeProfileSchema = new mongoose.Schema(
+  {
+    chestCm: { type: Number, min: 60, max: 160, required: true },
+    waistCm: { type: Number, min: 50, max: 160, required: true },
+    hipsCm: { type: Number, min: 60, max: 180, required: true },
+    preferredFit: {
+      type: String,
+      enum: ['fitted', 'regular', 'relaxed'],
+      default: 'regular'
+    },
+    consentGiven: { type: Boolean, required: true },
+    updatedAt: { type: Date, default: Date.now }
+  },
+  { _id: false }
+);
+
+>>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
 const userSchema = new mongoose.Schema(
   {
     username: {
@@ -76,6 +95,7 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true
     },
+<<<<<<< HEAD
     //  เพิ่มฟิลด์สำหรับเก็บที่อยู่จัดส่ง (เป็น Array ของ Sub-document)
     shippingAddresses: [addressSchema],
     
@@ -86,6 +106,12 @@ const userSchema = new mongoose.Schema(
         ref: 'Lookbook'
       }
     ]
+=======
+    sizeProfile: {
+      type: sizeProfileSchema,
+      default: undefined
+    }
+>>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
   },
   {
     timestamps: true

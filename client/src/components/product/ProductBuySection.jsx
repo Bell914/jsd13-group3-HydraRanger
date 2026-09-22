@@ -1,5 +1,6 @@
 import React from "react";
 import { Heart, Share2, Ruler, Minus, Plus, ShoppingBag } from "lucide-react";
+import { SizeRecommendationCard } from './SizeRecommendationCard.jsx';
 
 export const ProductBuySection = ({
   product,
@@ -17,6 +18,9 @@ export const ProductBuySection = ({
   onAddToCart,
   isWishlisted = false,
   onToggleWishlist,
+  isLoggedIn,
+  recommendationLoading,
+  sizeRecommendation,
 }) => {
   const getColorHex = (colorName = "", colorCode = "") => {
     // If colorCode is a hex value, use it directly
@@ -49,9 +53,24 @@ export const ProductBuySection = ({
       <div>
         {/* Title & Share / Wishlist */}
         <div className="flex items-start justify-between gap-4">
-          <h1 className="text-2xl sm:text-3xl font-black text-primary tracking-tight">
-            {product.name}
-          </h1>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black text-primary tracking-tight">
+              {product.name}
+            </h1>
+            {/* Product Tags */}
+            {product.tags && product.tags.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {product.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -110,6 +129,12 @@ export const ProductBuySection = ({
 
         {/* Size Selection */}
         <div className="mt-6">
+          <SizeRecommendationCard
+            isLoggedIn={isLoggedIn}
+            isLoading={recommendationLoading}
+            recommendation={sizeRecommendation}
+            onApply={onSizeChange}
+          />
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-bold text-primary">
               ขนาด : <span className="text-secondary font-semibold">{selectedSize}</span>

@@ -61,11 +61,15 @@ export const Navbar = () => {
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
-    const keyword = searchQuery.trim();
+    // Read the current value straight from the input so the latest typed text
+    // is never lost even if the store state update has not committed yet.
+    const formValue = event.currentTarget?.elements?.search?.value;
+    const keyword = (formValue !== undefined ? formValue : searchQuery).trim();
     if (!keyword) return;
     setIsSearchOpen(false);
     setIsMobileMenuOpen(false);
     navigate(`/products?search=${encodeURIComponent(keyword)}`);
+    setSearchQuery("");
   };
 
   const isActive = (path) => location.pathname === path;
@@ -139,7 +143,7 @@ export const Navbar = () => {
             className={`${isMobileMenuOpen ? "flex" : "hidden"} absolute left-0 top-full w-full border-t border-occasion-border/40 bg-surface p-5 shadow-xl md:static md:flex md:w-auto md:items-center md:justify-end md:border-0 md:bg-transparent md:p-0 md:shadow-none`}
           >
             <ul className="flex w-full flex-col items-center justify-center gap-2 text-base font-medium md:w-auto md:flex-row md:justify-end md:gap-0 md:divide-x md:divide-occasion-border/45">
-              <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-3 md:w-auto md:border-b-0 md:px-4 md:pb-0">
+              <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-4 md:pb-0">
                 <button
                   ref={searchButtonRef}
                   type="button"
@@ -164,28 +168,28 @@ export const Navbar = () => {
               </li>
 
               <li
-                className="relative group flex flex-col items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0"
+                className="relative group flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0"
                 onMouseEnter={() => setIsProductsHovered(true)}
                 onMouseLeave={() => setIsProductsHovered(false)}
               >
                 <Link
                   to="/products"
                   aria-current={isActive("/products") ? "page" : undefined}
-                  className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${
+                  className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${
                     isActive("/products")
-                      ? "font-bold text-primary underline decoration-accent decoration-2 underline-offset-4"
+                      ? "font-bold text-primary md:underline md:decoration-accent md:decoration-2 md:underline-offset-4"
                       : ""
                   }`}
                 >
                   PRODUCTS
                 </Link>
 
-                {/* Dropdown on hover: Tops & Bottoms matching user screenshot */}
+                {/* Dropdown on hover: Tops & Bottoms matching user screenshot (desktop only) */}
                 <div
-                  className={`flex flex-col gap-2 pt-2 md:absolute md:top-full md:left-1/2 md:-translate-x-1/2 z-50 w-28 transition-all duration-200 ${
+                  className={`hidden flex-col gap-2 md:flex md:absolute md:top-full md:left-1/2 md:-translate-x-1/2 z-50 w-28 transition-all duration-200 ${
                     isProductsHovered
                       ? "opacity-100 visible translate-y-0"
-                      : "hidden md:flex opacity-0 invisible md:-translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:pointer-events-auto"
+                      : "opacity-0 invisible md:-translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:pointer-events-auto"
                   }`}
                 >
                   <Link
@@ -215,7 +219,7 @@ export const Navbar = () => {
                 <Link
                   to="/lookbook"
                   aria-current={isActive("/lookbook") ? "page" : undefined}
-                  className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/lookbook") ? "bg-accent/10 font-bold text-accent" : ""}`}
+                  className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/lookbook") ? "font-bold text-accent md:bg-accent/10" : ""}`}
                 >
                   LOOKBOOKS
                 </Link>
@@ -223,9 +227,19 @@ export const Navbar = () => {
 
               <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0">
                 <Link
+                  to="/mix-and-match"
+                  aria-current={isActive("/mix-and-match") ? "page" : undefined}
+                  className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/mix-and-match") ? "font-bold text-accent md:bg-accent/10" : ""}`}
+                >
+                  MIX &amp; MATCH
+                </Link>
+              </li>
+
+              <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0">
+                <Link
                   to="/article"
                   aria-current={isActive("/article") ? "page" : undefined}
-                  className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/article") ? "bg-accent/10 font-bold text-accent" : ""}`}
+                  className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/article") ? "font-bold text-accent md:bg-accent/10" : ""}`}
                 >
                   ARTICLE
                 </Link>
@@ -236,7 +250,7 @@ export const Navbar = () => {
                   <Link
                     to="/login"
                     aria-current={isActive("/login") ? "page" : undefined}
-                    className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/login") ? "bg-accent/10 font-bold text-accent" : ""}`}
+                    className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/login") ? "font-bold text-accent md:bg-accent/10" : ""}`}
                   >
                     {"SIGN IN"}
                   </Link>
@@ -274,7 +288,7 @@ export const Navbar = () => {
           </div>
         </div>
       </nav>
-
+      {/*เมื่อ isSearchOpen เป็นจริง แล้วmodal จะทำงาน*/}
       {isSearchOpen && (
         <SearchModal
           query={searchQuery}

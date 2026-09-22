@@ -26,6 +26,8 @@ export const RecommendProduct = ({ product, index }) => {
         <img
           src={imgUrl}
           alt={product.title || product.nameTh || product.name}
+          loading="lazy"
+          decoding="async"
           className="h-full w-full cursor-pointer object-cover transition duration-300 ease-in-out group-hover:scale-105"
         />
         <div className="absolute bottom-4 left-4 font-bold text-white drop-shadow-lg">

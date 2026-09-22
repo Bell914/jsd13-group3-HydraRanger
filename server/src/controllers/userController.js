@@ -26,7 +26,7 @@ export const getUser = async (req, res, next) => {
       });
     }
 
-    const user = await userService.getUserById(req.params.id);
+    const user = await userService.getUserById(req.params.id, !isAdmin);
     if (!user) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
@@ -42,6 +42,7 @@ export const getUser = async (req, res, next) => {
   }
 };
 
+<<<<<<< HEAD
 // ==========================================
 // Shipping Address Management Controllers
 // ==========================================
@@ -59,11 +60,18 @@ export const getAddresses = async (req, res, next) => {
       success: true,
       data: user.shippingAddresses || []
     });
+=======
+export const getMySizeProfile = async (req, res, next) => {
+  try {
+    const profile = await userService.getSizeProfile(req.user.id || req.user._id);
+    res.status(HTTP_STATUS.OK).json({ success: true, data: profile });
+>>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
   } catch (error) {
     next(error);
   }
 };
 
+<<<<<<< HEAD
 // POST /api/users/addresses - เพิ่มที่อยู่จัดส่งใหม่
 export const addAddress = async (req, res, next) => {
   try {
@@ -124,12 +132,25 @@ export const deleteAddress = async (req, res, next) => {
       success: true,
       message: 'Address deleted successfully',
       data: user.shippingAddresses
+=======
+export const saveMySizeProfile = async (req, res, next) => {
+  try {
+    const profile = await userService.saveSizeProfile(
+      req.user.id || req.user._id,
+      req.body
+    );
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Size profile saved successfully',
+      data: profile
+>>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
     });
   } catch (error) {
     next(error);
   }
 };
 
+<<<<<<< HEAD
 // PATCH /api/users/addresses/:addressId/default - ตั้งค่าเป็นที่อยู่หลัก
 export const setDefaultAddress = async (req, res, next) => {
   try {
@@ -147,8 +168,20 @@ export const setDefaultAddress = async (req, res, next) => {
       success: true,
       message: 'Default address updated',
       data: user.shippingAddresses
+=======
+export const deleteMySizeProfile = async (req, res, next) => {
+  try {
+    await userService.deleteSizeProfile(req.user.id || req.user._id);
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Size profile deleted successfully'
+>>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
     });
   } catch (error) {
     next(error);
   }
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0

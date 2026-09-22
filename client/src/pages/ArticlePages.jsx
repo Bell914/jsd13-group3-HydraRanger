@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { fashionNews } from "../assets/assets.js";
 import { ArticleCard } from "../components/ArticleCard.jsx";
-import { Pagination } from "../components/Pagination.jsx";
+import PaginationPrevNext from "../components/PaginationPrevNext.jsx";
 
 export const ArticlePages = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -29,10 +29,11 @@ export const ArticlePages = () => {
         ))}
       </div>
 
-      <Pagination
+      <PaginationPrevNext
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
+        ariaLabel="Article pagination"
       />
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useCartStore from "../store/cartStore";
+import { useAddressStore } from "../store/addressStore.js";
 import { authService } from "../services/authService";
 import { getAddresses } from "../services/userService";
 import {
@@ -18,6 +19,7 @@ import {
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { cartItems, getTotalPrice, clearCart } = useCartStore();
+  const addAddress = useAddressStore((state) => state.addAddress);
   const currentUser = authService.getCurrentUser();
 
   // Current Step: 1 = Contact, 2 = Shipping, 3 = Payment, 4 = Review
@@ -108,6 +110,10 @@ export default function CheckoutPage() {
   // Handle Place Order
   const handlePlaceOrder = () => {
     setIsSubmitting(true);
+    if (shippingData.saveAddress) {
+      const { firstName, lastName, phone, address, city, state, zipCode, location } = shippingData;
+      addAddress({ firstName, lastName, phone, address, city, state, zipCode, location });
+    }
     const itemsSnapshot = [...cartItems];
     setTimeout(() => {
       const orderId = `OCC-${Math.floor(100000 + Math.random() * 900000)}`;

@@ -111,6 +111,7 @@ export const changePassword = async (req, res, next) => {
   }
 };
 
+<<<<<<< HEAD
 //  เพิ่มฟังก์ชัน resetPassword สำหรับ Forgot Password Flow
 export const resetPassword = async (req, res, next) => {
   try {
@@ -127,6 +128,21 @@ export const resetPassword = async (req, res, next) => {
     res.status(HTTP_STATUS.OK).json({
       success: true,
       message: result.message
+=======
+export const updateProfile = async (req, res, next) => {
+  try {
+    const { username, email, avatar } = req.body;
+    const user = await authService.updateProfile({
+      userId: req.user.id || req.user._id,
+      username,
+      email,
+      avatar
+    });
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: user
+>>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
     });
   } catch (error) {
     if (error.message === 'User not found') {
@@ -135,6 +151,15 @@ export const resetPassword = async (req, res, next) => {
         message: error.message
       });
     }
+<<<<<<< HEAD
+=======
+    if (error.message === 'Email or username is already in use') {
+      return res.status(HTTP_STATUS.CONFLICT).json({
+        success: false,
+        message: error.message
+      });
+    }
+>>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
     next(error);
   }
 };

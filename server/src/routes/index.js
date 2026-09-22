@@ -14,6 +14,12 @@ import reviewRoutes from "./reviewRoutes.js";
 import adminReviewRoutes from "./adminReviewRoutes.js";
 import contactRoutes from "./contact.route.js";
 import lookbookRoutes from "./lookbookRoutes.js";
+<<<<<<< HEAD
+=======
+import adminLookbookRoutes from "./adminLookbookRoutes.js";
+import uploadRoutes from "./uploadRoutes.js";
+import recommendRoutes from "./recommendRoutes.js";
+>>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
 
 const router = Router();
 
@@ -44,5 +50,11 @@ router.use("/reviews", reviewRoutes);
 router.use("/admin/reviews", adminReviewRoutes);
 router.use("/contact", contactRoutes);
 router.use("/lookbooks", lookbookRoutes);
+<<<<<<< HEAD
+=======
+router.use("/admin/lookbooks", adminLookbookRoutes);
+router.use("/uploads", uploadRoutes);
+router.use("/recommend", recommendRoutes);
+>>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
 
 export default router;

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { LogIn, UserRound, AlertCircle, Eye, EyeOff } from "lucide-react"; 
+import { LogIn, UserRound, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../context/Auth/useAuth.jsx";
 import { Button, Card } from "../components/index.js";
@@ -55,22 +55,11 @@ export const LoginPage = () => {
 
           {error && (
             <div
-              className="mb-6 rounded-xl border border-accent/35 bg-accent/10 p-3.5 text-sm text-accent"
+              className="mb-6 flex items-center gap-3 rounded-xl border border-accent/35 bg-accent/10 p-3.5 text-sm text-accent"
               role="alert"
             >
-              <div className="flex items-center gap-3">
-                <AlertCircle size={18} className="shrink-0" />
-                <span>{error}</span>
-              </div>
-              <div className="mt-2 pl-7 text-xs text-secondary">
-                Forgot your password?{" "}
-                <Link
-                  to="/forgot-password"
-                  className="font-semibold text-accent underline hover:text-accent-hover"
-                >
-                  Reset it here
-                </Link>
-              </div>
+              <AlertCircle size={18} className="shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
@@ -92,20 +81,13 @@ export const LoginPage = () => {
             </div>
 
             <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="block text-xs font-semibold text-black">
-                  Password
-                </label>
-                <Link
-                  to="/forgot-password"
-                  className="text-xs font-semibold text-accent hover:text-accent-hover hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
+              <label className="block text-xs font-semibold text-black mb-1.5">
+                Password
+              </label>
+              {/* 2. หุ้มด้วย relative เพื่อวางปุ่มไอคอนทับด้านขวา */}
               <div className="relative">
                 <input
+                  // 3. สลับ type ตาม state showPassword และใส่ pr-10 เว้นพื้นที่ไม่ให้ข้อความทับไอคอน
                   type={showPassword ? "text" : "password"}
                   className="w-full px-3.5 py-2.5 pr-10 rounded-xl bg-white border border-slate-700/70 text-sm text-black placeholder-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                   placeholder="••••••••"
@@ -115,6 +97,7 @@ export const LoginPage = () => {
                   }
                   required
                 />
+                {/* 4. เพิ่มปุ่มสลับการมองเห็นรหัสผ่าน */}
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
