@@ -269,39 +269,6 @@ export const changePassword = async ({ userId, currentPassword, newPassword }) =
   return { success: true, message: 'Password updated successfully' };
 };
 
-<<<<<<< HEAD
-//  ฟังก์ชันใหม่สำหรับ Reset Password โดยใช้อีเมล
-export const resetPassword = async ({ email, newPassword }) => {
-  const targetEmail = email.toLowerCase();
-
-  try {
-    const user = await User.findOne({ email: targetEmail });
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    user.password = newPassword;
-    await user.save();
-
-    return { success: true, message: 'Password reset successfully' };
-  } catch (error) {
-    if (error.message === 'User not found') {
-      throw error;
-    }
-    if (!isDbUnavailableError(error)) {
-      throw error;
-    }
-
-    // Fallback: In-memory simulation (ถ้า DB มีปัญหา)
-    const mockUser = inMemoryUsers.find((u) => u.email === targetEmail);
-    if (!mockUser) {
-      throw new Error('User not found');
-    }
-
-    mockUser.password = await bcrypt.hash(newPassword, 10);
-    return { success: true, message: 'Password reset successfully' };
-  }
-=======
 export const updateProfile = async ({ userId, username, email, avatar }) => {
   const validatedUsername = (username || '').trim();
   const validatedEmail = (email || '').trim().toLowerCase();
@@ -361,7 +328,6 @@ export const updateProfile = async ({ userId, username, email, avatar }) => {
   if (typeof avatar === 'string') mockUser.avatar = avatar.trim();
   const { password, ...safeUser } = mockUser;
   return safeUser;
->>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
 };
 
 export const refreshToken = (currentToken) => {

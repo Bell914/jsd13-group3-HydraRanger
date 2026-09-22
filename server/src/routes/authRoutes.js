@@ -31,11 +31,7 @@ router.post('/register', validate(validateRegisterInput), authController.registe
 router.post('/login', validate(validateLoginInput), authController.login);
 router.post('/refresh', authController.refresh);
 router.post('/change-password', protect, validate(validateChangePasswordInput), authController.changePassword);
-<<<<<<< HEAD
-router.post('/reset-password', authController.resetPassword);
-=======
 router.put('/profile', protect, validate(validateUpdateProfileInput), authController.updateProfile);
->>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0
 router.get('/me', protect, authController.getMe);
 
 export default router;
