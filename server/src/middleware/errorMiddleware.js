@@ -8,10 +8,11 @@ export const notFoundHandler = (req, res, next) => {
 };
 
 export const errorHandler = (err, req, res, next) => {
-  const statusCode =
+  const statusCode = err.statusCode || err.status || (
     res.statusCode && res.statusCode !== HTTP_STATUS.OK
       ? res.statusCode
-      : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      : HTTP_STATUS.INTERNAL_SERVER_ERROR
+  );
 
   console.error(`🚨 Error [${req.method} ${req.url}]:`, err.message);
 

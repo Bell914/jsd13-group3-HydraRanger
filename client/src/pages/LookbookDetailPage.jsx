@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { Heart } from "lucide-react";
 import { getLookbookById, getProductDetailUrl } from "../services/lookbookService.js";
 import { LoadingSpinner } from "../components/LoadingSpinner.jsx";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
+import { useLookbookStore } from "../store/lookbookStore.js";
 
 export default function LookbookDetailPage() {
   const { lookId } = useParams();
@@ -10,6 +12,8 @@ export default function LookbookDetailPage() {
   const [look, setLook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const isFavorite = useLookbookStore((state) => state.isFavorite(lookId));
+  const toggleFavorite = useLookbookStore((state) => state.toggleFavorite);
 
   const loadLook = async () => {
     setLoading(true);
@@ -116,9 +120,24 @@ export default function LookbookDetailPage() {
                 <h1 className="text-2xl sm:text-3xl font-black text-primary">
                   {look.nameTh}
                 </h1>
-                <span className="text-xs font-semibold text-secondary">
-                  {look.name}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-secondary">
+                    {look.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => toggleFavorite(look)}
+                    className={`rounded-full p-2 transition cursor-pointer ${
+                      isFavorite
+                        ? "text-red-500 hover:bg-red-50"
+                        : "text-secondary hover:bg-slate-200 hover:text-red-500"
+                    }`}
+                    title={isFavorite ? "ลบออกจากลุคโปรด" : "บันทึกเป็นลุคโปรด"}
+                    aria-label={isFavorite ? "ลบออกจากลุคโปรด" : "บันทึกเป็นลุคโปรด"}
+                  >
+                    <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
+                  </button>
+                </div>
               </div>
 
               <p className="text-xs sm:text-sm text-secondary/90 leading-relaxed">
