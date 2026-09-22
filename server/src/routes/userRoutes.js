@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { userController } from '../controllers/index.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import { USER_ROLES } from '../config/constants.js';
-import { validate } from '../middleware/validatorMiddleware.js';
+import { validate, validateParams } from '../middleware/validatorMiddleware.js';
+import { validateIdParam } from '../validators/commonValidator.js';
 import { validateSizeProfile } from '../validators/sizeProfileValidator.js';
 
 const router = Router();
@@ -17,13 +18,6 @@ router.put(
 );
 router.delete('/me/size-profile', protect, authorize(USER_ROLES.USER), userController.deleteMySizeProfile);
 router.get('/', protect, authorize(USER_ROLES.ADMIN), userController.getUsers);
-
-// Routes สำหรับ Shipping Addresses (ต้องวางไว้ก่อน /:id)
-router.get('/addresses', protect, userController.getAddresses);
-router.post('/addresses', protect, userController.addAddress);
-router.delete('/addresses/:addressId', protect, userController.deleteAddress);
-router.patch('/addresses/:addressId/default', protect, userController.setDefaultAddress);
-
-router.get('/:id', protect, userController.getUser);
+router.get('/:id', protect, validateParams(validateIdParam), userController.getUser);
 
 export default router;

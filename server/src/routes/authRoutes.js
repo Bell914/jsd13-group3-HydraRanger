@@ -7,7 +7,8 @@ import {
   validateRegisterInput,
   validateLoginInput,
   validateChangePasswordInput,
-  validateUpdateProfileInput
+  validateUpdateProfileInput,
+  validateRefreshToken
 } from '../validators/authValidator.js';
 
 const router = Router();
@@ -24,12 +25,9 @@ const loginLimiter = rateLimit({
   message: 'Too many login attempts, please try again later'
 });
 
-//router.post('/register', registerLimiter, validate(validateRegisterInput), authController.register);
-//router.post('/login', loginLimiter, validate(validateLoginInput), authController.login);
-// เปลี่ยนจากเดิมที่มี registerLimiter และ loginLimiter
-router.post('/register', validate(validateRegisterInput), authController.register);
-router.post('/login', validate(validateLoginInput), authController.login);
-router.post('/refresh', authController.refresh);
+router.post('/register', registerLimiter, validate(validateRegisterInput), authController.register);
+router.post('/login', loginLimiter, validate(validateLoginInput), authController.login);
+router.post('/refresh', validate(validateRefreshToken), authController.refresh);
 router.post('/change-password', protect, validate(validateChangePasswordInput), authController.changePassword);
 router.put('/profile', protect, validate(validateUpdateProfileInput), authController.updateProfile);
 router.get('/me', protect, authController.getMe);
