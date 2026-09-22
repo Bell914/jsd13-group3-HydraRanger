@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Lock, Mail, CheckCircle, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Lock, Mail, ArrowLeft, AlertCircle } from 'lucide-react';
 import { forgotPassword } from '../services/authService';
 
 export default function ForgotPasswordPage() {

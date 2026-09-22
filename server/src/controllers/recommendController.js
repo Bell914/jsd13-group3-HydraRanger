@@ -1,7 +1,10 @@
 import { HTTP_STATUS } from "../config/constants.js";
 import multer from "multer";
 import * as lookbookService from "../services/lookbookService.js";
-import { analyzeClothingImage } from "../services/geminiService.js";
+import {
+  analyzeClothingImage,
+  rankLookbooks,
+} from "../services/geminiService.js";
 
 const memoryUpload = multer({ storage: multer.memoryStorage() }).fields([
   { name: "top", maxCount: 1 },
@@ -176,11 +179,51 @@ export async function recommendLookbooks(req, res, next) {
     const analysis = await analyzeClothingImage(images);
     const lookbooks = await lookbookService.getPublicLookbooks();
 
-    const ranked = lookbooks
+    const publicLooks = lookbooks
       .map((lookbook) => toPublicLook(lookbook, analysis))
-      .filter((look) => look.imageUrl && look.id)
-      .sort((a, b) => b.matchScore - a.matchScore)
-      .slice(0, 3);
+      .filter((look) => look.imageUrl && look.id);
+
+    const lookbookList = lookbooks.map((lookbook) => ({
+      id: String(lookbook.lookbookId || ""),
+      name: lookbook.name || lookbook.title || "",
+      items: (lookbook.items || [])
+        .map((item) => item.product?.name || item.product?.title || "")
+        .filter(Boolean),
+      tags: Array.isArray(lookbook.styleTags) ? lookbook.styleTags : [],
+    }));
+
+    let ranked;
+    try {
+      const rankings = await rankLookbooks(images, lookbookList);
+      const scoreMap = new Map(rankings.map((r) => [r.lookbookId, r]));
+      ranked = publicLooks
+        .map((look) => {
+          const rank = scoreMap.get(look.id);
+          if (rank) {
+            look.matchScore = rank.score;
+            look.matchReasons = rank.reasons;
+          }
+          return look;
+        })
+        .sort((a, b) => b.matchScore - a.matchScore)
+        .slice(0, 3);
+    } catch (rankError) {
+      if (
+        rankError.code === "NO_GEMINI_KEY" ||
+        rankError.code === "GEMINI_HTTP" ||
+        rankError.code === "GEMINI_EMPTY" ||
+        rankError.code === "GEMINI_INVALID"
+      ) {
+        console.warn(
+          `⚠️  [Mix & Match] rankLookbooks ล้มเหลว ใช้ heuristic แทน: ${rankError.message}`,
+        );
+        ranked = [...publicLooks]
+          .sort((a, b) => b.matchScore - a.matchScore)
+          .slice(0, 3);
+      } else {
+        throw rankError;
+      }
+    }
 
     const analysisSummary = {
       styles: analysis.styles,
@@ -216,7 +259,11 @@ export async function recommendLookbooks(req, res, next) {
         message: "ระบบ AI ยังไม่ได้ตั้งค่า GEMINI_API_KEY",
       });
     }
-    if (error.code === "GEMINI_HTTP" || error.code === "GEMINI_EMPTY") {
+    if (
+      error.code === "GEMINI_HTTP" ||
+      error.code === "GEMINI_EMPTY" ||
+      error.code === "GEMINI_INVALID"
+    ) {
       return res.status(HTTP_STATUS.BAD_GATEWAY || 502).json({
         success: false,
         message: "ไม่สามารถวิเคราะห์รูปได้ในตอนนี้ กรุณาลองใหม่",

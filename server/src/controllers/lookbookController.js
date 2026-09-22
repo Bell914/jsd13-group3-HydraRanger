@@ -1,6 +1,8 @@
+import mongoose from 'mongoose';
 import { HTTP_STATUS } from '../config/constants.js';
-import * as lookbookService from '../services/lookbookService.js';
+import { Lookbook } from '../models/Lookbook.js';
 import { User } from '../models/User.js';
+import * as lookbookService from '../services/lookbookService.js';
 
 function handleLookbookError(error, res, next) {
   if (error.message === 'Lookbook not found') {
@@ -76,7 +78,7 @@ export async function updateLookbookStatus(req, res, next) {
 export async function toggleFavoriteLookbook(req, res, next) {
   try {
     const userId = req.user?._id || req.user?.id;
-    const { id: lookbookId } = req.params;
+    const requestedId = req.params.id;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -87,28 +89,34 @@ export async function toggleFavoriteLookbook(req, res, next) {
       user.favoriteLookbooks = [];
     }
 
-    const index = user.favoriteLookbooks.indexOf(lookbookId);
-    let isFavorited = false;
+    // ค้นหา Lookbook ทั้งแบบ ObjectId และ lookbookId (เช่น LOOK-001)
+    const lookbook = mongoose.Types.ObjectId.isValid(requestedId)
+      ? await Lookbook.findById(requestedId)
+      : await Lookbook.findOne({ lookbookId: String(requestedId).toUpperCase() });
 
-    if (index > -1) {
-      // มีอยู่แล้ว -> ลบออก (Unfavorite)
-      user.favoriteLookbooks.splice(index, 1);
-      isFavorited = false;
+    const targetId = lookbook ? String(lookbook._id) : String(requestedId);
+
+    const existingIndex = user.favoriteLookbooks.findIndex(
+      (favId) => String(favId) === targetId
+    );
+
+    const isFavorited = existingIndex === -1;
+
+    if (isFavorited) {
+      user.favoriteLookbooks.push(targetId);
     } else {
-      // ยังไม่มี -> เพิ่มเข้า (Favorite)
-      user.favoriteLookbooks.push(lookbookId);
-      isFavorited = true;
+      user.favoriteLookbooks.splice(existingIndex, 1);
     }
 
     await user.save();
 
-    res.status(HTTP_STATUS.OK).json({
+    return res.status(HTTP_STATUS.OK).json({
       success: true,
       message: isFavorited ? 'Saved to Favorite Lookbooks' : 'Removed from Favorite Lookbooks',
       isFavorited,
       favoriteLookbooks: user.favoriteLookbooks
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 }

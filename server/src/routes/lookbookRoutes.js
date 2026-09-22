@@ -11,6 +11,7 @@ const router = Router();
 // Public Routes
 router.get('/', getLookbooks);
 router.get('/:id', getLookbookById);
+router.post('/:id/favorite', protect, toggleFavoriteLookbook);
 
 // Protected Routes (ต้องล็อกอิน)
 router.post('/:id/favorite', protect, toggleFavoriteLookbook);

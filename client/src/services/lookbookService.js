@@ -1,5 +1,5 @@
 import fallbackData from "../data/look-data.json";
-import { API_URL } from "./api.js";
+import { API_URL, api } from "./api.js";
 
 export function normalizeProductId(id) {
   if (id === undefined || id === null) return "";
@@ -91,16 +91,17 @@ export async function getLookbookData() {
 
 export async function getLookbooks() {
   try {
-    // พยายามดึงจาก Backend API ก่อน
+    // ดึงจาก Backend API ก่อน
     const response = await api.get("/lookbooks");
-    if (response.data && response.data.data) {
-      return response.data.data;
+    const rawData = response.data?.data || response.data;
+    if (Array.isArray(rawData)) {
+      return rawData.map(normalizeLookbook);
     }
   } catch (err) {
     console.warn("API /lookbooks failed, falling back to local JSON data:", err.message);
   }
 
-  // Fallback ไปใช้ไฟล์ JSON เดิม
+  // Fallback ไปใช้ไฟล์ JSON เดิมกรณี API ล้มเหลว
   const data = await getLookbookData();
   return data.looks || [];
 }

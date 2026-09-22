@@ -2,6 +2,20 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { USER_ROLES } from '../config/constants.js';
 
+// Schema สำหรับ Shipping Address / Addresses
+const addressSchema = new mongoose.Schema(
+  {
+    recipientName: { type: String, required: true, trim: true },
+    phone: { type: String, required: true, trim: true },
+    addressLine: { type: String, required: true, trim: true },
+    district: { type: String, trim: true, default: '' },
+    province: { type: String, trim: true, default: '' },
+    postalCode: { type: String, required: true, trim: true },
+    isDefault: { type: Boolean, default: false }
+  },
+  { timestamps: true }
+);
+
 // Schema สำหรับ Size Profile
 const sizeProfileSchema = new mongoose.Schema(
   {
@@ -18,17 +32,6 @@ const sizeProfileSchema = new mongoose.Schema(
   },
   { _id: false }
 );
-
-// Schema สำหรับ Shipping Address
-const shippingAddressSchema = new mongoose.Schema({
-  recipientName: { type: String, required: true },
-  phone: { type: String, required: true },
-  addressLine: { type: String, required: true },
-  district: { type: String, required: true },
-  province: { type: String, required: true },
-  postalCode: { type: String, required: true },
-  isDefault: { type: Boolean, default: false }
-});
 
 const userSchema = new mongoose.Schema(
   {
@@ -70,24 +73,24 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true
     },
-    sizeProfile: {
-      type: sizeProfileSchema,
-      default: undefined
+    shippingAddresses: {
+      type: [addressSchema],
+      default: []
     },
-
-    // ==========================================
-    // เพิ่มเติม: Shipping Addresses & Favorite Lookbooks (Sprint 1 & 2)
-    // ==========================================
-    addresses: [shippingAddressSchema],
+    addresses: [addressSchema],
     favoriteLookbooks: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Lookbook'
       }
     ],
+    sizeProfile: {
+      type: sizeProfileSchema,
+      default: undefined
+    },
 
     // ==========================================
-    // เพิ่มเติม: Forgot / Reset Password Fields
+    // Forgot / Reset Password Fields
     // ==========================================
     resetPasswordToken: {
       type: String,
