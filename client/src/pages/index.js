@@ -13,3 +13,4 @@ export { default as CheckoutPage } from "./CheckoutPage.jsx";
 export { ProfilePage } from './ProfilePage.jsx';
 export { default as LookbookListPage } from "./LookbookListPage.jsx";
 export { default as LookbookDetailPage } from "./LookbookDetailPage.jsx";
+export { default as MixAndMatchPage } from "./MixAndMatchPage.jsx";

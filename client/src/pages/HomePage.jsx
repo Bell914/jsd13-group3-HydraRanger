@@ -1,27 +1,42 @@
-import React from "react";
-import lookData from "../data/look-data.json";
+import React, { useEffect, useState } from "react";
 import { assets, fashionNews } from "../assets/assets.js";
 import { Link } from "react-router-dom";
 import { HeroSection } from "../components/HeroSection.jsx";
 import { RecommendProduct } from "./RecommendProduct.jsx";
 import { TextHomepage } from "../components/TextHomepage.jsx";
 import { SpecialProducts } from "../components/SpecialProducts.jsx";
-import MixAndMatchSection from "../components/MixAndMatchSection.jsx";
-import { normalizeImageUrl } from "../utils/imageUtils.js";
-
-const looksData = lookData?.looks || lookData?.default?.looks || [];
-const looks = looksData.map((look) => ({
-  ...look,
-  image: normalizeImageUrl(look?.image),
-  items: Array.isArray(look?.items)
-    ? look.items.map((item) => ({
-        ...item,
-        image: normalizeImageUrl(item?.image),
-      }))
-    : [],
-}));
+import { getProducts } from "../services/productService.js";
+import { getLookbooks } from "../services/lookbookService.js";
 
 export const HomePage = () => {
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
+  const [recommendedLooks, setRecommendedLooks] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    getProducts()
+      .then((products) => {
+        if (!mounted) return;
+        setRecommendedProducts(Array.isArray(products) ? products : []);
+      })
+      .catch(() => {
+        if (mounted) setRecommendedProducts([]);
+      });
+    getLookbooks()
+      .then((lookbooks) => {
+        if (!mounted) return;
+        setRecommendedLooks(Array.isArray(lookbooks) ? lookbooks : []);
+      })
+      .catch(() => {
+        if (mounted) setRecommendedLooks([]);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const recProducts = recommendedProducts.slice(0, 3);
+
   return (
     <div className="flex min-w-0 flex-col gap-12 sm:gap-16 ">
       {/* Hero Section */}
@@ -36,31 +51,28 @@ export const HomePage = () => {
         />
 
         {/* Card Grid */}
-        <div className="my-8 grid grid-cols-1 gap-6 px-4 md:grid-cols-3">
-          {looks.slice(1, 4).map((el, index) => (
+        <div className="my-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+          {recProducts.map((el, index) => (
             <SpecialProducts
-              key={el.id || `rec-card-${index}`}
+              key={el._id || el.id || `rec-card-${index}`}
               product={el}
               index={index}
             />
           ))}
         </div>
 
-        {/* Mix and Match Section */}
-        <MixAndMatchSection assets={assets} />
-
         {/* Lookbook Section */}
         <div>
           <TextHomepage
             textheader={"RECOMMEND LOOKBOOK"}
-            textdisc={"Mix and Match ลุคสุดพิเศษที่ได้รับความนิยม"}
+            textdisc={"LookBooks ลุคสุดพิเศษที่ได้รับความนิยม"}
           />
 
           <div className="my-8 grid grid-cols-1 gap-6 md:grid-cols-3">
             {/* Card 1 */}
-            {looks.slice(1, 4).map((el, index) => (
+            {recommendedLooks.slice(1, 4).map((el, index) => (
               <RecommendProduct
-                key={el.id || `lookbook-${index}`}
+                key={el._id || el.id || `lookbook-${index}`}
                 product={el}
                 index={index}
               />
@@ -73,12 +85,11 @@ export const HomePage = () => {
           textheader={"Special Product"}
           textdisc={" สินค้าพิเศษเฉพาะช่วงนี้เท่านั้น"}
         />
-
-        <div className="relative my-8 h-auto w-full overflow-hidden rounded-2xl bg-background px-4 py-8 font-bold text-lg text-white sm:px-6 lg:px-8">
-          <div className="animate-marquee flex w-max gap-4 whitespace-nowrap">
-            {looks.map((product, idx) => (
+        <div className="relative my-8 h-auto w-full overflow-hidden rounded-2xl bg-background px-2 py-8 font-bold text-lg text-white sm:px-3 lg:px-3">
+          <div className="animate-marquee flex w-max gap-6 whitespace-nowrap">
+            {recommendedProducts.map((product, idx) => (
               <SpecialProducts
-                key={product.id ? `marquee-${product.id}` : `marquee-${idx}`}
+                key={product._id || product.id || `marquee-${idx}`}
                 product={product}
                 index={idx}
               />
@@ -130,6 +141,8 @@ export const HomePage = () => {
                   <img
                     src={article.image}
                     alt={article.title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-48 sm:h-52 md:h-56 object-cover transition-transform duration-300 hover:scale-105"
                   />
                 </figure>
@@ -146,6 +159,7 @@ export const HomePage = () => {
                   <div className="card-actions justify-end mt-4 pt-2">
                     <Link
                       to={`/article/${article.id}`}
+                      state={{ from: "/" }}
                       className="btn btn-primary btn-sm sm:btn-md w-full md:w-auto"
                     >
                       Read More

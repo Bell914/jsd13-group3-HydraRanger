@@ -1,12 +1,11 @@
 import { fashionNews } from "../assets/assets.js";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useLocation, Link } from "react-router-dom";
 
 export const ArticleDetail = () => {
   const { id } = useParams();
+  const location = useLocation();
+  const backPath = location.state?.from || "/article";
 
-  // ==========================================
-  // 1. กรณีที่มี ID ใน URL (หน้า Detail บทความ)
-  // ==========================================
   if (id) {
     const article = fashionNews.find((item) => item.id === parseInt(id));
 
@@ -25,8 +24,8 @@ export const ArticleDetail = () => {
     return (
       <div className="mx-auto max-w-4xl py-10 px-4 text-black">
         {/* ปุ่มย้อนกลับ */}
-        <Link to="/article" className="btn btn-ghost mb-6">
-          ← กลับหน้ารวม
+        <Link to={backPath} className="btn btn-ghost mb-6">
+          ← กลับ
         </Link>
 
         {/* เนื้อหาบทความ */}
