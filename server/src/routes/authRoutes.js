@@ -3,6 +3,7 @@ import * as authController from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { rateLimit } from '../middleware/rateLimiterMiddleware.js';
 import { validate } from '../middleware/validatorMiddleware.js';
+import { forgotPasswordLimiter } from '../middleware/authRateLimiter.js';
 import {
   validateRegisterInput,
   validateLoginInput,
