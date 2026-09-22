@@ -14,6 +14,25 @@ Respond with STRICT JSON only (no markdown, no extra text):
   "colors": [{"name": "english color name", "hex": "#rrggbb"}]
 }`;
 
+const RANK_PROMPT = `You are a fashion stylist. A customer uploaded photos of a top garment and/or a bottom garment they own.
+
+Compare the uploaded garments with the lookbook list below and pick the 3 looks most similar to what the customer uploaded.
+Judge similarity by ALL of these:
+1. garment type / product type (e.g. tee vs v-neck vs tank vs shirt vs oversized, and jeans vs chinos vs cargo vs trousers vs skirt)
+2. colour closeness
+3. material and style
+
+Respond with STRICT JSON only (no markdown, no extra text):
+{"rankings":[{"lookbookId":"LOOK-001","score":9,"reasons":["เสื้อยืดคอตตอน ทรงใกล้กับที่ลูกค้าอัปโหลด","สีขาวตรงกัน","สไตล์ minimal"]}]}
+
+Rules:
+- Exactly 3 rankings, best first.
+- score must be an integer from 1 to 10.
+- reasons in Thai, 1-3 short phrases about what matched (type/product/color/style).
+
+Lookbooks:
+`;
+
 /**
  * Call Gemini with one or two images and ask for a structured description.
  * @param {Array<{mimeType: string, data: string, frame: 'top'|'bottom'}>} images
@@ -100,4 +119,80 @@ function parseAnalysisJson(text) {
     if (match) return parseAnalysisJson(match[0]);
     throw new Error("Gemini response was not valid JSON");
   }
+}
+
+function buildGeminiBody(prompt, parts) {
+  return {
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: prompt }, ...parts],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.2,
+      responseMimeType: "application/json",
+    },
+  };
+}
+
+/**
+ * Ask Gemini to rank lookbooks by similarity to the uploaded garments,
+ * considering garment/product type, colour, material and style.
+ * @param {Array<{mimeType: string, data: string, frame: 'top'|'bottom'}>} images
+ * @param {Array<{id: string, name: string, items: string[], tags: string[]}>} lookbooks
+ * @returns {Promise<Array<{lookbookId: string, score: number, reasons: string[]}>>}
+ */
+export async function rankLookbooks(images, lookbooks) {
+  if (!ENV.GEMINI_API_KEY) {
+    const error = new Error("GEMINI_API_KEY is not configured");
+    error.code = "NO_GEMINI_KEY";
+    throw error;
+  }
+
+  const parts = [
+    { text: JSON.stringify(lookbooks, null, 1) },
+    ...images.map((image) => ({
+      inlineData: { mimeType: image.mimeType, data: image.data },
+    })),
+  ];
+
+  const url = `${GEMINI_ENDPOINT}/${encodeURIComponent(
+    ENV.GEMINI_MODEL,
+  )}:generateContent?key=${encodeURIComponent(ENV.GEMINI_API_KEY)}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(buildGeminiBody(RANK_PROMPT, parts)),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    const error = new Error(
+      `Gemini rank request failed (${response.status}): ${text.slice(0, 300)}`,
+    );
+    error.code = "GEMINI_HTTP";
+    throw error;
+  }
+
+  const result = await response.json();
+  const text = result?.candidates?.[0]?.content?.parts
+    ?.map((part) => part.text || "")
+    .join("");
+
+  if (!text) {
+    const error = new Error("Gemini returned an empty rank response");
+    error.code = "GEMINI_EMPTY";
+    throw error;
+  }
+
+  const cleaned = text.replace(/```json|```/g, "").trim();
+  const data = JSON.parse(cleaned);
+  const rankings = Array.isArray(data.rankings) ? data.rankings : [];
+  return rankings.map((r) => ({
+    lookbookId: String(r.lookbookId || ""),
+    score: Number(r.score) || 0,
+    reasons: Array.isArray(r.reasons) ? r.reasons : [],
+  }));
 }
