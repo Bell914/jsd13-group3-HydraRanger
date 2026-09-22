@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useCartStore from "../store/cartStore";
 import { authService } from "../services/authService";
+import { getAddresses } from "../services/userService";
 import {
   CheckoutStepper,
   ContactSection,
@@ -20,40 +21,79 @@ export default function CheckoutPage() {
   const currentUser = authService.getCurrentUser();
 
   // Current Step: 1 = Contact, 2 = Shipping, 3 = Payment, 4 = Review
-  // Default to step 2 as shown in the primary wireframe, or step 1 if no email
   const [currentStep, setCurrentStep] = useState(2);
 
   // Contact Form State
   const [email, setEmail] = useState(currentUser?.email || "");
 
-  // Shipping Form State (pre-populated with wireframe sample values for seamless demo)
+  // Shipping Form State
   const [shippingData, setShippingData] = useState({
-  location: "Thailand",
-  firstName: "",
-  lastName: "",
-  phone: "",
-  address: "",
-  deliveryNote: "",
-  city: "",
-  state: "",
-  zipCode: "",
-  saveAddress: false,
-  shippingMethod: "standard",
-  isGift: false,
-  giftMessage: "",
-});
+    location: "Thailand",
+    firstName: "",
+    lastName: "",
+    phone: "",
+    address: "",
+    deliveryNote: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    saveAddress: false,
+    shippingMethod: "standard",
+    isGift: false,
+    giftMessage: "",
+  });
+
+  // Saved addresses list from Backend
+  const [savedAddresses, setSavedAddresses] = useState([]);
 
   // Payment Form State
   const [paymentData, setPaymentData] = useState({
-  method: "credit-card",
-  cardNumber: "",
-  cardExp: "",
-  cardCvv: "",
-});
+    method: "credit-card",
+    cardNumber: "",
+    cardExp: "",
+    cardCvv: "",
+  });
 
   // Order Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
+
+  // ดึงข้อมูลที่อยู่จัดส่งของผู้ใช้ที่บันทึกไว้เมื่อเปิดหน้า Checkout
+  useEffect(() => {
+    fetchUserAddresses();
+  }, []);
+
+  const fetchUserAddresses = async () => {
+    try {
+      const res = await getAddresses();
+      const addrList = res.data || (Array.isArray(res) ? res : []);
+      setSavedAddresses(addrList);
+
+      if (addrList.length > 0) {
+        // เลือกที่อยู่หลัก (isDefault) หรือที่อยู่อันแรกสุดถ้าไม่มีหลัก
+        const defaultAddr = addrList.find((a) => a.isDefault) || addrList[0];
+        if (defaultAddr) {
+          // แยกชื่อผู้รับถ้าเป็นฟิลด์เดียว
+          const nameParts = (defaultAddr.recipientName || "").trim().split(" ");
+          const firstName = nameParts[0] || "";
+          const lastName = nameParts.slice(1).join(" ") || "";
+
+          setShippingData((prev) => ({
+            ...prev,
+            firstName: firstName || prev.firstName,
+            lastName: lastName || prev.lastName,
+            phone: defaultAddr.phone || prev.phone,
+            address: defaultAddr.addressLine || prev.address,
+            city: defaultAddr.district || prev.city,
+            state: defaultAddr.province || prev.state,
+            zipCode: defaultAddr.postalCode || prev.zipCode,
+          }));
+        }
+      }
+    } catch (err) {
+      console.warn("Could not load saved shipping addresses:", err.message);
+    }
+  };
 
   const subtotal = getTotalPrice();
 
@@ -86,7 +126,7 @@ export default function CheckoutPage() {
     }, 800);
   };
 
-  // If order is completed, show full Order Confirmation Screen (Receipt Screen from Image 1)
+  // If order is completed, show full Order Confirmation Screen
   if (completedOrder) {
     return <OrderConfirmationScreen orderData={completedOrder} />;
   }
@@ -142,6 +182,7 @@ export default function CheckoutPage() {
                 />
                 <ShippingSection
                   shippingData={shippingData}
+                  savedAddresses={savedAddresses}
                   onChangeShipping={setShippingData}
                   isCollapsed={false}
                   onContinue={() => setCurrentStep(3)}

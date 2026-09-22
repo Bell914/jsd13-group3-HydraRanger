@@ -142,9 +142,20 @@ class ApiClient {
     });
   }
 
+  patch(endpoint, body, options = {}) {
+    return this.request(endpoint, {
+      ...options,
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+  }
+
   delete(endpoint, options = {}) {
     return this.request(endpoint, { ...options, method: "DELETE" });
   }
 }
 
 export const api = new ApiClient(BASE_URL);
+
+// Export default เพื่อรองรับการ import แบบ `import api from './api'`
+export default api;

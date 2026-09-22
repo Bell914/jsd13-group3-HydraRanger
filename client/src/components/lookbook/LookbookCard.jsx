@@ -1,17 +1,48 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Bookmark } from "lucide-react";
 import { normalizeImageUrl } from "../../utils/imageUtils.js";
+import { useAuth } from "../../context/Auth/useAuth.jsx";
+import { toggleFavoriteLookbook } from "../../services/lookbookService.js";
 
-export default function LookbookCard({ look }) {
+export default function LookbookCard({ look, isInitialFavorited = false }) {
   if (!look) return null;
+
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [isFavorited, setIsFavorited] = useState(isInitialFavorited);
+  const [loading, setLoading] = useState(false);
 
   const imgUrl = normalizeImageUrl(look.image);
   const itemsCount = look.items?.length || 2;
 
+  const handleFavoriteClick = async (e) => {
+    e.preventDefault(); // ป้องกันการเปลี่ยนหน้าเมื่อกดปุ่ม Bookmark
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      alert("กรุณาเข้าสู่ระบบก่อนบันทึก Lookbook");
+      navigate("/login");
+      return;
+    }
+
+    if (loading) return;
+
+    try {
+      setLoading(true);
+      const res = await toggleFavoriteLookbook(look.id || look._id);
+      setIsFavorited(res.isFavorited);
+    } catch (error) {
+      console.error("Failed to toggle favorite lookbook:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Link
       to={`/lookbook/${look.id}`}
-      className="group flex flex-col justify-between overflow-hidden rounded-2xl bg-white border border-occasion-border/30 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
+      className="group flex flex-col justify-between overflow-hidden rounded-2xl bg-white border border-occasion-border/30 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 relative"
       id={`lookbook-card-${look.id}`}
     >
       {/* Look Image Container */}
@@ -25,15 +56,30 @@ export default function LookbookCard({ look }) {
 
         {/* Set Saving Badge */}
         {look.saving > 0 && (
-          <div className="absolute top-3 right-3 rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-white shadow-md">
+          <div className="absolute top-3 right-3 rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-white shadow-md z-10">
             ประหยัด ฿{look.saving.toLocaleString()}
           </div>
         )}
 
         {/* Look Number Badge */}
-        <div className="absolute top-3 left-3 rounded-md bg-black/60 backdrop-blur-sm px-2.5 py-1 text-xs font-bold text-white uppercase tracking-wider">
+        <div className="absolute top-3 left-3 rounded-md bg-black/60 backdrop-blur-sm px-2.5 py-1 text-xs font-bold text-white uppercase tracking-wider z-10">
           {look.id}
         </div>
+
+        {/* Bookmark / Favorite Button */}
+        <button
+          type="button"
+          onClick={handleFavoriteClick}
+          disabled={loading}
+          aria-label="Save to Favorite Lookbooks"
+          className={`absolute bottom-3 right-3 p-2.5 rounded-full backdrop-blur-md shadow-md transition-all z-20 ${
+            isFavorited
+              ? "bg-accent text-white"
+              : "bg-white/80 text-gray-700 hover:bg-white hover:text-accent"
+          }`}
+        >
+          <Bookmark size={18} fill={isFavorited ? "currentColor" : "none"} />
+        </button>
       </div>
 
       {/* Look Details Body */}
@@ -90,7 +136,7 @@ export default function LookbookCard({ look }) {
           </div>
 
           <span className="text-xs font-bold text-accent group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
-            ดูลุคนี้ &rarr;
+            ดูุสลุคนี้ &rarr;
           </span>
         </div>
       </div>

@@ -1,8 +1,9 @@
 /**
  * Lookbook Service
- * Fetches lookbook data from /collection-2026/look-data.json
+ * Fetches lookbook data from API or /collection-2026/look-data.json
  */
 import fallbackData from "../data/look-data.json";
+import api from "./api";
 
 export async function getLookbookData() {
   try {
@@ -14,7 +15,6 @@ export async function getLookbookData() {
     return data;
   } catch (error) {
     console.warn("fetch /collection-2026/look-data.json failed, checking fallback:", error.message);
-    // If running in environment where public URL is available, error is thrown or fallback is used
     if (fallbackData && fallbackData.looks) {
       return fallbackData;
     }
@@ -23,11 +23,32 @@ export async function getLookbookData() {
 }
 
 export async function getLookbooks() {
+  try {
+    // พยายามดึงจาก Backend API ก่อน
+    const response = await api.get("/lookbooks");
+    if (response.data && response.data.data) {
+      return response.data.data;
+    }
+  } catch (err) {
+    console.warn("API /lookbooks failed, falling back to local JSON data:", err.message);
+  }
+
+  // Fallback ไปใช้ไฟล์ JSON เดิม
   const data = await getLookbookData();
   return data?.looks || [];
 }
 
 export async function getLookbookById(lookId) {
+  try {
+    const response = await api.get(`/lookbooks/${lookId}`);
+    if (response.data && response.data.data) {
+      return response.data.data;
+    }
+  } catch (err) {
+    console.warn(`API /lookbooks/${lookId} failed, falling back to local JSON data:`, err.message);
+  }
+
+  // Fallback ไปใช้ไฟล์ JSON เดิม
   const data = await getLookbookData();
   const looks = data?.looks || [];
   const target = String(lookId).trim().toLowerCase();
@@ -39,6 +60,14 @@ export async function getLookbookById(lookId) {
       return id === target || name === target || id.replace("look-", "") === target;
     }) || null
   );
+}
+
+/**
+ * เพิ่ม / ยกเลิก บันทึก Lookbook โปรด (Toggle Favorite API)
+ */
+export async function toggleFavoriteLookbook(lookbookId) {
+  const response = await api.post(`/lookbooks/${lookbookId}/favorite`);
+  return response.data;
 }
 
 /**
