@@ -34,6 +34,14 @@ export const authService = {
     });
   },
 
+  async forgotPassword(email) {
+    return await api.post("/auth/forgot-password", { email });
+  },
+
+  async resetPassword({ token, password }) {
+    return await api.post(`/auth/reset-password/${token}`, { password });
+  },
+
   async refresh() {
     const token = api.getToken();
     if (!token) return null;
@@ -59,3 +67,5 @@ export const authService = {
     return Boolean(api.getToken());
   },
 };
+
+export const { forgotPassword, resetPassword } = authService;

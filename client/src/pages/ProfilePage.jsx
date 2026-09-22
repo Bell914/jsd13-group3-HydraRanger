@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Heart, BookOpen, MapPin, Package, AlertCircle, Save, KeyRound, Plus, Pencil, Trash2, Ruler } from 'lucide-react';
+import { User, Heart, BookOpen, MapPin, Package, AlertCircle, Save, KeyRound, Plus, Pencil, Trash2, Ruler, Loader2 } from 'lucide-react';
 import { Card } from '../components';
 import { useAuth } from '../context/Auth/useAuth.jsx';
 import { useWishlistStore } from '../store/wishlistStore.js';
@@ -18,7 +18,7 @@ const EmptyState = ({ message, subtitle }) => (
 );
 
 export const ProfilePage = () => {
-  const { user: authUser, updateProfile, changePassword } = useAuth();
+  const { user: authUser, updateProfile, changePassword, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [error, setError] = useState(''); // Error state สำหรับกรณี fetch ข้อมูลล้มเหลว
   const [success, setSuccess] = useState('');

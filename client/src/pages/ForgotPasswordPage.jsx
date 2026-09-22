@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, Mail, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { forgotPassword, resetPassword } from '../services/authService';
 
 export default function ForgotPasswordPage() {
   const [step, setStep] = useState(1); // 1: Form, 2: Check Email, 3: Set New, 4: Success
@@ -15,15 +16,28 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // Step 1: ส่งคำขอ Reset Link
-  const handleSendResetLink = (e) => {
+  // Step 1: ส่งคำขอ Reset Link ไปยัง Backend
+  const handleSendResetLink = async (e) => {
     e.preventDefault();
     if (!email) {
       setError('Please enter your email address');
       return;
     }
-    setError('');
-    setStep(2);
+
+    try {
+      setLoading(true);
+      setError('');
+
+      // เรียกใช้ authService ยิง API ขอรีเซ็ตรหัสผ่าน
+      await forgotPassword(email);
+
+      // ยิงสำเร็จ ให้เปลี่ยนไปหน้าแจ้งเตือนเช็กอีเมล
+      setStep(2);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Failed to send reset link. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Step 3: ตั้งรหัสผ่านใหม่
@@ -42,32 +56,13 @@ export default function ForgotPasswordPage() {
       setLoading(true);
       setError('');
 
-      // ดึง Base URL จาก Environment หรือใช้ default Port 5000
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-
-      const response = await fetch(`${API_URL}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, newPassword }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to reset password');
-      }
+      // เรียกใช้ authService ส่งรหัสผ่านใหม่ไปอัปเดต
+      await resetPassword({ password: newPassword });
 
       // รีเซ็ตสำเร็จ ไป Step 4
       setStep(4);
     } catch (err) {
-      // จัดการ Error หากเชื่อมต่อ Server ไม่ได้
-      if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
-        setError('Cannot connect to server. Please check if Backend server is running on port 5001.');
-      } else {
-        setError(err.message || 'Something went wrong. Please try again.');
-      }
+      setError(err.response?.data?.message || err.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -105,9 +100,10 @@ export default function ForgotPasswordPage() {
 
               <button
                 type="submit"
-                className="w-full bg-accent text-white font-semibold py-3 rounded-xl hover:bg-accent-hover transition"
+                disabled={loading}
+                className="w-full bg-accent text-white font-semibold py-3 rounded-xl hover:bg-accent-hover transition disabled:opacity-50"
               >
-                Send Reset Link
+                {loading ? 'Sending Request...' : 'Send Reset Link'}
               </button>
             </form>
 
