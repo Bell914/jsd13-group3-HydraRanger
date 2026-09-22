@@ -13,6 +13,7 @@ import adminCustomerRoutes from "./adminCustomerRoutes.js";
 import reviewRoutes from "./reviewRoutes.js";
 import adminReviewRoutes from "./adminReviewRoutes.js";
 import contactRoutes from "./contact.route.js";
+import lookbookRoutes from "./lookbookRoutes.js";
 
 const router = Router();
 
@@ -42,5 +43,6 @@ router.use("/admin/customers", adminCustomerRoutes);
 router.use("/reviews", reviewRoutes);
 router.use("/admin/reviews", adminReviewRoutes);
 router.use("/contact", contactRoutes);
+router.use("/lookbooks", lookbookRoutes);
 
 export default router;

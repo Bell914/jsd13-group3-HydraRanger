@@ -6,6 +6,13 @@ import { USER_ROLES } from '../config/constants.js';
 const router = Router();
 
 router.get('/', protect, authorize(USER_ROLES.ADMIN), userController.getUsers);
+
+// Routes สำหรับ Shipping Addresses (ต้องวางไว้ก่อน /:id)
+router.get('/addresses', protect, userController.getAddresses);
+router.post('/addresses', protect, userController.addAddress);
+router.delete('/addresses/:addressId', protect, userController.deleteAddress);
+router.patch('/addresses/:addressId/default', protect, userController.setDefaultAddress);
+
 router.get('/:id', protect, userController.getUser);
 
 export default router;

@@ -2,6 +2,40 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { USER_ROLES } from '../config/constants.js';
 
+// 1. สร้าง Sub-schema สำหรับเก็บที่อยู่จัดส่ง
+const addressSchema = new mongoose.Schema(
+  {
+    recipientName: {
+      type: String,
+      required: [true, 'Recipient name is required'],
+      trim: true
+    },
+    phone: {
+      type: String,
+      required: [true, 'Phone number is required'],
+      trim: true
+    },
+    addressLine: {
+      type: String,
+      required: [true, 'Address detail is required'],
+      trim: true
+    },
+    district: { type: String, trim: true, default: '' },
+    province: { type: String, trim: true, default: '' },
+    postalCode: {
+      type: String,
+      required: [true, 'Postal code is required'],
+      trim: true
+    },
+    isDefault: {
+      type: Boolean,
+      default: false
+    }
+  },
+  { timestamps: true }
+);
+
+// 2. Main User Schema
 const userSchema = new mongoose.Schema(
   {
     username: {
@@ -41,7 +75,17 @@ const userSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true
-    }
+    },
+    //  เพิ่มฟิลด์สำหรับเก็บที่อยู่จัดส่ง (เป็น Array ของ Sub-document)
+    shippingAddresses: [addressSchema],
+    
+    //  เพิ่มฟิลด์สำหรับเก็บ Favorite Lookbooks (อ้างอิง ID ของ Lookbook)
+    favoriteLookbooks: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Lookbook'
+      }
+    ]
   },
   {
     timestamps: true

@@ -13,20 +13,24 @@ const router = Router();
 
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 5,
+  max: 500,
   message: 'Too many registration attempts, please try again later'
 });
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 500,
   message: 'Too many login attempts, please try again later'
 });
 
-router.post('/register', registerLimiter, validate(validateRegisterInput), authController.register);
-router.post('/login', loginLimiter, validate(validateLoginInput), authController.login);
+//router.post('/register', registerLimiter, validate(validateRegisterInput), authController.register);
+//router.post('/login', loginLimiter, validate(validateLoginInput), authController.login);
+// เปลี่ยนจากเดิมที่มี registerLimiter และ loginLimiter
+router.post('/register', validate(validateRegisterInput), authController.register);
+router.post('/login', validate(validateLoginInput), authController.login);
 router.post('/refresh', authController.refresh);
 router.post('/change-password', protect, validate(validateChangePasswordInput), authController.changePassword);
+router.post('/reset-password', authController.resetPassword);
 router.get('/me', protect, authController.getMe);
 
 export default router;

@@ -111,6 +111,34 @@ export const changePassword = async (req, res, next) => {
   }
 };
 
+//  เพิ่มฟังก์ชัน resetPassword สำหรับ Forgot Password Flow
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { email, newPassword } = req.body;
+    if (!email || !newPassword) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: 'Email and new password are required'
+      });
+    }
+
+    const result = await authService.resetPassword({ email, newPassword });
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    if (error.message === 'User not found') {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
+        success: false,
+        message: error.message
+      });
+    }
+    next(error);
+  }
+};
+
 export const refresh = async (req, res, next) => {
   try {
     const { token } = req.body;
