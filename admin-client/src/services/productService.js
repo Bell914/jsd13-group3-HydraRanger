@@ -64,6 +64,7 @@ function prepareProduct(product) {
     imageUrl: product.imageUrl,
     variants: product.variants.map((variant) => {
       return {
+        _id: variant._id,
         sku: variant.sku,
         color: variant.color,
         colorCode: variant.colorCode,

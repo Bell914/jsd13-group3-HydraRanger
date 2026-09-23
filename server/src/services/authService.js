@@ -42,6 +42,7 @@ export const generateToken = (payload) => {
 
 const buildUserSession = (user) => {
   const id = user._id?.toString() || user.id;
+  const tokenVersion = user.tokenVersion || 0;
   const sessionUser = {
     id,
     username: user.username,
@@ -56,7 +57,8 @@ const buildUserSession = (user) => {
       id,
       username: user.username,
       email: user.email,
-      role: user.role
+      role: user.role,
+      tokenVersion
     })
   };
 };
@@ -88,6 +90,10 @@ export const registerUser = async ({ username, email, password }) => {
     }
     if (!isDbUnavailableError(dbError)) {
       throw dbError;
+    }
+
+    if (ENV.NODE_ENV !== 'development') {
+      throw new Error('Authentication service is temporarily unavailable');
     }
 
     // Fallback: In-memory simulation (only when DB is offline)
@@ -146,6 +152,10 @@ export const loginUser = async ({ email, password }) => {
     }
     if (!isDbUnavailableError(dbError)) {
       throw dbError;
+    }
+
+    if (ENV.NODE_ENV !== 'development') {
+      throw new Error('Authentication service is temporarily unavailable');
     }
 
     // In-memory fallback (only when DB is offline)
@@ -244,6 +254,7 @@ export const changePassword = async ({ userId, currentPassword, newPassword }) =
       if (!isMatch) throw new Error('Current password is incorrect');
 
       user.password = newPassword;
+      user.tokenVersion = (user.tokenVersion || 0) + 1;
       await user.save();
       return { success: true, message: 'Password updated successfully' };
     } catch (error) {
@@ -264,6 +275,7 @@ export const changePassword = async ({ userId, currentPassword, newPassword }) =
   if (!isMatch) throw new Error('Current password is incorrect');
 
   mockUser.password = await bcrypt.hash(newPassword, 10);
+  mockUser.tokenVersion = (mockUser.tokenVersion || 0) + 1;
   return { success: true, message: 'Password updated successfully' };
 };
 
@@ -326,14 +338,36 @@ export const updateProfile = async ({ userId, username, email, avatar }) => {
   return safeUser;
 };
 
-export const refreshToken = (currentToken) => {
+export const refreshToken = async (currentToken) => {
   try {
     const decoded = jwt.verify(currentToken, ENV.JWT_SECRET);
+
+    if (isSyntheticId(decoded.id)) {
+      if (ENV.NODE_ENV !== 'development') {
+        throw new Error('Invalid or expired token');
+      }
+
+      const mockUser = inMemoryUsers.find((user) => user.id === decoded.id);
+      const currentVersion = mockUser?.tokenVersion || 0;
+      if (decoded.tokenVersion !== currentVersion) {
+        throw new Error('Invalid or expired token');
+      }
+    } else {
+      const user = await User.findById(decoded.id);
+      if (!user || user.isActive === false) {
+        throw new Error('Invalid or expired token');
+      }
+      if ((decoded.tokenVersion || 0) !== (user.tokenVersion || 0)) {
+        throw new Error('Invalid or expired token');
+      }
+    }
+
     const token = generateToken({
       id: decoded.id,
       username: decoded.username,
       email: decoded.email,
-      role: decoded.role
+      role: decoded.role,
+      tokenVersion: decoded.tokenVersion || 0
     });
     return { token };
   } catch {

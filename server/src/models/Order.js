@@ -58,7 +58,9 @@ const orderSchema = new mongoose.Schema(
     shippingCost: { type: Number, required: true, min: 0 },
     taxAmount: { type: Number, required: true, min: 0 },
     totalAmount: { type: Number, required: true, min: 0 },
-    status: { type: String, enum: ORDER_STATUSES, default: 'pending', index: true }
+    status: { type: String, enum: ORDER_STATUSES, default: 'pending', index: true },
+    stockReserved: { type: Boolean, default: false },
+    stockRestored: { type: Boolean, default: false }
   },
   { timestamps: true }
 );

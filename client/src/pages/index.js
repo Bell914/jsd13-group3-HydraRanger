@@ -2,6 +2,7 @@ export { HomePage } from "./HomePage.jsx";
 export { DashboardPage } from "./DashboardPage.jsx";
 export { LoginPage } from "./LoginPage.jsx";
 export { RegisterPage } from "./RegisterPage.jsx";
+export { default as ForgotPasswordPage } from "./ForgotPasswordPage.jsx";
 export { NotFoundPage } from "./NotFoundPage.jsx";
 export { UiKitPage } from "./UiKitPage.jsx";
 export { ProductListPage } from "./ProductListPage.jsx";
