@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { USER_ROLES } from '../config/constants.js';
 
+// Schema สำหรับ Shipping Address / Addresses
 const addressSchema = new mongoose.Schema(
   {
     recipientName: { type: String, required: true, trim: true },
@@ -15,6 +16,7 @@ const addressSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Schema สำหรับ Size Profile
 const sizeProfileSchema = new mongoose.Schema(
   {
     chestCm: { type: Number, min: 60, max: 160, required: true },
@@ -101,6 +103,7 @@ const userSchema = new mongoose.Schema(
       type: [addressSchema],
       default: []
     },
+    addresses: [addressSchema],
     favoriteLookbooks: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -115,6 +118,18 @@ const userSchema = new mongoose.Schema(
     sizeProfile: {
       type: sizeProfileSchema,
       default: undefined
+    },
+
+    // ==========================================
+    // Forgot / Reset Password Fields
+    // ==========================================
+    resetPasswordToken: {
+      type: String,
+      default: null
+    },
+    resetPasswordExpires: {
+      type: Date,
+      default: null
     }
   },
   {
@@ -122,7 +137,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Hash password before saving
+// Hash password ก่อน save
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
@@ -130,7 +145,7 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-// Method to compare entered password with hashed password
+// Method เปรียบเทียบรหัสผ่าน
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
