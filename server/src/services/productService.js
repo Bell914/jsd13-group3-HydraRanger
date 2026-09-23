@@ -52,9 +52,9 @@ export function prepareVariants(variants = []) {
   return variants.map((variant) => {
     const preparedVariant = {
       sku: variant.sku,
-      size_or_color: variant.size_or_color || variant.size || variant.color,
-      size: variant.size || variant.size_or_color || '',
-      color: variant.color || '',
+      size_or_color: variant.size_or_color || variant.size || variant.color || 'Standard',
+      size: variant.size || (['S', 'M', 'L', 'XL'].includes(variant.size_or_color) ? variant.size_or_color : (variant.size_or_color || 'S')),
+      color: variant.color || (variant.size_or_color && !['S', 'M', 'L', 'XL'].includes(variant.size_or_color) ? variant.size_or_color : 'Standard'),
       colorCode: variant.colorCode || '',
       price: variant.price,
       stock_quantity: variant.stock_quantity ?? variant.stockQuantity ?? 0,

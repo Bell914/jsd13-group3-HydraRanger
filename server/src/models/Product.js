@@ -20,8 +20,16 @@ const variantSchema = new mongoose.Schema(
     imageUrl: { type: String, default: '', trim: true },
     detailImages: { type: [String], default: [] }
   },
-  { _id: true }
+  {
+    _id: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
+
+variantSchema.virtual('stockQuantity').get(function () {
+  return this.stock_quantity;
+});
 
 const sizeChartSchema = new mongoose.Schema(
   {

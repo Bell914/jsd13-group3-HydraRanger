@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { authController } from '../controllers/index.js';
+import * as authController from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { rateLimit } from '../middleware/rateLimiterMiddleware.js';
 import { validate } from '../middleware/validatorMiddleware.js';
+import { forgotPasswordLimiter } from '../middleware/authRateLimiter.js';
 import {
   validateRegisterInput,
   validateLoginInput,
@@ -31,5 +32,7 @@ router.post('/refresh', validate(validateRefreshToken), authController.refresh);
 router.post('/change-password', protect, validate(validateChangePasswordInput), authController.changePassword);
 router.put('/profile', protect, validate(validateUpdateProfileInput), authController.updateProfile);
 router.get('/me', protect, authController.getMe);
+router.post('/forgot-password', forgotPasswordLimiter, authController.forgotPassword);
+router.post('/reset-password/:token', authController.resetPassword);
 
 export default router;

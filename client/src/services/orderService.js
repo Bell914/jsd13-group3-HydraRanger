@@ -1,8 +1,8 @@
-import { api } from "./api";
+import { api } from './api.js';
 
 // สร้าง Order ใหม่
 export const createOrder = async (orderData) => {
-  const response = await api.post("/orders", orderData);
+  const response = await api.post('/orders', orderData);
   return response.data;
 };
 

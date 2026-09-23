@@ -9,6 +9,7 @@
     "dev": "node --watch src/server.js",
     "seed": "node src/scripts/seed.js",
     "test:conn": "node src/scripts/testConnection.js",
+    "test:loyalty": "node src/scripts/testLoyaltyBackend.js",
     "test:security": "NODE_ENV=production JWT_SECRET=test-only-secret node --test src/tests/*.test.js"
   },
   "keywords": [

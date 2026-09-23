@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { User, Heart, BookOpen, MapPin, Package, Ruler, Loader2 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { User, Heart, BookOpen, MapPin, Package, Ruler, Crown, Ticket, Loader2 } from 'lucide-react';
 import { Card } from '../../components';
 import { useAuth } from '../../context/Auth/useAuth.jsx';
 import { UserInfoSection } from './UserInfoSection.jsx';
@@ -8,9 +9,13 @@ import { LookbooksSection } from './LookbooksSection.jsx';
 import { AddressSection } from './AddressSection.jsx';
 import { OrderHistorySection } from './OrderHistorySection.jsx';
 import { SizeProfileSection } from './SizeProfileSection.jsx';
+import { MembershipSection } from './MembershipSection.jsx';
+import { CouponsSection } from './CouponsSection.jsx';
 
 const tabs = [
   { id: 'profile', label: 'ข้อมูลส่วนตัว', icon: User },
+  { id: 'membership', label: 'Membership & Loyalty', icon: Crown },
+  { id: 'coupons', label: 'คูปองและรางวัล (Vouchers)', icon: Ticket },
   { id: 'size-profile', label: 'Size & Fit', icon: Ruler },
   { id: 'wishlist', label: 'Wishlist', icon: Heart },
   { id: 'lookbooks', label: 'Favorite Lookbooks', icon: BookOpen },
@@ -19,8 +24,10 @@ const tabs = [
 ];
 
 export const ProfilePage = () => {
-  const { loading } = useAuth();
-  const [activeTab, setActiveTab] = useState('profile');
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'profile';
+  const { loading, user } = useAuth();
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   if (loading) {
     return (
@@ -62,6 +69,8 @@ export const ProfilePage = () => {
         {/* Tab Content Area */}
         <Card className="p-6 md:col-span-3">
           {activeTab === 'profile' && <UserInfoSection />}
+          {activeTab === 'membership' && <MembershipSection user={user} />}
+          {activeTab === 'coupons' && <CouponsSection user={user} />}
           {activeTab === 'size-profile' && <SizeProfileSection />}
           {activeTab === 'wishlist' && <WishlistSection />}
           {activeTab === 'lookbooks' && <LookbooksSection />}

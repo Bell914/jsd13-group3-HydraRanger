@@ -1,6 +1,13 @@
 import mongoose from 'mongoose';
 import { Order, ORDER_STATUSES } from '../models/Order.js';
 import { Product } from '../models/Product.js';
+import * as loyaltyService from './loyaltyService.js';
+import {
+  RANK_DISCOUNT_PERCENT,
+  FREE_SHIPPING_MINIMUM,
+  VALID_COUPONS,
+  SHIPPING_METHODS_CONFIG
+} from '../config/membershipConfig.js';
 
 const SHIPPING_COSTS = {
   standard: 0,
@@ -132,9 +139,46 @@ export async function createOrder(user, orderData) {
   validateShippingAddress(orderData.shippingAddress);
   const items = await prepareOrderItems(orderData.items);
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
-  const shippingMethod = orderData.shippingMethod || 'standard';
-  const shippingCost = getShippingCost(shippingMethod);
-  const taxAmount = Math.round(subtotal * 0.06 * 100) / 100;
+  // 1. Calculate discount from member tier
+  const membershipTierAtPurchase = user?.membership?.rank || 'MEMBER';
+  const rankPercent = RANK_DISCOUNT_PERCENT[membershipTierAtPurchase] || 0;
+  let calculatedDiscount = rankPercent > 0 ? Math.round((subtotal * rankPercent) / 100) : 0;
+
+  // 2. Validate coupon if provided
+  const couponCode = orderData.couponCode ? String(orderData.couponCode).trim().toUpperCase() : '';
+  if (couponCode) {
+    const coupon = VALID_COUPONS[couponCode];
+    if (coupon) {
+      if (subtotal >= (coupon.minSpend || 0)) {
+        if (coupon.type === 'percent') {
+          const couponDiscount = Math.round((subtotal * coupon.value) / 100);
+          calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
+        } else if (coupon.type === 'fixed') {
+          calculatedDiscount = Math.max(calculatedDiscount, coupon.value);
+        }
+      }
+    }
+  }
+  const discountAmount = Math.min(subtotal, calculatedDiscount);
+
+  // 3. Calculate shipping cost based on shipping method and free shipping rules
+  const methodKey = String(orderData.shippingMethod || 'standard').toLowerCase();
+  const selectedMethod = SHIPPING_METHODS_CONFIG[methodKey] || SHIPPING_METHODS_CONFIG.standard;
+  const baseShippingCost = selectedMethod.price;
+
+  const freeShippingThreshold = FREE_SHIPPING_MINIMUM[membershipTierAtPurchase] ?? 1000;
+  const isFreeShipping = freeShippingThreshold === 0 || subtotal >= freeShippingThreshold;
+
+  let shippingCost = baseShippingCost;
+  if (methodKey === 'standard') {
+    shippingCost = isFreeShipping ? 0 : 50;
+  } else if (membershipTierAtPurchase === 'PLATINUM' && methodKey === 'priority') {
+    shippingCost = 0; // Platinum priority shipping is free
+  }
+
+  const taxableSubtotal = Math.max(0, subtotal - discountAmount);
+  const taxAmount = Math.round(taxableSubtotal * 0.06 * 100) / 100;
+  const totalAmount = taxableSubtotal + shippingCost + taxAmount;
 
   await reserveOrderStock(items);
 
@@ -156,12 +200,16 @@ export async function createOrder(user, orderData) {
         country: orderData.shippingAddress?.location || orderData.shippingAddress?.country || 'Thailand',
         deliveryNote: orderData.shippingAddress?.deliveryNote || ''
       },
-      shippingMethod,
+      shippingMethod: orderData.shippingMethod || 'standard',
       paymentMethod: orderData.paymentMethod || 'credit-card',
       subtotal,
+      discountAmount,
+      couponCode,
+      membershipTierAtPurchase,
       shippingCost,
       taxAmount,
-      totalAmount: subtotal + shippingCost + taxAmount,
+      totalAmount,
+      loyaltyProcessed: false,
       stockReserved: true
     });
   } catch (error) {
@@ -198,38 +246,60 @@ export function getAllOrders() {
 export async function updateOrderStatus(orderId, status) {
   if (!ORDER_STATUSES.includes(status)) throw new Error('Invalid order status');
 
-  if (status === 'cancelled') {
-    const cancelledOrder = await Order.findOneAndUpdate(
-      { _id: orderId, status: { $ne: 'cancelled' } },
-      { status: 'cancelled' },
-      { new: true, runValidators: true }
-    );
+  const existingOrder = await Order.findById(orderId);
+  if (!existingOrder) throw new Error('Order not found');
 
-    if (cancelledOrder) {
-      if (cancelledOrder.stockReserved && !cancelledOrder.stockRestored) {
-        await restoreOrderStock(cancelledOrder.items);
-      }
-      cancelledOrder.stockRestored = true;
-      await cancelledOrder.save();
-      return cancelledOrder.populate('user', 'username email');
-    }
-
-    const existingOrder = await Order.findById(orderId);
-    if (!existingOrder) throw new Error('Order not found');
-    return existingOrder.populate('user', 'username email');
-  }
-
-  const order = await Order.findByIdAndUpdate(
-    { _id: orderId, status: { $ne: 'cancelled' } },
-    { status },
-    { new: true, runValidators: true }
-  ).populate('user', 'username email');
-
-  if (!order) {
-    const existingOrder = await Order.findById(orderId);
-    if (!existingOrder) throw new Error('Order not found');
+  if (existingOrder.status === 'cancelled' && status !== 'cancelled') {
     throw new Error('Cancelled order status cannot be changed');
   }
+
+  existingOrder.status = status;
+
+  if (status === 'cancelled') {
+    if (existingOrder.stockReserved && !existingOrder.stockRestored) {
+      await restoreOrderStock(existingOrder.items);
+      existingOrder.stockRestored = true;
+    }
+  }
+
+  const userId = existingOrder.user?._id || existingOrder.user?.id || existingOrder.user;
+  const netSpend = Math.max(0, existingOrder.subtotal - (existingOrder.discountAmount || 0));
+
+  let session = null;
+  try {
+    session = await mongoose.startSession();
+    session.startTransaction();
+  } catch {
+    session = null;
+  }
+
+  try {
+    if (userId && !existingOrder.loyaltyProcessed && ['paid', 'completed'].includes(status)) {
+      await loyaltyService.processOrderSpending(userId, netSpend, 'ADD', session);
+      existingOrder.loyaltyProcessed = true;
+    } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {
+      await loyaltyService.processOrderSpending(userId, netSpend, 'SUBTRACT', session);
+      existingOrder.loyaltyProcessed = false;
+    }
+
+    if (session) {
+      await existingOrder.save({ session });
+      await session.commitTransaction();
+    } else {
+      await existingOrder.save();
+    }
+  } catch (err) {
+    if (session) {
+      await session.abortTransaction();
+    }
+    throw err;
+  } finally {
+    if (session) {
+      session.endSession();
+    }
+  }
+
+  const order = await Order.findById(orderId).populate('user', 'username email');
   return order;
 }
 export async function cancelOrder(userId, orderId) {

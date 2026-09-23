@@ -258,6 +258,7 @@ export const Navbar = () => {
               ) : (
                 <ProfileDropdown
                   username={user?.username}
+                  membership={user?.membership}
                   isOpen={isProfileOpen}
                   onToggle={() => setIsProfileOpen((isOpen) => !isOpen)}
                   onClose={() => setIsProfileOpen(false)}
