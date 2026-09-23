@@ -12,6 +12,11 @@ function normalizeProduct(product) {
     imageUrl,
     tags: product.tags || [],
     availableDate: product.availableDate || product.createdAt || '',
+    isActive: product.is_active ?? product.isActive ?? true,
+    sizeChart: (product.size_chart || product.sizeChart || []).map((row) => ({
+      sizeName: row.size_name || row.sizeName || '',
+      garmentChestActual: row.garment_chest_actual ?? row.garmentChestActual ?? ''
+    })),
     variants: (product.variants || []).map((variant) => ({
       ...variant,
       color: variant.color || 'Standard',
@@ -62,6 +67,11 @@ function prepareProduct(product) {
     tags: product.tags,
     availableDate: product.availableDate,
     imageUrl: product.imageUrl,
+    is_active: product.isActive,
+    size_chart: (product.sizeChart || []).map((row) => ({
+      size_name: row.sizeName,
+      garment_chest_actual: Number(row.garmentChestActual)
+    })),
     variants: product.variants.map((variant) => {
       return {
         _id: variant._id,

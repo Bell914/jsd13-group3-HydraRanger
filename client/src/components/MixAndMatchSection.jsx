@@ -6,8 +6,6 @@ import { getLookbooks } from "../services/lookbookService.js";
 import { recommendLookbooks } from "../services/recommendService.js";
 
 const MixAndMatchSection = ({ assets }) => {
-  const [topUrl, setTopUrl] = useState("");
-  const [bottomUrl, setBottomUrl] = useState("");
   const [topFile, setTopFile] = useState(null);
   const [bottomFile, setBottomFile] = useState(null);
   const [recommendedLooks, setRecommendedLooks] = useState([]);
@@ -90,8 +88,6 @@ if (requestId !== recommendationRequestId.current) return;
       });
   };
 
-  const hasAnyUpload = Boolean(topUrl || bottomUrl);
-
   return (
     <div className="my-12 flex flex-col gap-8 rounded-2xl bg-accent p-6 sm:p-10">
       <div className="flex flex-col justify-between gap-8 lg:flex-row">
@@ -144,14 +140,14 @@ if (requestId !== recommendationRequestId.current) return;
         <ImageDropzone
           assets={assets}
           label="อัปโหลดเสื้อ / ท่อนบน"
-          onChange={setTopUrl}
           onFileChange={handleTopFileChange}
+          persistUpload={false}
         />
         <ImageDropzone
           assets={assets}
           label="อัปโหลดกางเกง / ท่อนล่าง"
-          onChange={setBottomUrl}
           onFileChange={handleBottomFileChange}
+          persistUpload={false}
         />
         <button
           type="button"

@@ -201,7 +201,7 @@ export const resetPassword = async (req, res, next) => {
   } catch (error) {
     if (
       error.message === 'Invalid or expired reset token' ||
-      error.message === 'Password must be at least 6 characters'
+      error.message === 'Password must be at least 8 characters'
     ) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,

@@ -110,7 +110,9 @@ describe('Size recommendation edge cases', () => {
       { size: 'M', color: 'White', stock_quantity: 2 },
       { size: 'L', color: 'Black', stock_quantity: 5 }
     ] };
-    expect(getSizeRecommendation(regularProfile, product, [], 'Black')).toMatchObject({ size: 'M', status: 'out-of-stock' });
+    expect(getSizeRecommendation(regularProfile, product, [], 'Black')).toMatchObject({
+      size: 'M', status: 'out-of-stock', alternativeSize: 'L'
+    });
     expect(getSizeRecommendation(regularProfile, product, [], 'White').status).toBe('available');
     expect(getSizeRecommendation(regularProfile, product, [], 'Blue').status).toBe('unavailable');
   });

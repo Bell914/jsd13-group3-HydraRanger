@@ -80,6 +80,14 @@ function createEmptyVariant() {
   };
 }
 
+function createEmptySizeRow() {
+  return {
+    id: createId(),
+    sizeName: 'S',
+    garmentChestActual: '',
+  };
+}
+
 function createEmptyForm() {
   return {
     name: '',
@@ -89,6 +97,8 @@ function createEmptyForm() {
     tags: '',
     availableDate: '',
     imageUrl: '',
+    isActive: true,
+    sizeChart: [createEmptySizeRow()],
     variants: [createEmptyVariant()],
   };
 }
@@ -119,6 +129,12 @@ function createFormFromProduct(product) {
     tags: (product.tags || []).join(', '),
     availableDate: product.availableDate ? product.availableDate.slice(0, 10) : '',
     imageUrl: product.imageUrl || '',
+    isActive: product.isActive !== false,
+    sizeChart: (product.sizeChart || []).map((row) => ({
+      ...row,
+      id: createId(),
+      garmentChestActual: String(row.garmentChestActual ?? ''),
+    })),
     variants,
   };
 }
@@ -158,6 +174,18 @@ function validateForm(form) {
     }
     if (variant.stockQuantity === '' || !Number.isInteger(stock) || stock < 0) {
       errors[`variant-${index}-stock`] = 'สต็อกต้องเป็นจำนวนเต็มตั้งแต่ 0 ขึ้นไป';
+    }
+  });
+
+  const usedSizes = new Set();
+  form.sizeChart.forEach((row, index) => {
+    const chest = Number(row.garmentChestActual);
+    if (usedSizes.has(row.sizeName)) {
+      errors[`size-chart-${index}-size`] = 'ไซส์ในตารางต้องไม่ซ้ำกัน';
+    }
+    usedSizes.add(row.sizeName);
+    if (row.garmentChestActual === '' || !Number.isFinite(chest) || chest <= 0) {
+      errors[`size-chart-${index}-chest`] = 'รอบอกเสื้อต้องมากกว่า 0';
     }
   });
 
@@ -220,6 +248,26 @@ export function ProductFormModal({ product, onClose, onSave }) {
     setForm({ ...form, variants: updatedVariants });
   };
 
+  const updateSizeRow = (index, field, value) => {
+    const sizeChart = form.sizeChart.map((row, rowIndex) => (
+      rowIndex === index ? { ...row, [field]: value } : row
+    ));
+    setForm({ ...form, sizeChart });
+    setErrors((current) => {
+      const next = { ...current };
+      delete next[`size-chart-${index}-${field === 'sizeName' ? 'size' : 'chest'}`];
+      return next;
+    });
+  };
+
+  const addSizeRow = () => {
+    setForm({ ...form, sizeChart: [...form.sizeChart, createEmptySizeRow()] });
+  };
+
+  const removeSizeRow = (index) => {
+    setForm({ ...form, sizeChart: form.sizeChart.filter((_, rowIndex) => rowIndex !== index) });
+  };
+
   const submit = async (event) => {
     event.preventDefault();
     setSubmitError('');
@@ -262,6 +310,7 @@ export function ProductFormModal({ product, onClose, onSave }) {
       productId: savedProductId,
       tags,
       variants,
+      sizeChart: form.sizeChart,
     };
 
     setLoading(true);
@@ -291,6 +340,14 @@ export function ProductFormModal({ product, onClose, onSave }) {
               <span>ชื่อสินค้า <b>*</b></span>
               <input type="text" ref={nameInputRef} value={form.name} onChange={(event) => updateField('name', event.target.value)} aria-invalid={Boolean(errors.name)} />
               {errors.name && <small className="field-error">{errors.name}</small>}
+            </label>
+
+            <label className="field full-width">
+              <span>สถานะสินค้า</span>
+              <select value={form.isActive ? 'active' : 'inactive'} onChange={(event) => updateField('isActive', event.target.value === 'active')}>
+                <option value="active">พร้อมขาย</option>
+                <option value="inactive">ซ่อนจากหน้าร้าน</option>
+              </select>
             </label>
 
             <label className="field full-width">
@@ -352,6 +409,39 @@ export function ProductFormModal({ product, onClose, onSave }) {
 
           <div className="variant-heading">
             <div>
+              <h3>ตารางไซส์</h3>
+              <p>ระบุรอบอกจริงของเสื้อเป็นเซนติเมตร เพื่อใช้แนะนำไซส์</p>
+            </div>
+            <button type="button" className="secondary-action" onClick={addSizeRow}>
+              <Plus size={15} /> เพิ่มไซส์
+            </button>
+          </div>
+
+          <div className="variant-list">
+            {form.sizeChart.map((row, index) => (
+              <fieldset className="variant-card" key={row.id}>
+                <legend>ไซส์ {index + 1}</legend>
+                <div className="variant-grid">
+                  <label className="field">
+                    <span>ชื่อไซส์</span>
+                    <select value={row.sizeName} onChange={(event) => updateSizeRow(index, 'sizeName', event.target.value)} aria-invalid={Boolean(errors[`size-chart-${index}-size`])}>
+                      {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => <option key={size}>{size}</option>)}
+                    </select>
+                    {errors[`size-chart-${index}-size`] && <small className="field-error">{errors[`size-chart-${index}-size`]}</small>}
+                  </label>
+                  <label className="field">
+                    <span>รอบอกเสื้อจริง (ซม.)</span>
+                    <input type="number" min="1" step="0.1" value={row.garmentChestActual} onChange={(event) => updateSizeRow(index, 'garmentChestActual', event.target.value)} aria-invalid={Boolean(errors[`size-chart-${index}-chest`])} />
+                    {errors[`size-chart-${index}-chest`] && <small className="field-error">{errors[`size-chart-${index}-chest`]}</small>}
+                  </label>
+                </div>
+                <button type="button" className="remove-variant" onClick={() => removeSizeRow(index)}><Trash2 size={14} /> ลบไซส์</button>
+              </fieldset>
+            ))}
+          </div>
+
+          <div className="variant-heading">
+            <div>
               <h3>ตัวเลือกสินค้า (Variants)</h3>
               <p>กำหนด SKU สี ไซซ์ ราคา และจำนวนสินค้า</p>
             </div>
@@ -368,7 +458,7 @@ export function ProductFormModal({ product, onClose, onSave }) {
                   <label className="field"><span>SKU *</span><input type="text" value={variant.sku} onChange={(event) => updateVariant(index, 'sku', event.target.value)} aria-invalid={Boolean(errors[`variant-${index}-sku`])} />{errors[`variant-${index}-sku`] && <small className="field-error">{errors[`variant-${index}-sku`]}</small>}</label>
                   <label className="field"><span>สี *</span><input type="text" value={variant.color} onChange={(event) => updateVariant(index, 'color', event.target.value)} aria-invalid={Boolean(errors[`variant-${index}-color`])} />{errors[`variant-${index}-color`] && <small className="field-error">{errors[`variant-${index}-color`]}</small>}</label>
                   <label className="field"><span>รหัสสี</span><input type="text" value={variant.colorCode} onChange={(event) => updateVariant(index, 'colorCode', event.target.value)} placeholder="OW" /></label>
-                  <label className="field"><span>ไซซ์</span><select value={variant.size} onChange={(event) => updateVariant(index, 'size', event.target.value)}><option>S</option><option>M</option><option>L</option></select></label>
+                  <label className="field"><span>ไซซ์</span><select value={variant.size} onChange={(event) => updateVariant(index, 'size', event.target.value)}>{['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => <option key={size}>{size}</option>)}</select></label>
                   <label className="field"><span>ราคา *</span><input type="number" min="1" step="0.01" value={variant.price} onChange={(event) => updateVariant(index, 'price', event.target.value)} aria-invalid={Boolean(errors[`variant-${index}-price`])} />{errors[`variant-${index}-price`] && <small className="field-error">{errors[`variant-${index}-price`]}</small>}</label>
                   <label className="field"><span>Stock *</span><input type="number" min="0" step="1" value={variant.stockQuantity} onChange={(event) => updateVariant(index, 'stockQuantity', event.target.value)} aria-invalid={Boolean(errors[`variant-${index}-stock`])} />{errors[`variant-${index}-stock`] && <small className="field-error">{errors[`variant-${index}-stock`]}</small>}</label>
                   <label className="field full-width"><span>รูปของ Variant</span><input type="text" value={variant.imageUrl || ''} onChange={(event) => updateVariant(index, 'imageUrl', event.target.value)} placeholder="เว้นว่างเพื่อใช้รูปหลัก" /></label>

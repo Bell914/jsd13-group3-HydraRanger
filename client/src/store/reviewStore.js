@@ -1,5 +1,7 @@
 import { create } from "zustand";
-import { createReview } from "../services/reviewService.js";
+import { createReview, getMyReviews } from "../services/reviewService.js";
+
+const reviewKey = (orderId, productId) => `${String(orderId)}:${String(productId)}`;
 
 export const useReviewStore = create((set, get) => ({
   reviewTarget: null,
@@ -8,6 +10,19 @@ export const useReviewStore = create((set, get) => ({
   submitting: false,
   message: "",
   error: "",
+  reviewedKeys: [],
+
+  loadMyReviews: async () => {
+    try {
+      const reviews = await getMyReviews();
+      const reviewedKeys = (Array.isArray(reviews) ? reviews : []).map((review) => (
+        reviewKey(review.order?._id || review.order, review.product?._id || review.product)
+      ));
+      set({ reviewedKeys });
+    } catch (err) {
+      set({ error: err.message || 'ไม่สามารถโหลดข้อมูลรีวิวได้' });
+    }
+  },
 
   openReview: (orderId, productId, title) =>
     set({
@@ -62,6 +77,10 @@ export const useReviewStore = create((set, get) => ({
         rating: 0,
         comment: "",
         submitting: false,
+        reviewedKeys: [
+          ...get().reviewedKeys,
+          reviewKey(reviewTarget.orderId, reviewTarget.productId),
+        ],
       });
       return true;
     } catch (err) {

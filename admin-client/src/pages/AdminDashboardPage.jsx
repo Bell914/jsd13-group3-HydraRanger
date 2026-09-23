@@ -136,7 +136,7 @@ export function AdminDashboardPage() {
               <SummaryCard label="สต็อกรวม" value={summary.totalStock} detail={`สต็อกต่ำ ${summary.lowStockCount} รายการ`} Icon={PackageCheck} />
               <SummaryCard label="ลูกค้าทั้งหมด" value={summary.customerCount} detail="เฉพาะบัญชีประเภทลูกค้า" Icon={Users} />
               <SummaryCard label="คำสั่งซื้อทั้งหมด" value={summary.totalOrders} detail={`รอตรวจสอบ ${summary.pendingOrderCount} รายการ`} Icon={ShoppingCart} />
-              <SummaryCard label="รายได้จาก Orders" value={formatMoney(summary.totalRevenue)} detail="ไม่รวม Order ที่ยกเลิก" Icon={Banknote} />
+              <SummaryCard label="รายได้จาก Orders" value={formatMoney(summary.totalRevenue)} detail="เฉพาะ Order ที่ชำระเงินแล้ว" Icon={Banknote} />
             </section>
 
             <section className="chart-grid">

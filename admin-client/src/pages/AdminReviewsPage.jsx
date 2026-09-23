@@ -94,7 +94,7 @@ export function AdminReviewsPage() {
           </div>
         </section>
         {loading && reviews.length === 0 && <p className="dashboard-message">กำลังโหลด Reviews…</p>}
-        {!loading && !error && reviews.length === 0 && <div className="empty-state"><strong>ยังไม่มีรีวิวสินค้า</strong><p>เฉพาะลูกค้าที่มี Order ชำระแล้วเท่านั้นที่สร้างรีวิวได้</p></div>}
+        {!loading && !error && reviews.length === 0 && <div className="empty-state"><strong>ยังไม่มีรีวิวสินค้า</strong><p>เฉพาะลูกค้าที่มี Order สำเร็จแล้วเท่านั้นที่สร้างรีวิวได้</p></div>}
         {!loading && reviews.length > 0 && visibleReviews.length === 0 && <div className="empty-state"><strong>ไม่พบรีวิวที่ตรงกับตัวกรอง</strong><p>ลองเปลี่ยนคำค้นหาหรือสถานะ</p></div>}
 
         {visibleReviews.length > 0 && (

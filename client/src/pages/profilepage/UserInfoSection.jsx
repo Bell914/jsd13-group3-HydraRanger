@@ -186,7 +186,7 @@ export const UserInfoSection = () => {
             </div>
             <div>
               <label htmlFor="pwd-new" className="mb-1 block text-sm font-medium text-gray-600">
-                รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)
+                รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)
               </label>
               <input
                 id="pwd-new"
@@ -199,7 +199,7 @@ export const UserInfoSection = () => {
                   }))
                 }
                 required
-                minLength={6}
+                minLength={8}
                 autoComplete="new-password"
                 className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
               />
