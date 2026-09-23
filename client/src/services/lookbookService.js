@@ -91,13 +91,17 @@ export async function getLookbookData() {
 
 export async function getLookbooks() {
   try {
+    // ดึงจาก Backend API ก่อน
     const response = await api.get("/lookbooks");
-    if (Array.isArray(response.data)) return response.data.map(normalizeLookbook);
+    const rawData = response.data?.data || response.data;
+    if (Array.isArray(rawData)) {
+      return rawData.map(normalizeLookbook);
+    }
   } catch (err) {
     console.warn("API /lookbooks failed, falling back to local JSON data:", err.message);
   }
 
-  // Fallback ไปใช้ไฟล์ JSON เดิม
+  // Fallback ไปใช้ไฟล์ JSON เดิมกรณี API ล้มเหลว
   const data = await getLookbookData();
   return data.looks || [];
 }

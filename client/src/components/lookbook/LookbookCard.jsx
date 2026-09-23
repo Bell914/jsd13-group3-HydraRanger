@@ -4,7 +4,7 @@ import { Heart } from "lucide-react";
 import { normalizeImageUrl } from "../../utils/imageUtils.js";
 import { useLookbookStore } from "../../store/lookbookStore.js";
 
-export default function LookbookCard({ look }) {
+export default function LookbookCard({ look, isInitialFavorited = false }) {
   if (!look) return null;
 
   const isFavorite = useLookbookStore((state) => state.isFavorite(look.id));
@@ -12,6 +12,29 @@ export default function LookbookCard({ look }) {
 
   const imgUrl = normalizeImageUrl(look.image);
   const itemsCount = look.items?.length || 2;
+
+  const handleFavoriteClick = async (e) => {
+    e.preventDefault(); // ป้องกันการเปลี่ยนหน้าเมื่อกดปุ่ม Bookmark
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      alert("กรุณาเข้าสู่ระบบก่อนบันทึก Lookbook");
+      navigate("/login");
+      return;
+    }
+
+    if (loading) return;
+
+    try {
+      setLoading(true);
+      const res = await toggleFavoriteLookbook(look.id || look._id);
+      setIsFavorited(res.isFavorited);
+    } catch (error) {
+      console.error("Failed to toggle favorite lookbook:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <article
