@@ -21,7 +21,7 @@ const EmptyState = ({ message, subtitle }) => (
 export const ProfilePage = () => {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'profile';
-  const { user: authUser, updateProfile, changePassword } = useAuth();
+  const { user: authUser, updateProfile, changePassword, loading } = useAuth();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [error, setError] = useState(''); // Error state สำหรับกรณี fetch ข้อมูลล้มเหลว
   const [success, setSuccess] = useState('');

@@ -213,5 +213,5 @@ export async function rankLookbooks(images, lookbooks) {
     throw error;
   }
 
-  return parseRankingsJson(text);
+return parseRankingsJson(text);
 }
