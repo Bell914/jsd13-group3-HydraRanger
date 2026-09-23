@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Menu } from 'lucide-react';
-import { useOutletContext } from 'react-router-dom';
-import { useAdminAuth } from '../context/useAdminAuth.js';
+import { AdminTopbar } from '../components/AdminTopbar.jsx';
 import { LookbookFormModal } from '../components/LookbookFormModal.jsx';
 import { productService } from '../services/productService.js';
 import {
@@ -19,8 +17,6 @@ function getImageUrl(imageUrl) {
 }
 
 export function AdminLookbooksPage() {
-  const { user } = useAdminAuth();
-  const { openSidebar } = useOutletContext();
   const [lookbooks, setLookbooks] = useState([]);
   const [products, setProducts] = useState([]);
   const [editingLookbook, setEditingLookbook] = useState(null);
@@ -112,11 +108,7 @@ export function AdminLookbooksPage() {
 
   return (
     <div className="admin-content">
-      <header className="admin-topbar">
-        <button type="button" className="mobile-menu" onClick={openSidebar} aria-label="เปิดเมนู"><Menu size={20} /></button>
-        <strong className="topbar-title">Lookbooks</strong>
-        <div className="admin-profile"><strong>{user?.username ?? 'Admin'}</strong></div>
-      </header>
+      <AdminTopbar title="Lookbooks" />
 
       <main className="data-page">
         <header className="page-heading">

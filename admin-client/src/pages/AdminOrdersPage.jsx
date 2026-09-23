@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Menu } from 'lucide-react';
-import { useOutletContext } from 'react-router-dom';
-import { useAdminAuth } from '../context/useAdminAuth.js';
+import { AdminTopbar } from '../components/AdminTopbar.jsx';
 import { getOrders, updateOrderStatus } from '../services/orderService.js';
 
 const STATUS_OPTIONS = [
@@ -41,8 +39,6 @@ function formatDate(value) {
 }
 
 export function AdminOrdersPage() {
-  const { user } = useAdminAuth();
-  const { openSidebar } = useOutletContext();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState('');
@@ -90,13 +86,7 @@ export function AdminOrdersPage() {
 
   return (
     <div className="admin-content">
-      <header className="admin-topbar">
-        <button type="button" className="mobile-menu" onClick={openSidebar} aria-label="เปิดเมนู">
-          <Menu size={20} />
-        </button>
-        <strong className="topbar-title">คำสั่งซื้อ</strong>
-        <div className="admin-profile"><strong>{user?.username ?? 'Admin'}</strong></div>
-      </header>
+      <AdminTopbar title="คำสั่งซื้อ" />
 
       <main className="data-page">
         <header className="page-heading">
