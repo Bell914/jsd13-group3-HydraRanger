@@ -76,6 +76,7 @@ export default function CheckoutPage() {
   // Order Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderError, setOrderError] = useState("");
+  const [submitError, setSubmitError] = useState(null);
   const [completedOrder, setCompletedOrder] = useState(null);
 
   // ดึงข้อมูลที่อยู่จัดส่งของผู้ใช้ที่บันทึกไว้เมื่อเปิดหน้า Checkout
@@ -136,10 +137,11 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     setIsSubmitting(true);
     setOrderError("");
+    setSubmitError(null);
 
-    if (shippingData.saveAddress) {
+    if (shippingData.saveAddress && addAddress) {
       const { firstName, lastName, phone, address, city, state, zipCode, location } = shippingData;
-      addAddress({ firstName, lastName, phone, address, city, state, zipCode, location });
+      addAddress({ firstName, lastName, phone, address, city, state, zipCode, location: location || "Thailand" });
     }
     const itemsSnapshot = [...cartItems];
 
@@ -148,8 +150,9 @@ export default function CheckoutPage() {
       items: cartItems.map((item) => ({
         productId: item.productId || item._id || item.product_id,
         variantId: item.variantId || item.variant_id,
-        sku: item.sku,
-        quantity: item.quantity
+        sku: item.sku || "",
+        quantity: item.quantity,
+        price: item.price,
       })),
       shippingAddress: {
         firstName: shippingData.firstName,
@@ -164,6 +167,7 @@ export default function CheckoutPage() {
       },
       shippingMethod: shippingData.shippingMethod || 'standard',
       paymentMethod: paymentData.method || 'credit-card',
+      shippingCost: shippingCost,
       couponCode: shippingData.couponCode || ''
     };
 
@@ -182,10 +186,17 @@ export default function CheckoutPage() {
       }
 
       setCompletedOrder({
-        orderId: created.orderNumber || created._id || `OCC-${Math.floor(100000 + Math.random() * 900000)}`,
-        shippingData,
-        email: orderPayload.email,
-        items: itemsSnapshot,
+        orderId: created.orderNumber || created.orderId || created._id || `OCC-${Math.floor(100000 + Math.random() * 900000)}`,
+        shippingData: {
+          ...(created?.shippingAddress || shippingData),
+          shippingMethod: created?.shippingMethod || shippingData.shippingMethod,
+        },
+        email: created.customerEmail || orderPayload.email,
+        items: (created.items || itemsSnapshot).map((item) => ({
+          ...item,
+          name: item.title || item.name || item.productName,
+          price: item.unitPrice || item.price,
+        })),
         subtotal: created.subtotal ?? subtotal,
         rankDiscountAmount: created.discountAmount ?? rankDiscountAmount,
         userRank,
@@ -198,9 +209,13 @@ export default function CheckoutPage() {
       clearCart();
     } catch (err) {
       console.error("Order creation failed:", err);
-      const msg = err.response?.data?.message || err.message || "Failed to place order. Please try again.";
+      const msg =
+        err.data?.message ||
+        err.response?.data?.message ||
+        err.message ||
+        "เกิดข้อผิดพลาดในการบันทึกคำสั่งซื้อ กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง";
       setOrderError(msg);
-      alert(msg);
+      setSubmitError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -237,6 +252,18 @@ export default function CheckoutPage() {
           currentStep={currentStep}
           onStepClick={(step) => setCurrentStep(step)}
         />
+
+        {submitError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex justify-between items-center">
+            <span>{submitError}</span>
+            <button 
+              onClick={() => setSubmitError(null)}
+              className="text-red-500 font-bold hover:text-red-800"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Multi-Step Forms */}
