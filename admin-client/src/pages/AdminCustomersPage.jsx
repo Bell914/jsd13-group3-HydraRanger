@@ -25,6 +25,16 @@ export function AdminCustomersPage() {
   const [error, setError] = useState('');
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  const searchText = search.trim().toLowerCase();
+  const visibleCustomers = customers.filter((customer) => {
+    const isActive = customer.isActive !== false;
+    const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? isActive : !isActive);
+    const customerText = `${customer.username || ''} ${customer.email || ''}`.toLowerCase();
+    return matchesStatus && customerText.includes(searchText);
+  });
 
   async function loadCustomers() {
     setLoading(true);
@@ -91,22 +101,36 @@ export function AdminCustomersPage() {
       <main className="data-page">
         <header className="page-heading">
           <div><h1>Customers</h1><p>บัญชีลูกค้าจริงจาก MongoDB</p></div>
-          <button type="button" className="refresh-button" onClick={loadCustomers} disabled={loading}>
+          <button type="button" className="primary-action" onClick={loadCustomers} disabled={loading}>
             {loading ? 'กำลังโหลด…' : 'อัปเดตข้อมูล'}
           </button>
         </header>
 
         {error && <div className="dashboard-error" role="alert"><p>{error}</p></div>}
+        <section className="filter-toolbar" aria-label="ค้นหาและกรองลูกค้า">
+          <label className="product-search plain-search">
+            <span className="sr-only">ค้นหาชื่อลูกค้าหรืออีเมล</span>
+            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ค้นหาชื่อหรืออีเมล..." />
+          </label>
+          <div className="filters">
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="กรองสถานะลูกค้า">
+              <option value="all">ทุกสถานะ</option>
+              <option value="active">ใช้งานได้</option>
+              <option value="suspended">ระงับบัญชี</option>
+            </select>
+          </div>
+        </section>
         {loading && customers.length === 0 && <p className="dashboard-message">กำลังโหลด Customers…</p>}
         {!loading && !error && customers.length === 0 && <div className="empty-state"><strong>ยังไม่มีลูกค้า</strong><p>ลูกค้าที่สมัครสมาชิกจะแสดงในหน้านี้</p></div>}
+        {!loading && customers.length > 0 && visibleCustomers.length === 0 && <div className="empty-state"><strong>ไม่พบลูกค้าที่ตรงกับตัวกรอง</strong><p>ลองเปลี่ยนคำค้นหาหรือสถานะ</p></div>}
 
-        {customers.length > 0 && (
+        {visibleCustomers.length > 0 && (
           <section className="product-table-card">
             <div className="table-scroll">
               <table className="data-table">
                 <thead><tr><th>ชื่อลูกค้า</th><th>อีเมล</th><th>วันที่สมัคร</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
                 <tbody>
-                  {customers.map((customer) => (
+                  {visibleCustomers.map((customer) => (
                     <tr key={customer._id}>
                       <td data-label="ชื่อลูกค้า"><strong>{customer.username}</strong></td>
                       <td data-label="อีเมล">{customer.email}</td>

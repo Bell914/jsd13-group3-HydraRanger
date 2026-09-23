@@ -2,6 +2,19 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { USER_ROLES } from '../config/constants.js';
 
+const addressSchema = new mongoose.Schema(
+  {
+    recipientName: { type: String, required: true, trim: true },
+    phone: { type: String, required: true, trim: true },
+    addressLine: { type: String, required: true, trim: true },
+    district: { type: String, trim: true, default: '' },
+    province: { type: String, trim: true, default: '' },
+    postalCode: { type: String, required: true, trim: true },
+    isDefault: { type: Boolean, default: false }
+  },
+  { timestamps: true }
+);
+
 const sizeProfileSchema = new mongoose.Schema(
   {
     chestCm: { type: Number, min: 60, max: 160, required: true },
@@ -58,6 +71,16 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true
     },
+    shippingAddresses: {
+      type: [addressSchema],
+      default: []
+    },
+    favoriteLookbooks: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Lookbook'
+      }
+    ],
     sizeProfile: {
       type: sizeProfileSchema,
       default: undefined

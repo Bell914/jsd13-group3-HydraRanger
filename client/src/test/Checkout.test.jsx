@@ -5,10 +5,63 @@ import { describe, expect, it, beforeEach, vi } from "vitest";
 import CheckoutPage from "../pages/CheckoutPage";
 import CartPage from "../pages/CartPage";
 import { useCartStore } from "../store/cartStore";
+import { createOrder } from "../services/orderService";
+
+// ➕ Mock orderService เพื่อไม่ให้ยิงไปที่ Backend จริงตอนทำ Automated Test
+vi.mock("../services/orderService", () => ({
+  createOrder: vi.fn().mockResolvedValue({
+    orderNumber: "OCC-123456",
+    customerEmail: "test@example.com",
+    shippingAddress: {
+      firstName: "Test",
+      lastName: "User",
+      address: "123 Street",
+    },
+    items: [
+      { title: "Oversized T-Shirt", unitPrice: 590, quantity: 2 }
+    ],
+    totalAmount: 1231.4,
+  }),
+}));
+
+const fillShippingForm = () => {
+  fireEvent.change(screen.getByLabelText("First name"), {
+    target: { value: "Test" },
+  });
+  fireEvent.change(screen.getByLabelText("Last name"), {
+    target: { value: "User" },
+  });
+  fireEvent.change(screen.getByLabelText("Phone number"), {
+    target: { value: "0812345678" },
+  });
+  fireEvent.change(screen.getByLabelText("Address"), {
+    target: { value: "123 Street" },
+  });
+  fireEvent.change(screen.getByLabelText("City"), {
+    target: { value: "Bangkok" },
+  });
+  fireEvent.change(screen.getByLabelText("State"), {
+    target: { value: "Bangkok" },
+  });
+  fireEvent.change(screen.getByLabelText("Zip code"), {
+    target: { value: "10110" },
+  });
+};
+
+const fillCardForm = () => {
+  fireEvent.change(screen.getByPlaceholderText("4541 1234 5678 9012"), {
+    target: { value: "4111111111111111" },
+  });
+  fireEvent.change(screen.getByPlaceholderText("ดด/ปป (เช่น 12/28)"), {
+    target: { value: "12/28" },
+  });
+  fireEvent.change(screen.getByPlaceholderText("รหัส 3 หลักหลังบัตร"), {
+    target: { value: "123" },
+  });
+};
 
 describe("Cart & Checkout Flow", () => {
   beforeEach(() => {
-    // Populate store with a mock product
     useCartStore.setState({
       cartItems: [
         {
@@ -32,15 +85,14 @@ describe("Cart & Checkout Flow", () => {
         </MemoryRouter>
       );
 
-      expect(screen.getByText("Shopping Cart")).toBeInTheDocument();
+      expect(screen.getByText(/ตะกร้าสินค้าของคุณ/)).toBeInTheDocument();
       expect(screen.getByText("Oversized T-Shirt")).toBeInTheDocument();
-      expect(screen.getByText("Off White")).toBeInTheDocument();
-      expect(screen.getByText("Size M")).toBeInTheDocument();
-      expect(screen.getAllByText("฿1180").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText("สี: Off White")).toBeInTheDocument();
+      expect(screen.getByText("ไซส์: M")).toBeInTheDocument();
+      expect(screen.getAllByText("฿1,180").length).toBeGreaterThanOrEqual(1);
 
-      // Proceed to Checkout button
       const checkoutBtn = screen.getByRole("link", {
-        name: /proceed to checkout/i,
+        name: /ดำเนินการชำระเงิน/i,
       });
       expect(checkoutBtn).toBeInTheDocument();
       expect(checkoutBtn).toHaveAttribute("href", "/checkout");
@@ -78,7 +130,6 @@ describe("Cart & Checkout Flow", () => {
       expect(screen.getByText("Payment")).toBeInTheDocument();
       expect(screen.getByText("Review")).toBeInTheDocument();
 
-      // In step 2, Shipping heading and continue button are visible
       expect(screen.getByLabelText("First name")).toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: "CONTINUE" })
@@ -95,18 +146,14 @@ describe("Cart & Checkout Flow", () => {
         </MemoryRouter>
       );
 
-      // Click CONTINUE from Step 2 to move to Step 3
-      const continueBtn = screen.getByRole("button", { name: "CONTINUE" });
-      fireEvent.click(continueBtn);
+      fillShippingForm();
+      fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
 
-      // Now on Step 3 Payment
-      expect(screen.getByText("Use my Gift Card")).toBeInTheDocument();
+      expect(screen.getByText(/ใช้งาน Gift Card/)).toBeInTheDocument();
 
-      // Verify Back button ("ย้อนกลับ") is present on Step 3
       const backBtn = screen.getByRole("button", { name: "ย้อนกลับ" });
       expect(backBtn).toBeInTheDocument();
 
-      // Click Back button to return to Step 2
       fireEvent.click(backBtn);
       expect(screen.getByLabelText("First name")).toBeInTheDocument();
     });
@@ -118,24 +165,20 @@ describe("Cart & Checkout Flow", () => {
         </MemoryRouter>
       );
 
-      // Step 2 -> Step 3
+      fillShippingForm();
+      fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
+      fillCardForm();
       fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
 
-      // Step 3 -> Step 4
-      fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
-
-      // Now on Step 4 Review
       expect(
         screen.getByRole("button", { name: "PLACE ORDER" })
       ).toBeInTheDocument();
 
-      // Verify Back button ("ย้อนกลับ") is present on Step 4
       const backBtn = screen.getByRole("button", { name: "ย้อนกลับ" });
       expect(backBtn).toBeInTheDocument();
 
-      // Click Back button to return to Step 3
       fireEvent.click(backBtn);
-      expect(screen.getByText("Use my Gift Card")).toBeInTheDocument();
+      expect(screen.getByText(/ใช้งาน Gift Card/)).toBeInTheDocument();
     });
 
     it("places order on Step 4 and displays OrderConfirmationScreen with tracking", async () => {
@@ -145,15 +188,14 @@ describe("Cart & Checkout Flow", () => {
         </MemoryRouter>
       );
 
-      // Step 2 -> Step 3 -> Step 4
+      fillShippingForm();
       fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
+      fillCardForm();
       fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
 
-      // Click PLACE ORDER
       const placeOrderBtn = screen.getByRole("button", { name: "PLACE ORDER" });
       fireEvent.click(placeOrderBtn);
 
-      // Wait for Order Confirmation screen to appear
       await waitFor(
         () => {
           expect(
@@ -171,6 +213,37 @@ describe("Cart & Checkout Flow", () => {
       ).toBeInTheDocument();
       expect(
         screen.getByRole("link", { name: /continue shopping/i })
+      ).toBeInTheDocument();
+    });
+
+    it("shows an error message and stays on Review when createOrder fails", async () => {
+      createOrder.mockRejectedValueOnce(
+        Object.assign(new Error("server error"), {
+          data: { message: "การชำระเงินถูกปฏิเสธ กรุณาตรวจสอบข้อมูลบัตร" },
+        })
+      );
+
+      render(
+        <MemoryRouter>
+          <CheckoutPage />
+        </MemoryRouter>
+      );
+
+      fillShippingForm();
+      fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
+      fillCardForm();
+      fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
+
+      fireEvent.click(screen.getByRole("button", { name: "PLACE ORDER" }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/การชำระเงินถูกปฏิเสธ/)
+        ).toBeInTheDocument();
+      });
+
+      expect(
+        screen.getByRole("button", { name: "PLACE ORDER" })
       ).toBeInTheDocument();
     });
   });

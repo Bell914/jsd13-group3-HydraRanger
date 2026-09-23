@@ -5,7 +5,6 @@ import {
   DashboardPage,
   LoginPage,
   RegisterPage,
-  ForgotPasswordPage,
   NotFoundPage,
   UiKitPage,
   ProductListPage,
@@ -38,7 +37,6 @@ export const AppRoutes = () => {
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/ui-kit" element={<UiKitPage />} />
       <Route path="/article" element={<ArticlePages />} />
       <Route path="/article/:id" element={<ArticleDetail />} />

@@ -9,7 +9,7 @@
     "dev": "node --watch src/server.js",
     "seed": "node src/scripts/seed.js",
     "test:conn": "node src/scripts/testConnection.js",
-    "test:security": "node --test src/tests/security.test.js src/tests/validation.test.js"
+    "test:security": "node --test src/tests/security.test.js src/tests/validation.test.js src/tests/followup.test.js"
   },
   "keywords": [
     "express",

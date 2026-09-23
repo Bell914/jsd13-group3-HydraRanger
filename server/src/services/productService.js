@@ -135,6 +135,11 @@ export async function createProduct(productData) {
 export async function updateProduct(id, productData) {
   const data = await prepareProductData(productData);
 
+  // An omitted chart means keep the existing chart; [] explicitly clears it.
+  if (productData.size_chart === undefined) {
+    delete data.size_chart;
+  }
+
   const product = await Product.findByIdAndUpdate(id, data, {
     new: true,
     runValidators: true

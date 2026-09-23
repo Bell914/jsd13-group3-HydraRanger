@@ -1,15 +1,9 @@
 import { HTTP_STATUS } from "../config/constants.js";
-import multer from "multer";
 import * as lookbookService from "../services/lookbookService.js";
 import {
   analyzeClothingImage,
   rankLookbooks,
 } from "../services/geminiService.js";
-
-const memoryUpload = multer({ storage: multer.memoryStorage() }).fields([
-  { name: "top", maxCount: 1 },
-  { name: "bottom", maxCount: 1 },
-]);
 
 const COLOR_BUCKETS = [
   { name: "white", keywords: ["white", "off white", "cream", "ivory", "beige"] },
@@ -211,7 +205,8 @@ export async function recommendLookbooks(req, res, next) {
       if (
         rankError.code === "NO_GEMINI_KEY" ||
         rankError.code === "GEMINI_HTTP" ||
-        rankError.code === "GEMINI_EMPTY"
+        rankError.code === "GEMINI_EMPTY" ||
+        rankError.code === "GEMINI_INVALID"
       ) {
         console.warn(
           `⚠️  [Mix & Match] rankLookbooks ล้มเหลว ใช้ heuristic แทน: ${rankError.message}`,
@@ -258,7 +253,11 @@ export async function recommendLookbooks(req, res, next) {
         message: "ระบบ AI ยังไม่ได้ตั้งค่า GEMINI_API_KEY",
       });
     }
-    if (error.code === "GEMINI_HTTP" || error.code === "GEMINI_EMPTY") {
+    if (
+      error.code === "GEMINI_HTTP" ||
+      error.code === "GEMINI_EMPTY" ||
+      error.code === "GEMINI_INVALID"
+    ) {
       return res.status(HTTP_STATUS.BAD_GATEWAY || 502).json({
         success: false,
         message: "ไม่สามารถวิเคราะห์รูปได้ในตอนนี้ กรุณาลองใหม่",
@@ -268,4 +267,4 @@ export async function recommendLookbooks(req, res, next) {
   }
 }
 
-export { memoryUpload };
+export { memoryUpload } from '../middleware/recommendUploadMiddleware.js';
