@@ -5,6 +5,8 @@ import { validateContactInput } from '../validators/contactValidator.js';
 import { validateCustomerStatus } from '../validators/customerValidator.js';
 import { validateCreateOrder, validateOrderStatus } from '../validators/orderValidator.js';
 import { validateReviewInput } from '../validators/reviewValidator.js';
+import { validateProductInput } from '../validators/productValidator.js';
+import { validateResetPasswordInput } from '../validators/authValidator.js';
 
 test('order requires items and a complete shipping address', () => {
   const result = validateCreateOrder({ items: [], shippingAddress: {} });
@@ -14,6 +16,26 @@ test('order requires items and a complete shipping address', () => {
 
 test('order status rejects an unknown value', () => {
   assert.equal(validateOrderStatus({ status: 'unknown' }).isValid, false);
+  assert.equal(validateOrderStatus({ status: 'refunded' }).isValid, true);
+});
+
+test('password reset requires at least eight characters', () => {
+  assert.equal(validateResetPasswordInput({ password: '1234567' }).isValid, false);
+  assert.equal(validateResetPasswordInput({ password: '12345678' }).isValid, true);
+});
+
+test('product size chart rejects duplicate sizes and invalid measurements', () => {
+  const result = validateProductInput({
+    name: 'Shirt',
+    category: 'tops',
+    variants: [{ sku: 'SHIRT-S', size: 'S', price: 490, stockQuantity: 1 }],
+    size_chart: [
+      { size_name: 'S', garment_chest_actual: 0 },
+      { size_name: 'S', garment_chest_actual: 100 }
+    ]
+  });
+  assert.equal(result.isValid, false);
+  assert.ok(result.errors.some((error) => error.includes('duplicate size')));
 });
 
 test('customer status only accepts a boolean', () => {

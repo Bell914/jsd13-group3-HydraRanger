@@ -47,6 +47,15 @@ export async function getProductReviews(req, res, next) {
   }
 }
 
+export async function getMyReviews(req, res, next) {
+  try {
+    const reviews = await reviewService.getMyReviews(req.user._id || req.user.id);
+    res.status(HTTP_STATUS.OK).json({ success: true, data: reviews });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getAdminReviews(req, res, next) {
   try {
     const reviews = await reviewService.getAllReviews();

@@ -120,6 +120,19 @@ function getStockStatus(product, size, selectedColor) {
   return 'out-of-stock';
 }
 
+function getClosestAvailableSize(product, recommendedSize, selectedColor) {
+  const recommendedIndex = SIZE_ORDER.indexOf(recommendedSize);
+  const availableSizes = SIZE_ORDER.filter((size) => (
+    getStockStatus(product, size, selectedColor) === 'available'
+  ));
+
+  if (availableSizes.length === 0) return null;
+  return availableSizes.sort((first, second) => (
+    Math.abs(SIZE_ORDER.indexOf(first) - recommendedIndex) -
+    Math.abs(SIZE_ORDER.indexOf(second) - recommendedIndex)
+  ))[0];
+}
+
 export function getSizeRecommendation(profile, product, fallbackSizes = [], selectedColor = '') {
   if (!profile) return null;
   if (profile.consentGiven === false) return null;
@@ -131,8 +144,12 @@ export function getSizeRecommendation(profile, product, fallbackSizes = [], sele
     recommendFromMeasurements(profile, product, sizes);
   if (!recommendation.size) return recommendation;
 
+  const status = getStockStatus(product, recommendation.size, selectedColor);
   return {
     ...recommendation,
-    status: getStockStatus(product, recommendation.size, selectedColor)
+    status,
+    alternativeSize: status === 'available'
+      ? null
+      : getClosestAvailableSize(product, recommendation.size, selectedColor)
   };
 }

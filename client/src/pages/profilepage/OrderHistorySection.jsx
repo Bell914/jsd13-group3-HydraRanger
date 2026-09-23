@@ -5,7 +5,11 @@ import { getMyOrders } from '../../services/orderService.js';
 import { useReviewStore } from '../../store/reviewStore.js';
 import { EmptyState } from './EmptyState.jsx';
 
-const REVIEWABLE_STATUSES = ['paid', 'processing', 'shipped', 'completed'];
+const REVIEWABLE_STATUS = 'completed';
+
+function getProductId(item) {
+  return item.product?._id || item.product;
+}
 
 export const OrderHistorySection = () => {
   const { user: authUser } = useAuth();
@@ -23,6 +27,8 @@ export const OrderHistorySection = () => {
   const setReviewRating = useReviewStore((state) => state.setRating);
   const setReviewComment = useReviewStore((state) => state.setComment);
   const submitReview = useReviewStore((state) => state.submitReview);
+  const reviewedKeys = useReviewStore((state) => state.reviewedKeys);
+  const loadMyReviews = useReviewStore((state) => state.loadMyReviews);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,6 +54,10 @@ export const OrderHistorySection = () => {
       cancelled = true;
     };
   }, [authUser]);
+
+  useEffect(() => {
+    if (authUser) loadMyReviews();
+  }, [authUser, loadMyReviews]);
 
   const handleSubmitReview = (e) => {
     e.preventDefault();
@@ -99,8 +109,10 @@ export const OrderHistorySection = () => {
 
               <div className="space-y-2">
                 {order.items?.map((item, idx) => {
-                  const canReview = REVIEWABLE_STATUSES.includes(order.status);
-                  const isReviewing = reviewTarget?.productId === item.product && reviewTarget?.orderId === order._id;
+                  const productId = getProductId(item);
+                  const canReview = order.status === REVIEWABLE_STATUS;
+                  const hasReviewed = reviewedKeys.includes(`${order._id}:${productId}`);
+                  const isReviewing = reviewTarget?.productId === productId && reviewTarget?.orderId === order._id;
                   return (
                     <div
                       key={`${item.sku || item.product}-${idx}`}
@@ -117,15 +129,20 @@ export const OrderHistorySection = () => {
                           <span className="text-sm font-medium">
                             ฿{item.lineTotal?.toLocaleString() || (item.unitPrice * item.quantity).toLocaleString()}
                           </span>
-                          {canReview && !isReviewing && (
+                          {canReview && !hasReviewed && !isReviewing && (
                             <button
                               type="button"
-                              onClick={() => openReview(order._id, item.product, item.title)}
+                              onClick={() => openReview(order._id, productId, item.title)}
                               className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:opacity-80 transition cursor-pointer"
                             >
                               <Star size={13} />
                               รีวิวสินค้า
                             </button>
+                          )}
+                          {hasReviewed && (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                              <Star size={13} /> รีวิวแล้ว
+                            </span>
                           )}
                           {isReviewing && (
                             <button
@@ -139,7 +156,7 @@ export const OrderHistorySection = () => {
                         </div>
                       </div>
 
-                      {canReview && isReviewing && (
+                      {canReview && !hasReviewed && isReviewing && (
                         <form onSubmit={handleSubmitReview} className="mt-2 space-y-3 border-t border-gray-100 pt-3">
                           <div>
                             <p className="mb-1 text-sm font-medium text-gray-600">
@@ -172,11 +189,11 @@ export const OrderHistorySection = () => {
                             </div>
                           </div>
                           <div>
-                            <label htmlFor={`review-comment-${order._id}-${item.product}`} className="mb-1 block text-sm font-medium text-gray-600">
+                            <label htmlFor={`review-comment-${order._id}-${productId}`} className="mb-1 block text-sm font-medium text-gray-600">
                               ความคิดเห็น
                             </label>
                             <textarea
-                              id={`review-comment-${order._id}-${item.product}`}
+                              id={`review-comment-${order._id}-${productId}`}
                               value={reviewComment}
                               onChange={(e) => setReviewComment(e.target.value)}
                               rows={3}

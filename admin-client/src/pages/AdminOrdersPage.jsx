@@ -10,8 +10,19 @@ const STATUS_OPTIONS = [
   ['processing', 'กำลังเตรียมสินค้า'],
   ['shipped', 'จัดส่งแล้ว'],
   ['completed', 'สำเร็จ'],
-  ['cancelled', 'ยกเลิก']
+  ['cancelled', 'ยกเลิก'],
+  ['refunded', 'คืนเงิน']
 ];
+
+const NEXT_STATUSES = {
+  pending: ['pending', 'paid', 'cancelled'],
+  paid: ['paid', 'processing', 'cancelled', 'refunded'],
+  processing: ['processing', 'shipped', 'cancelled', 'refunded'],
+  shipped: ['shipped', 'completed', 'refunded'],
+  completed: ['completed', 'refunded'],
+  cancelled: ['cancelled'],
+  refunded: ['refunded']
+};
 
 function formatMoney(value) {
   return new Intl.NumberFormat('th-TH', {
@@ -135,7 +146,7 @@ export function AdminOrdersPage() {
                           disabled={savingId === order._id}
                           onChange={(event) => changeStatus(order._id, event.target.value)}
                         >
-                          {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                          {STATUS_OPTIONS.filter(([value]) => NEXT_STATUSES[order.status]?.includes(value)).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                         </select>
                       </td>
                     </tr>

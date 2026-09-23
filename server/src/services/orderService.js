@@ -15,6 +15,21 @@ const SHIPPING_COSTS = {
   priority: 100
 };
 
+const ALLOWED_STATUS_TRANSITIONS = {
+  pending: ['paid', 'cancelled'],
+  paid: ['processing', 'cancelled', 'refunded'],
+  processing: ['shipped', 'cancelled', 'refunded'],
+  shipped: ['completed', 'refunded'],
+  completed: ['refunded'],
+  cancelled: [],
+  refunded: []
+};
+
+export function canTransitionOrderStatus(currentStatus, nextStatus) {
+  if (currentStatus === nextStatus) return true;
+  return (ALLOWED_STATUS_TRANSITIONS[currentStatus] || []).includes(nextStatus);
+}
+
 function createOrderNumber() {
   const date = new Date().toISOString().slice(0, 10).replaceAll('-', '');
   const random = Math.floor(100000 + Math.random() * 900000);
@@ -249,13 +264,15 @@ export async function updateOrderStatus(orderId, status) {
   const existingOrder = await Order.findById(orderId);
   if (!existingOrder) throw new Error('Order not found');
 
-  if (existingOrder.status === 'cancelled' && status !== 'cancelled') {
-    throw new Error('Cancelled order status cannot be changed');
+  if (status === existingOrder.status) return existingOrder.populate('user', 'username email');
+
+  if (!canTransitionOrderStatus(existingOrder.status, status)) {
+    throw new Error(`Order status cannot change from ${existingOrder.status} to ${status}`);
   }
 
   existingOrder.status = status;
 
-  if (status === 'cancelled') {
+  if (['cancelled', 'refunded'].includes(status)) {
     if (existingOrder.stockReserved && !existingOrder.stockRestored) {
       await restoreOrderStock(existingOrder.items);
       existingOrder.stockRestored = true;
@@ -274,7 +291,7 @@ export async function updateOrderStatus(orderId, status) {
   }
 
   try {
-    if (userId && !existingOrder.loyaltyProcessed && ['paid', 'completed'].includes(status)) {
+    if (userId && !existingOrder.loyaltyProcessed && status === 'paid') {
       await loyaltyService.processOrderSpending(userId, netSpend, 'ADD', session);
       existingOrder.loyaltyProcessed = true;
     } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {

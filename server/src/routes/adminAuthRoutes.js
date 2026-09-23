@@ -8,6 +8,8 @@ import { validateLoginInput } from "../validators/authValidator.js";
 const router = Router();
 
 const adminLoginLimiter = rateLimit({
+  name: "admin-login",
+  shared: true,
   windowMs: 15 * 60 * 1000,
   max: 10,
   message: "Too many admin login attempts, please try again later",

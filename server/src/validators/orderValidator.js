@@ -1,5 +1,5 @@
 const ORDER_STATUSES = [
-  'pending', 'paid', 'processing', 'shipped', 'completed', 'cancelled'
+  'pending', 'paid', 'processing', 'shipped', 'completed', 'cancelled', 'refunded'
 ];
 
 const SHIPPING_METHODS = ['standard', 'express', 'priority'];
