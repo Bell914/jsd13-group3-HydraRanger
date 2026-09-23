@@ -14,7 +14,7 @@ const MixAndMatchSection = ({ assets }) => {
   const [recommending, setRecommending] = useState(false);
   const [aiRanked, setAiRanked] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
-  const recommendationRequestId = useRef(0);
+const recommendationRequestId = useRef(0);
 
   useEffect(() => {
     let mounted = true;
@@ -38,7 +38,7 @@ const MixAndMatchSection = ({ assets }) => {
 
   const hasFiles = Boolean(topFile || bottomFile);
 
-  const resetRecommendation = () => {
+const resetRecommendation = () => {
     recommendationRequestId.current += 1;
     setConfirmed(false);
     setAiRanked(false);
@@ -61,13 +61,13 @@ const MixAndMatchSection = ({ assets }) => {
     if (bottomFile) files.push({ name: "bottom", file: bottomFile });
     if (files.length === 0) return;
 
-    const requestId = recommendationRequestId.current + 1;
+const requestId = recommendationRequestId.current + 1;
     recommendationRequestId.current = requestId;
     setConfirmed(true);
     setRecommending(true);
     recommendLookbooks(files)
       .then(({ lookbooks }) => {
-        if (requestId !== recommendationRequestId.current) return;
+if (requestId !== recommendationRequestId.current) return;
         if (lookbooks.length > 0) {
           setRecommendedLooks(
             lookbooks.map((look) => ({
@@ -78,7 +78,7 @@ const MixAndMatchSection = ({ assets }) => {
           setAiRanked(true);
         }
       })
-      .catch(() => {
+.catch(() => {
         if (requestId === recommendationRequestId.current) {
           setAiRanked(false);
         }
