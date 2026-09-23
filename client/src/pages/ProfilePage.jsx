@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { User, Heart, BookOpen, MapPin, Package, AlertCircle, Save, KeyRound, Plus, Pencil, Trash2, Ruler, Loader2 } from 'lucide-react';
-import { Card } from '../components';
+import { Link, useSearchParams } from 'react-router-dom';
+import { User, Heart, BookOpen, MapPin, Package, AlertCircle, Save, KeyRound, Plus, Pencil, Trash2, Crown, Check, Ticket, Sparkles, Tag, Ruler } from 'lucide-react';
+import { Card, WishlistSection, MembershipCard, CouponsSection } from '../components';
 import { useAuth } from '../context/Auth/useAuth.jsx';
 import { useWishlistStore } from '../store/wishlistStore.js';
 import { useAddressStore, emptyAddress } from '../store/addressStore.js';
 import { useLookbookStore } from '../store/lookbookStore.js';
 import { normalizeImageUrl } from '../utils/imageUtils.js';
+import { MEMBER_PROMOTIONS } from '../utils/loyaltyUtils.js';
 import { SizeProfileSection } from '../components/profile/SizeProfileSection.jsx';
 
 // Component แสดงผลเมื่อไม่มีข้อมูล (Empty State)
@@ -18,8 +19,10 @@ const EmptyState = ({ message, subtitle }) => (
 );
 
 export const ProfilePage = () => {
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'profile';
   const { user: authUser, updateProfile, changePassword, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [error, setError] = useState(''); // Error state สำหรับกรณี fetch ข้อมูลล้มเหลว
   const [success, setSuccess] = useState('');
   const wishlist = useWishlistStore((state) => state.wishlist);
@@ -159,6 +162,8 @@ export const ProfilePage = () => {
 
   const tabs = [
     { id: 'profile', label: 'ข้อมูลส่วนตัว', icon: User },
+    { id: 'membership', label: 'Membership & Loyalty', icon: Crown },
+    { id: 'coupons', label: 'คูปองและรางวัล (Vouchers)', icon: Ticket },
     { id: 'size-profile', label: 'Size & Fit', icon: Ruler },
     { id: 'wishlist', label: 'Wishlist', icon: Heart },
     { id: 'lookbooks', label: 'Favorite Lookbooks', icon: BookOpen },
@@ -220,6 +225,7 @@ export const ProfilePage = () => {
                 <EmptyState message="ยังไม่ได้เข้าสู่ระบบ" subtitle="เข้าสู่ระบบเพื่อดูและแก้ไขข้อมูลส่วนตัวของคุณ" />
               ) : (
                 <>
+                  <MembershipCard user={user} />
                   <form onSubmit={handleSaveProfile} className="space-y-4">
                     {success && (
                       <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
@@ -363,53 +369,132 @@ export const ProfilePage = () => {
 
           {activeTab === 'size-profile' && <SizeProfileSection />}
 
-          {activeTab === 'wishlist' && (
+          {activeTab === 'membership' && (
             <div>
-              <h2 className="text-lg font-semibold mb-4">รายการโปรด (Wishlist)</h2>
-              {wishlist.length === 0 ? (
-                <EmptyState message="ยังไม่มีรายการสินค้าโปรด" subtitle="กดหัวใจที่สินค้าที่คุณชอบเพื่อบันทึกไว้ดูภายหลัง" />
+              <h2 className="text-lg font-semibold mb-4">ระดับสมาชิกและสิทธิพิเศษ (Membership & Loyalty)</h2>
+              {!authUser ? (
+                <EmptyState message="ยังไม่ได้เข้าสู่ระบบ" subtitle="เข้าสู่ระบบเพื่อตรวจสอบระดับสมาชิกและสิทธิพิเศษของคุณ" />
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {wishlist.map((item) => (
-                    <div
-                      key={item._id}
-                      className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-3"
-                    >
-                      <Link to={`/products/${item._id}`} className="shrink-0">
-                        <img
-                          src={normalizeImageUrl(item.imageUrl)}
-                          alt={item.name}
-                          className="h-20 w-16 rounded-lg object-cover"
-                        />
-                      </Link>
-                      <div className="min-w-0 flex-1">
-                        <Link
-                          to={`/products/${item._id}`}
-                          className="line-clamp-2 block text-sm font-bold text-primary hover:text-accent transition"
-                        >
-                          {item.name}
-                        </Link>
-                        <p className="mt-1 text-sm font-semibold text-secondary">
-                          ฿{item.price.toLocaleString()}.00
+                <div>
+                  <MembershipCard user={user} />
+
+                  <div className="mt-8">
+                    <h3 className="text-base font-bold text-primary mb-3">เปรียบเทียบสิทธิประโยชน์แต่ละระดับ (Membership Tiers)</h3>
+                    <div className="overflow-x-auto rounded-xl border border-gray-200">
+                      <table className="w-full text-left text-xs sm:text-sm">
+                        <thead className="bg-slate-50 text-gray-700 font-bold border-b border-gray-200">
+                          <tr>
+                            <th className="p-3">ระดับสมาชิก</th>
+                            <th className="p-3">ยอดซื้อสะสม</th>
+                            <th className="p-3">ส่วนลด On-top</th>
+                            <th className="p-3">คูปองวันเกิด</th>
+                            <th className="p-3">สิทธิ์ส่งฟรี</th>
+                            <th className="p-3">สิทธิพิเศษเพิ่มเติม</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 text-gray-600">
+                          <tr className={user?.membership?.rank === 'MEMBER' ? 'bg-blue-50/50 font-semibold' : ''}>
+                            <td className="p-3 font-bold text-slate-800">MEMBER</td>
+                            <td className="p-3">฿0</td>
+                            <td className="p-3">-</td>
+                            <td className="p-3">ลด 5%</td>
+                            <td className="p-3">ครบ ฿1,000</td>
+                            <td className="p-3">Welcome Coupon ลด 10%</td>
+                          </tr>
+                          <tr className={user?.membership?.rank === 'BRONZE' ? 'bg-amber-100/40 font-semibold' : ''}>
+                            <td className="p-3 font-bold text-amber-700">BRONZE</td>
+                            <td className="p-3">฿1,000</td>
+                            <td className="p-3 text-emerald-600 font-bold">ลด 3%</td>
+                            <td className="p-3">ลด 10%</td>
+                            <td className="p-3">ครบ ฿850</td>
+                            <td className="p-3">สะสมยอดต่อเนื่อง</td>
+                          </tr>
+                          <tr className={user?.membership?.rank === 'SILVER' ? 'bg-slate-100/70 font-semibold' : ''}>
+                            <td className="p-3 font-bold text-slate-600">SILVER</td>
+                            <td className="p-3">฿3,000</td>
+                            <td className="p-3 text-emerald-600 font-bold">ลด 5%</td>
+                            <td className="p-3">ลด 15%</td>
+                            <td className="p-3">ครบ ฿700</td>
+                            <td className="p-3">Early Access 12 ชม.</td>
+                          </tr>
+                          <tr className={user?.membership?.rank === 'GOLD' ? 'bg-amber-50/70 font-semibold' : ''}>
+                            <td className="p-3 font-bold text-amber-600">GOLD</td>
+                            <td className="p-3">฿8,000</td>
+                            <td className="p-3 text-emerald-600 font-bold">ลด 10%</td>
+                            <td className="p-3">ลด 20%</td>
+                            <td className="p-3 text-blue-600 font-bold">ส่งฟรี ไม่มีขั้นต่ำ</td>
+                            <td className="p-3">Early Access 24 ชม.</td>
+                          </tr>
+                          <tr className={user?.membership?.rank === 'PLATINUM' ? 'bg-purple-50/70 font-semibold' : ''}>
+                            <td className="p-3 font-bold text-purple-700">PLATINUM</td>
+                            <td className="p-3">฿20,000</td>
+                            <td className="p-3 text-emerald-600 font-bold">ลด 15%</td>
+                            <td className="p-3">ลด 25% + Gift</td>
+                            <td className="p-3 text-blue-600 font-bold">ส่งฟรี + Priority</td>
+                            <td className="p-3">Early Access 48 ชม. + VIP Care</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Member Exclusive Promotions (Item 10) */}
+                  <div className="mt-8 pt-6 border-t border-gray-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-base font-bold text-primary flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-amber-500" />
+                          <span>โปรโมชั่นพิเศษสำหรับสมาชิก (Member Exclusive Campaigns)</span>
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          สิทธิประโยชน์และแคมเปญพิเศษที่จัดขึ้นสำหรับสมาชิก OCCASION LOYALTY CLUB โดยเฉพาะ
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeFromWishlist(item._id)}
-                        className="rounded-full p-2 text-red-500 hover:bg-red-50 transition cursor-pointer"
-                        title="ลบออกจากรายการโปรด"
-                        aria-label="ลบออกจากรายการโปรด"
-                      >
-                        <Heart size={18} fill="currentColor" />
-                      </button>
                     </div>
-                  ))}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {MEMBER_PROMOTIONS.map((promo) => (
+                        <div
+                          key={promo.id}
+                          className="rounded-2xl border border-gray-200 p-4 bg-gradient-to-br from-white to-gray-50/80 shadow-2xs hover:shadow-xs transition flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-primary text-white">
+                                {promo.tag}
+                              </span>
+                              <span className="text-[10px] font-semibold text-gray-500">
+                                {promo.period}
+                              </span>
+                            </div>
+                            <h4 className="text-sm font-bold text-gray-900 mt-1">
+                              {promo.title}
+                            </h4>
+                            <p className="text-xs text-gray-600 mt-1 line-clamp-3">
+                              {promo.description}
+                            </p>
+                          </div>
+                          <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
+                            <span className="font-semibold text-amber-700">{promo.badge}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* 3. Favorite Lookbooks */}
+          {activeTab === 'coupons' && (
+            <CouponsSection user={user} />
+          )}
+
+          {activeTab === 'wishlist' && (
+            <WishlistSection items={wishlist} onRemove={removeFromWishlist} />
+          )}
+
+          {/* Favorite Lookbooks */}
           {activeTab === 'lookbooks' && (
             <div>
               <h2 className="text-lg font-semibold mb-4">Favorite Lookbooks</h2>

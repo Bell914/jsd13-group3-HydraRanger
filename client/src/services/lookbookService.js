@@ -1,5 +1,5 @@
 import fallbackData from "../data/look-data.json";
-import { API_URL, api } from "./api.js";
+import { resolveApiUrl, API_URL, api } from "./api.js";
 
 export function normalizeProductId(id) {
   if (id === undefined || id === null) return "";
@@ -61,7 +61,7 @@ function normalizeLookbook(lookbook) {
 }
 
 async function request(path) {
-  const response = await fetch(`${API_URL}${path}`);
+  const response = await fetch(`${resolveApiUrl()}${path}`);
   const result = await response.json().catch(() => ({}));
 
   if (!response.ok) {

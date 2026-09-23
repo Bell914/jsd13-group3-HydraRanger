@@ -120,3 +120,4 @@ export async function toggleFavoriteLookbook(req, res, next) {
     return next(error);
   }
 }
+
