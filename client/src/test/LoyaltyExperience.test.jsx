@@ -2,9 +2,9 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
-import { MembershipCard } from '../components/profile/MembershipCard.jsx';
-import { CouponsSection } from '../components/profile/CouponsSection.jsx';
-import { RankUpgradeModal } from '../components/profile/RankUpgradeModal.jsx';
+import { MembershipCard } from '../pages/profilepage/MembershipCard.jsx';
+import { CouponsSection } from '../pages/profilepage/CouponsSection.jsx';
+import { RankUpgradeModal } from '../pages/profilepage/RankUpgradeModal.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import { hasEarlyAccess, NEXT_RANK_PERKS } from '../utils/loyaltyUtils.js';
 
