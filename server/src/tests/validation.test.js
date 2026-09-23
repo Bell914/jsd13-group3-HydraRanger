@@ -38,6 +38,15 @@ test('product size chart rejects duplicate sizes and invalid measurements', () =
   assert.ok(result.errors.some((error) => error.includes('duplicate size')));
 });
 
+test('bottom size chart requires waist and hips instead of chest', () => {
+  const result = validateProductInput({
+    name: 'Pants', category: 'bottoms',
+    variants: [{ sku: 'PANTS-M', size: 'M', price: 790, stockQuantity: 1 }],
+    size_chart: [{ size_name: 'M', garment_waist_actual: 78, garment_hips_actual: 104 }]
+  });
+  assert.equal(result.isValid, true);
+});
+
 test('customer status only accepts a boolean', () => {
   assert.equal(validateCustomerStatus({ isActive: 'false' }).isValid, false);
   assert.equal(validateCustomerStatus({ isActive: false }).isValid, true);

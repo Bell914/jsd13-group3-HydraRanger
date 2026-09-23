@@ -33,22 +33,49 @@ function getProductSizes(product, fallbackSizes) {
 }
 
 function recommendFromProductChart(profile, product, sizes) {
-  // The current product chart stores chest measurements only.
-  // Bottoms must use waist and hips from the body guide instead.
-  if (getProductCategory(product) === 'bottoms') return null;
+  const category = getProductCategory(product);
 
   const chart = (product?.size_chart || product?.sizeChart || [])
     .map((item) => ({
       size: item.size_name || item.size,
-      garmentChest: Number(item.garment_chest_actual ?? item.garmentChest)
+      garmentChest: Number(item.garment_chest_actual ?? item.garmentChestActual ?? item.garmentChest),
+      garmentWaist: Number(item.garment_waist_actual ?? item.garmentWaistActual ?? item.garmentWaist),
+      garmentHips: Number(item.garment_hips_actual ?? item.garmentHipsActual ?? item.garmentHips)
     }))
-    .filter((item) => sizes.includes(item.size) && Number.isFinite(item.garmentChest) && item.garmentChest > 0)
-    .sort((first, second) => first.garmentChest - second.garmentChest);
+    .filter((item) => sizes.includes(item.size));
 
-  if (chart.length === 0) return null;
+  if (category === 'bottoms') {
+    const usableChart = chart.filter((item) => (
+      Number.isFinite(item.garmentWaist) && item.garmentWaist > 0 &&
+      Number.isFinite(item.garmentHips) && item.garmentHips > 0
+    )).sort((first, second) => (
+      Math.max(first.garmentWaist, first.garmentHips) -
+      Math.max(second.garmentWaist, second.garmentHips)
+    ));
+    if (usableChart.length === 0) return null;
+
+    const ease = getFitEase(profile.preferredFit);
+    const match = usableChart.find((item) => (
+      item.garmentWaist >= Number(profile.waistCm) + ease &&
+      item.garmentHips >= Number(profile.hipsCm) + ease
+    ));
+    if (!match) return noMatchingSize();
+
+    return {
+      size: match.size,
+      confidence: 'ปานกลาง',
+      source: 'ตารางรอบเอวและสะโพกของสินค้านี้',
+      reason: `เทียบรอบเอว ${profile.waistCm} ซม. และรอบสะโพก ${profile.hipsCm} ซม. กับทรง ${getFitLabel(profile.preferredFit)}`
+    };
+  }
+
+  const usableChart = chart
+    .filter((item) => Number.isFinite(item.garmentChest) && item.garmentChest > 0)
+    .sort((first, second) => first.garmentChest - second.garmentChest);
+  if (usableChart.length === 0) return null;
 
   const targetChest = Number(profile.chestCm) + getFitEase(profile.preferredFit);
-  const match = chart.find((item) => item.garmentChest >= targetChest);
+  const match = usableChart.find((item) => item.garmentChest >= targetChest);
   if (!match) return noMatchingSize();
 
   return {

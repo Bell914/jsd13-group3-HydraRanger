@@ -65,13 +65,22 @@ export function validateProductInput(product) {
       errors.push('size_chart must be an array');
     } else {
       const sizeNames = new Set();
+      const category = product.category?.slug || product.category;
       product.size_chart.forEach((row, index) => {
         const sizeName = row?.size_name?.trim();
         const chest = Number(row?.garment_chest_actual);
+        const waist = Number(row?.garment_waist_actual);
+        const hips = Number(row?.garment_hips_actual);
         if (!sizeName) errors.push(`Size chart ${index + 1}: size_name is required`);
         if (sizeNames.has(sizeName)) errors.push(`Size chart ${index + 1}: duplicate size '${sizeName}'`);
         if (sizeName) sizeNames.add(sizeName);
-        if (!Number.isFinite(chest) || chest <= 0) {
+        if (category === 'bottoms' && (!Number.isFinite(waist) || waist <= 0)) {
+          errors.push(`Size chart ${index + 1}: garment_waist_actual must be greater than 0`);
+        }
+        if (category === 'bottoms' && (!Number.isFinite(hips) || hips <= 0)) {
+          errors.push(`Size chart ${index + 1}: garment_hips_actual must be greater than 0`);
+        }
+        if (category !== 'bottoms' && (!Number.isFinite(chest) || chest <= 0)) {
           errors.push(`Size chart ${index + 1}: garment_chest_actual must be greater than 0`);
         }
       });

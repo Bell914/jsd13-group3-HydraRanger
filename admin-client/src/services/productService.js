@@ -1,7 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
-const TOKEN_KEY = 'occasion_admin_token';
-
-function normalizeProduct(product) {
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5001/api';
+export function normalizeProduct(product) {
   const category = product.category_id?.slug || product.category || '';
   const imageUrl = product.imageUrl || product.images?.[0]?.image_url || '';
 
@@ -15,7 +13,9 @@ function normalizeProduct(product) {
     isActive: product.is_active ?? product.isActive ?? true,
     sizeChart: (product.size_chart || product.sizeChart || []).map((row) => ({
       sizeName: row.size_name || row.sizeName || '',
-      garmentChestActual: row.garment_chest_actual ?? row.garmentChestActual ?? ''
+      garmentChestActual: row.garment_chest_actual ?? row.garmentChestActual ?? '',
+      garmentWaistActual: row.garment_waist_actual ?? row.garmentWaistActual ?? '',
+      garmentHipsActual: row.garment_hips_actual ?? row.garmentHipsActual ?? ''
     })),
     variants: (product.variants || []).map((variant) => ({
       ...variant,
@@ -31,16 +31,11 @@ function normalizeProduct(product) {
 
 async function request(path, options = {}) {
   try {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) {
-      throw new Error('ไม่พบสิทธิ์ Admin กรุณาเข้าสู่ระบบใหม่');
-    }
-
     const response = await fetch(API_BASE_URL + path, {
       ...options,
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
         ...options.headers
       }
     });
@@ -58,7 +53,7 @@ async function request(path, options = {}) {
   }
 }
 
-function prepareProduct(product) {
+export function prepareProduct(product) {
   return {
     name: product.name,
     description: product.description,
@@ -70,7 +65,9 @@ function prepareProduct(product) {
     is_active: product.isActive,
     size_chart: (product.sizeChart || []).map((row) => ({
       size_name: row.sizeName,
-      garment_chest_actual: Number(row.garmentChestActual)
+      ...(row.garmentChestActual !== '' ? { garment_chest_actual: Number(row.garmentChestActual) } : {}),
+      ...(row.garmentWaistActual !== '' ? { garment_waist_actual: Number(row.garmentWaistActual) } : {}),
+      ...(row.garmentHipsActual !== '' ? { garment_hips_actual: Number(row.garmentHipsActual) } : {})
     })),
     variants: product.variants.map((variant) => {
       return {
