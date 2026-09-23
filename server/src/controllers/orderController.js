@@ -12,7 +12,9 @@ function sendOrderError(error, res, next) {
     'Invalid order status',
     'Missing shipping fields',
     'Order already cancelled',
-    'Cannot cancel order'
+    'Cannot cancel order',
+    'Invalid shipping method',
+    'Cancelled order status'
   ];
 
   if (badRequestMessages.some((message) => error.message.startsWith(message))) {

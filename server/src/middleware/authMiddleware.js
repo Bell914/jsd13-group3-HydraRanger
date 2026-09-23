@@ -54,6 +54,12 @@ export const protect = async (req, res, next) => {
               message: 'This customer account has been suspended'
             });
           }
+          if ((decoded.tokenVersion || 0) !== (user.tokenVersion || 0)) {
+            return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+              success: false,
+              message: 'Not authorized, token has been revoked'
+            });
+          }
           req.user = user;
         } else {
           // DB is up but user no longer exists (deleted/banned) → reject
