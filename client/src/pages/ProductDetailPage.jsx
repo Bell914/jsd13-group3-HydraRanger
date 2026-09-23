@@ -64,9 +64,9 @@ export default function ProductDetailPage() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(true);
   const [isMaterialsOpen, setIsMaterialsOpen] = useState(true);
 
-  // Standard sizes matching backend (S, M, L)
+  // Show only sizes that exist in the product variants.
   const sizeOptions = useMemo(() => {
-    if (!product?.variants || product.variants.length === 0) return ["S", "M", "L"];
+    if (!product?.variants || product.variants.length === 0) return [];
     const variantSizes = [
       ...new Set(
         product.variants
@@ -74,9 +74,9 @@ export default function ProductDetailPage() {
           .filter(Boolean)
       ),
     ];
-    const allowed = ["S", "M", "L"];
+    const allowed = ["XS", "S", "M", "L", "XL", "XXL"];
     const filtered = allowed.filter((s) => variantSizes.includes(s));
-    return filtered.length > 0 ? filtered : allowed;
+    return filtered;
   }, [product]);
 
   // Ensure selectedSize is valid
@@ -195,17 +195,18 @@ export default function ProductDetailPage() {
   // Selected variant
   const selectedVariant = useMemo(() => {
     if (!product?.variants) return null;
-    const match =
-      product.variants.find((v) => v.color === selectedColor) ||
-      product.variants[0] ||
-      null;
+    const match = product.variants.find((variant) => {
+      const matchesSize = (variant.size || variant.size_or_color) === selectedSize;
+      const matchesColor = !selectedColor || variant.color === selectedColor;
+      return matchesSize && matchesColor;
+    });
     if (!match) return null;
     return {
       ...match,
       imageUrl: normalizeImageUrl(match.imageUrl),
       detailImages: (match.detailImages || []).map(normalizeImageUrl),
     };
-  }, [product, selectedColor]);
+  }, [product, selectedColor, selectedSize]);
 
   // Generate 7 thumbnails from collection-2026/all-images matching the wireframe
   const thumbnails = useMemo(() => {
@@ -283,7 +284,18 @@ export default function ProductDetailPage() {
       return;
     }
 
-    const currentPrice = selectedVariant?.price ?? 490;
+    if (!selectedVariant) {
+      setValidationError("ไม่มีสินค้าในไซส์และสีที่เลือก กรุณาเลือกใหม่");
+      return;
+    }
+
+    const stock = Number(selectedVariant.stock_quantity ?? selectedVariant.stockQuantity);
+    if (!Number.isFinite(stock) || !Number.isInteger(quantity) || quantity < 1 || quantity > stock) {
+      setValidationError("สินค้าในไซส์และสีนี้มีไม่พอสำหรับจำนวนที่เลือก");
+      return;
+    }
+
+    const currentPrice = selectedVariant.price;
 
     const variantPayload = {
       ...selectedVariant,
@@ -369,7 +381,7 @@ export default function ProductDetailPage() {
   }
 
   const currentPrice = selectedVariant?.price ?? 490;
-  const sizeRecommendation = getSizeRecommendation(sizeProfile, product, sizeOptions);
+  const sizeRecommendation = getSizeRecommendation(sizeProfile, product, sizeOptions, selectedColor);
 
   return (
     <main className="flex-1 bg-background py-6 md:py-10">

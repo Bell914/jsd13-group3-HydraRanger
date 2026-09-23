@@ -107,6 +107,11 @@ const userSchema = new mongoose.Schema(
         ref: 'Lookbook'
       }
     ],
+    tokenVersion: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
     sizeProfile: {
       type: sizeProfileSchema,
       default: undefined

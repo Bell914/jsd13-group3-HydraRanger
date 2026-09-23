@@ -48,22 +48,30 @@ function prepareImages(productData) {
   }));
 }
 
-function prepareVariants(variants = []) {
-  return variants.map((variant) => ({
-    sku: variant.sku,
-    size_or_color: variant.size_or_color || variant.size || variant.color || 'Standard',
-    color: variant.color || (variant.size_or_color && !['S', 'M', 'L', 'XL'].includes(variant.size_or_color) ? variant.size_or_color : 'Standard'),
-    colorCode: variant.colorCode || '',
-    size: variant.size || (['S', 'M', 'L', 'XL'].includes(variant.size_or_color) ? variant.size_or_color : 'S'),
-    price: variant.price,
-    stock_quantity: variant.stock_quantity ?? variant.stockQuantity ?? 0,
-    imageUrl: variant.imageUrl || '',
-    detailImages: variant.detailImages || []
-  }));
+export function prepareVariants(variants = []) {
+  return variants.map((variant) => {
+    const preparedVariant = {
+      sku: variant.sku,
+      size_or_color: variant.size_or_color || variant.size || variant.color || 'Standard',
+      size: variant.size || (['S', 'M', 'L', 'XL'].includes(variant.size_or_color) ? variant.size_or_color : (variant.size_or_color || 'S')),
+      color: variant.color || (variant.size_or_color && !['S', 'M', 'L', 'XL'].includes(variant.size_or_color) ? variant.size_or_color : 'Standard'),
+      colorCode: variant.colorCode || '',
+      price: variant.price,
+      stock_quantity: variant.stock_quantity ?? variant.stockQuantity ?? 0,
+      imageUrl: variant.imageUrl || '',
+      detailImages: Array.isArray(variant.detailImages) ? variant.detailImages : []
+    };
+
+    if (mongoose.Types.ObjectId.isValid(variant._id)) {
+      preparedVariant._id = variant._id;
+    }
+
+    return preparedVariant;
+  });
 }
 
-async function prepareProductData(productData) {
-  return {
+async function prepareProductData(productData, { isUpdate = false } = {}) {
+  const data = {
     category_id: await findCategoryId(productData),
     title: productData.title || productData.name,
     description: productData.description || '',
@@ -72,11 +80,20 @@ async function prepareProductData(productData) {
       ? productData.tags.map((tag) => (typeof tag === 'string' ? tag.trim() : tag)).filter(Boolean)
       : [],
     availableDate: productData.availableDate ? new Date(productData.availableDate) : undefined,
-    is_active: productData.is_active ?? productData.isActive ?? true,
     images: prepareImages(productData),
-    variants: prepareVariants(productData.variants),
-    size_chart: productData.size_chart || []
+    variants: prepareVariants(productData.variants)
   };
+
+  const activeState = productData.is_active ?? productData.isActive;
+  if (!isUpdate || activeState !== undefined) {
+    data.is_active = activeState ?? true;
+  }
+
+  if (!isUpdate || productData.size_chart !== undefined) {
+    data.size_chart = productData.size_chart || [];
+  }
+
+  return data;
 }
 
 export async function getProducts({ includeInactive = false, category, search } = {}) {
@@ -138,7 +155,12 @@ export async function createProduct(productData) {
 }
 
 export async function updateProduct(id, productData) {
-  const data = await prepareProductData(productData);
+  const data = await prepareProductData(productData, { isUpdate: true });
+
+  // An omitted chart means keep the existing chart; [] explicitly clears it.
+  if (productData.size_chart === undefined) {
+    delete data.size_chart;
+  }
 
   const product = await Product.findByIdAndUpdate(id, data, {
     new: true,

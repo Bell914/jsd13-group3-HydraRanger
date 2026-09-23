@@ -65,20 +65,6 @@ export default function CheckoutPage() {
   // Saved addresses list from Backend
   const [savedAddresses, setSavedAddresses] = useState([]);
 
-  // Payment Form State
-  const [paymentData, setPaymentData] = useState({
-    method: "credit-card",
-    cardNumber: "",
-    cardExp: "",
-    cardCvv: "",
-  });
-
-  // Order Submission State
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [orderError, setOrderError] = useState("");
-  const [submitError, setSubmitError] = useState(null);
-  const [completedOrder, setCompletedOrder] = useState(null);
-
   // ดึงข้อมูลที่อยู่จัดส่งของผู้ใช้ที่บันทึกไว้เมื่อเปิดหน้า Checkout
   useEffect(() => {
     fetchUserAddresses();
@@ -116,6 +102,20 @@ export default function CheckoutPage() {
     }
   };
 
+  // Payment Form State
+  const [paymentData, setPaymentData] = useState({
+    method: "credit-card",
+    cardNumber: "",
+    cardExp: "",
+    cardCvv: "",
+  });
+
+  // Order Submission State
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [completedOrder, setCompletedOrder] = useState(null);
+  const [orderError, setOrderError] = useState("");
+  const [submitError, setSubmitError] = useState(null);
+
   const subtotal = getTotalPrice();
 
   // Loyalty Rank Discount & Free Shipping Calculations
@@ -141,7 +141,16 @@ export default function CheckoutPage() {
 
     if (shippingData.saveAddress && addAddress) {
       const { firstName, lastName, phone, address, city, state, zipCode, location } = shippingData;
-      addAddress({ firstName, lastName, phone, address, city, state, zipCode, location: location || "Thailand" });
+      addAddress({
+        firstName,
+        lastName,
+        phone,
+        address,
+        city,
+        state,
+        zipCode,
+        location: location || "Thailand",
+      });
     }
     const itemsSnapshot = [...cartItems];
 

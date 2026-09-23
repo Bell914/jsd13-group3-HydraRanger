@@ -12,13 +12,13 @@ const variantSchema = new mongoose.Schema(
   {
     sku: { type: String, required: true, trim: true },
     size_or_color: { type: String, required: true, trim: true },
-    color: { type: String, trim: true },
-    colorCode: { type: String, trim: true },
-    size: { type: String, trim: true },
+    size: { type: String, default: '', trim: true },
+    color: { type: String, default: '', trim: true },
+    colorCode: { type: String, default: '', trim: true },
     price: { type: Number, required: true, min: 0 },
     stock_quantity: { type: Number, default: 0, min: 0 },
-    imageUrl: { type: String, trim: true },
-    detailImages: [{ type: String, trim: true }]
+    imageUrl: { type: String, default: '', trim: true },
+    detailImages: { type: [String], default: [] }
   },
   {
     _id: true,

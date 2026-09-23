@@ -38,6 +38,9 @@ export const protect = async (req, res, next) => {
 
       // Synthetic in-memory / env-bootstrap users never exist in DB
       if (isSyntheticUser(decoded.id)) {
+        if (ENV.NODE_ENV !== 'development') {
+          return res.status(401).json({ success: false, message: 'Development sessions are not allowed' });
+        }
         req.user = buildFallbackUser(decoded);
         return next();
       }
@@ -49,6 +52,12 @@ export const protect = async (req, res, next) => {
             return res.status(HTTP_STATUS.FORBIDDEN).json({
               success: false,
               message: 'This customer account has been suspended'
+            });
+          }
+          if ((decoded.tokenVersion || 0) !== (user.tokenVersion || 0)) {
+            return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+              success: false,
+              message: 'Not authorized, token has been revoked'
             });
           }
           req.user = user;
@@ -63,7 +72,13 @@ export const protect = async (req, res, next) => {
         if (!isDbUnavailableError(dbError)) {
           throw dbError;
         }
-        // DB offline → fall back to in-memory / session users
+        if (ENV.NODE_ENV !== 'development') {
+          return res.status(503).json({
+            success: false,
+            message: 'Unable to verify your account right now. Please try again later.'
+          });
+        }
+        // Local development can still use the existing mock sessions.
         req.user = buildFallbackUser(decoded);
       }
 

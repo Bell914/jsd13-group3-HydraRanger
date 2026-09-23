@@ -9,6 +9,12 @@ import {
   SHIPPING_METHODS_CONFIG
 } from '../config/membershipConfig.js';
 
+const SHIPPING_COSTS = {
+  standard: 0,
+  express: 50,
+  priority: 100
+};
+
 function createOrderNumber() {
   const date = new Date().toISOString().slice(0, 10).replaceAll('-', '');
   const random = Math.floor(100000 + Math.random() * 900000);
@@ -71,6 +77,56 @@ async function prepareOrderItems(items) {
   return preparedItems;
 }
 
+function wasUpdated(result) {
+  return (result.modifiedCount ?? result.nModified ?? 0) === 1;
+}
+
+async function restoreOrderStock(items) {
+  for (const item of items) {
+    await Product.updateOne(
+      { _id: item.product, 'variants._id': item.variantId },
+      { $inc: { 'variants.$.stock_quantity': item.quantity } }
+    );
+  }
+}
+
+async function reserveOrderStock(items) {
+  const reservedItems = [];
+
+  try {
+    for (const item of items) {
+      const result = await Product.updateOne(
+        {
+          _id: item.product,
+          variants: {
+            $elemMatch: {
+              _id: item.variantId,
+              stock_quantity: { $gte: item.quantity }
+            }
+          }
+        },
+        { $inc: { 'variants.$.stock_quantity': -item.quantity } }
+      );
+
+      if (!wasUpdated(result)) {
+        throw new Error(`Not enough stock for ${item.title}`);
+      }
+
+      reservedItems.push(item);
+    }
+  } catch (error) {
+    await restoreOrderStock(reservedItems);
+    throw error;
+  }
+}
+
+export function getShippingCost(shippingMethod = 'standard') {
+  if (!Object.hasOwn(SHIPPING_COSTS, shippingMethod)) {
+    throw new Error('Invalid shipping method');
+  }
+  return SHIPPING_COSTS[shippingMethod];
+}
+
 function validateShippingAddress(address) {
   const requiredFields = ['firstName', 'lastName', 'phone', 'address', 'city', 'zipCode'];
   const missingFields = requiredFields.filter((field) => !address?.[field]?.trim());
@@ -83,7 +139,6 @@ export async function createOrder(user, orderData) {
   validateShippingAddress(orderData.shippingAddress);
   const items = await prepareOrderItems(orderData.items);
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
-
   // 1. Calculate discount from member tier
   const membershipTierAtPurchase = user?.membership?.rank || 'MEMBER';
   const rankPercent = RANK_DISCOUNT_PERCENT[membershipTierAtPurchase] || 0;
@@ -125,33 +180,42 @@ export async function createOrder(user, orderData) {
   const taxAmount = Math.round(taxableSubtotal * 0.06 * 100) / 100;
   const totalAmount = taxableSubtotal + shippingCost + taxAmount;
 
-  const order = await Order.create({
-    orderNumber: createOrderNumber(),
-    user: user._id || user.id,
-    customerEmail: orderData.email || user.email,
-    items,
-    shippingAddress: {
-      firstName: orderData.shippingAddress?.firstName,
-      lastName: orderData.shippingAddress?.lastName,
-      phone: orderData.shippingAddress?.phone,
-      address: orderData.shippingAddress?.address,
-      city: orderData.shippingAddress?.city,
-      state: orderData.shippingAddress?.state || '',
-      zipCode: orderData.shippingAddress?.zipCode,
-      country: orderData.shippingAddress?.location || orderData.shippingAddress?.country || 'Thailand',
-      deliveryNote: orderData.shippingAddress?.deliveryNote || ''
-    },
-    shippingMethod: orderData.shippingMethod || 'standard',
-    paymentMethod: orderData.paymentMethod || 'credit-card',
-    subtotal,
-    discountAmount,
-    couponCode,
-    membershipTierAtPurchase,
-    shippingCost,
-    taxAmount,
-    totalAmount,
-    loyaltyProcessed: false
-  });
+  await reserveOrderStock(items);
+
+  let order;
+  try {
+    order = await Order.create({
+      orderNumber: createOrderNumber(),
+      user: user._id || user.id,
+      customerEmail: orderData.email || user.email,
+      items,
+      shippingAddress: {
+        firstName: orderData.shippingAddress?.firstName,
+        lastName: orderData.shippingAddress?.lastName,
+        phone: orderData.shippingAddress?.phone,
+        address: orderData.shippingAddress?.address,
+        city: orderData.shippingAddress?.city,
+        state: orderData.shippingAddress?.state || '',
+        zipCode: orderData.shippingAddress?.zipCode,
+        country: orderData.shippingAddress?.location || orderData.shippingAddress?.country || 'Thailand',
+        deliveryNote: orderData.shippingAddress?.deliveryNote || ''
+      },
+      shippingMethod: orderData.shippingMethod || 'standard',
+      paymentMethod: orderData.paymentMethod || 'credit-card',
+      subtotal,
+      discountAmount,
+      couponCode,
+      membershipTierAtPurchase,
+      shippingCost,
+      taxAmount,
+      totalAmount,
+      loyaltyProcessed: false,
+      stockReserved: true
+    });
+  } catch (error) {
+    await restoreOrderStock(items);
+    throw error;
+  }
 
   return Order.findById(order._id).populate('user', 'username email');
 }
@@ -185,8 +249,18 @@ export async function updateOrderStatus(orderId, status) {
   const existingOrder = await Order.findById(orderId);
   if (!existingOrder) throw new Error('Order not found');
 
-  const previousStatus = existingOrder.status;
+  if (existingOrder.status === 'cancelled' && status !== 'cancelled') {
+    throw new Error('Cancelled order status cannot be changed');
+  }
+
   existingOrder.status = status;
+
+  if (status === 'cancelled') {
+    if (existingOrder.stockReserved && !existingOrder.stockRestored) {
+      await restoreOrderStock(existingOrder.items);
+      existingOrder.stockRestored = true;
+    }
+  }
 
   const userId = existingOrder.user?._id || existingOrder.user?.id || existingOrder.user;
   const netSpend = Math.max(0, existingOrder.subtotal - (existingOrder.discountAmount || 0));
@@ -227,4 +301,34 @@ export async function updateOrderStatus(orderId, status) {
 
   const order = await Order.findById(orderId).populate('user', 'username email');
   return order;
+}
+export async function cancelOrder(userId, orderId) {
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    throw new Error('Order not found');
+  }
+
+  const order = await Order.findOneAndUpdate(
+    {
+      _id: orderId,
+      user: userId,
+      status: { $in: ['pending', 'paid'] }
+    },
+    { status: 'cancelled' },
+    { new: true, runValidators: true }
+  );
+
+  if (order) {
+    if (order.stockReserved && !order.stockRestored) {
+      await restoreOrderStock(order.items);
+    }
+    order.stockRestored = true;
+    return order.save();
+  }
+
+  const existingOrder = await getOrderById(orderId, userId);
+
+  if (existingOrder.status === 'cancelled') {
+    throw new Error('Order already cancelled');
+  }
+  throw new Error('Cannot cancel order in current status');
 }
