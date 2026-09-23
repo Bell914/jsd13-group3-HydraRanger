@@ -1,8 +1,15 @@
 import { Router } from "express";
 import { recommendLookbooks, memoryUpload } from "../controllers/recommendController.js";
 
-const router = Router();
+import { rateLimit } from '../middleware/rateLimiterMiddleware.js';
 
-router.post("/", memoryUpload, recommendLookbooks);
+const router = Router();
+const recommendLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'วิเคราะห์รูปได้ไม่เกิน 10 ครั้งใน 15 นาที กรุณาลองใหม่ภายหลัง'
+});
+
+router.post("/", recommendLimiter, memoryUpload, recommendLookbooks);
 
 export default router;
