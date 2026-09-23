@@ -118,7 +118,7 @@ export default function PaymentSection({
             <span className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center text-xs font-serif font-extrabold">
               Ω
             </span>
-            <span>ใช้งาน Gift Card / โค้ดส่วนลด</span>
+            <span>Use my Gift Card</span>
           </div>
         </div>
 

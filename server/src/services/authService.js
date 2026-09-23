@@ -48,7 +48,12 @@ const buildUserSession = (user) => {
     email: user.email,
     role: user.role,
     createdAt: user.createdAt,
-    isActive: user.isActive !== false
+    isActive: user.isActive !== false,
+    membership: user.membership || {
+      rank: 'MEMBER',
+      accumulatedSpending: 0,
+      rankUpdatedAt: user.createdAt || new Date()
+    }
   };
   return {
     user: sessionUser,

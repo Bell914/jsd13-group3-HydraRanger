@@ -9,6 +9,7 @@ import {
   PackageCheck,
   Mail,
   HelpCircle,
+  Sparkles,
 } from "lucide-react";
 import CheckoutStepper from "./CheckoutStepper";
 
@@ -37,6 +38,9 @@ export default function OrderConfirmationScreen({ orderData }) {
     email = "customer@example.com",
     items = [],
     subtotal = 0,
+    rankDiscountAmount = 0,
+    userRank = "MEMBER",
+    upgradedRank,
     shippingCost = 0,
     taxAmount = 0,
     totalAmount = 0,
@@ -56,6 +60,19 @@ export default function OrderConfirmationScreen({ orderData }) {
         <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 mb-6 text-white shadow-inner">
           <PackageCheck className="w-9 h-9 sm:w-11 sm:h-11 text-emerald-400" />
         </div>
+
+        {/* Rank Upgrade Celebration Banner */}
+        {upgradedRank && (
+          <div className="mb-6 max-w-md mx-auto p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border border-amber-400/40 text-center backdrop-blur-xs shadow-inner">
+            <div className="inline-flex items-center gap-2 text-amber-300 font-black text-sm">
+              <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
+              <span>ยินดีด้วย! คำสั่งซื้อนี้ทำให้คุณเลื่อนระดับเป็น {upgradedRank} 🎉</span>
+            </div>
+            <p className="text-[11px] text-amber-100/80 mt-1">
+              ระบบปลดล็อกสิทธิพิเศษและส่วนลด On-top ใหม่ให้คุณทันที
+            </p>
+          </div>
+        )}
 
         {/* Main Heading */}
         <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight mb-3">
@@ -217,15 +234,21 @@ export default function OrderConfirmationScreen({ orderData }) {
           <div className="mt-6 pt-4 border-t border-gray-200 space-y-1.5 text-xs sm:text-sm">
             <div className="flex justify-between text-gray-600">
               <span>Subtotal</span>
-              <span>฿{subtotal}</span>
+              <span>฿{subtotal.toLocaleString()}</span>
             </div>
+            {rankDiscountAmount > 0 && (
+              <div className="flex justify-between text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-lg">
+                <span>Member Discount ({userRank})</span>
+                <span>-฿{rankDiscountAmount.toLocaleString()}</span>
+              </div>
+            )}
             <div className="flex justify-between text-gray-600">
               <span>Shipping</span>
               <span>{shippingCost === 0 ? "FREE" : `฿${shippingCost}`}</span>
             </div>
             <div className="flex justify-between text-gray-600">
               <span>Tax (Included)</span>
-              <span>฿{taxAmount}</span>
+              <span>฿{taxAmount.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-base font-extrabold text-gray-950 pt-3 border-t border-gray-200">
               <span>Total Paid</span>

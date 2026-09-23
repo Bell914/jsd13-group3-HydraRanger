@@ -33,8 +33,11 @@ export default function CartPage() {
         <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-2 pb-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-primary">
-              ตะกร้าสินค้าของคุณ ({totalItemsCount} ชิ้น)
+              Shopping Cart
             </h1>
+            <span className="text-sm font-medium text-secondary">
+              ({totalItemsCount} ชิ้น)
+            </span>
           </div>
           {cartItems && cartItems.length > 0 && (
             <button
@@ -105,19 +108,24 @@ export default function CartPage() {
                           <div className="flex flex-wrap items-center gap-1.5 pt-1">
                             {item.color && (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                สี: {item.color}
+                                <span>{item.color}</span>
                               </span>
                             )}
                             {item.size && (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                ไซส์: {item.size}
+                                <span>Size {item.size}</span>
                               </span>
                             )}
                           </div>
                         )}
 
                         <p className="text-base sm:text-lg font-extrabold text-gray-950 pt-2">
-                          ฿{(item.price || 0).toLocaleString()} / ชิ้น
+                          <span>฿{item.price * (item.quantity || 1)}</span>
+                          {item.quantity > 1 && (
+                            <span className="text-xs font-normal text-gray-500 ml-1.5">
+                              (฿{(item.price || 0).toLocaleString()} / ชิ้น)
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -217,6 +225,7 @@ export default function CartPage() {
 
                 <Link
                   to="/checkout"
+                  aria-label="Proceed to Checkout"
                   className="group relative w-full mt-4 py-4 px-6 bg-gray-950 hover:bg-black text-white font-bold text-sm tracking-wider uppercase rounded-xl flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg transition-all active:scale-[0.99] cursor-pointer"
                 >
                   <span>ดำเนินการชำระเงิน</span>
