@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard.jsx";
 import RecommendedSlider from "../components/RecommendedSlider.jsx";
@@ -10,6 +10,7 @@ export default function ProductListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const productsSectionRef = useRef(null);
 
   // URL query params
   const selectedCategory = searchParams.get("category") || "all";
@@ -68,6 +69,17 @@ export default function ProductListPage() {
     }
     return products.slice(0, 32);
   }, [products, searchKeyword, selectedCategory]);
+
+  // Smooth-scroll to the product cards once search results finish loading
+  useEffect(() => {
+    if (!searchKeyword) return;
+    if (!loading && !error && displayedProducts.length > 0) {
+      productsSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [searchKeyword, loading, error, displayedProducts.length]);
 
   const handlePageClick = (pageNum) => {
     setCurrentPage(pageNum);
@@ -161,7 +173,7 @@ export default function ProductListPage() {
 
         {/* 4-Column Products Grid (32 items matching wireframe) */}
         {!loading && !error && displayedProducts.length > 0 && (
-          <section aria-label="รายการสินค้า">
+          <section ref={productsSectionRef} aria-label="รายการสินค้า">
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {displayedProducts.map((product, idx) => (
                 <ProductCard
