@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { assets, fashionNews } from "../assets/assets.js";
+import { fashionNews } from "../assets/assets.js";
 import { Link } from "react-router-dom";
 import { HeroSection } from "../components/HeroSection.jsx";
 import { RecommendProduct } from "./RecommendProduct.jsx";
@@ -7,12 +7,10 @@ import { TextHomepage } from "../components/TextHomepage.jsx";
 import { SpecialProducts } from "../components/SpecialProducts.jsx";
 import { getProducts } from "../services/productService.js";
 import { getLookbooks } from "../services/lookbookService.js";
-import { getArticles, normalizeArticle } from "../services/articleService.js";
 
 export const HomePage = () => {
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [recommendedLooks, setRecommendedLooks] = useState([]);
-  const [articles, setArticles] = useState(() => fashionNews.map(normalizeArticle));
 
   useEffect(() => {
     let mounted = true;
@@ -32,51 +30,50 @@ export const HomePage = () => {
       .catch(() => {
         if (mounted) setRecommendedLooks([]);
       });
-    getArticles()
-      .then((articleData) => {
-        if (mounted) setArticles(articleData);
-      })
-      .catch(() => {});
     return () => {
       mounted = false;
     };
   }, []);
 
   const recProducts = recommendedProducts.slice(0, 3);
+  const teamMembers = [
+    { name: "Pathsharasakon", nickname: "Nae / เน่", character: "Chopper", portraitImage: "/team/member-1.png", characterImage: "/team/chopper.png" },
+    { name: "Tipkanya", nickname: "Luknok / ลูกนก", character: "Usopp", portraitImage: "/team/member-2.png", characterImage: "/team/usopp.png" },
+    { name: "Puttipong", nickname: "Mos / มอส", character: "Ace", portraitImage: "/team/member-4.png", characterImage: "/team/ace.png" },
+    { name: "Ittikorn", nickname: "BM / บีเอ็ม", character: "Zoro", portraitImage: "/team/member-3.png", characterImage: "/team/zoro.png" },
+    { name: "Sitthan", nickname: "Bird / เบิร์ด", character: "One Piece", portraitImage: "/team/member-5.png", characterImage: "/team/skull.png" },
+  ];
 
   return (
-    <div className="flex min-w-0 flex-col gap-12 sm:gap-16 ">
+    <div className="homepage flex min-w-0 flex-col gap-6 pb-4 sm:gap-10">
       {/* Hero Section */}
-      <HeroSection bgimage={assets.bghero} />
+      <HeroSection />
 
       {/* Main Section */}
-      <section id="main" className="mx-auto w-full max-w-7xl sm:px-6 lg:px-8">
-        {/* Recommend Section Header */}
-        <TextHomepage
-          textheader={"RECOMMEND PRODUCT"}
-          textdisc={"สินค้าแนะนำเลือกช็อปตามใจ"}
-        />
-
-        {/* Card Grid */}
-        <div className="my-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-          {recProducts.map((el, index) => (
-            <SpecialProducts
-              key={el._id || el.id || `rec-card-${index}`}
-              product={el}
-              index={index}
-            />
-          ))}
-        </div>
+      <section id="main" className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section className="body-reference-section" aria-labelledby="recommend-products-title">
+          <TextHomepage
+            textheader={"RECOMMEND PRODUCT"}
+            textdisc={"สินค้าแนะนำเลือกช็อปตามใจ"}
+          />
+          <div className="product-click-grid">
+            {recProducts.map((el, index) => (
+              <SpecialProducts
+                key={el._id || el.id || `rec-card-${index}`}
+                product={el}
+                index={index}
+              />
+            ))}
+          </div>
+        </section>
 
         {/* Lookbook Section */}
-        <div>
+        <section className="body-reference-section lookbook-section" aria-labelledby="recommend-lookbook-title">
           <TextHomepage
             textheader={"RECOMMEND LOOKBOOK"}
             textdisc={"LookBooks ลุคสุดพิเศษที่ได้รับความนิยม"}
           />
-
-          <div className="my-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-            {/* Card 1 */}
+          <div className="product-click-grid product-click-grid--lookbook">
             {recommendedLooks.slice(1, 4).map((el, index) => (
               <RecommendProduct
                 key={el._id || el.id || `lookbook-${index}`}
@@ -85,29 +82,30 @@ export const HomePage = () => {
               />
             ))}
           </div>
-        </div>
+        </section>
 
         {/* Special Product Marquee Section */}
-        <TextHomepage
-          textheader={"Special Product"}
-          textdisc={" สินค้าพิเศษเฉพาะช่วงนี้เท่านั้น"}
-        />
-        <div className="relative my-8 h-auto w-full overflow-hidden rounded-2xl bg-background px-2 py-8 font-bold text-lg text-white sm:px-3 lg:px-3">
-          <div className="animate-marquee flex w-max gap-6 whitespace-nowrap">
-            {recommendedProducts.map((product, idx) => (
+        <section className="body-reference-section" aria-labelledby="special-products-title">
+          <TextHomepage
+            textheader={"Special Product"}
+            textdisc={"สินค้าพิเศษเฉพาะช่วงนี้เท่านั้น"}
+          />
+          <div className="product-click-grid">
+            {recommendedProducts.slice(0, 3).map((product, idx) => (
               <SpecialProducts
-                key={product._id || product.id || `marquee-${idx}`}
+                key={product._id || product.id || `special-card-${idx}`}
                 product={product}
                 index={idx}
               />
             ))}
           </div>
-        </div>
+        </section>
 
         {/* Article Section */}
         <TextHomepage
           textheader={"Article"}
           textdisc={"อ่านบทความพิเศษช่วงนี้เท่านั้น"}
+          className="article-section-heading"
         />
 
         {/* Article Hero: video banner */}
@@ -139,7 +137,7 @@ export const HomePage = () => {
             id="article-grid"
             className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3"
           >
-            {articles.slice(0, 3).map((article) => (
+            {fashionNews.slice(1, 4).map((article) => (
               <div
                 key={article.id}
                 className="card bg-base-100 flex flex-col justify-between w-full shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden"
@@ -155,10 +153,10 @@ export const HomePage = () => {
                 </figure>
                 <div className="card-body flex flex-col justify-between flex-grow p-4 sm:p-6">
                   <div>
-                    <h2 className="card-title text-lg sm:text-xl line-clamp-2">
+                    <h2 className="card-title text-lg text-[#263639] sm:text-xl line-clamp-2">
                       {article.title}
                     </h2>
-                    <p className="text-sm sm:text-base text-base-content/70 mt-2 line-clamp-3">
+                    <p className="text-sm text-[#526164] sm:text-base mt-2 line-clamp-3">
                       {article.description || article.category}
                     </p>
                   </div>
@@ -167,7 +165,7 @@ export const HomePage = () => {
                     <Link
                       to={`/article/${article.id}`}
                       state={{ from: "/" }}
-                      className="btn btn-primary btn-sm sm:btn-md w-full md:w-auto"
+                      className="btn btn-sm sm:btn-md w-full bg-[#263639] text-white hover:bg-[#987b76] md:w-auto"
                     >
                       Read More
                     </Link>
@@ -177,6 +175,29 @@ export const HomePage = () => {
             ))}
           </div>
         </div>
+
+        <section className="team-section" aria-labelledby="team-title">
+          <div className="team-section__heading">
+            <p>THE PEOPLE BEHIND OCCASION</p>
+            <h2 id="team-title">Meet the Crew</h2>
+            <span>Hover each card to reveal their character.</span>
+          </div>
+          <div className="team-card-grid">
+            {teamMembers.map((member) => (
+              <article className="team-flip-card" key={member.name} tabIndex="0" aria-label={`${member.name}, ${member.nickname}, character ${member.character}`}>
+                <div className="team-flip-card__inner">
+                  <div className={`team-flip-card__face team-flip-card__front ${member.character === "Chopper" ? "team-flip-card__front--chopper" : ""} ${member.character === "Ace" ? "team-flip-card__front--ace" : ""} ${member.character === "Zoro" ? "team-flip-card__front--zoro" : ""} ${member.character === "One Piece" ? "team-flip-card__front--skull" : ""}`}>
+                    <img src={member.characterImage} alt={`${member.character} character`} />
+                  </div>
+                  <div className="team-flip-card__face team-flip-card__back">
+                    <img className="team-flip-card__portrait" src={member.portraitImage} alt="" />
+                    <div className="team-flip-card__label"><strong>{member.nickname}</strong><span>{member.name}</span></div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
       </section>
     </div>
   );
