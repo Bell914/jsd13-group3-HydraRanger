@@ -54,7 +54,7 @@ export const Footer = () => {
             <h4 className="font-bold text-lg mb-4 text-[#efc3bc]">Connect with OCCASION</h4>
             <ul className="flex flex-col space-y-3 text-sm text-[#f7f2ec]/90 list-none p-0 m-0">
               {socialLinks.map(([href, icon, alt, label]) => (
-                <li key={label}><a href={href} target="_blank" rel="noopener noreferrer" className={"inline-flex items-center gap-2 " + linkClass}><img src={icon} alt={alt} aria-hidden="true" className="w-5 h-5 object-contain" /><span>{label}</span></a></li>
+                <li key={label}><a href={href} target="_blank" rel="noopener noreferrer" className={"inline-flex items-center gap-2 " + linkClass}><img src={icon} alt={alt} aria-hidden="true" className="w-5 h-5 object-contain brightness-0 invert" /><span>{label}</span></a></li>
               ))}
             </ul>
           </div>
