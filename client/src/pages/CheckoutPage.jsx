@@ -11,6 +11,7 @@ import {
 } from "../utils/loyaltyUtils.js";
 import { getAddresses } from "../services/userService";
 import { createOrder } from "../services/orderService.js";
+import { couponService } from "../services/couponService.js";
 import {
   CheckoutStepper,
   ContactSection,
@@ -116,6 +117,11 @@ export default function CheckoutPage() {
   const [orderError, setOrderError] = useState("");
   const [submitError, setSubmitError] = useState(null);
 
+  // Coupon State
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState("");
+
   const subtotal = getTotalPrice();
 
   // Loyalty Rank Discount & Free Shipping Calculations
@@ -129,9 +135,40 @@ export default function CheckoutPage() {
     SHIPPING_METHODS.find((m) => m.id === shippingData.shippingMethod) ||
     SHIPPING_METHODS[0];
   const shippingCost = isFreeShipping ? 0 : (selectedShipping ? selectedShipping.price : 0);
-  const discountedSubtotal = Math.max(0, subtotal - rankDiscountAmount);
+  
+  const couponDiscountAmount = appliedCoupon
+    ? (appliedCoupon.discountAmount || Math.round((subtotal * (appliedCoupon.discountValue || 5)) / 100))
+    : 0;
+  const totalDiscount = Math.max(rankDiscountAmount, couponDiscountAmount);
+  const discountedSubtotal = Math.max(0, subtotal - totalDiscount);
   const taxAmount = currentStep >= 3 ? Math.round(discountedSubtotal * 0.06 * 100) / 100 : 0;
   const totalAmount = discountedSubtotal + shippingCost + taxAmount;
+
+  const handleApplyCoupon = async (code) => {
+    try {
+      setCouponLoading(true);
+      setCouponError("");
+      const res = await couponService.validateCoupon(code, subtotal);
+      if (res?.data || res?.valid) {
+        const couponData = res.data || res;
+        setAppliedCoupon(couponData);
+        setCouponError("");
+      } else {
+        setCouponError(res?.message || "โค้ดส่วนลดไม่ถูกต้อง");
+        setAppliedCoupon(null);
+      }
+    } catch (err) {
+      setCouponError(err.message || "ไม่สามารถตรวจสอบโค้ดส่วนลดได้");
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponError("");
+  };
 
   // Handle Place Order
   const handlePlaceOrder = async () => {
@@ -177,7 +214,7 @@ export default function CheckoutPage() {
       shippingMethod: shippingData.shippingMethod || 'standard',
       paymentMethod: paymentData.method || 'credit-card',
       shippingCost: shippingCost,
-      couponCode: shippingData.couponCode || ''
+      couponCode: appliedCoupon?.code || shippingData.couponCode || ''
     };
 
     try {
@@ -360,6 +397,12 @@ export default function CheckoutPage() {
               currentStep={currentStep}
               userRank={userRank}
               rankDiscountAmount={rankDiscountAmount}
+              appliedCoupon={appliedCoupon}
+              couponDiscountAmount={couponDiscountAmount}
+              onApplyCoupon={handleApplyCoupon}
+              onRemoveCoupon={handleRemoveCoupon}
+              couponLoading={couponLoading}
+              couponError={couponError}
             />
           </div>
         </div>
