@@ -44,27 +44,48 @@ export const getAddresses = async (req, res, next) => {
   }
 };
 
+function validateAddress(body) {
+  const address = {
+    recipientName: String(body.recipientName || '').trim(),
+    phone: String(body.phone || '').trim(),
+    addressDetail: String(body.addressDetail ?? body.addressLine ?? '').trim(),
+    subdistrict: String(body.subdistrict || '').trim(),
+    district: String(body.district || '').trim(),
+    province: String(body.province || '').trim(),
+    postalCode: String(body.zipCode ?? body.postalCode ?? '').trim(),
+    isDefault: Boolean(body.isDefault)
+  };
+
+  if (!address.recipientName) return { error: 'กรุณากรอกชื่อผู้รับ' };
+  if (!/^[0-9]{9,10}$/.test(address.phone)) {
+    return { error: 'เบอร์โทรศัพท์ต้องเป็นตัวเลข 9-10 หลัก' };
+  }
+  if (!/^[0-9]{5}$/.test(address.postalCode)) {
+    return { error: 'รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก' };
+  }
+  if (!address.addressDetail || !address.district || !address.province) {
+    return { error: 'กรุณากรอกที่อยู่ อำเภอ/เขต และจังหวัดให้ครบถ้วน' };
+  }
+
+  return { address };
+}
+
+function sendAddressError(res, message) {
+  return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message });
+}
+
 export const addAddress = async (req, res, next) => {
   try {
-    const { recipientName, phone, addressLine, addressDetail, subdistrict, district, province, postalCode, zipCode, isDefault } = req.body;
-    const details = String(addressDetail ?? addressLine ?? '').trim();
-    const postal = String(zipCode ?? postalCode ?? '').trim();
-    if (!String(recipientName || '').trim()) return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'กรุณากรอกชื่อผู้รับ' });
-    if (!/^[0-9]{9,10}$/.test(String(phone || '').trim())) return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'เบอร์โทรศัพท์ต้องเป็นตัวเลข 9-10 หลัก' });
-    if (!/^[0-9]{5}$/.test(postal)) return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก' });
-    if (!details || !String(district || '').trim() || !String(province || '').trim()) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).json({
-        success: false,
-        message: 'กรุณากรอกที่อยู่ อำเภอ/เขต และจังหวัดให้ครบถ้วน'
-      });
-    }
+    const result = validateAddress(req.body);
+    if (result.error) return sendAddressError(res, result.error);
+    const address = result.address;
 
     const user = await User.findById(req.user?.id || req.user?._id);
     if (!user) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'User not found' });
     }
 
-    const shouldBeDefault = Boolean(isDefault) || user.shippingAddresses.length === 0;
+    const shouldBeDefault = address.isDefault || user.shippingAddresses.length === 0;
     if (shouldBeDefault) {
       user.shippingAddresses.forEach((address) => {
         address.isDefault = false;
@@ -72,14 +93,8 @@ export const addAddress = async (req, res, next) => {
     }
 
     user.shippingAddresses.push({
-      recipientName,
-      phone,
-      addressLine: details,
-      addressDetail: details,
-      subdistrict: subdistrict || '',
-      district: district || '',
-      province: province || '',
-      postalCode: postal,
+      ...address,
+      addressLine: address.addressDetail,
       isDefault: shouldBeDefault
     });
     await user.save();
@@ -126,22 +141,32 @@ export const deleteAddress = async (req, res, next) => {
 
 export const updateAddress = async (req, res, next) => {
   try {
-    const { recipientName, phone, addressLine, addressDetail, subdistrict, district, province, postalCode, zipCode, isDefault } = req.body;
-    const detail = String(addressDetail ?? addressLine ?? '').trim();
-    const postal = String(zipCode ?? postalCode ?? '').trim();
-    if (!String(recipientName || '').trim()) return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'กรุณากรอกชื่อผู้รับ' });
-    if (!/^[0-9]{9,10}$/.test(String(phone || '').trim())) return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'เบอร์โทรศัพท์ต้องเป็นตัวเลข 9-10 หลัก' });
-    if (!/^[0-9]{5}$/.test(postal)) return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก' });
-    if (!detail || !String(district || '').trim() || !String(province || '').trim()) return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'กรุณากรอกที่อยู่ อำเภอ/เขต และจังหวัดให้ครบถ้วน' });
+    const result = validateAddress(req.body);
+    if (result.error) return sendAddressError(res, result.error);
+    const address = result.address;
     const user = await User.findById(req.user?.id || req.user?._id);
     if (!user) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'User not found' });
     const target = user.shippingAddresses.id(req.params.addressId);
     if (!target) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Address not found' });
-    if (isDefault) user.shippingAddresses.forEach((address) => { address.isDefault = false; });
-    Object.assign(target, { recipientName: recipientName.trim(), phone: phone.trim(), addressLine: detail, addressDetail: detail, subdistrict: subdistrict || '', district: district.trim(), province: province.trim(), postalCode: postal, ...(isDefault ? { isDefault: true } : {}) });
+    if (address.isDefault) {
+      user.shippingAddresses.forEach((savedAddress) => {
+        savedAddress.isDefault = false;
+      });
+    }
+    Object.assign(target, {
+      ...address,
+      addressLine: address.addressDetail,
+      ...(address.isDefault ? { isDefault: true } : {})
+    });
     await user.save();
-    return res.status(HTTP_STATUS.OK).json({ success: true, message: 'Address updated successfully', data: user.shippingAddresses });
-  } catch (error) { return next(error); }
+    return res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Address updated successfully',
+      data: user.shippingAddresses
+    });
+  } catch (error) {
+    return next(error);
+  }
 };
 
 export const setDefaultAddress = async (req, res, next) => {

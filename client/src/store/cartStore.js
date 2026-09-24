@@ -30,6 +30,11 @@ export const useCartStore = create((set, get) => ({
 
   addToCart: ({ product, variant, quantity = 1 }) => {
     const currentItems = get().cartItems;
+    const stockQuantity = getStock(variant);
+
+    // Do not add an item that has no stock.
+    if (stockQuantity === 0) return currentItems;
+
     const prodId = product._id || product.productId || "product";
     const colorKey = variant.color || "std";
     const sizeKey = variant.size || "std";
@@ -47,10 +52,9 @@ export const useCartStore = create((set, get) => ({
       updatedItems = currentItems.map((item, idx) => {
         if (idx === existingIndex) {
           const newQty = item.quantity + quantity;
-          const maxStock = getStock(variant);
           return {
             ...item,
-            quantity: Math.min(newQty, maxStock),
+            quantity: Math.min(newQty, stockQuantity),
           };
         }
         return item;
@@ -67,8 +71,8 @@ export const useCartStore = create((set, get) => ({
         size: variant.size,
         price: variant.price,
         imageUrl: variant.imageUrl || product.imageUrl,
-        quantity: Math.min(Math.max(1, Number(quantity) || 1), getStock(variant)),
-        stockQuantity: getStock(variant),
+        quantity: Math.min(Math.max(1, Number(quantity) || 1), stockQuantity),
+        stockQuantity,
       };
       updatedItems = [...currentItems, newItem];
     }
@@ -91,11 +95,16 @@ export const useCartStore = create((set, get) => ({
       get().removeFromCart(variantId);
       return;
     }
-    const updatedItems = get().cartItems.map((item) =>
-      item.variantId === variantId
-        ? { ...item, quantity: Math.min(quantity, getStock(item)) }
-        : item
-    );
+    const updatedItems = get().cartItems
+      .filter((item) => item.variantId !== variantId || getStock(item) > 0)
+      .map((item) => {
+        if (item.variantId !== variantId) return item;
+
+        return {
+          ...item,
+          quantity: Math.min(quantity, getStock(item)),
+        };
+      });
     saveCart(updatedItems);
     set({ cartItems: updatedItems });
   },

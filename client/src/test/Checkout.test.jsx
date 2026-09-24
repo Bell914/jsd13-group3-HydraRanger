@@ -86,4 +86,15 @@ describe("Checkout order integration", () => {
     updateQuantity("v1", 99);
     expect(useCartStore.getState().cartItems[0].quantity).toBe(5);
   });
+
+  it("does not add an item when its stock is zero", () => {
+    useCartStore.setState({ cartItems: [] });
+    useCartStore.getState().addToCart({
+      product: { _id: "p2", name: "Out of stock" },
+      variant: { _id: "v2", stockQuantity: 0, price: 10 },
+      quantity: 1,
+    });
+
+    expect(useCartStore.getState().cartItems).toEqual([]);
+  });
 });
