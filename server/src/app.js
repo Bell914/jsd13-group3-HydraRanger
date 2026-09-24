@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { ENV } from "./config/env.js";
 import { buildAllowedOrigins, isOriginAllowed } from "./config/security.js";
 import apiRouter from "./routes/index.js";
+import couponRoutes from "./routes/couponRoutes.js";
 import {
   requestLogger,
   notFoundHandler,
@@ -67,6 +68,7 @@ app.get("/", (req, res) => {
 
 // API Routes
 app.use("/api", apiRouter);
+app.use("/api/coupons", couponRoutes); // 🚀 เพิ่มเส้นทาง Route สำหรับระบบ Coupon เรียบร้อย
 
 // 404 & Error Middlewares
 app.use(notFoundHandler);
