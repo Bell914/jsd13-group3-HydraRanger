@@ -5,7 +5,7 @@ export const ProductReviews = () => {
   return (
     <section className="my-12 max-w-5xl mx-auto">
       <div className="flex items-center gap-3 border-b border-gray-300 pb-3">
-        <h2 className="text-xl font-extrabold text-primary">รีวิว (Reviews)</h2>
+        <h2 className="text-xl font-extrabold text-primary">รีวิว</h2>
         <div className="flex items-center gap-1 text-amber-500">
           {[...Array(5)].map((_, i) => (
             <Star key={i} size={16} fill="currentColor" />
@@ -28,7 +28,7 @@ export const ProductReviews = () => {
             ))}
           </div>
           <p className="text-xs font-semibold text-secondary mb-2">
-            คุณเอมิลี่ • <span className="text-emerald-600">ลูกค้าที่ได้รับการยืนยันการซื้อ (Verified)</span>
+            คุณเอมิลี่ • <span className="text-emerald-600">ลูกค้าที่ได้รับการยืนยันการซื้อ</span>
           </p>
           <p className="text-sm text-gray-700 leading-relaxed">
             เสื้อผ้านิ่มมาก ทรง Oversized สวยกำลังดี ใส่สบายไม่ร้อนเลย ตรงปกมากครับ คุณภาพเนื้อผ้าคุ้มเกินราคา
@@ -50,7 +50,7 @@ export const ProductReviews = () => {
             ))}
           </div>
           <p className="text-xs font-semibold text-secondary mb-2">
-            คุณเจมส์ • <span className="text-emerald-600">ลูกค้าที่ได้รับการยืนยันการซื้อ (Verified)</span>
+            คุณเจมส์ • <span className="text-emerald-600">ลูกค้าที่ได้รับการยืนยันการซื้อ</span>
           </p>
           <p className="text-sm text-gray-700 leading-relaxed">
             คุณภาพผ้าดีมาก คุ้มราคา แมตช์กับกางเกงได้ง่าย ใส่ไปเที่ยวหรือไปทำงานก็ดูดี สั่งเพิ่มอีกตัวแน่นอน
