@@ -166,4 +166,15 @@ describe("Checkout order integration", () => {
     expect(screen.queryByRole("heading", { name: "ช่องทางการชำระเงิน" })).not.toBeInTheDocument();
     expect(createOrder).not.toHaveBeenCalled();
   });
+
+  it("only offers Stripe card payments in checkout", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToCheckoutPaymentStep();
+    await screen.findByTestId("payment-element");
+
+    expect(screen.getByText("Credit / Debit Card")).toBeInTheDocument();
+    expect(screen.queryByText("PromptPay")).not.toBeInTheDocument();
+    expect(screen.queryByText("PayPal")).not.toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledTimes(1);
+  });
 });

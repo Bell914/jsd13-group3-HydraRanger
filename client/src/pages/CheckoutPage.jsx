@@ -414,6 +414,10 @@ export default function CheckoutPage() {
     setSubmitError("");
 
     try {
+      if (paymentData.method !== "credit-card") {
+        throw new Error("กรุณาเลือกชำระเงินด้วย Credit / Debit Card");
+      }
+
       const stockError = getStockError();
       if (stockError) throw new Error(stockError);
 
@@ -631,15 +635,9 @@ export default function CheckoutPage() {
                     )}
                   </div>
                 ) : (
-                  <ReviewSection
-                    email={email}
-                    shippingData={shippingData}
-                    paymentData={paymentData}
-                    onEditStep={setCurrentStep}
-                    onBack={() => goToStep(3)}
-                    onPlaceOrder={() => handlePlaceOrder(null, null)}
-                    isSubmitting={isSubmitting}
-                  />
+                  <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    กรุณาเลือกชำระเงินด้วย Credit / Debit Card
+                  </p>
                 )}
               </>
             )}

@@ -1,9 +1,7 @@
 import React, { useState } from "react";
-import { CreditCard, Plus, QrCode, Wallet } from "lucide-react";
+import { CreditCard, Plus } from "lucide-react";
 
 const PAYMENT_OPTIONS = [
-  { id: "promptpay", name: "PromptPay", icon: QrCode },
-  { id: "paypal", name: "PayPal", icon: Wallet },
   { id: "credit-card", name: "Credit / Debit Card", icon: CreditCard },
 ];
 
@@ -15,15 +13,8 @@ export default function PaymentSection({
   onContinue,
   onBack,
 }) {
-  const [selectedMethod, setSelectedMethod] = useState(
-    paymentData.method || "credit-card",
-  );
+  const selectedMethod = "credit-card";
   const [error, setError] = useState("");
-
-  function selectPaymentMethod(method) {
-    setSelectedMethod(method);
-    onChangePayment({ method });
-  }
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -37,7 +28,7 @@ export default function PaymentSection({
       return;
     }
 
-    onChangePayment({ method: selectedMethod });
+    onChangePayment({ method: "credit-card" });
     onContinue();
   }
 
@@ -55,11 +46,7 @@ export default function PaymentSection({
         <div className="flex items-center gap-3">
           <CreditCard className="h-5 w-5" />
           <span className="text-sm font-medium">
-            {paymentData.method === "paypal"
-              ? "PayPal"
-                : paymentData.method === "promptpay"
-                ? "PromptPay"
-                : "Credit / Debit Card"}
+            Credit / Debit Card
           </span>
         </div>
       </div>
@@ -78,8 +65,8 @@ export default function PaymentSection({
             <div key={option.id} className="overflow-hidden rounded-lg border border-gray-200">
               <button
                 type="button"
-                onClick={() => selectPaymentMethod(option.id)}
-                className="flex w-full items-center justify-between px-4 py-3.5 text-left hover:bg-gray-50"
+                aria-pressed={isSelected}
+                className="flex w-full items-center justify-between px-4 py-3.5 text-left"
               >
                 <span className="flex items-center gap-3">
                   <option.icon size={20} aria-hidden="true" />
@@ -90,11 +77,6 @@ export default function PaymentSection({
               {isSelected && option.id === "credit-card" && (
                 <p className="border-t bg-gray-50 p-4 text-sm text-gray-600">
                   กรอกข้อมูลบัตรอย่างปลอดภัยผ่าน Stripe ในขั้นตอนถัดไป
-                </p>
-              )}
-              {isSelected && option.id === "promptpay" && (
-                <p className="border-t bg-gray-50 p-4 text-sm text-gray-600">
-                  ชำระเงินผ่านพร้อมเพย์ด้วย QR Code
                 </p>
               )}
             </div>
