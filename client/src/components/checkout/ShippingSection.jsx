@@ -45,6 +45,9 @@ export default function ShippingSection({
   const validate = () => {
     const errs = {};
     if (!shippingData.firstName?.trim()) errs.firstName = "กรุณากรอกชื่อ";
+    if (!isSavedAddressSelected && !shippingData.lastName?.trim()) {
+      errs.lastName = "กรุณากรอกนามสกุล";
+    }
     if (!shippingData.phone?.trim()) errs.phone = "กรุณากรอกเบอร์โทรศัพท์";
     if (!shippingData.address?.trim()) errs.address = "กรุณากรอกที่อยู่จัดส่ง";
     if (!shippingData.city?.trim()) errs.city = "กรุณากรอกอำเภอ / เขต";
@@ -321,7 +324,7 @@ export default function ShippingSection({
               htmlFor="shipping-state"
               className="block text-sm font-medium text-gray-800 mb-1"
             >
-              Province
+              จังหวัด
             </label>
             <div className="relative">
               <select

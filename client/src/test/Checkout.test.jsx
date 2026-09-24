@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import CheckoutPage from "../pages/CheckoutPage";
 import { useCartStore } from "../store/cartStore";
-import { createOrder } from "../services/orderService";
+import { createOrder } from "../services/orderService.js";
 
 vi.stubEnv("VITE_STRIPE_PUBLISHABLE_KEY", "pk_test_checkout");
 
@@ -17,7 +17,7 @@ const apiMocks = vi.hoisted(() => ({
   patch: vi.fn().mockResolvedValue({ success: true }),
 }));
 
-vi.mock("../services/orderService", () => ({ createOrder: vi.fn() }));
+vi.mock("../services/orderService.js", () => ({ createOrder: vi.fn() }));
 vi.mock("../services/userService", () => ({ getAddresses: vi.fn().mockResolvedValue({ data: [] }) }));
 vi.mock("../services/api.js", () => ({ api: apiMocks }));
 vi.mock("@stripe/stripe-js", () => ({ loadStripe: vi.fn(() => Promise.resolve({})) }));
@@ -29,19 +29,19 @@ vi.mock("@stripe/react-stripe-js", () => ({
 }));
 
 const fillShippingForm = () => {
-  fireEvent.change(screen.getByLabelText("First name"), { target: { value: "Test" } });
-  fireEvent.change(screen.getByLabelText("Last name"), { target: { value: "User" } });
-  fireEvent.change(screen.getByLabelText("Phone number"), { target: { value: "0812345678" } });
-  fireEvent.change(screen.getByLabelText("Address"), { target: { value: "123 Street" } });
-  fireEvent.change(screen.getByLabelText("City"), { target: { value: "Bangkok" } });
-  fireEvent.change(screen.getByLabelText("State"), { target: { value: "Bangkok" } });
-  fireEvent.change(screen.getByLabelText("Zip code"), { target: { value: "10110" } });
+  fireEvent.change(screen.getByLabelText("ชื่อ"), { target: { value: "Test" } });
+  fireEvent.change(screen.getByLabelText("นามสกุล"), { target: { value: "User" } });
+  fireEvent.change(screen.getByLabelText("เบอร์โทรศัพท์"), { target: { value: "0812345678" } });
+  fireEvent.change(screen.getByLabelText("บ้านเลขที่ / ถนน / อาคาร"), { target: { value: "123 Street" } });
+  fireEvent.change(screen.getByLabelText("อำเภอ / เขต"), { target: { value: "Bangkok" } });
+  fireEvent.change(screen.getByLabelText("จังหวัด"), { target: { value: "Bangkok" } });
+  fireEvent.change(screen.getByLabelText("รหัสไปรษณีย์"), { target: { value: "10110" } });
 };
 
 const goToCheckoutPaymentStep = () => {
   fillShippingForm();
-  fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
-  fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
+  fireEvent.click(screen.getAllByRole("button", { name: "ดำเนินการต่อ" })[0]);
+  fireEvent.click(screen.getByRole("button", { name: "ดำเนินการต่อ" }));
 };
 
 describe("Checkout order integration", () => {
@@ -69,7 +69,7 @@ describe("Checkout order integration", () => {
     await screen.findByTestId("payment-element");
     fireEvent.click(screen.getByRole("button", { name: /ชำระเงินและยืนยันคำสั่งซื้อ/i }));
 
-    expect(await screen.findByText(/Your OCCASION order is confirmed!/i)).toBeInTheDocument();
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
     expect(stripeMocks.confirmPayment).toHaveBeenCalled();
     expect(apiMocks.post).toHaveBeenCalledWith("/payment/create-payment-intent", {
       orderId: "order-mongo-id",
@@ -100,14 +100,14 @@ describe("Checkout order integration", () => {
     goToCheckoutPaymentStep();
     await screen.findByTestId("payment-element");
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[2]);
+    fireEvent.click(screen.getAllByRole("button", { name: "แก้ไข" })[2]);
 
     await waitFor(() => {
       expect(apiMocks.post).toHaveBeenCalledWith("/payment/cancel-payment-intent", {
         orderId: "order-mongo-id",
       });
     });
-    expect(screen.getByRole("heading", { name: "Payment" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "ช่องทางการชำระเงิน" })).toBeInTheDocument();
   });
 
   it("cancels an order after payment fails so reserved stock can be released", async () => {
