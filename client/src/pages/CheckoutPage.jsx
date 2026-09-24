@@ -14,6 +14,7 @@ import {
   FREE_SHIPPING_MINIMUM,
   calculateRankFromSpending,
 } from "../utils/loyaltyUtils.js";
+import { couponService } from "../services/couponService.js";
 import {
   CheckoutStepper,
   ContactSection,
@@ -204,17 +205,27 @@ export default function CheckoutPage() {
     loadSavedAddresses();
   }, [setAddressStore]);
 
+  // Coupon State
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState("");
+
   const subtotal = getTotalPrice();
   const userRank = currentUser?.membership?.rank || "MEMBER";
   const discountPercent = RANK_DISCOUNT_PERCENT[userRank] || 0;
   const rankDiscountAmount = Math.round((subtotal * discountPercent) / 100);
   const freeShippingMinimum = FREE_SHIPPING_MINIMUM[userRank] ?? 1000;
   const isFreeShipping = freeShippingMinimum === 0 || subtotal >= freeShippingMinimum;
-  const selectedShipping = SHIPPING_METHODS.find(
-    (method) => method.id === shippingData.shippingMethod,
-  ) || SHIPPING_METHODS[0];
+  const selectedShipping =
+    SHIPPING_METHODS.find((method) => method.id === shippingData.shippingMethod) ||
+    SHIPPING_METHODS[0];
   const shippingCost = isFreeShipping ? 0 : selectedShipping.price;
-  const discountedSubtotal = Math.max(0, subtotal - rankDiscountAmount);
+
+  const couponDiscountAmount = appliedCoupon
+    ? (appliedCoupon.discountAmount || Math.round((subtotal * (appliedCoupon.discountValue || 5)) / 100))
+    : 0;
+  const totalDiscount = Math.max(rankDiscountAmount, couponDiscountAmount);
+  const discountedSubtotal = Math.max(0, subtotal - totalDiscount);
   const taxAmount = currentStep >= 3 ? Math.round(discountedSubtotal * 0.06 * 100) / 100 : 0;
   const totalAmount = discountedSubtotal + shippingCost + taxAmount;
   const checkoutFingerprint = JSON.stringify({
@@ -227,11 +238,38 @@ export default function CheckoutPage() {
     })),
     shippingData,
     paymentMethod: paymentData.method,
+    couponCode: appliedCoupon?.code || "",
   });
   const stripeOrderPayload = useMemo(
     () => buildOrderPayload(),
     [checkoutFingerprint],
   );
+
+  const handleApplyCoupon = async (code) => {
+    try {
+      setCouponLoading(true);
+      setCouponError("");
+      const res = await couponService.validateCoupon(code, subtotal);
+      if (res?.data || res?.valid) {
+        const couponData = res.data || res;
+        setAppliedCoupon(couponData);
+        setCouponError("");
+      } else {
+        setCouponError(res?.message || "โค้ดส่วนลดไม่ถูกต้อง");
+        setAppliedCoupon(null);
+      }
+    } catch (err) {
+      setCouponError(err.message || "ไม่สามารถตรวจสอบโค้ดส่วนลดได้");
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponError("");
+  };
 
   function buildOrderPayload() {
     return {
@@ -257,7 +295,7 @@ export default function CheckoutPage() {
       shippingMethod: shippingData.shippingMethod || "standard",
       paymentMethod: paymentData.method || "credit-card",
       shippingCost,
-      couponCode: shippingData.couponCode || "",
+      couponCode: appliedCoupon?.code || shippingData.couponCode || "",
     };
   }
 
@@ -355,7 +393,7 @@ export default function CheckoutPage() {
         price: item.unitPrice || item.price,
       })),
       subtotal: order.subtotal ?? subtotal,
-      rankDiscountAmount: order.discountAmount ?? rankDiscountAmount,
+      rankDiscountAmount: order.discountAmount ?? totalDiscount,
       userRank,
       upgradedRank,
       shippingCost: order.shippingCost ?? shippingCost,
@@ -615,6 +653,12 @@ export default function CheckoutPage() {
               currentStep={currentStep}
               userRank={userRank}
               rankDiscountAmount={rankDiscountAmount}
+              appliedCoupon={appliedCoupon}
+              couponDiscountAmount={couponDiscountAmount}
+              onApplyCoupon={handleApplyCoupon}
+              onRemoveCoupon={handleRemoveCoupon}
+              couponLoading={couponLoading}
+              couponError={couponError}
             />
           </div>
         </div>
