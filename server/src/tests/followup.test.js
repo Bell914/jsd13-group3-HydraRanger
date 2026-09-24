@@ -7,6 +7,7 @@ import { ENV } from '../config/env.js';
 import { User } from '../models/User.js';
 import { Order } from '../models/Order.js';
 import { Product } from '../models/Product.js';
+import { Review } from '../models/Review.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { rateLimit } from '../middleware/rateLimiterMiddleware.js';
 import { memoryUpload, MAX_RECOMMEND_IMAGE_SIZE } from '../middleware/recommendUploadMiddleware.js';
@@ -127,9 +128,22 @@ test('reviews require a completed order', async (t) => {
       rating: 5,
       comment: 'great product'
     }),
-    /completed order/
+    /สามารถรีวิวได้เฉพาะสินค้าที่จัดส่งเสร็จสิ้น \(completed\) แล้วเท่านั้น/
   );
   assert.equal(orderFilter.status, 'completed');
+  assert.equal(String(orderFilter.user), 'aaaaaaaaaaaaaaaaaaaaaaaa');
+  assert.equal(String(orderFilter['items.product']), 'cccccccccccccccccccccccc');
+});
+
+test('duplicate review constraint is unique per user, product, and order', async (t) => {
+  const indexes = Review.schema.indexes();
+  assert.ok(indexes.some(([keys, options]) => keys.user === 1 && keys.product === 1 && keys.order === 1 && options.unique));
+  t.mock.method(Order, 'findOne', async () => ({ _id: 'bbbbbbbbbbbbbbbbbbbbbbbb' }));
+  t.mock.method(Product, 'findById', async () => ({ _id: 'cccccccccccccccccccccccc' }));
+  t.mock.method(Review, 'create', async () => { const error = new Error('duplicate'); error.code = 11000; throw error; });
+  await assert.rejects(createReview('aaaaaaaaaaaaaaaaaaaaaaaa', {
+    orderId: 'bbbbbbbbbbbbbbbbbbbbbbbb', productId: 'cccccccccccccccccccccccc', rating: 5, comment: 'great product'
+  }), (error) => error.code === 11000);
 });
 
 test('password reset revokes existing sessions', async (t) => {

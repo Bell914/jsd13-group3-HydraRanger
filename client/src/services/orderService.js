@@ -7,7 +7,7 @@ export const createOrder = async (orderData) => {
 
 export const getMyOrders = async () => {
   const response = await api.get('/orders/my');
-  return response.data;
+  return Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : [];
 };
 
 export const getOrderDetail = async (orderId) => {

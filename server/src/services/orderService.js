@@ -82,6 +82,8 @@ async function prepareOrderItems(items) {
       sku: variant.sku,
       title: product.title,
       variant: variant.size_or_color,
+      color: variant.color || '',
+      size: variant.size || '',
       imageUrl: getImageUrl(product),
       unitPrice: variant.price,
       quantity,
@@ -237,8 +239,20 @@ export async function createOrder(user, orderData) {
   return Order.findById(order._id).populate('user', 'username email');
 }
 
-export function getMyOrders(userId) {
-  return Order.find({ user: userId }).sort({ createdAt: -1 });
+export async function getMyOrders(userId) {
+  const orders = await Order.find({ user: userId }).sort({ createdAt: -1 }).lean();
+  return orders.map((order) => ({
+    ...order,
+    userId: String(order.user),
+    items: order.items.map((item) => ({
+      ...item,
+      productId: String(item.product),
+      name: item.title,
+      price: item.unitPrice,
+      color: item.color || '',
+      size: item.size || ''
+    }))
+  }));
 }
 
 export async function getOrderById(orderId, userId) {

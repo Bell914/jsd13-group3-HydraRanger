@@ -17,6 +17,8 @@ const orderItemSchema = new mongoose.Schema(
     sku: { type: String, required: true, trim: true },
     title: { type: String, required: true, trim: true },
     variant: { type: String, required: true, trim: true },
+    color: { type: String, default: '', trim: true },
+    size: { type: String, default: '', trim: true },
     imageUrl: { type: String, default: '' },
     unitPrice: { type: Number, required: true, min: 0 },
     quantity: { type: Number, required: true, min: 1 },

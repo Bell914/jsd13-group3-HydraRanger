@@ -7,6 +7,7 @@ function sendReviewError(error, res, next) {
     'Review comment',
     'Invalid order',
     'Only customers',
+    'สามารถรีวิวได้เฉพาะสินค้าที่จัดส่งเสร็จสิ้น (completed) แล้วเท่านั้น',
     'isVisible must'
   ];
 
