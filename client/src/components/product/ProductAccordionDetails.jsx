@@ -1,15 +1,17 @@
 import React from "react";
 
 export const ProductAccordionDetails = ({
+  product,
+  selectedVariant,
   isDetailsOpen,
   setIsDetailsOpen,
   isMaterialsOpen,
   setIsMaterialsOpen,
 }) => {
   return (
-    <section className="my-12 max-w-5xl mx-auto rounded-2xl border-2 border-[#0095ff] bg-white p-6 sm:p-8 shadow-sm">
+    <section className="my-12 max-w-5xl mx-auto overflow-hidden rounded-2xl border border-[#ded8cf] bg-white px-6 sm:px-8 shadow-sm">
       {/* Section 1: รายละเอียด (Details) */}
-      <div className="border-b border-gray-200 pb-6">
+      <div className="border-b border-gray-200 py-6">
         <button
           type="button"
           onClick={() => setIsDetailsOpen(!isDetailsOpen)}
@@ -25,35 +27,17 @@ export const ProductAccordionDetails = ({
 
         {isDetailsOpen && (
           <div className="mt-4 space-y-4 text-sm text-gray-700 leading-relaxed">
-            <ul className="space-y-1.5 list-none p-0 m-0">
-              <li>- เสื้อทรงหลวมที่ได้แรงบันดาลใจจากยุคทศวรรษที่ 1990</li>
-              <li>
-                - ทรงกระชับเข้ารูปพร้อมดีเทลช่วงชายแบบปล่อยสไตล์สตรีท แมตช์กับกางเกงสไตล์แคชชวล ทางการ และมินิมอล
-              </li>
-            </ul>
-
-            <div>
-              <h3 className="font-bold text-primary mb-1">รายละเอียดการใช้งาน</h3>
-              <ul className="space-y-1 list-none p-0 m-0 text-secondary">
-                <li>- ดีไซน์ช่วงลำตัวโปร่งนุ่มสบาย 01 OFF WHITE มีความโปร่งเล็กน้อย</li>
-                <li>- ทรง: ทรงเข้ารูป (Relaxed Fit)</li>
-                <li>- กระเป๋า: ไม่มีกระเป๋า</li>
-                <li>- รูปภาพที่แสดง อาจมีสีที่ยังไม่วางจำหน่าย</li>
-              </ul>
-            </div>
+            <p>{product?.description || "รายละเอียดสินค้าจะอัปเดตเร็ว ๆ นี้"}</p>
 
             <div className="pt-2 text-xs text-gray-500">
-              <p>รหัสสินค้า: 465433, 474410, 460783</p>
-              <p className="mt-0.5">
-                โปรดทราบว่าสินค้านี้อาจมีรหัสสินค้าแตกต่างไปแม้จะเป็นสินค้าตัวเดียวกันก็ตาม
-              </p>
+              <p>รหัสสินค้า: {selectedVariant?.sku || product?.sku || product?.productId || "-"}</p>
             </div>
           </div>
         )}
       </div>
 
       {/* Section 2: วัสดุ / การดูแล (Materials & Care) */}
-      <div className="pt-6">
+      <div className="py-6">
         <button
           type="button"
           onClick={() => setIsMaterialsOpen(!isMaterialsOpen)}

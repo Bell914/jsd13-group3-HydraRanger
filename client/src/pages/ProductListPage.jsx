@@ -5,15 +5,14 @@ import RecommendedSlider from "../components/RecommendedSlider.jsx";
 import { getProducts } from "../services/productService.js";
 
 export default function ProductListPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState("featured");
   const productsSectionRef = useRef(null);
-
-  const PRODUCTS_PER_PAGE = 8;
 
   // URL query params
   const selectedCategory = searchParams.get("category") || "all";
@@ -56,26 +55,36 @@ export default function ProductListPage() {
   }, [selectedCategory, searchKeyword]);
 
 
-  // Display products: use the real product list (no duplication) for pagination
-  const displayedProducts = useMemo(() => (products || []).slice(), [products]);
+  // Never repeat products to fill the grid. Repeated cards make inventory and
+  // pagination misleading, especially when the API only returns a few items.
+  const displayedProducts = useMemo(() => {
+    if (!products || products.length === 0) return [];
+    const getPrice = (product) => {
+      const prices = (product.variants || [])
+        .map((variant) => Number(variant.price))
+        .filter((price) => Number.isFinite(price));
+      return prices.length ? Math.min(...prices) : Number(product.price) || 0;
+    };
+    const sorted = [...products];
+    if (sortBy === "price-low") sorted.sort((a, b) => getPrice(a) - getPrice(b));
+    if (sortBy === "price-high") sorted.sort((a, b) => getPrice(b) - getPrice(a));
+    if (sortBy === "name") {
+      sorted.sort((a, b) => (a.name || a.title || "").localeCompare(b.name || b.title || "", "th"));
+    }
+    return sorted;
+  }, [products, sortBy]);
 
-  // Reset to first page whenever the filter/search changes
+  const itemsPerPage = 12;
+  const totalPages = Math.max(1, Math.ceil(displayedProducts.length / itemsPerPage));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedProducts = displayedProducts.slice(
+    (safePage - 1) * itemsPerPage,
+    safePage * itemsPerPage
+  );
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategory, searchKeyword]);
-
-  // Pagination: 8 cards per page
-  const totalPages = useMemo(
-    () => Math.max(1, Math.ceil(displayedProducts.length / PRODUCTS_PER_PAGE)),
-    [displayedProducts]
-  );
-
-  const safePage = Math.min(currentPage, totalPages);
-
-  const pagedProducts = useMemo(
-    () => displayedProducts.slice((safePage - 1) * PRODUCTS_PER_PAGE, safePage * PRODUCTS_PER_PAGE),
-    [displayedProducts, safePage]
-  );
+  }, [selectedCategory, searchKeyword, sortBy]);
 
   // Smooth-scroll to the product cards once search results finish loading
   useEffect(() => {
@@ -88,16 +97,17 @@ export default function ProductListPage() {
     }
   }, [searchKeyword, loading, error, displayedProducts.length]);
 
-  // Footer "BOTTOM" button: land on the top of the products section
+  // Land on the top of the products section when requested or category selected
   useEffect(() => {
-    if (location.state?.scrollTo !== "products") return;
-    if (!loading && !error && displayedProducts.length > 0) {
-      productsSectionRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+    if (location.state?.scrollTo === "products" || (selectedCategory && selectedCategory !== "all")) {
+      if (!loading && !error && displayedProducts.length > 0) {
+        productsSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
     }
-  }, [location.state?.scrollTo, loading, error, displayedProducts.length]);
+  }, [location.state?.scrollTo, location.state?.timestamp, selectedCategory, loading, error, displayedProducts.length]);
 
   const handlePageClick = (pageNum) => {
     setCurrentPage(pageNum);
@@ -135,7 +145,9 @@ export default function ProductListPage() {
         </section>
 
         {/* HERO SECTION: Auto-sliding Recommended Products Carousel */}
-        <RecommendedSlider products={products} />
+        {!loading && !error && products.length > 0 && (
+          <RecommendedSlider products={products} />
+        )}
 
         {/* Loading Skeleton */}
         {loading && (
@@ -192,13 +204,77 @@ export default function ProductListPage() {
           </div>
         )}
 
-        {/* Product Grid (8 cards per page) */}
-        {!loading && !error && pagedProducts.length > 0 && (
+        {/* Responsive product grid */}
+        {!loading && !error && displayedProducts.length > 0 && (
           <section ref={productsSectionRef} id="products-section" aria-label="รายการสินค้า">
+            <div className="mb-6 flex flex-col gap-4 border-b border-[#ded8cf] pb-5 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">
+                  OCCASION COLLECTION
+                </p>
+                <h2 className="mt-1 text-2xl font-black text-primary">
+                  {searchKeyword
+                    ? `ผลการค้นหา “${searchKeyword}”`
+                    : selectedCategory === "tops"
+                    ? "หมวดหมู่: เสื้อ (TOPS)"
+                    : selectedCategory === "bottoms"
+                    ? "หมวดหมู่: กางเกง (BOTTOMS)"
+                    : "เลือกซื้อสินค้า"}
+                </h2>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {[
+                    { id: "all", label: "ทั้งหมด" },
+                    { id: "tops", label: "เสื้อ (TOPS)" },
+                    { id: "bottoms", label: "กางเกง (BOTTOMS)" },
+                  ].map((cat) => {
+                    const isSelected = selectedCategory === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          const newParams = new URLSearchParams(searchParams);
+                          if (cat.id === "all") {
+                            newParams.delete("category");
+                          } else {
+                            newParams.set("category", cat.id);
+                          }
+                          setSearchParams(newParams);
+                        }}
+                        className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-accent text-white shadow-sm"
+                            : "bg-surface border border-occasion-border/60 text-secondary hover:border-accent hover:text-accent"
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-2 text-sm text-secondary">
+                  พบ {displayedProducts.length} รายการ
+                </p>
+              </div>
+
+              <label className="flex items-center gap-3 text-sm font-semibold text-primary">
+                เรียงตาม
+                <select
+                  value={sortBy}
+                  onChange={(event) => setSortBy(event.target.value)}
+                  className="min-w-44 rounded-xl border border-[#d8d1c7] bg-white px-4 py-2.5 text-sm font-medium text-primary outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+                >
+                  <option value="featured">สินค้าแนะนำ</option>
+                  <option value="price-low">ราคา: ต่ำไปสูง</option>
+                  <option value="price-high">ราคา: สูงไปต่ำ</option>
+                  <option value="name">ชื่อสินค้า</option>
+                </select>
+              </label>
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {pagedProducts.map((product, idx) => (
+              {paginatedProducts.map((product) => (
                 <ProductCard
-                  key={`${product._id || product.productId}-${idx}`}
+                  key={product._id || product.productId}
                   product={product}
                 />
               ))}
@@ -206,14 +282,13 @@ export default function ProductListPage() {
           </section>
         )}
 
-        {/* Dynamic Pagination (8 cards per page) */}
+        {/* Dynamic Pagination */}
         {!loading && !error && displayedProducts.length > 0 && totalPages > 1 && (
           <nav
             aria-label="การแบ่งหน้าสินค้า"
             className="my-12 flex items-center justify-center gap-3 sm:gap-6 text-base sm:text-lg font-bold"
           >
-            {[...Array(totalPages)].map((_, index) => {
-              const pageNum = index + 1;
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNum) => {
               const isActive = pageNum === safePage;
               return (
                 <button
@@ -222,8 +297,8 @@ export default function ProductListPage() {
                   onClick={() => handlePageClick(pageNum)}
                   className={`transition-all duration-200 cursor-pointer px-1 py-0.5 select-none ${
                     isActive
-                      ? "text-[#0046a7] font-black text-xl sm:text-2xl underline decoration-accent decoration-2 underline-offset-8 scale-110"
-                      : "text-[#3b82f6] hover:text-[#0046a7] hover:scale-110"
+                      ? "text-primary font-black text-xl sm:text-2xl underline decoration-accent decoration-2 underline-offset-8 scale-110"
+                      : "text-secondary hover:text-accent hover:scale-110"
                   }`}
                   aria-current={isActive ? "page" : undefined}
                   aria-label={`หน้า ${pageNum}`}
