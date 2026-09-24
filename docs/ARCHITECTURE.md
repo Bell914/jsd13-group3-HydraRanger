@@ -77,12 +77,13 @@ graph TD
 3. **`src/routes/`**: Centralized routing system พร้อม Protected Route Guard
 4. **`src/pages/`**: View/Container components ที่ประกอบด้วย State และการเรียกใช้ Services
 5. **`src/components/`**: Reusable UI Components (Dumb/Presentational Components)
-6. **`src/services/`**: Centralized Axios/Fetch client พร้อมการแนบ Bearer Token อัตโนมัติ
+6. **`src/services/`**: Centralized Fetch client ที่ส่ง session cookie ด้วย `credentials: include`
 
 ### Authentication Boundary
 
-- Customer token ใช้ key occasion_token
-- Admin token ใช้ key occasion_admin_token
+- Customer session อยู่ใน HttpOnly cookie `occasion_session`
+- Admin session อยู่ใน HttpOnly cookie `occasion_admin_session`
+- JavaScript ฝั่ง Browser อ่าน token ไม่ได้ และเก็บใน `localStorage` เฉพาะข้อมูลผู้ใช้ที่ใช้แสดงผล
 - Customer login ไม่รับบัญชี role admin
 - Admin login รับเฉพาะบัญชี role admin
 - Public registration สร้าง role user ที่ Backend เท่านั้น

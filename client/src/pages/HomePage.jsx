@@ -157,7 +157,7 @@ export const HomePage = () => {
                       {article.title}
                     </h2>
                     <p className="text-sm text-[#526164] sm:text-base mt-2 line-clamp-3">
-                      {article.description}
+                      {article.description || article.category}
                     </p>
                   </div>
 

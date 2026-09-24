@@ -10,8 +10,8 @@ export const validateRegisterInput = ({ username, email, password }) => {
     errors.push('A valid email address is required');
   }
 
-  if (!password || password.length < 6) {
-    errors.push('Password is required and must be at least 6 characters');
+  if (!password || password.length < 8) {
+    errors.push('Password is required and must be at least 8 characters');
   }
 
   return {
@@ -68,8 +68,8 @@ export const validateChangePasswordInput = ({ currentPassword, newPassword }) =>
     errors.push('Current password is required');
   }
 
-  if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
-    errors.push('New password is required and must be at least 6 characters');
+  if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+    errors.push('New password is required and must be at least 8 characters');
   }
 
   if (newPassword && currentPassword && newPassword === currentPassword) {
@@ -87,5 +87,21 @@ export const validateRefreshToken = ({ token }) => {
   return {
     isValid,
     errors: isValid ? [] : ['Token is required']
+  };
+};
+
+export const validateForgotPasswordInput = ({ email }) => {
+  const isValid = typeof email === 'string' && /^\S+@\S+\.\S+$/.test(email.trim());
+  return {
+    isValid,
+    errors: isValid ? [] : ['A valid email address is required']
+  };
+};
+
+export const validateResetPasswordInput = ({ password }) => {
+  const isValid = typeof password === 'string' && password.length >= 8;
+  return {
+    isValid,
+    errors: isValid ? [] : ['Password must be at least 8 characters']
   };
 };
