@@ -12,6 +12,7 @@ export default function ProductListPage() {
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("featured");
+  const [isSortOpen, setIsSortOpen] = useState(false);
   const productsSectionRef = useRef(null);
 
   // URL query params
@@ -151,17 +152,9 @@ export default function ProductListPage() {
 
         {/* Loading Skeleton */}
         {loading && (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-            {[...Array(8)].map((_, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col rounded-2xl bg-primary/20 p-4 animate-pulse min-h-[280px]"
-              >
-                <div className="aspect-square w-full rounded-xl bg-primary/30 mb-4"></div>
-                <div className="h-4 w-3/4 bg-primary/30 rounded mb-2"></div>
-                <div className="h-3 w-1/2 bg-primary/20 rounded mt-auto"></div>
-              </div>
-            ))}
+          <div className="flex h-[40vh] w-full flex-col items-center justify-center gap-4">
+            <span className="loading loading-spinner loading-lg text-accent"></span>
+            <p className="text-sm font-medium text-secondary animate-pulse">กำลังโหลดสินค้า...</p>
           </div>
         )}
 
@@ -216,16 +209,16 @@ export default function ProductListPage() {
                   {searchKeyword
                     ? `ผลการค้นหา “${searchKeyword}”`
                     : selectedCategory === "tops"
-                    ? "หมวดหมู่: เสื้อ (TOPS)"
+                    ? "หมวดหมู่: เสื้อ"
                     : selectedCategory === "bottoms"
-                    ? "หมวดหมู่: กางเกง (BOTTOMS)"
+                    ? "หมวดหมู่: กางเกง"
                     : "เลือกซื้อสินค้า"}
                 </h2>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   {[
                     { id: "all", label: "ทั้งหมด" },
-                    { id: "tops", label: "เสื้อ (TOPS)" },
-                    { id: "bottoms", label: "กางเกง (BOTTOMS)" },
+                    { id: "tops", label: "เสื้อ" },
+                    { id: "bottoms", label: "กางเกง" },
                   ].map((cat) => {
                     const isSelected = selectedCategory === cat.id;
                     return (
@@ -257,19 +250,66 @@ export default function ProductListPage() {
                 </p>
               </div>
 
-              <label className="flex items-center gap-3 text-sm font-semibold text-primary">
+              <div className="flex items-center gap-3 text-sm font-semibold text-primary relative">
                 เรียงตาม
-                <select
-                  value={sortBy}
-                  onChange={(event) => setSortBy(event.target.value)}
-                  className="min-w-44 rounded-xl border border-[#d8d1c7] bg-white px-4 py-2.5 text-sm font-medium text-primary outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
-                >
-                  <option value="featured">สินค้าแนะนำ</option>
-                  <option value="price-low">ราคา: ต่ำไปสูง</option>
-                  <option value="price-high">ราคา: สูงไปต่ำ</option>
-                  <option value="name">ชื่อสินค้า</option>
-                </select>
-              </label>
+                <div className="relative">
+                  <button 
+                    type="button"
+                    onClick={() => setIsSortOpen(!isSortOpen)}
+                    onBlur={() => setTimeout(() => setIsSortOpen(false), 200)}
+                    className="flex cursor-pointer items-center justify-between min-w-[180px] rounded-xl border border-[#d8d1c7] bg-white px-4 py-2.5 text-sm font-medium text-primary outline-none transition hover:border-accent focus:border-accent focus:ring-2 focus:ring-accent/20"
+                  >
+                    <span>
+                      {sortBy === "featured" ? "สินค้าแนะนำ" : 
+                       sortBy === "price-low" ? "ราคา: ต่ำไปสูง" : 
+                       sortBy === "price-high" ? "ราคา: สูงไปต่ำ" : 
+                       "ชื่อสินค้า"}
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-primary transition-transform ${isSortOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+                  
+                  {isSortOpen && (
+                    <ul className="absolute right-0 top-full z-[10] mt-2 w-[180px] p-2 shadow-[0_8px_30px_rgb(0,0,0,0.12)] bg-white rounded-xl border border-[#d8d1c7]/50 flex flex-col gap-1">
+                      <li>
+                        <button 
+                          type="button"
+                          className={`font-medium w-full rounded-lg flex text-left px-4 py-2 transition-colors ${sortBy === "featured" ? "bg-accent text-white" : "text-primary hover:bg-accent/10 hover:text-accent"}`}
+                          onClick={() => { setSortBy("featured"); setIsSortOpen(false); }}
+                        >
+                          สินค้าแนะนำ
+                        </button>
+                      </li>
+                      <li>
+                        <button 
+                          type="button"
+                          className={`font-medium w-full rounded-lg flex text-left px-4 py-2 transition-colors ${sortBy === "price-low" ? "bg-accent text-white" : "text-primary hover:bg-accent/10 hover:text-accent"}`}
+                          onClick={() => { setSortBy("price-low"); setIsSortOpen(false); }}
+                        >
+                          ราคา: ต่ำไปสูง
+                        </button>
+                      </li>
+                      <li>
+                        <button 
+                          type="button"
+                          className={`font-medium w-full rounded-lg flex text-left px-4 py-2 transition-colors ${sortBy === "price-high" ? "bg-accent text-white" : "text-primary hover:bg-accent/10 hover:text-accent"}`}
+                          onClick={() => { setSortBy("price-high"); setIsSortOpen(false); }}
+                        >
+                          ราคา: สูงไปต่ำ
+                        </button>
+                      </li>
+                      <li>
+                        <button 
+                          type="button"
+                          className={`font-medium w-full rounded-lg flex text-left px-4 py-2 transition-colors ${sortBy === "name" ? "bg-accent text-white" : "text-primary hover:bg-accent/10 hover:text-accent"}`}
+                          onClick={() => { setSortBy("name"); setIsSortOpen(false); }}
+                        >
+                          ชื่อสินค้า
+                        </button>
+                      </li>
+                    </ul>
+                  )}
+                </div>
+              </div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {paginatedProducts.map((product) => (
