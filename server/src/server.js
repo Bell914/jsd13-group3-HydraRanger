@@ -1,10 +1,24 @@
 import app from "./app.js";
 import { ENV } from "./config/env.js";
 import { connectDB } from "./config/db.js";
+import { cleanupExpiredCardPayments } from "./controllers/paymentController.js";
+
+const PAYMENT_CLEANUP_INTERVAL = 60 * 1000;
 
 const startServer = async () => {
   // Connect to Database
   await connectDB();
+
+  // Release stock held by card orders that were not paid within 30 minutes.
+  await cleanupExpiredCardPayments().catch((error) => {
+    console.error("Could not clean up expired card payments:", error);
+  });
+  const paymentCleanupTimer = setInterval(() => {
+    cleanupExpiredCardPayments().catch((error) => {
+      console.error("Could not clean up expired card payments:", error);
+    });
+  }, PAYMENT_CLEANUP_INTERVAL);
+  paymentCleanupTimer.unref();
 
   // Start HTTP Server
   const server = app.listen(ENV.PORT, () => {

@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { ENV } from "./config/env.js";
 import { buildAllowedOrigins, isOriginAllowed } from "./config/security.js";
 import apiRouter from "./routes/index.js";
+import { stripeWebhook } from "./controllers/paymentController.js";
 import {
   requestLogger,
   notFoundHandler,
@@ -46,6 +47,8 @@ app.use(
   }),
 );
 
+// Stripe signs the exact raw request bytes; this route must run before JSON parsing.
+app.post("/api/payment/webhook", express.raw({ type: "application/json" }), stripeWebhook);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

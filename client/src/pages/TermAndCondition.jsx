@@ -1,6 +1,6 @@
 export const TermAndCondition = () => {
   return (
-    <div className="bg-white min-h-screen flex flex-col font-['Prompt']">
+    <div className="bg-white min-h-screen flex flex-col font-['Poppins']">
       {/* Navbar Container (นำคอมโพเนนต์ Navbar ของคุณมาใส่ตรงนี้) */}
       <header id="navbar-container"></header>
 

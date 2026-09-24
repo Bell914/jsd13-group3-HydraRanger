@@ -8,6 +8,7 @@ import {
   VALID_COUPONS,
   SHIPPING_METHODS_CONFIG
 } from '../config/membershipConfig.js';
+import { refundCouponUsage, claimCouponAtomically } from './couponService.js';
 
 const SHIPPING_COSTS = {
   standard: 0,
@@ -73,7 +74,7 @@ async function prepareOrderItems(items) {
     const variant = findVariant(product, item);
     if (!variant) throw new Error(`Variant for ${product.title} was not found`);
     if (variant.stock_quantity < quantity) {
-      throw new Error(`Not enough stock for ${product.title}`);
+      throw new Error(variant.stock_quantity <= 0 ? 'สินค้าหมดแล้ว' : 'สินค้ามีไม่เพียงพอในสต็อก');
     }
 
     preparedItems.push({
@@ -82,6 +83,8 @@ async function prepareOrderItems(items) {
       sku: variant.sku,
       title: product.title,
       variant: variant.size_or_color,
+      color: variant.color || '',
+      size: variant.size || '',
       imageUrl: getImageUrl(product),
       unitPrice: variant.price,
       quantity,
@@ -125,7 +128,7 @@ async function reserveOrderStock(items) {
       );
 
       if (!wasUpdated(result)) {
-        throw new Error(`Not enough stock for ${item.title}`);
+        throw new Error('สินค้ามีไม่เพียงพอในสต็อก');
       }
 
       reservedItems.push(item);
@@ -162,16 +165,41 @@ export async function createOrder(user, orderData) {
 
   // 2. Validate coupon if provided
   const couponCode = orderData.couponCode ? String(orderData.couponCode).trim().toUpperCase() : '';
+  let appliedDbCoupon = null;
+  const orderId = new mongoose.Types.ObjectId();
   if (couponCode) {
-    const coupon = VALID_COUPONS[couponCode];
-    if (coupon) {
-      if (subtotal >= (coupon.minSpend || 0)) {
-        if (coupon.type === 'percent') {
-          const couponDiscount = Math.round((subtotal * coupon.value) / 100);
+    // 2.1 First attempt atomic claim on dynamic user coupons in MongoDB (e.g. WELCOME5)
+    const userId = user?._id || user?.id;
+    if (userId) {
+      try {
+        appliedDbCoupon = await claimCouponAtomically({
+          code: couponCode,
+          userId,
+          orderId,
+        });
+        if (appliedDbCoupon) {
+          const couponDiscount = Math.round((subtotal * appliedDbCoupon.discountValue) / 100);
           calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
-        } else if (coupon.type === 'fixed') {
-          calculatedDiscount = Math.max(calculatedDiscount, coupon.value);
         }
+      } catch (couponErr) {
+        console.warn('Coupon atomic claim warning:', couponErr.message);
+      }
+    }
+
+    // 2.2 Fallback to static VALID_COUPONS (Tier coupons, birthday coupons)
+    if (!appliedDbCoupon) {
+      const coupon = VALID_COUPONS[couponCode];
+      if (coupon) {
+        if (subtotal >= (coupon.minSpend || 0)) {
+          if (coupon.type === 'percent') {
+            const couponDiscount = Math.round((subtotal * coupon.value) / 100);
+            calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
+          } else if (coupon.type === 'fixed') {
+            calculatedDiscount = Math.max(calculatedDiscount, coupon.value);
+          }
+        }
+      } else {
+        throw new Error('คูปองไม่ถูกต้อง หรือถูกใช้งานไปแล้ว');
       }
     }
   }
@@ -195,12 +223,18 @@ export async function createOrder(user, orderData) {
   const taxableSubtotal = Math.max(0, subtotal - discountAmount);
   const taxAmount = Math.round(taxableSubtotal * 0.06 * 100) / 100;
   const totalAmount = taxableSubtotal + shippingCost + taxAmount;
-
-  await reserveOrderStock(items);
+  const paymentMethod = orderData.paymentMethod || 'credit-card';
+  const paymentExpiresAt = paymentMethod === 'credit-card'
+    ? new Date(Date.now() + 30 * 60 * 1000)
+    : null;
 
   let order;
+  let stockReserved = false;
   try {
+    await reserveOrderStock(items);
+    stockReserved = true;
     order = await Order.create({
+      _id: orderId,
       orderNumber: createOrderNumber(),
       user: user._id || user.id,
       customerEmail: orderData.email || user.email,
@@ -217,7 +251,9 @@ export async function createOrder(user, orderData) {
         deliveryNote: orderData.shippingAddress?.deliveryNote || ''
       },
       shippingMethod: orderData.shippingMethod || 'standard',
-      paymentMethod: orderData.paymentMethod || 'credit-card',
+      paymentMethod,
+      paymentIntentId: orderData.paymentIntentId || '',
+      paymentExpiresAt,
       subtotal,
       discountAmount,
       couponCode,
@@ -229,15 +265,47 @@ export async function createOrder(user, orderData) {
       stockReserved: true
     });
   } catch (error) {
-    await restoreOrderStock(items);
+    try {
+      if (stockReserved) await restoreOrderStock(items);
+    } finally {
+      // Only release the claim owned by this failed checkout, including stock failures.
+      if (appliedDbCoupon) {
+        await refundCouponUsage({ code: couponCode, userId: user._id || user.id, orderId });
+      }
+    }
     throw error;
   }
 
   return Order.findById(order._id).populate('user', 'username email');
 }
 
-export function getMyOrders(userId) {
-  return Order.find({ user: userId }).sort({ createdAt: -1 });
+export async function getExpiredCardPaymentOrders(now = new Date()) {
+  const oldOrderCutoff = new Date(now.getTime() - 30 * 60 * 1000);
+
+  return Order.find({
+    status: 'pending',
+    paymentMethod: 'credit-card',
+    $or: [
+      { paymentExpiresAt: { $lte: now } },
+      { paymentExpiresAt: null, createdAt: { $lte: oldOrderCutoff } }
+    ]
+  });
+}
+
+export async function getMyOrders(userId) {
+  const orders = await Order.find({ user: userId }).sort({ createdAt: -1 }).lean();
+  return orders.map((order) => ({
+    ...order,
+    userId: String(order.user),
+    items: order.items.map((item) => ({
+      ...item,
+      productId: String(item.product),
+      name: item.title,
+      price: item.unitPrice,
+      color: item.color || '',
+      size: item.size || ''
+    }))
+  }));
 }
 
 export async function getOrderById(orderId, userId) {
@@ -259,6 +327,27 @@ export function getAllOrders() {
   return Order.find().populate('user', 'username email').sort({ createdAt: -1 });
 }
 
+function isTransactionUnavailable(error) {
+  return error?.code === 20 || /transaction numbers are only allowed/i.test(error?.message || '');
+}
+
+async function applyOrderStatusChanges(existingOrder, status, userId, netSpend, session = null) {
+  if (['cancelled', 'refunded'].includes(status) && existingOrder.stockReserved && !existingOrder.stockRestored) {
+    await restoreOrderStock(existingOrder.items, session);
+    existingOrder.stockRestored = true;
+  }
+
+  if (userId && !existingOrder.loyaltyProcessed && status === 'paid') {
+    await loyaltyService.processOrderSpending(userId, netSpend, 'ADD', session);
+    existingOrder.loyaltyProcessed = true;
+  } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {
+    await loyaltyService.processOrderSpending(userId, netSpend, 'SUBTRACT', session);
+    existingOrder.loyaltyProcessed = false;
+  }
+
+  await existingOrder.save(session ? { session } : undefined);
+}
+
 export async function updateOrderStatus(orderId, status) {
   if (!ORDER_STATUSES.includes(status)) throw new Error('Invalid order status');
 
@@ -276,42 +365,34 @@ export async function updateOrderStatus(orderId, status) {
   const userId = existingOrder.user?._id || existingOrder.user?.id || existingOrder.user;
   const netSpend = Math.max(0, existingOrder.subtotal - (existingOrder.discountAmount || 0));
 
-  let session = null;
+  let session;
   try {
-    if (['cancelled', 'refunded'].includes(status) && existingOrder.stockReserved && !existingOrder.stockRestored) {
-      await restoreOrderStock(existingOrder.items, session);
-      existingOrder.stockRestored = true;
-    }
-
     session = await mongoose.startSession();
     session.startTransaction();
-  } catch {
-    session = null;
+    await applyOrderStatusChanges(existingOrder, status, userId, netSpend, session);
+    await session.commitTransaction();
+  } catch (error) {
+    await session?.abortTransaction();
+
+    if (!session || isTransactionUnavailable(error)) {
+      await applyOrderStatusChanges(existingOrder, status, userId, netSpend);
+    } else {
+      throw error;
+    }
+  } finally {
+    await session?.endSession();
   }
 
-  try {
-    if (userId && !existingOrder.loyaltyProcessed && status === 'paid') {
-      await loyaltyService.processOrderSpending(userId, netSpend, 'ADD', session);
-      existingOrder.loyaltyProcessed = true;
-    } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {
-      await loyaltyService.processOrderSpending(userId, netSpend, 'SUBTRACT', session);
-      existingOrder.loyaltyProcessed = false;
-    }
-
-    if (session) {
-      await existingOrder.save({ session });
-      await session.commitTransaction();
-    } else {
-      await existingOrder.save();
-    }
-  } catch (err) {
-    if (session) {
-      await session.abortTransaction();
-    }
-    throw err;
-  } finally {
-    if (session) {
-      session.endSession();
+  // Refund coupon if order was cancelled or refunded
+  if (['cancelled', 'refunded'].includes(status) && existingOrder.couponCode && userId) {
+    try {
+      await refundCouponUsage({
+        code: existingOrder.couponCode,
+        userId,
+        orderId: existingOrder._id
+      });
+    } catch (refundErr) {
+      console.warn('Coupon refund warning on updateOrderStatus:', refundErr.message);
     }
   }
 
@@ -335,3 +416,4 @@ export async function cancelOrder(userId, orderId) {
   // Keep stock and loyalty changes in one status-transition path.
   return updateOrderStatus(orderId, 'cancelled');
 }
+

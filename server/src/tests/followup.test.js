@@ -2,16 +2,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import jwt from 'jsonwebtoken';
 import express from 'express';
+import mongoose from 'mongoose';
 import { once } from 'node:events';
 import { ENV } from '../config/env.js';
 import { User } from '../models/User.js';
 import { Order } from '../models/Order.js';
 import { Product } from '../models/Product.js';
+import { Review } from '../models/Review.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { rateLimit } from '../middleware/rateLimiterMiddleware.js';
 import { memoryUpload, MAX_RECOMMEND_IMAGE_SIZE } from '../middleware/recommendUploadMiddleware.js';
-import { updateProduct } from '../services/productService.js';
-import { canTransitionOrderStatus } from '../services/orderService.js';
+import { getProducts, updateProduct } from '../services/productService.js';
+import { canTransitionOrderStatus, cancelOrder, getExpiredCardPaymentOrders, updateOrderStatus} from '../services/orderService.js';
 import { createReview } from '../services/reviewService.js';
 import { resetPassword } from '../services/authService.js';
 import { matchesUploadedImageHeader } from '../middleware/uploadMiddleware.js';
@@ -99,12 +101,70 @@ test('editing a product preserves an omitted size chart and accepts explicit cha
   assert.deepEqual(stored.size_chart, []);
 });
 
+test('admin product listing includes inactive products that can be reopened', async (t) => {
+  const filters = [];
+  t.mock.method(Product, 'find', (filter) => {
+    filters.push(filter);
+    return {
+      populate() { return this; },
+      async sort() { return []; }
+    };
+  });
+
+  await getProducts();
+  await getProducts({ includeInactive: true });
+
+  assert.deepEqual(filters[0], { is_active: { $ne: false } });
+  assert.deepEqual(filters[1], {});
+});
+
 test('order status follows the forward workflow and keeps terminal states closed', () => {
   assert.equal(canTransitionOrderStatus('pending', 'paid'), true);
   assert.equal(canTransitionOrderStatus('paid', 'processing'), true);
   assert.equal(canTransitionOrderStatus('completed', 'pending'), false);
   assert.equal(canTransitionOrderStatus('cancelled', 'paid'), false);
   assert.equal(canTransitionOrderStatus('completed', 'refunded'), true);
+});
+
+test('stock restoration runs inside the order status transaction', async (t) => {
+  const events = [];
+  const session = {
+    startTransaction() { events.push('start'); },
+    async commitTransaction() { events.push('commit'); },
+    async abortTransaction() { events.push('abort'); },
+    endSession() { events.push('end'); }
+  };
+  const order = {
+    status: 'paid',
+    stockReserved: true,
+    stockRestored: false,
+    loyaltyProcessed: false,
+    subtotal: 500,
+    discountAmount: 0,
+    user: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+    items: [{
+      product: 'bbbbbbbbbbbbbbbbbbbbbbbb',
+      variantId: 'cccccccccccccccccccccccc',
+      quantity: 1
+    }],
+    async save(options) {
+      assert.equal(options.session, session);
+      events.push('save');
+    },
+    async populate() { return this; }
+  };
+
+  t.mock.method(mongoose, 'startSession', async () => session);
+  t.mock.method(Order, 'findById', () => order);
+  t.mock.method(Product, 'updateOne', async (_filter, _update, options) => {
+    assert.equal(options.session, session);
+    events.push('stock');
+  });
+
+  await updateOrderStatus('dddddddddddddddddddddddd', 'cancelled');
+
+  assert.deepEqual(events, ['start', 'stock', 'save', 'commit', 'end']);
+  assert.equal(order.stockRestored, true);
 });
 
 test('persistent image upload validates file signatures', () => {
@@ -127,9 +187,79 @@ test('reviews require a completed order', async (t) => {
       rating: 5,
       comment: 'great product'
     }),
-    /completed order/
+    /สามารถรีวิวได้เฉพาะสินค้าที่จัดส่งเสร็จสิ้น \(completed\) แล้วเท่านั้น/
   );
   assert.equal(orderFilter.status, 'completed');
+  assert.equal(String(orderFilter.user), 'aaaaaaaaaaaaaaaaaaaaaaaa');
+  assert.equal(String(orderFilter['items.product']), 'cccccccccccccccccccccccc');
+});
+
+test('expired card payment lookup only selects unpaid card orders past their deadline', async (t) => {
+  const now = new Date('2026-09-24T12:00:00.000Z');
+  let filter;
+  t.mock.method(Order, 'find', (query) => {
+    filter = query;
+    return [];
+  });
+
+  await getExpiredCardPaymentOrders(now);
+
+  assert.equal(filter.status, 'pending');
+  assert.equal(filter.paymentMethod, 'credit-card');
+  assert.equal(filter.$or[0].paymentExpiresAt.$lte, now);
+  assert.equal(filter.$or[1].createdAt.$lte.toISOString(), '2026-09-24T11:30:00.000Z');
+});
+
+test('cancelling a pending order restores its reserved stock', async (t) => {
+  const userId = 'aaaaaaaaaaaaaaaaaaaaaaaa';
+  const order = {
+    _id: 'bbbbbbbbbbbbbbbbbbbbbbbb',
+    user: userId,
+    status: 'pending',
+    stockReserved: true,
+    stockRestored: false,
+    loyaltyProcessed: false,
+    subtotal: 200,
+    discountAmount: 0,
+    items: [{ product: 'cccccccccccccccccccccccc', variantId: 'dddddddddddddddddddddddd', quantity: 2 }],
+    async save() {}
+  };
+  let stock = 3;
+  let findByIdCalls = 0;
+
+  t.mock.method(Order, 'findOne', () => ({ populate: async () => order }));
+  t.mock.method(Order, 'findById', () => {
+    findByIdCalls += 1;
+    if (findByIdCalls === 1) return Promise.resolve(order);
+    return { populate: async () => order };
+  });
+  t.mock.method(Product, 'updateOne', async (_filter, update) => {
+    stock += update.$inc['variants.$.stock_quantity'];
+    return { modifiedCount: 1 };
+  });
+  t.mock.method(mongoose, 'startSession', async () => ({
+    startTransaction() {},
+    async commitTransaction() {},
+    async abortTransaction() {},
+    endSession() {}
+  }));
+
+  const cancelledOrder = await cancelOrder(userId, order._id);
+
+  assert.equal(cancelledOrder.status, 'cancelled');
+  assert.equal(cancelledOrder.stockRestored, true);
+  assert.equal(stock, 5);
+});
+
+test('duplicate review constraint is unique per user, product, and order', async (t) => {
+  const indexes = Review.schema.indexes();
+  assert.ok(indexes.some(([keys, options]) => keys.user === 1 && keys.product === 1 && keys.order === 1 && options.unique));
+  t.mock.method(Order, 'findOne', async () => ({ _id: 'bbbbbbbbbbbbbbbbbbbbbbbb' }));
+  t.mock.method(Product, 'findById', async () => ({ _id: 'cccccccccccccccccccccccc' }));
+  t.mock.method(Review, 'create', async () => { const error = new Error('duplicate'); error.code = 11000; throw error; });
+  await assert.rejects(createReview('aaaaaaaaaaaaaaaaaaaaaaaa', {
+    orderId: 'bbbbbbbbbbbbbbbbbbbbbbbb', productId: 'cccccccccccccccccccccccc', rating: 5, comment: 'great product'
+  }), (error) => error.code === 11000);
 });
 
 test('password reset revokes existing sessions', async (t) => {

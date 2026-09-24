@@ -13,6 +13,7 @@ const ImageDropzone = ({
   onFileChange,
   persistUpload = true,
   className = "",
+  localOnly = false,
 }) => {
   const inputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
@@ -60,8 +61,12 @@ const ImageDropzone = ({
       setUploading(true);
 
       try {
-        const url = await uploadImage(file);
-        notify(url);
+        if (localOnly) {
+          notify(previewUrl);
+        } else {
+          const url = await uploadImage(file);
+          notify(url);
+        }
       } catch (err) {
         setError(err?.message || "อัปโหลดรูปภาพไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
         notify(null);
@@ -70,7 +75,7 @@ const ImageDropzone = ({
         setUploading(false);
       }
     },
-    [fileUrl, notify, notifyFile, persistUpload],
+[fileUrl, notify, notifyFile, persistUpload, localOnly],
   );
 
   const clearImage = useCallback(() => {

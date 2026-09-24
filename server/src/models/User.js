@@ -8,6 +8,8 @@ const addressSchema = new mongoose.Schema(
     recipientName: { type: String, required: true, trim: true },
     phone: { type: String, required: true, trim: true },
     addressLine: { type: String, required: true, trim: true },
+    addressDetail: { type: String, trim: true, default: '' },
+    subdistrict: { type: String, trim: true, default: '' },
     district: { type: String, trim: true, default: '' },
     province: { type: String, trim: true, default: '' },
     postalCode: { type: String, required: true, trim: true },
@@ -70,6 +72,10 @@ const userSchema = new mongoose.Schema(
     avatar: {
       type: String,
       default: ''
+    },
+    birthday: {
+      type: Date,
+      default: null
     },
     isActive: {
       type: Boolean,
