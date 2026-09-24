@@ -27,21 +27,19 @@ export const createWelcomeCouponForUser = async (userId) => {
   }
 };
 
-// 2. ตรวจสอบคูปอง (Validate) ก่อน Checkout
+// 2. ตรวจสอบคูปอง (Validate) ก่อน Checkout - Query ด้วย code + userId
 export const validateCoupon = async ({ code, userId, subtotal }) => {
   if (!code) throw new Error("กรุณากรอกโค้ดส่วนลด");
+  if (!userId) throw new Error("กรุณาเข้าสู่ระบบก่อนใช้งานคูปอง");
 
+  // Query ด้วยทั้ง code และ userId เพื่อป้องกันการชนกันของคูปอง WELCOME5 ของแต่ละบัญชี
   const coupon = await Coupon.findOne({
     code: code.trim().toUpperCase(),
+    userId,
   });
 
   if (!coupon) {
-    throw new Error("ไม่พบโค้ดส่วนลดนี้ในระบบ");
-  }
-
-  // ตรวจสอบความเป็นเจ้าของคูปอง (User ที่ Login เท่านั้น)
-  if (coupon.userId.toString() !== userId.toString()) {
-    throw new Error("คุณไม่มีสิทธิ์ใช้งานคูปองนี้ (คูปองนี้เป็นของบัญชีอื่น)");
+    throw new Error("ไม่พบโค้ดส่วนลดนี้ในระบบ หรือคุณไม่มีสิทธิ์ใช้งาน");
   }
 
   // ตรวจสอบว่าถูกใช้แล้วหรือยัง
@@ -74,21 +72,48 @@ export const validateCoupon = async ({ code, userId, subtotal }) => {
   };
 };
 
-// 3. ปรับสถานะเป็น Used เมื่อสั่งซื้อ/ชำระเงินสำเร็จ (Atomic Update)
-export const markCouponAsUsed = async (couponId, orderId) => {
-  if (!couponId) return;
-  return await Coupon.findByIdAndUpdate(
-    couponId,
+// 3. Claim coupon แบบ Atomic เพื่อป้องกัน Race Condition / Double Claim เมื่อมี 2 checkout พร้อมกัน
+export const claimCouponAtomically = async ({ code, userId, orderId = null }) => {
+  if (!code || !userId) return null;
+
+  return await Coupon.findOneAndUpdate(
     {
-      isUsed: true,
-      usedAt: new Date(),
-      orderId,
+      code: code.trim().toUpperCase(),
+      userId,
+      isUsed: false,
+      expiresAt: { $gt: new Date() },
+    },
+    {
+      $set: {
+        isUsed: true,
+        usedAt: new Date(),
+        ...(orderId ? { orderId } : {}),
+      },
     },
     { new: true }
   );
 };
 
-// 4. คืนสิทธิ์การใช้งานคูปองกรณี Order ถูก Cancel หรือ Refund
+// 4. ปรับสถานะเป็น Used เมื่อสั่งซื้อ/ชำระเงินสำเร็จ (Atomic Update)
+export const markCouponAsUsed = async (couponId, orderId) => {
+  if (!couponId) return null;
+  return await Coupon.findOneAndUpdate(
+    {
+      _id: couponId,
+      isUsed: false,
+    },
+    {
+      $set: {
+        isUsed: true,
+        usedAt: new Date(),
+        orderId,
+      },
+    },
+    { new: true }
+  );
+};
+
+// 5. คืนสิทธิ์การใช้งานคูปองกรณี Order ถูก Cancel หรือ Refund
 export const refundCouponUsage = async ({ code, userId, orderId }) => {
   return await Coupon.findOneAndUpdate(
     { code: code.toUpperCase(), userId },

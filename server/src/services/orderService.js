@@ -9,7 +9,7 @@ import {
   SHIPPING_METHODS_CONFIG
 } from '../config/membershipConfig.js';
 import { Coupon } from '../models/couponModel.js';
-import { markCouponAsUsed, refundCouponUsage } from './couponService.js';
+import { markCouponAsUsed, refundCouponUsage, claimCouponAtomically } from './couponService.js';
 
 const SHIPPING_COSTS = {
   standard: 0,
@@ -168,21 +168,21 @@ export async function createOrder(user, orderData) {
   const couponCode = orderData.couponCode ? String(orderData.couponCode).trim().toUpperCase() : '';
   let appliedDbCoupon = null;
   if (couponCode) {
-    // 2.1 First check dynamic user coupons in MongoDB (e.g. WELCOME5)
-    try {
-      const dbCoupon = await Coupon.findOne({
-        code: couponCode,
-        userId: user?._id || user?.id,
-        isUsed: false,
-        expiresAt: { $gt: new Date() }
-      });
-      if (dbCoupon) {
-        appliedDbCoupon = dbCoupon;
-        const couponDiscount = Math.round((subtotal * dbCoupon.discountValue) / 100);
-        calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
+    // 2.1 First attempt atomic claim on dynamic user coupons in MongoDB (e.g. WELCOME5)
+    const userId = user?._id || user?.id;
+    if (userId) {
+      try {
+        appliedDbCoupon = await claimCouponAtomically({
+          code: couponCode,
+          userId,
+        });
+        if (appliedDbCoupon) {
+          const couponDiscount = Math.round((subtotal * appliedDbCoupon.discountValue) / 100);
+          calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
+        }
+      } catch (couponErr) {
+        console.warn('Coupon atomic claim warning:', couponErr.message);
       }
-    } catch (couponErr) {
-      console.warn('Coupon lookup warning:', couponErr.message);
     }
 
     // 2.2 Fallback to static VALID_COUPONS (Tier coupons, birthday coupons)
@@ -197,6 +197,8 @@ export async function createOrder(user, orderData) {
             calculatedDiscount = Math.max(calculatedDiscount, coupon.value);
           }
         }
+      } else {
+        throw new Error('คูปองไม่ถูกต้อง หรือถูกใช้งานไปแล้ว');
       }
     }
   }
@@ -261,15 +263,27 @@ export async function createOrder(user, orderData) {
     });
   } catch (error) {
     await restoreOrderStock(items);
+    // Rollback atomic coupon claim if order creation failed
+    if (appliedDbCoupon) {
+      try {
+        await Coupon.findByIdAndUpdate(appliedDbCoupon._id, {
+          $set: { isUsed: false, usedAt: null, orderId: null }
+        });
+      } catch (rollbackErr) {
+        console.error('Failed to rollback coupon usage:', rollbackErr.message);
+      }
+    }
     throw error;
   }
 
-  // Mark dynamic coupon as used
+  // Associate orderId with claimed dynamic coupon
   if (appliedDbCoupon) {
     try {
-      await markCouponAsUsed(appliedDbCoupon._id, order._id);
+      await Coupon.findByIdAndUpdate(appliedDbCoupon._id, {
+        $set: { orderId: order._id }
+      });
     } catch (err) {
-      console.error('Failed to mark coupon as used:', err.message);
+      console.error('Failed to attach orderId to coupon:', err.message);
     }
   }
 
