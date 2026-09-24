@@ -12,3 +12,5 @@ export async function uploadProductImage(file) {
   if (!response.ok) throw new Error(result.message || 'อัปโหลดรูปไม่สำเร็จ');
   return result.data.url;
 }
+
+export const uploadArticleImage = uploadProductImage;
