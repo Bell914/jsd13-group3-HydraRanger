@@ -119,7 +119,6 @@ export async function sendWelcomeMemberEmail(user, couponCode = 'OCCWELCOME10') 
   }
 }
 
-
 // 🚀 Welcome Coupon Email (ส่งโค้ด 5% ให้สมาชิกใหม่)
 export const sendWelcomeDiscountEmail = async ({ toEmail, username, couponCode = "WELCOME5", discountPercent = 5, expiresAt }) => {
   const user = process.env.SMTP_USER || process.env.EMAIL_USER;
@@ -164,3 +163,37 @@ export const sendWelcomeDiscountEmail = async ({ toEmail, username, couponCode =
     return { success: false, error: error.message };
   }
 };
+
+export async function sendPasswordResetEmail(user, resetUrl) {
+  if (!user?.email || !resetUrl) return false;
+
+  const transporter = await getTransporter();
+  if (!transporter) {
+    if (process.env.NODE_ENV === 'development') {
+      console.info(`[Development password reset] ${resetUrl}`);
+    } else {
+      console.error('Password reset email is not configured. Set SMTP_USER and SMTP_PASS.');
+    }
+    return false;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"OCCASION" <${process.env.SMTP_USER}>`,
+      to: user.email,
+      subject: 'ตั้งรหัสผ่าน OCCASION ใหม่',
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+          <h2>ตั้งรหัสผ่านใหม่</h2>
+          <p>ลิงก์นี้ใช้ได้ 1 ชั่วโมงและใช้ได้เพียงครั้งเดียว</p>
+          <p><a href="${resetUrl}">ตั้งรหัสผ่านใหม่</a></p>
+          <p style="color: #6b7280; font-size: 12px;">หากคุณไม่ได้ส่งคำขอนี้ คุณสามารถเพิกเฉยต่ออีเมลฉบับนี้ได้</p>
+        </div>
+      `
+    });
+    return true;
+  } catch (error) {
+    console.error(`Failed to send password reset email: ${error.message}`);
+    return false;
+  }
+}

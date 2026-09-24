@@ -53,6 +53,21 @@ describe("ImageDropzone", () => {
     expect(screen.getByRole("button", { name: "ลบรูป" })).toBeInTheDocument();
   });
 
+  it("keeps recommendation files in memory without calling the persistent upload API", async () => {
+    const onChange = vi.fn();
+    const onFileChange = vi.fn();
+    const { container } = render(
+      <ImageDropzone persistUpload={false} onChange={onChange} onFileChange={onFileChange} />,
+    );
+
+    selectFile(container.querySelector('input[type="file"]'), pngFile);
+
+    expect(uploadImage).not.toHaveBeenCalled();
+    expect(onFileChange).toHaveBeenCalledWith(pngFile);
+    expect(onChange).toHaveBeenCalledWith(expect.stringMatching(/^blob:/));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("rejects files that are not images", async () => {
     const onChange = vi.fn();
 

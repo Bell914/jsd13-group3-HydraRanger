@@ -11,6 +11,7 @@ const ImageDropzone = ({
   label = "ลากรูปมาที่นี่",
   onChange,
   onFileChange,
+  persistUpload = true,
   className = "",
 }) => {
   const inputRef = useRef(null);
@@ -47,10 +48,16 @@ const ImageDropzone = ({
 
       setError("");
       if (fileUrl) URL.revokeObjectURL(fileUrl);
-      setFileUrl(URL.createObjectURL(file));
-      setUploading(true);
-      notify(null);
+      const previewUrl = URL.createObjectURL(file);
+      setFileUrl(previewUrl);
+      notify(persistUpload ? null : previewUrl);
       notifyFile(file);
+
+      // Recommendation images go directly to /recommend. They do not need to
+      // be stored in the public product-image folder first.
+      if (!persistUpload) return;
+
+      setUploading(true);
 
       try {
         const url = await uploadImage(file);
@@ -63,7 +70,7 @@ const ImageDropzone = ({
         setUploading(false);
       }
     },
-    [fileUrl, notify, notifyFile],
+    [fileUrl, notify, notifyFile, persistUpload],
   );
 
   const clearImage = useCallback(() => {

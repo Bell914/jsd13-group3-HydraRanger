@@ -10,11 +10,6 @@ export const AuthProvider = ({ children }) => {
     let active = true;
 
     const initAuth = async () => {
-      if (!authService.isAuthenticated()) {
-        if (active) setLoading(false);
-        return;
-      }
-
       try {
         const res = await authService.getMe();
         const sessionUser = res?.data?.user || res?.data;
@@ -23,7 +18,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem("occasion_user", JSON.stringify(sessionUser));
       } catch (error) {
         console.error("Session expired or invalid token", error);
-        authService.logout();
+        await authService.logout();
         if (active) setUser(null);
       } finally {
         if (active) setLoading(false);
@@ -49,8 +44,8 @@ export const AuthProvider = ({ children }) => {
     return res;
   }, []);
 
-  const logout = useCallback(() => {
-    authService.logout();
+  const logout = useCallback(async () => {
+    await authService.logout();
     setUser(null);
   }, []);
 

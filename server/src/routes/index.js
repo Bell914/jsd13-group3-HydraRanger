@@ -18,6 +18,8 @@ import adminLookbookRoutes from "./adminLookbookRoutes.js";
 import uploadRoutes from "./uploadRoutes.js";
 import recommendRoutes from "./recommendRoutes.js";
 import couponRoutes from "./couponRoutes.js";
+import articleRoutes from "./articleRoutes.js";
+import adminArticleRoutes from "./adminArticleRoutes.js";
 
 const router = Router();
 
@@ -32,6 +34,7 @@ router.get("/", (req, res) => {
       auth: "/api/auth",
       products: "/api/products",
       lookbooks: "/api/lookbooks",
+      articles: "/api/articles",
       users: "/api/users",
       orders: "/api/orders",
       coupons: "/api/coupons",
@@ -41,7 +44,6 @@ router.get("/", (req, res) => {
 
 // Health check endpoint
 router.get("/health", (req, res) => {
-
   res.status(200).json({
     success: true,
     message: "Server is running",
@@ -71,5 +73,7 @@ router.use("/admin/lookbooks", adminLookbookRoutes);
 router.use("/uploads", uploadRoutes);
 router.use("/recommend", recommendRoutes);
 router.use("/coupons", couponRoutes);
+router.use("/articles", articleRoutes);
+router.use("/admin/articles", adminArticleRoutes);
 
 export default router;

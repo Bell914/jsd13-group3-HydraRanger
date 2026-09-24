@@ -13,8 +13,8 @@ export const validateRegisterForm = (formData) => {
 
   if (!formData.password) {
     errors.password = "กรุณากรอกรหัสผ่าน";
-  } else if (formData.password.length < 6) {
-    errors.password = "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร";
+  } else if (formData.password.length < 8) {
+    errors.password = "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร";
   }
 
   // ตรวจสอบการยืนยันรหัสผ่าน

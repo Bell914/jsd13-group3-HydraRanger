@@ -5,7 +5,7 @@ import { User } from '../models/User.js';
 import { ENV } from '../config/env.js';
 // 🚀 เพิ่ม Import ระบบ Welcome Coupon และ Email
 import { createWelcomeCouponForUser } from './couponService.js';
-import { sendWelcomeDiscountEmail } from './emailService.js';
+import { sendWelcomeDiscountEmail, sendPasswordResetEmail } from './emailService.js';
 
 // In-Memory mock store fallback if DB is offline
 const inMemoryUsers = [];
@@ -419,7 +419,7 @@ export const forgotPassword = async (email) => {
       await user.save();
 
       const clientUrl = ENV.CLIENT_URL || 'http://localhost:5173';
-      console.log(`\n===========================================\n[RESET PASSWORD LINK]: ${clientUrl}/reset-password/${resetToken}\n===========================================\n`);
+      await sendPasswordResetEmail(user, `${clientUrl}/reset-password/${resetToken}`);
     }
   } catch (error) {
     if (!isDbUnavailableError(error)) throw error;
@@ -429,7 +429,9 @@ export const forgotPassword = async (email) => {
       const resetToken = crypto.randomBytes(32).toString('hex');
       mockUser.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
       mockUser.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
-      console.log(`\n===========================================\n[MOCK RESET PASSWORD LINK]: http://localhost:5173/reset-password/${resetToken}\n===========================================\n`);
+      if (ENV.NODE_ENV === 'development') {
+        await sendPasswordResetEmail(mockUser, `http://localhost:5173/reset-password/${resetToken}`);
+      }
     }
   }
 
@@ -437,8 +439,8 @@ export const forgotPassword = async (email) => {
 };
 
 export const resetPassword = async ({ token, password }) => {
-  if (!password || password.length < 6) {
-    throw new Error('Password must be at least 6 characters');
+  if (!password || password.length < 8) {
+    throw new Error('Password must be at least 8 characters');
   }
 
   const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
@@ -451,6 +453,7 @@ export const resetPassword = async ({ token, password }) => {
 
     if (user) {
       user.password = password;
+      user.tokenVersion = (user.tokenVersion || 0) + 1;
       user.resetPasswordToken = null;
       user.resetPasswordExpires = null;
       await user.save();
@@ -469,6 +472,7 @@ export const resetPassword = async ({ token, password }) => {
   }
 
   mockUser.password = await bcrypt.hash(password, 10);
+  mockUser.tokenVersion = (mockUser.tokenVersion || 0) + 1;
   mockUser.resetPasswordToken = null;
   mockUser.resetPasswordExpires = null;
 

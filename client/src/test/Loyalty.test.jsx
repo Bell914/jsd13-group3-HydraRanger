@@ -9,7 +9,7 @@ import {
   RANK_THRESHOLDS,
   MEMBERSHIP_RANKS
 } from "../utils/loyaltyUtils.js";
-import { MembershipCard } from "../components/profile/MembershipCard.jsx";
+import { MembershipCard } from "../pages/profilepage/MembershipCard.jsx";
 
 describe("Membership Rank & Loyalty Program", () => {
   describe("loyaltyUtils calculation", () => {

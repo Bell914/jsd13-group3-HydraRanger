@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Menu } from 'lucide-react';
-import { useOutletContext } from 'react-router-dom';
+import { AdminTopbar } from '../components/AdminTopbar.jsx';
 import { CustomerEditModal } from '../components/CustomerEditModal.jsx';
-import { useAdminAuth } from '../context/useAdminAuth.js';
 import {
   getCustomers,
   updateCustomer,
@@ -18,8 +16,6 @@ function formatDate(value) {
 }
 
 export function AdminCustomersPage() {
-  const { user } = useAdminAuth();
-  const { openSidebar } = useOutletContext();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -90,13 +86,7 @@ export function AdminCustomersPage() {
 
   return (
     <div className="admin-content">
-      <header className="admin-topbar">
-        <button type="button" className="mobile-menu" onClick={openSidebar} aria-label="เปิดเมนู">
-          <Menu size={20} />
-        </button>
-        <strong className="topbar-title">ลูกค้า</strong>
-        <div className="admin-profile"><strong>{user?.username ?? 'Admin'}</strong></div>
-      </header>
+      <AdminTopbar title="ลูกค้า" />
 
       <main className="data-page">
         <header className="page-heading">

@@ -45,6 +45,20 @@ describe('Personalized Size Recommendation', () => {
     expect(result.reason).toContain('รอบเอวและรอบสะโพก');
   });
 
+  it('uses the product waist and hips chart for bottoms', () => {
+    const product = {
+      category: 'bottoms',
+      variants: [{ size: 'S', stockQuantity: 1 }, { size: 'M', stockQuantity: 1 }],
+      size_chart: [
+        { size_name: 'S', garment_waist_actual: 80, garment_hips_actual: 100 },
+        { size_name: 'M', garment_waist_actual: 88, garment_hips_actual: 108 }
+      ]
+    };
+    const result = getSizeRecommendation(regularProfile, product, ['S', 'M']);
+    expect(result.size).toBe('M');
+    expect(result.source).toContain('ตารางรอบเอวและสะโพก');
+  });
+
   it('does not recommend a size before the customer saves a profile', () => {
     expect(getSizeRecommendation(null, {}, ['S', 'M', 'L'])).toBeNull();
   });
@@ -110,9 +124,26 @@ describe('Size recommendation edge cases', () => {
       { size: 'M', color: 'White', stock_quantity: 2 },
       { size: 'L', color: 'Black', stock_quantity: 5 }
     ] };
-    expect(getSizeRecommendation(regularProfile, product, [], 'Black')).toMatchObject({ size: 'M', status: 'out-of-stock' });
+    expect(getSizeRecommendation(regularProfile, product, [], 'Black')).toMatchObject({
+      size: 'M', status: 'out-of-stock', alternativeSize: 'L'
+    });
     expect(getSizeRecommendation(regularProfile, product, [], 'White').status).toBe('available');
     expect(getSizeRecommendation(regularProfile, product, [], 'Blue').status).toBe('unavailable');
+  });
+
+  it('only offers a larger in-stock size as an alternative', () => {
+    const bothSidesAvailable = { category: 'tops', variants: [
+      { size: 'S', color: 'Black', stock_quantity: 5 },
+      { size: 'M', color: 'Black', stock_quantity: 0 },
+      { size: 'L', color: 'Black', stock_quantity: 5 }
+    ] };
+    expect(getSizeRecommendation(regularProfile, bothSidesAvailable, [], 'Black').alternativeSize).toBe('L');
+
+    const smallerOnly = { category: 'tops', variants: [
+      { size: 'S', color: 'Black', stock_quantity: 5 },
+      { size: 'M', color: 'Black', stock_quantity: 0 }
+    ] };
+    expect(getSizeRecommendation(regularProfile, smallerOnly, [], 'Black').alternativeSize).toBeNull();
   });
 
   it('does not enable purchase when stock is unknown', () => {
