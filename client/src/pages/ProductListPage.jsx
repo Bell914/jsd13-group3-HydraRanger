@@ -1,16 +1,19 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard.jsx";
 import RecommendedSlider from "../components/RecommendedSlider.jsx";
 import { getProducts } from "../services/productService.js";
 
 export default function ProductListPage() {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const productsSectionRef = useRef(null);
+
+  const PRODUCTS_PER_PAGE = 8;
 
   // URL query params
   const selectedCategory = searchParams.get("category") || "all";
@@ -53,22 +56,26 @@ export default function ProductListPage() {
   }, [selectedCategory, searchKeyword]);
 
 
-  // Display products: do not duplicate when user is searching or filtering by category
-  const displayedProducts = useMemo(() => {
-    if (!products || products.length === 0) return [];
-    const isFiltered = Boolean(searchKeyword || (selectedCategory && selectedCategory !== "all"));
-    if (isFiltered) {
-      return products;
-    }
-    if (products.length < 32) {
-      const list = [];
-      while (list.length < 32) {
-        list.push(...products);
-      }
-      return list.slice(0, 32);
-    }
-    return products.slice(0, 32);
-  }, [products, searchKeyword, selectedCategory]);
+  // Display products: use the real product list (no duplication) for pagination
+  const displayedProducts = useMemo(() => (products || []).slice(), [products]);
+
+  // Reset to first page whenever the filter/search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, searchKeyword]);
+
+  // Pagination: 8 cards per page
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(displayedProducts.length / PRODUCTS_PER_PAGE)),
+    [displayedProducts]
+  );
+
+  const safePage = Math.min(currentPage, totalPages);
+
+  const pagedProducts = useMemo(
+    () => displayedProducts.slice((safePage - 1) * PRODUCTS_PER_PAGE, safePage * PRODUCTS_PER_PAGE),
+    [displayedProducts, safePage]
+  );
 
   // Smooth-scroll to the product cards once search results finish loading
   useEffect(() => {
@@ -81,9 +88,23 @@ export default function ProductListPage() {
     }
   }, [searchKeyword, loading, error, displayedProducts.length]);
 
+  // Footer "BOTTOM" button: land on the top of the products section
+  useEffect(() => {
+    if (location.state?.scrollTo !== "products") return;
+    if (!loading && !error && displayedProducts.length > 0) {
+      productsSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [location.state?.scrollTo, loading, error, displayedProducts.length]);
+
   const handlePageClick = (pageNum) => {
     setCurrentPage(pageNum);
-    window.scrollTo({ top: 380, behavior: "smooth" });
+    productsSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   };
 
   return (
@@ -171,11 +192,11 @@ export default function ProductListPage() {
           </div>
         )}
 
-        {/* 4-Column Products Grid (32 items matching wireframe) */}
-        {!loading && !error && displayedProducts.length > 0 && (
-          <section ref={productsSectionRef} aria-label="รายการสินค้า">
+        {/* Product Grid (8 cards per page) */}
+        {!loading && !error && pagedProducts.length > 0 && (
+          <section ref={productsSectionRef} id="products-section" aria-label="รายการสินค้า">
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {displayedProducts.map((product, idx) => (
+              {pagedProducts.map((product, idx) => (
                 <ProductCard
                   key={`${product._id || product.productId}-${idx}`}
                   product={product}
@@ -185,14 +206,15 @@ export default function ProductListPage() {
           </section>
         )}
 
-        {/* Pagination Numbers 1-10 matching user screenshot */}
-        {!loading && !error && displayedProducts.length > 0 && (
+        {/* Dynamic Pagination (8 cards per page) */}
+        {!loading && !error && displayedProducts.length > 0 && totalPages > 1 && (
           <nav
             aria-label="การแบ่งหน้าสินค้า"
             className="my-12 flex items-center justify-center gap-3 sm:gap-6 text-base sm:text-lg font-bold"
           >
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((pageNum) => {
-              const isActive = currentPage === pageNum;
+            {[...Array(totalPages)].map((_, index) => {
+              const pageNum = index + 1;
+              const isActive = pageNum === safePage;
               return (
                 <button
                   key={pageNum}

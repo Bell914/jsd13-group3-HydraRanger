@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { uploadArticleImage } from '../services/uploadService.js';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5002/api';
 
 function getImageUrl(imageUrl) {
   if (!imageUrl || imageUrl.startsWith('http')) return imageUrl;

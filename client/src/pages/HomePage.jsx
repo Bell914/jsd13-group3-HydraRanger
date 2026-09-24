@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { fashionNews } from "../assets/assets.js";
 import { Link } from "react-router-dom";
 import { HeroSection } from "../components/HeroSection.jsx";
 import { RecommendProduct } from "./RecommendProduct.jsx";
@@ -7,10 +6,12 @@ import { TextHomepage } from "../components/TextHomepage.jsx";
 import { SpecialProducts } from "../components/SpecialProducts.jsx";
 import { getProducts } from "../services/productService.js";
 import { getLookbooks } from "../services/lookbookService.js";
+import { getArticles } from "../services/articleService.js";
 
 export const HomePage = () => {
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [recommendedLooks, setRecommendedLooks] = useState([]);
+  const [recommendedArticles, setRecommendedArticles] = useState([]);
 
   useEffect(() => {
     let mounted = true;
@@ -29,6 +30,14 @@ export const HomePage = () => {
       })
       .catch(() => {
         if (mounted) setRecommendedLooks([]);
+      });
+    getArticles({ limit: 3 })
+      .then(({ articles }) => {
+        if (!mounted) return;
+        setRecommendedArticles(Array.isArray(articles) ? articles : []);
+      })
+      .catch(() => {
+        if (mounted) setRecommendedArticles([]);
       });
     return () => {
       mounted = false;
@@ -137,9 +146,9 @@ export const HomePage = () => {
             id="article-grid"
             className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3"
           >
-            {fashionNews.slice(1, 4).map((article) => (
+{recommendedArticles.map((article) => (
               <div
-                key={article.id}
+                key={article.id || article.title}
                 className="card bg-base-100 flex flex-col justify-between w-full shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden"
               >
                 <figure className="w-full overflow-hidden">
@@ -153,11 +162,14 @@ export const HomePage = () => {
                 </figure>
                 <div className="card-body flex flex-col justify-between flex-grow p-4 sm:p-6">
                   <div>
+<div className="badge badge-secondary text-xs mb-2">
+                      {article.category}
+                    </div>
                     <h2 className="card-title text-lg text-[#263639] sm:text-xl line-clamp-2">
                       {article.title}
                     </h2>
                     <p className="text-sm text-[#526164] sm:text-base mt-2 line-clamp-3">
-                      {article.description || article.category}
+                      {article.excerpt || article.content || ""}
                     </p>
                   </div>
 
