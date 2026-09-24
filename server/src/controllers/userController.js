@@ -1,6 +1,7 @@
 import { HTTP_STATUS } from '../config/constants.js';
 import { User } from '../models/User.js';
 import * as userService from '../services/userService.js';
+import { User } from '../models/User.js';
 
 export const getUsers = async (req, res, next) => {
   try {
@@ -44,22 +45,48 @@ export const getAddresses = async (req, res, next) => {
   }
 };
 
+function validateAddress(body) {
+  const address = {
+    recipientName: String(body.recipientName || '').trim(),
+    phone: String(body.phone || '').trim(),
+    addressDetail: String(body.addressDetail ?? body.addressLine ?? '').trim(),
+    subdistrict: String(body.subdistrict || '').trim(),
+    district: String(body.district || '').trim(),
+    province: String(body.province || '').trim(),
+    postalCode: String(body.zipCode ?? body.postalCode ?? '').trim(),
+    isDefault: Boolean(body.isDefault)
+  };
+
+  if (!address.recipientName) return { error: 'กรุณากรอกชื่อผู้รับ' };
+  if (!/^[0-9]{9,10}$/.test(address.phone)) {
+    return { error: 'เบอร์โทรศัพท์ต้องเป็นตัวเลข 9-10 หลัก' };
+  }
+  if (!/^[0-9]{5}$/.test(address.postalCode)) {
+    return { error: 'รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก' };
+  }
+  if (!address.addressDetail || !address.district || !address.province) {
+    return { error: 'กรุณากรอกที่อยู่ อำเภอ/เขต และจังหวัดให้ครบถ้วน' };
+  }
+
+  return { address };
+}
+
+function sendAddressError(res, message) {
+  return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message });
+}
+
 export const addAddress = async (req, res, next) => {
   try {
-    const { recipientName, phone, addressLine, district, province, postalCode, isDefault } = req.body;
-    if (!recipientName || !phone || !addressLine || !postalCode) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).json({
-        success: false,
-        message: 'Please provide recipientName, phone, addressLine, and postalCode'
-      });
-    }
+    const result = validateAddress(req.body);
+    if (result.error) return sendAddressError(res, result.error);
+    const address = result.address;
 
     const user = await User.findById(req.user?.id || req.user?._id);
     if (!user) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'User not found' });
     }
 
-    const shouldBeDefault = Boolean(isDefault) || user.shippingAddresses.length === 0;
+    const shouldBeDefault = address.isDefault || user.shippingAddresses.length === 0;
     if (shouldBeDefault) {
       user.shippingAddresses.forEach((address) => {
         address.isDefault = false;
@@ -67,12 +94,8 @@ export const addAddress = async (req, res, next) => {
     }
 
     user.shippingAddresses.push({
-      recipientName,
-      phone,
-      addressLine,
-      district: district || '',
-      province: province || '',
-      postalCode,
+      ...address,
+      addressLine: address.addressDetail,
       isDefault: shouldBeDefault
     });
     await user.save();
@@ -110,6 +133,36 @@ export const deleteAddress = async (req, res, next) => {
     return res.status(HTTP_STATUS.OK).json({
       success: true,
       message: 'Address deleted successfully',
+      data: user.shippingAddresses
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const updateAddress = async (req, res, next) => {
+  try {
+    const result = validateAddress(req.body);
+    if (result.error) return sendAddressError(res, result.error);
+    const address = result.address;
+    const user = await User.findById(req.user?.id || req.user?._id);
+    if (!user) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'User not found' });
+    const target = user.shippingAddresses.id(req.params.addressId);
+    if (!target) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Address not found' });
+    if (address.isDefault) {
+      user.shippingAddresses.forEach((savedAddress) => {
+        savedAddress.isDefault = false;
+      });
+    }
+    Object.assign(target, {
+      ...address,
+      addressLine: address.addressDetail,
+      ...(address.isDefault ? { isDefault: true } : {})
+    });
+    await user.save();
+    return res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Address updated successfully',
       data: user.shippingAddresses
     });
   } catch (error) {
@@ -176,6 +229,123 @@ export const deleteMySizeProfile = async (req, res, next) => {
   try {
     await userService.deleteSizeProfile(req.user.id || req.user._id);
     res.status(HTTP_STATUS.OK).json({ success: true, message: 'Size profile deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==========================================
+// Shipping Address Management Controllers
+// ==========================================
+
+// GET /api/users/addresses - ดึงรายการที่อยู่จัดส่งทั้งหมด
+export const getAddresses = async (req, res, next) => {
+  try {
+    const userId = req.user?.id || req.user?._id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      data: user.shippingAddresses || []
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/users/addresses - เพิ่มที่อยู่จัดส่งใหม่
+export const addAddress = async (req, res, next) => {
+  try {
+    const { recipientName, phone, addressLine, district, province, postalCode, isDefault } = req.body;
+
+    if (!recipientName || !phone || !addressLine || !postalCode) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: 'Please provide recipientName, phone, addressLine, and postalCode'
+      });
+    }
+
+    const userId = req.user?.id || req.user?._id;
+    const user = await User.findById(userId);
+
+    if (!user.shippingAddresses) {
+      user.shippingAddresses = [];
+    }
+
+    // ถ้าตั้งให้เป็นที่อยู่หลัก หรือยังไม่มีที่อยู่เลย ให้เคลียร์ที่อยู่อื่นไม่ให้เป็น default
+    if (isDefault || user.shippingAddresses.length === 0) {
+      user.shippingAddresses.forEach((addr) => (addr.isDefault = false));
+    }
+
+    const newAddress = {
+      recipientName,
+      phone,
+      addressLine,
+      district: district || '',
+      province: province || '',
+      postalCode,
+      isDefault: isDefault || user.shippingAddresses.length === 0
+    };
+
+    user.shippingAddresses.push(newAddress);
+    await user.save();
+
+    res.status(HTTP_STATUS.CREATED).json({
+      success: true,
+      message: 'Address added successfully',
+      data: user.shippingAddresses
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// DELETE /api/users/addresses/:addressId - ลบที่อยู่จัดส่ง
+export const deleteAddress = async (req, res, next) => {
+  try {
+    const { addressId } = req.params;
+    const userId = req.user?.id || req.user?._id;
+    const user = await User.findById(userId);
+
+    if (user.shippingAddresses) {
+      user.shippingAddresses = user.shippingAddresses.filter(
+        (addr) => addr._id.toString() !== addressId
+      );
+      await user.save();
+    }
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Address deleted successfully',
+      data: user.shippingAddresses || []
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /api/users/addresses/:addressId/default - ตั้งค่าเป็นที่อยู่หลัก
+export const setDefaultAddress = async (req, res, next) => {
+  try {
+    const { addressId } = req.params;
+    const userId = req.user?.id || req.user?._id;
+    const user = await User.findById(userId);
+
+    if (user.shippingAddresses) {
+      user.shippingAddresses.forEach((addr) => {
+        addr.isDefault = addr._id.toString() === addressId;
+      });
+      await user.save();
+    }
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Default address updated',
+      data: user.shippingAddresses || []
+    });
   } catch (error) {
     next(error);
   }

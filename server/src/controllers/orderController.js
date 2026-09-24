@@ -9,6 +9,8 @@ function sendOrderError(error, res, next) {
     'Product in order',
     'Variant for',
     'Not enough stock',
+    'สินค้ามีไม่เพียงพอในสต็อก',
+    'สินค้าหมดแล้ว',
     'Invalid order status',
     'Missing shipping fields',
     'Order already cancelled',

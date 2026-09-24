@@ -32,6 +32,9 @@ export default function ShippingSection({
   onEdit,
   onContinue,
   onBack,
+  savedAddresses = [],
+  onSelectAddress,
+  onAddNewAddress,
 }) {
   const [showDeliveryNote, setShowDeliveryNote] = useState(
     Boolean(shippingData.deliveryNote)
@@ -105,6 +108,41 @@ export default function ShippingSection({
       <h2 className="text-2xl font-bold text-gray-900 mb-6">Shipping</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {onSelectAddress && (
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <label
+              htmlFor="saved-shipping-address"
+              className="mb-2 block text-sm font-semibold text-gray-800"
+            >
+              เลือกที่อยู่ที่บันทึกไว้
+            </label>
+            <select
+              id="saved-shipping-address"
+              value={shippingData.selectedAddressId || ""}
+              onChange={(event) => {
+                const addressId = event.target.value;
+                if (addressId === "__new" || !addressId) {
+                  onAddNewAddress?.();
+                  return;
+                }
+                onSelectAddress(addressId);
+              }}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
+            >
+              <option value="">กรอกที่อยู่ใหม่</option>
+              {savedAddresses.map((address) => (
+                <option
+                  key={address._id || address.id}
+                  value={address._id || address.id}
+                >
+                  {address.recipientName}
+                  {address.isDefault ? " (ที่อยู่หลัก)" : ""} — {address.addressDetail || address.addressLine}, {address.district}
+                </option>
+              ))}
+              <option value="__new">+ เพิ่มที่อยู่ใหม่</option>
+            </select>
+          </div>
+        )}
         {/* Location Dropdown */}
         <div>
           <label

@@ -85,12 +85,12 @@ export const Navbar = () => {
           <Link
             to="/"
             aria-label="OCCASION หน้าแรก"
-            className="flex shrink-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
+            className="flex h-16 w-48 shrink-0 items-center justify-center overflow-hidden rounded-lg focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
           >
             <img
               src={assets.newlogo}
               alt="OCCASION"
-              className="h-auto w-20 md:w-24"
+              className="h-auto w-48 max-w-none"
             />
           </Link>
 

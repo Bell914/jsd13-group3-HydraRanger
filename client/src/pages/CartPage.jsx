@@ -151,8 +151,9 @@ export default function CartPage() {
                           onClick={() =>
                             updateQuantity(item.variantId, item.quantity + 1)
                           }
+                          disabled={item.quantity >= Number(item.stockQuantity ?? item.stock_quantity ?? 0)}
                           aria-label="Increase quantity"
-                          className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-gray-600 hover:bg-gray-200 hover:text-black transition-colors cursor-pointer"
+                          className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-gray-600 hover:bg-gray-200 hover:text-black transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <Plus size={13} strokeWidth={2.5} />
                         </button>

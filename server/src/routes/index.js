@@ -18,6 +18,7 @@ import adminLookbookRoutes from "./adminLookbookRoutes.js";
 import uploadRoutes from "./uploadRoutes.js";
 import recommendRoutes from "./recommendRoutes.js";
 import couponRoutes from "./couponRoutes.js";
+import paymentRoutes from "./paymentRoutes.js";
 import articleRoutes from "./articleRoutes.js";
 import adminArticleRoutes from "./adminArticleRoutes.js";
 
@@ -63,6 +64,7 @@ router.use("/products", productRoutes);
 router.use("/admin/products", adminProductRoutes);
 router.use("/admin/dashboard", adminDashboardRoutes);
 router.use("/orders", orderRoutes);
+router.use("/payment", paymentRoutes);
 router.use("/admin/orders", adminOrderRoutes);
 router.use("/admin/customers", adminCustomerRoutes);
 router.use("/reviews", reviewRoutes);

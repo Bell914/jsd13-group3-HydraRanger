@@ -12,6 +12,8 @@
     "test:loyalty": "vitest run Loyalty"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^6.12.0",
+    "@stripe/stripe-js": "^9.17.0",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
