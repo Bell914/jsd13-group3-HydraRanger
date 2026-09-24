@@ -55,6 +55,7 @@ const orderSchema = new mongoose.Schema(
     shippingAddress: { type: shippingAddressSchema, required: true },
     shippingMethod: { type: String, default: 'standard', trim: true },
     paymentMethod: { type: String, default: 'credit-card', trim: true },
+    paymentIntentId: { type: String, default: '', index: true },
     subtotal: { type: Number, required: true, min: 0 },
     discountAmount: { type: Number, default: 0, min: 0 },
     couponCode: { type: String, default: '', trim: true },

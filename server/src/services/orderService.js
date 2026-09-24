@@ -218,6 +218,7 @@ export async function createOrder(user, orderData) {
       },
       shippingMethod: orderData.shippingMethod || 'standard',
       paymentMethod: orderData.paymentMethod || 'credit-card',
+      paymentIntentId: orderData.paymentIntentId || '',
       subtotal,
       discountAmount,
       couponCode,
