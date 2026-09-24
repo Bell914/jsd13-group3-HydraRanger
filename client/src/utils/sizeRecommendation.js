@@ -150,14 +150,11 @@ function getStockStatus(product, size, selectedColor) {
 function getClosestAvailableSize(product, recommendedSize, selectedColor) {
   const recommendedIndex = SIZE_ORDER.indexOf(recommendedSize);
   const availableSizes = SIZE_ORDER.filter((size) => (
+    SIZE_ORDER.indexOf(size) > recommendedIndex &&
     getStockStatus(product, size, selectedColor) === 'available'
   ));
 
-  if (availableSizes.length === 0) return null;
-  return availableSizes.sort((first, second) => (
-    Math.abs(SIZE_ORDER.indexOf(first) - recommendedIndex) -
-    Math.abs(SIZE_ORDER.indexOf(second) - recommendedIndex)
-  ))[0];
+  return availableSizes[0] || null;
 }
 
 export function getSizeRecommendation(profile, product, fallbackSizes = [], selectedColor = '') {

@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5002/api';
 
 export async function uploadProductImage(file) {
   const form = new FormData();
@@ -12,3 +12,5 @@ export async function uploadProductImage(file) {
   if (!response.ok) throw new Error(result.message || 'อัปโหลดรูปไม่สำเร็จ');
   return result.data.url;
 }
+
+export const uploadArticleImage = uploadProductImage;

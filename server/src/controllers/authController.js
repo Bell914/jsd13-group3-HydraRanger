@@ -107,12 +107,13 @@ export const changePassword = async (req, res, next) => {
 
 export const updateProfile = async (req, res, next) => {
   try {
-    const { username, email, avatar } = req.body;
+    const { username, email, avatar, birthday } = req.body;
     const user = await authService.updateProfile({
       userId: req.user.id || req.user._id,
       username,
       email,
-      avatar
+      avatar,
+      birthday
     });
     res.status(HTTP_STATUS.OK).json({
       success: true,

@@ -176,7 +176,7 @@ export async function deleteProduct(id) {
     id,
     { is_active: false },
     { new: true }
-  );
+  ).populate('category_id');
   if (!product) throw new Error('Product not found');
   return product;
 }

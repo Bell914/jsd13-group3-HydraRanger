@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { useWishlistStore } from "../store/wishlistStore.js";
-import { WishlistSection } from "../pages/profilepage/WishlistSection.jsx";
+import { WishlistSection } from "../components/profilepage/WishlistSection.jsx";
 import ProductCard from "../components/ProductCard.jsx";
 import AuthContext from "../context/Auth/AuthContext.jsx";
 

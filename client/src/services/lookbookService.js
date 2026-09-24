@@ -98,7 +98,10 @@ export async function getLookbooks() {
       return rawData.map(normalizeLookbook);
     }
   } catch (err) {
-    console.warn("API /lookbooks failed, falling back to local JSON data:", err.message);
+    console.warn(
+      "API /lookbooks failed, falling back to local JSON data:",
+      err.message,
+    );
   }
 
   // Fallback ไปใช้ไฟล์ JSON เดิมกรณี API ล้มเหลว

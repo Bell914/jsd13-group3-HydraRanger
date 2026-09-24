@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5001/api';
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5002/api';
 export function normalizeProduct(product) {
   const category = product.category_id?.slug || product.category || '';
   const imageUrl = product.imageUrl || product.images?.[0]?.image_url || '';
@@ -111,6 +111,7 @@ export const productService = {
   },
 
   async deleteProduct(id) {
-    await request(`/admin/products/${id}`, { method: 'DELETE' });
+    const result = await request(`/admin/products/${id}`, { method: 'DELETE' });
+    return normalizeProduct(result.data);
   }
 };

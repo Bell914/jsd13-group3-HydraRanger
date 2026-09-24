@@ -8,6 +8,7 @@ import {
   VALID_COUPONS,
   SHIPPING_METHODS_CONFIG
 } from '../config/membershipConfig.js';
+import { refundCouponUsage, claimCouponAtomically } from './couponService.js';
 
 const SHIPPING_COSTS = {
   standard: 0,
@@ -164,16 +165,41 @@ export async function createOrder(user, orderData) {
 
   // 2. Validate coupon if provided
   const couponCode = orderData.couponCode ? String(orderData.couponCode).trim().toUpperCase() : '';
+  let appliedDbCoupon = null;
+  const orderId = new mongoose.Types.ObjectId();
   if (couponCode) {
-    const coupon = VALID_COUPONS[couponCode];
-    if (coupon) {
-      if (subtotal >= (coupon.minSpend || 0)) {
-        if (coupon.type === 'percent') {
-          const couponDiscount = Math.round((subtotal * coupon.value) / 100);
+    // 2.1 First attempt atomic claim on dynamic user coupons in MongoDB (e.g. WELCOME5)
+    const userId = user?._id || user?.id;
+    if (userId) {
+      try {
+        appliedDbCoupon = await claimCouponAtomically({
+          code: couponCode,
+          userId,
+          orderId,
+        });
+        if (appliedDbCoupon) {
+          const couponDiscount = Math.round((subtotal * appliedDbCoupon.discountValue) / 100);
           calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
-        } else if (coupon.type === 'fixed') {
-          calculatedDiscount = Math.max(calculatedDiscount, coupon.value);
         }
+      } catch (couponErr) {
+        console.warn('Coupon atomic claim warning:', couponErr.message);
+      }
+    }
+
+    // 2.2 Fallback to static VALID_COUPONS (Tier coupons, birthday coupons)
+    if (!appliedDbCoupon) {
+      const coupon = VALID_COUPONS[couponCode];
+      if (coupon) {
+        if (subtotal >= (coupon.minSpend || 0)) {
+          if (coupon.type === 'percent') {
+            const couponDiscount = Math.round((subtotal * coupon.value) / 100);
+            calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
+          } else if (coupon.type === 'fixed') {
+            calculatedDiscount = Math.max(calculatedDiscount, coupon.value);
+          }
+        }
+      } else {
+        throw new Error('คูปองไม่ถูกต้อง หรือถูกใช้งานไปแล้ว');
       }
     }
   }
@@ -202,11 +228,13 @@ export async function createOrder(user, orderData) {
     ? new Date(Date.now() + 30 * 60 * 1000)
     : null;
 
-  await reserveOrderStock(items);
-
   let order;
+  let stockReserved = false;
   try {
+    await reserveOrderStock(items);
+    stockReserved = true;
     order = await Order.create({
+      _id: orderId,
       orderNumber: createOrderNumber(),
       user: user._id || user.id,
       customerEmail: orderData.email || user.email,
@@ -237,7 +265,14 @@ export async function createOrder(user, orderData) {
       stockReserved: true
     });
   } catch (error) {
-    await restoreOrderStock(items);
+    try {
+      if (stockReserved) await restoreOrderStock(items);
+    } finally {
+      // Only release the claim owned by this failed checkout, including stock failures.
+      if (appliedDbCoupon) {
+        await refundCouponUsage({ code: couponCode, userId: user._id || user.id, orderId });
+      }
+    }
     throw error;
   }
 
@@ -292,6 +327,27 @@ export function getAllOrders() {
   return Order.find().populate('user', 'username email').sort({ createdAt: -1 });
 }
 
+function isTransactionUnavailable(error) {
+  return error?.code === 20 || /transaction numbers are only allowed/i.test(error?.message || '');
+}
+
+async function applyOrderStatusChanges(existingOrder, status, userId, netSpend, session = null) {
+  if (['cancelled', 'refunded'].includes(status) && existingOrder.stockReserved && !existingOrder.stockRestored) {
+    await restoreOrderStock(existingOrder.items, session);
+    existingOrder.stockRestored = true;
+  }
+
+  if (userId && !existingOrder.loyaltyProcessed && status === 'paid') {
+    await loyaltyService.processOrderSpending(userId, netSpend, 'ADD', session);
+    existingOrder.loyaltyProcessed = true;
+  } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {
+    await loyaltyService.processOrderSpending(userId, netSpend, 'SUBTRACT', session);
+    existingOrder.loyaltyProcessed = false;
+  }
+
+  await existingOrder.save(session ? { session } : undefined);
+}
+
 export async function updateOrderStatus(orderId, status) {
   if (!ORDER_STATUSES.includes(status)) throw new Error('Invalid order status');
 
@@ -309,42 +365,34 @@ export async function updateOrderStatus(orderId, status) {
   const userId = existingOrder.user?._id || existingOrder.user?.id || existingOrder.user;
   const netSpend = Math.max(0, existingOrder.subtotal - (existingOrder.discountAmount || 0));
 
-  let session = null;
+  let session;
   try {
-    if (['cancelled', 'refunded'].includes(status) && existingOrder.stockReserved && !existingOrder.stockRestored) {
-      await restoreOrderStock(existingOrder.items, session);
-      existingOrder.stockRestored = true;
-    }
-
     session = await mongoose.startSession();
     session.startTransaction();
-  } catch {
-    session = null;
+    await applyOrderStatusChanges(existingOrder, status, userId, netSpend, session);
+    await session.commitTransaction();
+  } catch (error) {
+    await session?.abortTransaction();
+
+    if (!session || isTransactionUnavailable(error)) {
+      await applyOrderStatusChanges(existingOrder, status, userId, netSpend);
+    } else {
+      throw error;
+    }
+  } finally {
+    await session?.endSession();
   }
 
-  try {
-    if (userId && !existingOrder.loyaltyProcessed && status === 'paid') {
-      await loyaltyService.processOrderSpending(userId, netSpend, 'ADD', session);
-      existingOrder.loyaltyProcessed = true;
-    } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {
-      await loyaltyService.processOrderSpending(userId, netSpend, 'SUBTRACT', session);
-      existingOrder.loyaltyProcessed = false;
-    }
-
-    if (session) {
-      await existingOrder.save({ session });
-      await session.commitTransaction();
-    } else {
-      await existingOrder.save();
-    }
-  } catch (err) {
-    if (session) {
-      await session.abortTransaction();
-    }
-    throw err;
-  } finally {
-    if (session) {
-      session.endSession();
+  // Refund coupon if order was cancelled or refunded
+  if (['cancelled', 'refunded'].includes(status) && existingOrder.couponCode && userId) {
+    try {
+      await refundCouponUsage({
+        code: existingOrder.couponCode,
+        userId,
+        orderId: existingOrder._id
+      });
+    } catch (refundErr) {
+      console.warn('Coupon refund warning on updateOrderStatus:', refundErr.message);
     }
   }
 
@@ -368,3 +416,4 @@ export async function cancelOrder(userId, orderId) {
   // Keep stock and loyalty changes in one status-transition path.
   return updateOrderStatus(orderId, 'cancelled');
 }
+

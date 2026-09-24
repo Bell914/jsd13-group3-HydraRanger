@@ -17,7 +17,10 @@ import lookbookRoutes from "./lookbookRoutes.js";
 import adminLookbookRoutes from "./adminLookbookRoutes.js";
 import uploadRoutes from "./uploadRoutes.js";
 import recommendRoutes from "./recommendRoutes.js";
+import couponRoutes from "./couponRoutes.js";
 import paymentRoutes from "./paymentRoutes.js";
+import articleRoutes from "./articleRoutes.js";
+import adminArticleRoutes from "./adminArticleRoutes.js";
 
 const router = Router();
 
@@ -32,15 +35,16 @@ router.get("/", (req, res) => {
       auth: "/api/auth",
       products: "/api/products",
       lookbooks: "/api/lookbooks",
+      articles: "/api/articles",
       users: "/api/users",
       orders: "/api/orders",
+      coupons: "/api/coupons",
     },
   });
 });
 
 // Health check endpoint
 router.get("/health", (req, res) => {
-
   res.status(200).json({
     success: true,
     message: "Server is running",
@@ -48,7 +52,6 @@ router.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
     service: "OCCASION API Server (Sprint 2)",
     database: getDBStatus(),
-    passwordEmailConfigured: Boolean(process.env.SMTP_USER && process.env.SMTP_PASS),
   });
 });
 
@@ -71,5 +74,8 @@ router.use("/lookbooks", lookbookRoutes);
 router.use("/admin/lookbooks", adminLookbookRoutes);
 router.use("/uploads", uploadRoutes);
 router.use("/recommend", recommendRoutes);
+router.use("/coupons", couponRoutes);
+router.use("/articles", articleRoutes);
+router.use("/admin/articles", adminArticleRoutes);
 
 export default router;

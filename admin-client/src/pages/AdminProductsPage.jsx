@@ -122,11 +122,13 @@ export function AdminProductsPage() {
     setDeleting(true);
     setErrorMessage('');
     try {
-      await productService.deleteProduct(productToDelete._id);
+      const inactiveProduct = await productService.deleteProduct(productToDelete._id);
       setProductList((currentProducts) => {
-        return currentProducts.filter((product) => product._id !== productToDelete._id);
+        return currentProducts.map((product) => (
+          product._id === inactiveProduct._id ? inactiveProduct : product
+        ));
       });
-      setSuccessMessage(`ลบสินค้า “${productToDelete.name}” เรียบร้อยแล้ว`);
+      setSuccessMessage(`ปิดการขาย “${productToDelete.name}” เรียบร้อยแล้ว`);
       setProductToDelete(null);
     } catch (error) {
       setErrorMessage(error.message);

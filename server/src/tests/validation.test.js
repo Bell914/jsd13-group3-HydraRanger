@@ -7,6 +7,7 @@ import { validateCreateOrder, validateOrderStatus } from '../validators/orderVal
 import { validateReviewInput } from '../validators/reviewValidator.js';
 import { validateProductInput } from '../validators/productValidator.js';
 import { validateResetPasswordInput } from '../validators/authValidator.js';
+import { validateArticleInput, validateArticleStatus } from '../validators/articleValidator.js';
 
 test('order requires items and a complete shipping address', () => {
   const result = validateCreateOrder({ items: [], shippingAddress: {} });
@@ -79,4 +80,21 @@ test('ID validator accepts only a 24-character MongoDB ID', () => {
 
 test('product ID parameter validator rejects malformed IDs', () => {
   assert.equal(validateProductIdParam({ productId: 'bad-id' }).isValid, false);
+});
+
+test('article requires its public content and accepts a valid draft', () => {
+  const missingContent = validateArticleInput({ title: 'New article' });
+  assert.equal(missingContent.isValid, false);
+  assert.ok(missingContent.errors.includes('Content is required'));
+
+  const draft = validateArticleInput({
+    title: 'New article',
+    excerpt: 'Short introduction',
+    content: 'Full article content',
+    category: 'Style Guide',
+    imageUrl: '/api/uploads/507f1f77bcf86cd799439011',
+    isPublished: false,
+  });
+  assert.equal(draft.isValid, true);
+  assert.equal(validateArticleStatus({ isPublished: 'yes' }).isValid, false);
 });
