@@ -6,6 +6,7 @@ import { authService } from "../services/authService";
 import { useAuth } from "../context/Auth/useAuth.jsx";
 import { RANK_DISCOUNT_PERCENT, FREE_SHIPPING_MINIMUM, calculateRankFromSpending } from "../utils/loyaltyUtils.js";
 import { getAddresses } from "../services/userService";
+import { addAddress as createSavedAddress } from "../services/userService.js";
 import { createOrder } from "../services/orderService.js";
 import { api } from "../services/api.js";
 import { loadStripe } from "@stripe/stripe-js";
@@ -41,7 +42,7 @@ function StripeIntentSetup({ amount, onReady, onError }) {
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { cartItems, getTotalPrice, clearCart } = useCartStore();
-  const addAddress = useAddressStore((state) => state.addAddress);
+  const setSavedAddressStore = useAddressStore((state) => state.setAddresses);
   let authUser = null;
   try { authUser = useAuth()?.user; } catch { authUser = authService.getCurrentUser(); }
   const currentUser = authUser || authService.getCurrentUser();
@@ -60,10 +61,11 @@ export default function CheckoutPage() {
     getAddresses().then((res) => {
       const addresses = res.data || (Array.isArray(res) ? res : []);
       setSavedAddresses(addresses);
+      setSavedAddressStore(addresses);
       const selected = addresses.find((item) => item.isDefault) || addresses[0];
       if (selected) {
         const names = (selected.recipientName || "").trim().split(" ");
-        setShippingData((prev) => ({ ...prev, firstName: names[0] || prev.firstName, lastName: names.slice(1).join(" ") || prev.lastName, phone: selected.phone || prev.phone, address: selected.addressLine || prev.address, city: selected.district || prev.city, state: selected.province || prev.state, zipCode: selected.postalCode || prev.zipCode }));
+          setShippingData((prev) => ({ ...prev, selectedAddressId: selected._id, firstName: names[0] || prev.firstName, lastName: names.slice(1).join(" ") || prev.lastName, phone: selected.phone || prev.phone, address: selected.addressDetail || selected.addressLine || prev.address, city: selected.district || prev.city, state: selected.province || prev.state, zipCode: selected.zipCode || selected.postalCode || prev.zipCode, location: selected.country || prev.location, saveAddress: false }));
       }
     }).catch((err) => console.warn("Could not load saved shipping addresses:", err.message));
   }, []);
@@ -94,7 +96,12 @@ export default function CheckoutPage() {
       const nextRank = calculateRankFromSpending(Number(currentUser.membership?.accumulatedSpending || 0) + (created?.subtotal ?? discountedSubtotal));
       if (nextRank !== userRank) upgradedRank = nextRank;
     }
-    if (shippingData.saveAddress) addAddress({ ...shippingData, location: shippingData.location || "Thailand" });
+    if (shippingData.saveAddress) {
+      const addressResponse = await createSavedAddress({ recipientName: `${shippingData.firstName} ${shippingData.lastName}`.trim(), phone: shippingData.phone, addressDetail: shippingData.address, district: shippingData.city, province: shippingData.state, zipCode: shippingData.zipCode, isDefault: savedAddresses.length === 0 });
+      const nextAddresses = addressResponse?.data || [];
+      setSavedAddresses(nextAddresses);
+      setSavedAddressStore(nextAddresses);
+    }
     setCompletedOrder({ orderId: created.orderNumber || created.orderId || created._id, shippingData: { ...(created.shippingAddress || shippingData), shippingMethod: created.shippingMethod || shippingData.shippingMethod }, email: created.customerEmail || payload.email, items: (created.items || cartItems).map((item) => ({ ...item, name: item.title || item.name || item.productName, price: item.unitPrice || item.price })), subtotal: created.subtotal ?? subtotal, rankDiscountAmount: created.discountAmount ?? rankDiscountAmount, userRank, upgradedRank, shippingCost: created.shippingCost ?? shippingCost, taxAmount: created.taxAmount ?? taxAmount, totalAmount: created.totalAmount ?? totalAmount });
     clearCart();
     return created;
@@ -137,7 +144,7 @@ export default function CheckoutPage() {
     {submitError && <div role="alert" className="mb-6 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"><span>{submitError}</span><button onClick={() => setSubmitError("")} className="font-bold">✕</button></div>}
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3"><div className="space-y-4 lg:col-span-2">
       {currentStep === 1 && <ContactSection email={email} onChangeEmail={setEmail} isCollapsed={false} onContinue={() => setCurrentStep(2)} onBack={() => navigate("/cart")} />}
-      {currentStep === 2 && <><ContactSection email={email} isCollapsed onEdit={() => setCurrentStep(1)} /><ShippingSection shippingData={shippingData} savedAddresses={savedAddresses} onChangeShipping={setShippingData} isCollapsed={false} onContinue={() => setCurrentStep(3)} onBack={() => navigate("/cart")} /></>}
+      {currentStep === 2 && <><ContactSection email={email} isCollapsed onEdit={() => setCurrentStep(1)} /><ShippingSection shippingData={shippingData} savedAddresses={savedAddresses} onSelectAddress={(id) => { const address = savedAddresses.find((item) => String(item._id || item.id) === String(id)); if (!address) return; const names = (address.recipientName || '').trim().split(/\s+/); setShippingData((prev) => ({ ...prev, selectedAddressId: String(address._id || address.id), firstName: names[0] || '', lastName: names.slice(1).join(' '), phone: address.phone || '', address: address.addressDetail || address.addressLine || '', city: address.district || '', state: address.province || '', zipCode: address.zipCode || address.postalCode || '', saveAddress: false })); }} onAddNewAddress={() => setShippingData((prev) => ({ ...prev, selectedAddressId: '', firstName: '', lastName: '', phone: '', address: '', city: '', state: '', zipCode: '', saveAddress: true }))} onChangeShipping={setShippingData} isCollapsed={false} onContinue={() => setCurrentStep(3)} onBack={() => navigate("/cart")} /></>}
       {currentStep === 3 && <><ContactSection email={email} isCollapsed onEdit={() => setCurrentStep(1)} /><ShippingSection shippingData={shippingData} isCollapsed onEdit={() => setCurrentStep(2)} /><PaymentSection paymentData={paymentData} onChangePayment={setPaymentData} isCollapsed={false} onContinue={() => { setSubmitError(""); setCurrentStep(4); }} onBack={() => setCurrentStep(2)} /></>}
       {currentStep === 4 && <><ContactSection email={email} isCollapsed onEdit={() => setCurrentStep(1)} /><ShippingSection shippingData={shippingData} isCollapsed onEdit={() => setCurrentStep(2)} /><PaymentSection paymentData={paymentData} isCollapsed onEdit={() => setCurrentStep(3)} />{paymentData.method === "credit-card" ? <div className="rounded-lg border border-gray-200 bg-white p-6"><h2 className="mb-4 text-xl font-bold">ชำระเงินด้วยบัตร</h2>{!clientSecret ? <><Elements stripe={stripePromise}><StripeIntentSetup amount={totalAmount} onReady={setClientSecret} onError={setIntentError} /></Elements><p className="text-sm text-gray-600">{intentError || "กำลังเตรียมแบบฟอร์มชำระเงิน..."}</p></> : <Elements stripe={stripePromise} options={{ clientSecret }}><StripePaymentForm onSubmit={handlePlaceOrder} isSubmitting={isSubmitting} /></Elements>}</div> : <ReviewSection email={email} shippingData={shippingData} paymentData={paymentData} onEditStep={setCurrentStep} onBack={() => setCurrentStep(3)} onPlaceOrder={() => handlePlaceOrder(null, null)} isSubmitting={isSubmitting} />}</>}
     </div><div className="lg:col-span-1"><OrderSummary cartItems={cartItems} subtotal={subtotal} shippingMethodId={shippingData.shippingMethod} currentStep={currentStep} userRank={userRank} rankDiscountAmount={rankDiscountAmount} /></div></div>

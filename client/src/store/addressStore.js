@@ -1,24 +1,6 @@
 import { create } from "zustand";
 
-const STORAGE_KEY = "occasion_addresses";
-
-const loadInitialAddresses = () => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch (error) {
-    console.error("Failed to load addresses from localStorage:", error);
-    return [];
-  }
-};
-
-const saveAddresses = (addresses) => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(addresses));
-  } catch (error) {
-    console.error("Failed to save addresses to localStorage:", error);
-  }
-};
+const saveAddresses = () => {};
 
 export const emptyAddress = {
   label: "",
@@ -38,7 +20,8 @@ const makeId = () =>
     : `addr-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 
 export const useAddressStore = create((set, get) => ({
-  addresses: loadInitialAddresses(),
+  addresses: [],
+  setAddresses: (addresses) => set({ addresses: Array.isArray(addresses) ? addresses : [] }),
 
   addAddress: (address) => {
     const item = {
