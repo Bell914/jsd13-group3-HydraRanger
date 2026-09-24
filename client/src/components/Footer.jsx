@@ -23,12 +23,12 @@ export const Footer = () => {
             <ul className="space-y-2 text-sm text-[#f7f2ec]/90 list-none p-0 m-0">
               <li>
                 <Link to="/products?category=tops" className={linkClass}>
-                  ชุดส่วนบน
+                  เสื้อ
                 </Link>
               </li>
               <li>
                 <Link to="/products?category=bottoms" className={linkClass}>
-                  ชุดส่วนร่าง
+                  กางเกง
                 </Link>
               </li>
               <li>
@@ -107,7 +107,7 @@ export const Footer = () => {
         </div>
 
         <div className="border-t border-[#f7f2ec]/20 pt-6 text-center text-xs text-[#f7f2ec]/70">
-          &copy; 2026 ออคเคชัน สงวนลิขสิทธิ์ทั้งหมด
+          &copy; 2026 OCCASION. All rights reserved.
         </div>
       </div>
     </footer>

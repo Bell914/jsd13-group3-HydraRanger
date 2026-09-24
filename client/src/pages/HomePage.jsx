@@ -46,11 +46,41 @@ export const HomePage = () => {
 
   const recProducts = recommendedProducts.slice(0, 3);
   const teamMembers = [
-    { name: "Pathsharasakon", nickname: "Nae / เน่", character: "Chopper", portraitImage: "/team/member-1.png", characterImage: "/team/chopper.png" },
-    { name: "Tipkanya", nickname: "Luknok / ลูกนก", character: "Usopp", portraitImage: "/team/member-2.png", characterImage: "/team/usopp.png" },
-    { name: "Puttipong", nickname: "Mos / มอส", character: "Ace", portraitImage: "/team/member-4.png", characterImage: "/team/ace.png" },
-    { name: "Ittikorn", nickname: "BM / บีเอ็ม", character: "Zoro", portraitImage: "/team/member-3.png", characterImage: "/team/zoro.png" },
-    { name: "Sitthan", nickname: "Bird / เบิร์ด", character: "One Piece", portraitImage: "/team/member-5.png", characterImage: "/team/skull.png" },
+    {
+      name: "Pathsharasakon",
+      nickname: "Nae / เน่",
+      character: "Chopper",
+      portraitImage: "/team/member-1.png",
+      characterImage: "/team/chopper.png",
+    },
+    {
+      name: "Tipkanya",
+      nickname: "Luknok / ลูกนก",
+      character: "Usopp",
+      portraitImage: "/team/member-2.png",
+      characterImage: "/team/usopp.png",
+    },
+    {
+      name: "Puttipong",
+      nickname: "Mos / มอส",
+      character: "Ace",
+      portraitImage: "/team/member-4.png",
+      characterImage: "/team/ace.png",
+    },
+    {
+      name: "Ittikorn",
+      nickname: "BM / บีเอ็ม",
+      character: "Zoro",
+      portraitImage: "/team/member-3.png",
+      characterImage: "/team/zoro.png",
+    },
+    {
+      name: "Sitthan",
+      nickname: "Bird / เบิร์ด",
+      character: "One Piece",
+      portraitImage: "/team/member-5.png",
+      characterImage: "/team/skull.png",
+    },
   ];
 
   return (
@@ -59,8 +89,14 @@ export const HomePage = () => {
       <HeroSection />
 
       {/* Main Section */}
-      <section id="main" className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <section className="body-reference-section" aria-labelledby="recommend-products-title">
+      <section
+        id="main"
+        className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8"
+      >
+        <section
+          className="body-reference-section"
+          aria-labelledby="recommend-products-title"
+        >
           <TextHomepage
             textheader={"สินค้าแนะนำเลือกช็อปตามใจ"}
           />
@@ -76,7 +112,10 @@ export const HomePage = () => {
         </section>
 
         {/* Lookbook Section */}
-        <section className="body-reference-section lookbook-section" aria-labelledby="recommend-lookbook-title">
+        <section
+          className="body-reference-section lookbook-section"
+          aria-labelledby="recommend-lookbook-title"
+        >
           <TextHomepage
             textheader={"ลุคสุดพิเศษที่ได้รับความนิยม"}
           />
@@ -92,7 +131,10 @@ export const HomePage = () => {
         </section>
 
         {/* Special Product Marquee Section */}
-        <section className="body-reference-section" aria-labelledby="special-products-title">
+        <section
+          className="body-reference-section"
+          aria-labelledby="special-products-title"
+        >
           <TextHomepage
             textheader={"สินค้าพิเศษเฉพาะช่วงนี้เท่านั้น"}
           />
@@ -142,7 +184,7 @@ export const HomePage = () => {
             id="article-grid"
             className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3"
           >
-{recommendedArticles.map((article) => (
+            {recommendedArticles.map((article) => (
               <div
                 key={article.id || article.title}
                 className="card bg-base-100 flex flex-col justify-between w-full shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden"
@@ -158,7 +200,7 @@ export const HomePage = () => {
                 </figure>
                 <div className="card-body flex flex-col justify-between flex-grow p-4 sm:p-6">
                   <div>
-<div className="badge badge-secondary text-xs mb-2">
+                    <div className="badge badge-secondary text-xs mb-2">
                       {article.category}
                     </div>
                     <h2 className="card-title text-lg text-[#263639] sm:text-xl line-clamp-2">
@@ -187,18 +229,34 @@ export const HomePage = () => {
         <section className="team-section" aria-labelledby="team-title">
           <div className="team-section__heading">
             <h2 id="team-title">Meet the Crew</h2>
-            <span>Hover each card to reveal their character.</span>
           </div>
           <div className="team-card-grid">
             {teamMembers.map((member) => (
-              <article className="team-flip-card" key={member.name} tabIndex="0" aria-label={`${member.name}, ${member.nickname}, character ${member.character}`}>
+              <article
+                className="team-flip-card"
+                key={member.name}
+                tabIndex="0"
+                aria-label={`${member.name}, ${member.nickname}, character ${member.character}`}
+              >
                 <div className="team-flip-card__inner">
-                  <div className={`team-flip-card__face team-flip-card__front ${member.character === "Chopper" ? "team-flip-card__front--chopper" : ""} ${member.character === "Ace" ? "team-flip-card__front--ace" : ""} ${member.character === "Zoro" ? "team-flip-card__front--zoro" : ""} ${member.character === "One Piece" ? "team-flip-card__front--skull" : ""}`}>
-                    <img src={member.characterImage} alt={`${member.character} character`} />
+                  <div
+                    className={`team-flip-card__face team-flip-card__front ${member.character === "Chopper" ? "team-flip-card__front--chopper" : ""} ${member.character === "Ace" ? "team-flip-card__front--ace" : ""} ${member.character === "Zoro" ? "team-flip-card__front--zoro" : ""} ${member.character === "One Piece" ? "team-flip-card__front--skull" : ""}`}
+                  >
+                    <img
+                      src={member.characterImage}
+                      alt={`${member.character} character`}
+                    />
                   </div>
                   <div className="team-flip-card__face team-flip-card__back">
-                    <img className="team-flip-card__portrait" src={member.portraitImage} alt="" />
-                    <div className="team-flip-card__label"><strong>{member.nickname}</strong><span>{member.name}</span></div>
+                    <img
+                      className="team-flip-card__portrait"
+                      src={member.portraitImage}
+                      alt=""
+                    />
+                    <div className="team-flip-card__label">
+                      <strong>{member.nickname}</strong>
+                      <span>{member.name}</span>
+                    </div>
                   </div>
                 </div>
               </article>
