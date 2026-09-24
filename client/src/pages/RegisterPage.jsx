@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus, Shield, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, Shield, AlertCircle, Eye, EyeOff, CheckCircle2, Mail, Tag, ArrowRight } from 'lucide-react';
 import { authService } from '../services/authService.js';
 import { useAuth } from '../context/Auth/useAuth.jsx';
 import { Button, Card, FormInput } from '../components/index.js';
@@ -24,6 +24,7 @@ export const RegisterPage = () => {
   const [fieldErrors, setFieldErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -51,13 +52,76 @@ export const RegisterPage = () => {
         email: formData.email,
         password: formData.password,
       });
-      navigate("/");
+      setIsSuccess(true);
     } catch (err) {
       setApiError(err.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+
+  if (isSuccess) {
+    return (
+      <div className="max-w-md mx-auto w-full py-12 px-4">
+        <Card className="text-center p-8 border border-emerald-100 shadow-xl bg-white">
+          <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+            <CheckCircle2 size={36} />
+          </div>
+
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            สมัครสมาชิกสำเร็จ!
+          </h2>
+          <p className="text-sm text-gray-600 mb-6">
+            ยินดีต้อนรับคุณ <span className="font-semibold text-gray-900">{formData.username}</span> สู่ครอบครัว OCCASION
+          </p>
+
+          {/* Welcome Coupon Card Notification */}
+          <div className="bg-gradient-to-br from-rose-50 to-orange-50 border-2 border-dashed border-rose-300 rounded-2xl p-5 mb-6 text-left">
+            <div className="flex items-center gap-2 text-rose-600 font-bold text-sm mb-1">
+              <Tag size={16} />
+              <span>ของขวัญต้อนรับสมาชิกใหม่</span>
+            </div>
+            <p className="text-xs text-gray-600 mb-3">
+              รับส่วนลด <b>5%</b> สำหรับการสั่งซื้อครั้งแรกของคุณ
+            </p>
+            <div className="bg-white rounded-lg p-3 border border-rose-200 flex items-center justify-between">
+              <span className="font-mono font-bold text-rose-600 text-lg tracking-wider">
+                WELCOME5
+              </span>
+              <span className="text-xs bg-rose-100 text-rose-700 font-semibold px-2 py-1 rounded">
+                ลด 5%
+              </span>
+            </div>
+            <div className="mt-3 flex items-start gap-2 text-xs text-gray-500">
+              <Mail size={14} className="shrink-0 mt-0.5 text-gray-400" />
+              <span>
+                เราได้ส่งรายละเอียดโค้ดไปยัง <b className="text-gray-700">{formData.email}</b> แล้ว กรุณาตรวจสอบกล่องจดหมายของคุณ
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <Button
+              type="button"
+              variant="primary"
+              icon={ArrowRight}
+              onClick={() => navigate("/")}
+              className="w-full justify-center"
+            >
+              เริ่มช้อปปิ้งเลย
+            </Button>
+            <button
+              type="button"
+              onClick={() => navigate("/profile")}
+              className="text-xs text-gray-500 hover:text-gray-900 transition-colors py-1"
+            >
+              ดูข้อมูลโปรไฟล์และคูปองของฉัน
+            </button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto w-full py-8">
