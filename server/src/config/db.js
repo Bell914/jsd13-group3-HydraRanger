@@ -15,6 +15,8 @@ function scheduleReconnect() {
   }, RECONNECT_DELAY_MS);
 }
 
+
+
 export const connectDB = async () => {
   if (isConnected && mongoose.connection.readyState === 1) return;
   if (connecting) return;
@@ -63,9 +65,13 @@ mongoose.connection.on("error", (error) => {
   if (!isConnected) scheduleReconnect();
 });
 
-export const getDBStatus = () => ({
-  isConnected,
-  uri: ENV.MONGODB_URI
-    ? `${ENV.MONGODB_URI.split("@").pop()}`
-    : "Not configured",
-});
+export const getDBStatus = () => {
+  const readyState = mongoose.connection.readyState;
+  return {
+    isConnected: readyState === 1 || isConnected,
+    readyState,
+    uri: ENV.MONGODB_URI
+      ? `${ENV.MONGODB_URI.split("@").pop()}`
+      : "Not configured",
+  };
+};

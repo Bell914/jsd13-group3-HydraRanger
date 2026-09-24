@@ -1,5 +1,5 @@
 import React from "react";
-import { Heart, Share2, Ruler, Minus, Plus, ShoppingBag } from "lucide-react";
+import { Heart, Share2, Ruler, Minus, Plus, ShoppingBag, Sparkles } from "lucide-react";
 import { SizeRecommendationCard } from './SizeRecommendationCard.jsx';
 
 export const ProductBuySection = ({
@@ -57,17 +57,29 @@ export const ProductBuySection = ({
             <h1 className="text-2xl sm:text-3xl font-black text-primary tracking-tight">
               {product.name}
             </h1>
-            {/* Product Tags */}
-            {product.tags && product.tags.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {product.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200"
-                  >
-                    #{tag}
-                  </span>
-                ))}
+            {/* Product Tags & Early Access */}
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              {product.isEarlyAccess && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-400 to-yellow-400 px-2 py-0.5 text-xs font-black uppercase text-gray-950 shadow-xs">
+                  <Sparkles size={12} className="text-gray-950" />
+                  <span>EARLY ACCESS</span>
+                </span>
+              )}
+              {product.tags && product.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+            {product.isEarlyAccess && (
+              <div className="mt-2.5 flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                <Sparkles size={14} className="text-amber-600 shrink-0" />
+                <span>
+                  <strong>Early Access Exclusive:</strong> สิทธิพิเศษช้อปสินค้าคอลเลกชันใหม่ก่อนใคร สำหรับสมาชิก <strong>SILVER</strong> ขึ้นไป
+                </span>
               </div>
             )}
           </div>
@@ -108,19 +120,25 @@ export const ProductBuySection = ({
                 ? { color: colorObj, colorCode: "" }
                 : colorObj;
               const isSelected = selectedColor === color;
+              const isAvailable = product.variants?.some((variant) => (
+                variant.color === color && Number(variant.stock_quantity ?? variant.stockQuantity) > 0
+              ));
               return (
                 <button
                   key={color}
                   type="button"
                   onClick={() => onColorChange(color)}
+                  disabled={!isAvailable}
                   className={`h-8 w-8 rounded-full border-2 transition-all cursor-pointer ${
-                    isSelected
+                    !isAvailable
+                      ? "border-gray-200 opacity-35 cursor-not-allowed"
+                      : isSelected
                       ? "border-primary ring-2 ring-accent scale-110"
                       : "border-gray-300 hover:scale-105"
                   }`}
                   style={{ backgroundColor: getColorHex(color, colorCode) }}
-                  title={color}
-                  aria-label={`เลือกสี ${color}`}
+                  title={isAvailable ? color : `${color} สินค้าหมด`}
+                  aria-label={isAvailable ? `เลือกสี ${color}` : `${color} สินค้าหมด`}
                 />
               );
             })}
@@ -152,18 +170,26 @@ export const ProductBuySection = ({
           <div className="flex flex-wrap gap-2.5 sm:gap-3">
             {sizeOptions.map((size) => {
               const isSelected = selectedSize === size;
+              const isAvailable = product.variants?.some((variant) => {
+                const matchesSize = (variant.size || variant.size_or_color) === size;
+                const matchesColor = !selectedColor || variant.color === selectedColor;
+                return matchesSize && matchesColor && Number(variant.stock_quantity ?? variant.stockQuantity) > 0;
+              });
               return (
                 <button
                   key={size}
                   type="button"
                   onClick={() => onSizeChange(size)}
+                  disabled={!isAvailable}
                   className={`min-w-[56px] sm:min-w-[68px] rounded-xl py-2.5 px-4 text-sm font-extrabold transition-all cursor-pointer text-center shadow-xs ${
-                    isSelected
+                    !isAvailable
+                      ? "border border-gray-200 bg-gray-100 text-gray-400 line-through cursor-not-allowed"
+                      : isSelected
                       ? "bg-primary text-white shadow ring-2 ring-accent scale-102"
                       : "border border-occasion-border/60 bg-white text-secondary hover:border-primary hover:text-primary hover:scale-102"
                   }`}
                 >
-                  {size}
+                  {size}{!isAvailable ? ' หมด' : ''}
                 </button>
               );
             })}

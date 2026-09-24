@@ -1,20 +1,19 @@
 import { Router } from 'express';
-<<<<<<< HEAD
 import { protect } from '../middleware/authMiddleware.js';
-import { lookbookController } from '../controllers/index.js';
+import {
+  getLookbooks,
+  getLookbookById,
+  toggleFavoriteLookbook
+} from '../controllers/lookbookController.js';
 
 const router = Router();
 
-router.post('/:id/favorite', protect, lookbookController.toggleFavoriteLookbook);
-
-export default router;
-=======
-import { getLookbooks, getLookbookById } from '../controllers/lookbookController.js';
-
-const router = Router();
-
+// Public Routes
 router.get('/', getLookbooks);
 router.get('/:id', getLookbookById);
+router.post('/:id/favorite', protect, toggleFavoriteLookbook);
+
+// Protected Routes (ต้องล็อกอิน)
+router.post('/:id/favorite', protect, toggleFavoriteLookbook);
 
 export default router;
->>>>>>> 9abd5a0233e221df2af334ab8ff7fce6b26e14c0

@@ -3,7 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import useCartStore from "../store/cartStore";
 import { useAddressStore } from "../store/addressStore.js";
 import { authService } from "../services/authService";
+import { useAuth } from "../context/Auth/useAuth.jsx";
+import {
+  RANK_DISCOUNT_PERCENT,
+  FREE_SHIPPING_MINIMUM,
+  calculateRankFromSpending
+} from "../utils/loyaltyUtils.js";
 import { getAddresses } from "../services/userService";
+import { createOrder } from "../services/orderService.js";
 import {
   CheckoutStepper,
   ContactSection,
@@ -23,7 +30,17 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
   const { cartItems, getTotalPrice, clearCart } = useCartStore();
   const addAddress = useAddressStore((state) => state.addAddress);
-  const currentUser = authService.getCurrentUser();
+
+  let authUser = null;
+  let updateProfile = null;
+  try {
+    const auth = useAuth();
+    authUser = auth?.user;
+    updateProfile = auth?.updateProfile;
+  } catch {
+    authUser = authService.getCurrentUser();
+  }
+  const currentUser = authUser || authService.getCurrentUser();
 
   // Current Step: 1 = Contact, 2 = Shipping, 3 = Payment, 4 = Review
   const [currentStep, setCurrentStep] = useState(2);
@@ -99,20 +116,32 @@ export default function CheckoutPage() {
   // Order Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
+<<<<<<< HEAD
 
+=======
+  const [orderError, setOrderError] = useState("");
+>>>>>>> develop
   const [submitError, setSubmitError] = useState(null);
 
   const subtotal = getTotalPrice();
+
+  // Loyalty Rank Discount & Free Shipping Calculations
+  const userRank = currentUser?.membership?.rank || 'MEMBER';
+  const discountPercent = RANK_DISCOUNT_PERCENT[userRank] || 0;
+  const rankDiscountAmount = discountPercent > 0 ? Math.round((subtotal * discountPercent) / 100) : 0;
+  const isFreeShipping = FREE_SHIPPING_MINIMUM[userRank] === 0 || subtotal >= (FREE_SHIPPING_MINIMUM[userRank] ?? 1000);
 
   // Calculate order total for final order placement
   const selectedShipping =
     SHIPPING_METHODS.find((m) => m.id === shippingData.shippingMethod) ||
     SHIPPING_METHODS[0];
-  const shippingCost = selectedShipping ? selectedShipping.price : 0;
-  const taxAmount = currentStep >= 3 ? Math.round(subtotal * 0.06 * 100) / 100 : 0;
-  const totalAmount = subtotal + shippingCost + taxAmount;
+  const shippingCost = isFreeShipping ? 0 : (selectedShipping ? selectedShipping.price : 0);
+  const discountedSubtotal = Math.max(0, subtotal - rankDiscountAmount);
+  const taxAmount = currentStep >= 3 ? Math.round(discountedSubtotal * 0.06 * 100) / 100 : 0;
+  const totalAmount = discountedSubtotal + shippingCost + taxAmount;
 
   // Handle Place Order
+<<<<<<< HEAD
   // ✏️ HIGHLIGHT (UPDATE): ปรับแก้ไข Syntax try/catch ให้ถูกต้อง และเรียกใช้ createOrder ผ่าน api.post
 const handlePlaceOrder = async () => {
     setIsSubmitting(true);
@@ -189,6 +218,99 @@ console.error("Failed to place order:", err);
       setSubmitError(
         err.data?.message || err.message || "เกิดข้อผิดพลาดในการบันทึกคำสั่งซื้อ กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง"
       );
+=======
+  const handlePlaceOrder = async () => {
+    setIsSubmitting(true);
+    setOrderError("");
+    setSubmitError(null);
+
+    if (shippingData.saveAddress && addAddress) {
+      const { firstName, lastName, phone, address, city, state, zipCode, location } = shippingData;
+      addAddress({
+        firstName,
+        lastName,
+        phone,
+        address,
+        city,
+        state,
+        zipCode,
+        location: location || "Thailand",
+      });
+    }
+    const itemsSnapshot = [...cartItems];
+
+    const orderPayload = {
+      email: email || currentUser?.email,
+      items: cartItems.map((item) => ({
+        productId: item.productId || item._id || item.product_id,
+        variantId: item.variantId || item.variant_id,
+        sku: item.sku || "",
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      shippingAddress: {
+        firstName: shippingData.firstName,
+        lastName: shippingData.lastName,
+        phone: shippingData.phone,
+        address: shippingData.address,
+        city: shippingData.city,
+        state: shippingData.state || '',
+        zipCode: shippingData.zipCode,
+        location: shippingData.location || 'Thailand',
+        deliveryNote: shippingData.deliveryNote || ''
+      },
+      shippingMethod: shippingData.shippingMethod || 'standard',
+      paymentMethod: paymentData.method || 'credit-card',
+      shippingCost: shippingCost,
+      couponCode: shippingData.couponCode || ''
+    };
+
+    try {
+      const res = await createOrder(orderPayload);
+      const created = res?.data || res;
+
+      let upgradedRank = null;
+      if (currentUser) {
+        const currentSpending = Number(currentUser.membership?.accumulatedSpending || 0);
+        const newSpending = currentSpending + (created?.subtotal ?? discountedSubtotal);
+        const newRank = calculateRankFromSpending(newSpending);
+        if (newRank !== userRank) {
+          upgradedRank = newRank;
+        }
+      }
+
+      setCompletedOrder({
+        orderId: created.orderNumber || created.orderId || created._id || `OCC-${Math.floor(100000 + Math.random() * 900000)}`,
+        shippingData: {
+          ...(created?.shippingAddress || shippingData),
+          shippingMethod: created?.shippingMethod || shippingData.shippingMethod,
+        },
+        email: created.customerEmail || orderPayload.email,
+        items: (created.items || itemsSnapshot).map((item) => ({
+          ...item,
+          name: item.title || item.name || item.productName,
+          price: item.unitPrice || item.price,
+        })),
+        subtotal: created.subtotal ?? subtotal,
+        rankDiscountAmount: created.discountAmount ?? rankDiscountAmount,
+        userRank,
+        upgradedRank,
+        shippingCost: created.shippingCost ?? shippingCost,
+        taxAmount: created.taxAmount ?? taxAmount,
+        totalAmount: created.totalAmount ?? totalAmount,
+      });
+
+      clearCart();
+    } catch (err) {
+      console.error("Order creation failed:", err);
+      const msg =
+        err.data?.message ||
+        err.response?.data?.message ||
+        err.message ||
+        "เกิดข้อผิดพลาดในการบันทึกคำสั่งซื้อ กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง";
+      setOrderError(msg);
+      setSubmitError(msg);
+>>>>>>> develop
     } finally {
       setIsSubmitting(false);
     }
@@ -226,7 +348,10 @@ console.error("Failed to place order:", err);
           onStepClick={(step) => setCurrentStep(step)}
         />
 
+<<<<<<< HEAD
 {/* ➕ HIGHLIGHT: แสดงกล่อง Error Message หากยิง API ไม่สำเร็จ */}
+=======
+>>>>>>> develop
         {submitError && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex justify-between items-center">
             <span>{submitError}</span>
@@ -297,15 +422,22 @@ console.error("Failed to place order:", err);
 
             {/* STEP 4: Review (Active when step 4) */}
             {currentStep === 4 && (
-              <ReviewSection
-                email={email}
-                shippingData={shippingData}
-                paymentData={paymentData}
-                onEditStep={(step) => setCurrentStep(step)}
-                onBack={() => setCurrentStep(3)}
-                onPlaceOrder={handlePlaceOrder}
-                isSubmitting={isSubmitting}
-              />
+              <>
+                {orderError && (
+                  <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+                    {orderError}
+                  </div>
+                )}
+                <ReviewSection
+                  email={email}
+                  shippingData={shippingData}
+                  paymentData={paymentData}
+                  onEditStep={(step) => setCurrentStep(step)}
+                  onBack={() => setCurrentStep(3)}
+                  onPlaceOrder={handlePlaceOrder}
+                  isSubmitting={isSubmitting}
+                />
+              </>
             )}
           </div>
 
@@ -316,6 +448,8 @@ console.error("Failed to place order:", err);
               subtotal={subtotal}
               shippingMethodId={shippingData.shippingMethod}
               currentStep={currentStep}
+              userRank={userRank}
+              rankDiscountAmount={rankDiscountAmount}
             />
           </div>
         </div>

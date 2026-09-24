@@ -146,3 +146,4 @@ export default function LookbookCard({ look, isInitialFavorited = false }) {
     </article>
   );
 }
+

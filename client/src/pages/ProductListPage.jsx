@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard.jsx";
 import RecommendedSlider from "../components/RecommendedSlider.jsx";
 import { getProducts } from "../services/productService.js";
@@ -10,6 +10,7 @@ export default function ProductListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const productsSectionRef = useRef(null);
 
   // URL query params
   const selectedCategory = searchParams.get("category") || "all";
@@ -68,6 +69,17 @@ export default function ProductListPage() {
     }
     return products.slice(0, 32);
   }, [products, searchKeyword, selectedCategory]);
+
+  // Smooth-scroll to the product cards once search results finish loading
+  useEffect(() => {
+    if (!searchKeyword) return;
+    if (!loading && !error && displayedProducts.length > 0) {
+      productsSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [searchKeyword, loading, error, displayedProducts.length]);
 
   const handlePageClick = (pageNum) => {
     setCurrentPage(pageNum);
@@ -136,15 +148,32 @@ export default function ProductListPage() {
         {/* Empty State */}
         {!loading && !error && products.length === 0 && (
           <div className="rounded-2xl border border-dashed border-occasion-border/40 bg-surface/50 py-16 px-6 text-center">
-            <p className="text-lg font-semibold text-primary">
-              ไม่พบสินค้าตรงตามเงื่อนไขที่เลือก
-            </p>
+            {searchKeyword ? (
+              <>
+                <p className="text-lg font-semibold text-primary">
+                  ไม่มีผลลัพธ์ที่ตรงกับ "{searchKeyword}"
+                </p>
+                <p className="mt-2 text-sm text-secondary/80">
+                  ลองค้นหาด้วยคำอื่นหรือตรวจสอบการสะกด
+                </p>
+                <Link
+                  to="/products"
+                  className="mt-6 inline-block rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-accent cursor-pointer"
+                >
+                  แสดงสินค้าทั้งหมด
+                </Link>
+              </>
+            ) : (
+              <p className="text-lg font-semibold text-primary">
+                ไม่พบสินค้าตรงตามเงื่อนไขที่เลือก
+              </p>
+            )}
           </div>
         )}
 
         {/* 4-Column Products Grid (32 items matching wireframe) */}
         {!loading && !error && displayedProducts.length > 0 && (
-          <section aria-label="รายการสินค้า">
+          <section ref={productsSectionRef} aria-label="รายการสินค้า">
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {displayedProducts.map((product, idx) => (
                 <ProductCard

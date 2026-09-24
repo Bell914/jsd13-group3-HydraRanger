@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Menu, Star } from 'lucide-react';
-import { useOutletContext } from 'react-router-dom';
-import { useAdminAuth } from '../context/useAdminAuth.js';
+import { Star } from 'lucide-react';
+import { AdminTopbar } from '../components/AdminTopbar.jsx';
 import { getReviews, updateReviewVisibility } from '../services/reviewService.js';
 
 function formatDate(value) {
@@ -13,12 +12,20 @@ function formatDate(value) {
 }
 
 export function AdminReviewsPage() {
-  const { user } = useAdminAuth();
-  const { openSidebar } = useOutletContext();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState('');
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [visibilityFilter, setVisibilityFilter] = useState('all');
+
+  const searchText = search.trim().toLowerCase();
+  const visibleReviews = reviews.filter((review) => {
+    const isVisible = review.isVisible !== false;
+    const matchesVisibility = visibilityFilter === 'all' || (visibilityFilter === 'visible' ? isVisible : !isVisible);
+    const reviewText = `${review.product?.title || ''} ${review.user?.username || ''} ${review.user?.email || ''} ${review.comment || ''}`.toLowerCase();
+    return matchesVisibility && reviewText.includes(searchText);
+  });
 
   async function loadReviews() {
     setLoading(true);
@@ -57,25 +64,35 @@ export function AdminReviewsPage() {
 
   return (
     <div className="admin-content">
-      <header className="admin-topbar">
-        <button type="button" className="mobile-menu" onClick={openSidebar} aria-label="เปิดเมนู"><Menu size={20} /></button>
-        <strong className="topbar-title">รีวิวสินค้า</strong>
-        <div className="admin-profile"><strong>{user?.username ?? 'Admin'}</strong></div>
-      </header>
+      <AdminTopbar title="รีวิวสินค้า" />
 
       <main className="data-page">
         <header className="page-heading">
           <div><h1>Product Reviews</h1><p>Admin ซ่อนรีวิวที่ไม่เหมาะสมได้โดยไม่ลบข้อมูลถาวร</p></div>
-          <button type="button" className="refresh-button" onClick={loadReviews} disabled={loading}>{loading ? 'กำลังโหลด…' : 'อัปเดตข้อมูล'}</button>
+          <button type="button" className="primary-action" onClick={loadReviews} disabled={loading}>{loading ? 'กำลังโหลด…' : 'อัปเดตข้อมูล'}</button>
         </header>
 
         {error && <div className="dashboard-error" role="alert"><p>{error}</p></div>}
+        <section className="filter-toolbar" aria-label="ค้นหาและกรองรีวิว">
+          <label className="product-search plain-search">
+            <span className="sr-only">ค้นหาสินค้า ลูกค้า หรือข้อความรีวิว</span>
+            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ค้นหาสินค้าหรือรีวิว..." />
+          </label>
+          <div className="filters">
+            <select value={visibilityFilter} onChange={(event) => setVisibilityFilter(event.target.value)} aria-label="กรองการมองเห็นรีวิว">
+              <option value="all">ทุกสถานะ</option>
+              <option value="visible">แสดงอยู่</option>
+              <option value="hidden">ซ่อนอยู่</option>
+            </select>
+          </div>
+        </section>
         {loading && reviews.length === 0 && <p className="dashboard-message">กำลังโหลด Reviews…</p>}
-        {!loading && !error && reviews.length === 0 && <div className="empty-state"><strong>ยังไม่มีรีวิวสินค้า</strong><p>เฉพาะลูกค้าที่มี Order ชำระแล้วเท่านั้นที่สร้างรีวิวได้</p></div>}
+        {!loading && !error && reviews.length === 0 && <div className="empty-state"><strong>ยังไม่มีรีวิวสินค้า</strong><p>เฉพาะลูกค้าที่มี Order สำเร็จแล้วเท่านั้นที่สร้างรีวิวได้</p></div>}
+        {!loading && reviews.length > 0 && visibleReviews.length === 0 && <div className="empty-state"><strong>ไม่พบรีวิวที่ตรงกับตัวกรอง</strong><p>ลองเปลี่ยนคำค้นหาหรือสถานะ</p></div>}
 
-        {reviews.length > 0 && (
+        {visibleReviews.length > 0 && (
           <section className="review-list">
-            {reviews.map((review) => (
+            {visibleReviews.map((review) => (
               <article className={`review-card ${review.isVisible === false ? 'is-hidden' : ''}`} key={review._id}>
                 <header>
                   <div>

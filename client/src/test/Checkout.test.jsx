@@ -85,11 +85,21 @@ describe("Cart & Checkout Flow", () => {
         </MemoryRouter>
       );
 
+<<<<<<< HEAD
       expect(screen.getByText(/ตะกร้าสินค้าของคุณ/)).toBeInTheDocument();
       expect(screen.getByText("Oversized T-Shirt")).toBeInTheDocument();
       expect(screen.getByText("สี: Off White")).toBeInTheDocument();
       expect(screen.getByText("ไซส์: M")).toBeInTheDocument();
       expect(screen.getAllByText("฿1,180").length).toBeGreaterThanOrEqual(1);
+=======
+      expect(
+        screen.getByRole("heading", { name: /shopping cart/i })
+      ).toBeInTheDocument();
+      expect(screen.getByText("Oversized T-Shirt")).toBeInTheDocument();
+      expect(screen.getByText("Off White")).toBeInTheDocument();
+      expect(screen.getByText("Size M")).toBeInTheDocument();
+      expect(screen.getByText(/฿1180/)).toBeInTheDocument();
+>>>>>>> develop
 
       const checkoutBtn = screen.getByRole("link", {
         name: /ดำเนินการชำระเงิน/i,
@@ -149,7 +159,11 @@ describe("Cart & Checkout Flow", () => {
       fillShippingForm();
       fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
 
+<<<<<<< HEAD
       expect(screen.getByText(/ใช้งาน Gift Card/)).toBeInTheDocument();
+=======
+      expect(screen.getByText(/Use my Gift Card/i)).toBeInTheDocument();
+>>>>>>> develop
 
       const backBtn = screen.getByRole("button", { name: "ย้อนกลับ" });
       expect(backBtn).toBeInTheDocument();
@@ -178,7 +192,11 @@ describe("Cart & Checkout Flow", () => {
       expect(backBtn).toBeInTheDocument();
 
       fireEvent.click(backBtn);
+<<<<<<< HEAD
       expect(screen.getByText(/ใช้งาน Gift Card/)).toBeInTheDocument();
+=======
+      expect(screen.getByText(/Use my Gift Card/i)).toBeInTheDocument();
+>>>>>>> develop
     });
 
     it("places order on Step 4 and displays OrderConfirmationScreen with tracking", async () => {
@@ -238,8 +256,13 @@ describe("Cart & Checkout Flow", () => {
 
       await waitFor(() => {
         expect(
+<<<<<<< HEAD
           screen.getByText(/การชำระเงินถูกปฏิเสธ/)
         ).toBeInTheDocument();
+=======
+          screen.getAllByText(/การชำระเงินถูกปฏิเสธ/).length
+        ).toBeGreaterThanOrEqual(1);
+>>>>>>> develop
       });
 
       expect(

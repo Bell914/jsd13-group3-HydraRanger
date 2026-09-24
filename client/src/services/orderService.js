@@ -1,8 +1,16 @@
+<<<<<<< HEAD
 import { api } from "./api";
 
 // สร้าง Order ใหม่
 export const createOrder = async (orderData) => {
   const response = await api.post("/orders", orderData);
+=======
+import { api } from './api.js';
+
+// สร้าง Order ใหม่
+export const createOrder = async (orderData) => {
+  const response = await api.post('/orders', orderData);
+>>>>>>> develop
   return response.data;
 };
 

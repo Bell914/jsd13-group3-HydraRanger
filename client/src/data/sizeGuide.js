@@ -36,5 +36,5 @@ export function formatMeasurementRange(range, unit) {
 }
 
 export function getProductCategory(product) {
-  return product?.category_id?.slug || product?.category || '';
+  return product?.category_id?.slug || product?.category?.slug || product?.category || '';
 }
