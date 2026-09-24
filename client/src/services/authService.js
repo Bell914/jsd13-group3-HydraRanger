@@ -3,8 +3,7 @@ import { api } from "./api.js";
 export const authService = {
   async register(userData) {
     const res = await api.post("/auth/register", userData);
-    if (res.data?.token) {
-      api.setToken(res.data.token);
+    if (res.data?.user) {
       localStorage.setItem("occasion_user", JSON.stringify(res.data.user));
     }
     return res;
@@ -12,8 +11,7 @@ export const authService = {
 
   async login(credentials) {
     const res = await api.post("/auth/login", credentials);
-    if (res.data?.token) {
-      api.setToken(res.data.token);
+    if (res.data?.user) {
       localStorage.setItem("occasion_user", JSON.stringify(res.data.user));
     }
     return res;
@@ -34,16 +32,27 @@ export const authService = {
     });
   },
 
-  async refresh() {
-    const token = api.getToken();
-    if (!token) return null;
-    const res = await api.post("/auth/refresh", { token });
-    return res?.data?.token || null;
+  async forgotPassword(email) {
+    return await api.post("/auth/forgot-password", { email });
   },
 
-  logout() {
-    api.setToken(null);
-    localStorage.removeItem("occasion_user");
+  async resetPassword({ token, password }) {
+    return await api.post(`/auth/reset-password/${token}`, { password });
+  },
+
+  async refresh() {
+    return await api.post("/auth/refresh", {});
+  },
+
+  async logout() {
+    try {
+      await api.post("/auth/logout", {});
+    } catch {
+      // Local session data must still be cleared when the server is unavailable.
+    } finally {
+      localStorage.removeItem("occasion_token");
+      localStorage.removeItem("occasion_user");
+    }
   },
 
   getCurrentUser() {
@@ -56,6 +65,8 @@ export const authService = {
   },
 
   isAuthenticated() {
-    return Boolean(api.getToken());
+    return Boolean(this.getCurrentUser());
   },
 };
+
+export const { forgotPassword, resetPassword } = authService;

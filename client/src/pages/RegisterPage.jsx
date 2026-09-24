@@ -114,7 +114,7 @@ export const RegisterPage = () => {
               name="password"
               label="Password"
               type={showPassword ? "text" : "password"}
-              placeholder="At least 6 characters"
+              placeholder="At least 8 characters"
               value={formData.password}
               onChange={handleChange}
               error={fieldErrors.password}

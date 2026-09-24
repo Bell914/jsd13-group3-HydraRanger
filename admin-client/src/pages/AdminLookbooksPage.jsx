@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Menu } from 'lucide-react';
-import { useOutletContext } from 'react-router-dom';
-import { useAdminAuth } from '../context/useAdminAuth.js';
+import { AdminTopbar } from '../components/AdminTopbar.jsx';
 import { LookbookFormModal } from '../components/LookbookFormModal.jsx';
 import { productService } from '../services/productService.js';
 import {
@@ -19,8 +17,6 @@ function getImageUrl(imageUrl) {
 }
 
 export function AdminLookbooksPage() {
-  const { user } = useAdminAuth();
-  const { openSidebar } = useOutletContext();
   const [lookbooks, setLookbooks] = useState([]);
   const [products, setProducts] = useState([]);
   const [editingLookbook, setEditingLookbook] = useState(null);
@@ -28,6 +24,16 @@ export function AdminLookbooksPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [visibilityFilter, setVisibilityFilter] = useState('all');
+
+  const searchText = search.trim().toLowerCase();
+  const visibleLookbooks = lookbooks.filter((lookbook) => {
+    const isVisible = lookbook.isActive !== false;
+    const matchesVisibility = visibilityFilter === 'all' || (visibilityFilter === 'visible' ? isVisible : !isVisible);
+    const lookbookText = `${lookbook.nameTh || ''} ${lookbook.name || ''} ${lookbook.lookbookId || ''}`.toLowerCase();
+    return matchesVisibility && lookbookText.includes(searchText);
+  });
 
   async function loadData() {
     setLoading(true);
@@ -102,11 +108,7 @@ export function AdminLookbooksPage() {
 
   return (
     <div className="admin-content">
-      <header className="admin-topbar">
-        <button type="button" className="mobile-menu" onClick={openSidebar} aria-label="เปิดเมนู"><Menu size={20} /></button>
-        <strong className="topbar-title">Lookbooks</strong>
-        <div className="admin-profile"><strong>{user?.username ?? 'Admin'}</strong></div>
-      </header>
+      <AdminTopbar title="Lookbooks" />
 
       <main className="data-page">
         <header className="page-heading">
@@ -115,16 +117,30 @@ export function AdminLookbooksPage() {
         </header>
 
         {error && <div className="dashboard-error" role="alert"><p>{error}</p><button type="button" onClick={loadData}>ลองใหม่</button></div>}
+        <section className="filter-toolbar" aria-label="ค้นหาและกรอง Lookbook">
+          <label className="product-search plain-search">
+            <span className="sr-only">ค้นหาชื่อหรือรหัส Lookbook</span>
+            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ค้นหา Lookbook..." />
+          </label>
+          <div className="filters">
+            <select value={visibilityFilter} onChange={(event) => setVisibilityFilter(event.target.value)} aria-label="กรองการมองเห็น Lookbook">
+              <option value="all">ทุกสถานะ</option>
+              <option value="visible">แสดงอยู่</option>
+              <option value="hidden">ซ่อนอยู่</option>
+            </select>
+          </div>
+        </section>
         {loading && <p className="dashboard-message">กำลังโหลด Lookbooks…</p>}
         {!loading && !error && lookbooks.length === 0 && <div className="empty-state"><strong>ยังไม่มี Lookbook</strong><p>กดเพิ่ม Lookbook เพื่อสร้างลุคแรก</p></div>}
+        {!loading && lookbooks.length > 0 && visibleLookbooks.length === 0 && <div className="empty-state"><strong>ไม่พบ Lookbook ที่ตรงกับตัวกรอง</strong><p>ลองเปลี่ยนคำค้นหาหรือสถานะ</p></div>}
 
-        {lookbooks.length > 0 && (
+        {visibleLookbooks.length > 0 && (
           <section className="product-table-card">
             <div className="table-scroll">
               <table className="data-table">
                 <thead><tr><th>รูป</th><th>Lookbook</th><th>สินค้า</th><th>ราคาเซ็ต</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
                 <tbody>
-                  {lookbooks.map((lookbook) => (
+                  {visibleLookbooks.map((lookbook) => (
                     <tr key={lookbook._id}>
                       <td data-label="รูป"><img className="lookbook-thumbnail" src={getImageUrl(lookbook.imageUrl)} alt={lookbook.nameTh} /></td>
                       <td data-label="Lookbook"><strong>{lookbook.nameTh}</strong><small>{lookbook.lookbookId} • {lookbook.name}</small></td>

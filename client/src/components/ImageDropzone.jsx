@@ -10,6 +10,8 @@ const ImageDropzone = ({
   assets,
   label = "ลากรูปมาที่นี่",
   onChange,
+  onFileChange,
+  persistUpload = true,
   className = "",
 }) => {
   const inputRef = useRef(null);
@@ -25,6 +27,10 @@ const ImageDropzone = ({
   }, [fileUrl]);
 
   const notify = useCallback((url) => onChange?.(url), [onChange]);
+  const notifyFile = useCallback(
+    (file) => onFileChange?.(file || null),
+    [onFileChange],
+  );
 
   const handleFiles = useCallback(
     async (files) => {
@@ -42,9 +48,16 @@ const ImageDropzone = ({
 
       setError("");
       if (fileUrl) URL.revokeObjectURL(fileUrl);
-      setFileUrl(URL.createObjectURL(file));
+      const previewUrl = URL.createObjectURL(file);
+      setFileUrl(previewUrl);
+      notify(persistUpload ? null : previewUrl);
+      notifyFile(file);
+
+      // Recommendation images go directly to /recommend. They do not need to
+      // be stored in the public product-image folder first.
+      if (!persistUpload) return;
+
       setUploading(true);
-      notify(null);
 
       try {
         const url = await uploadImage(file);
@@ -52,11 +65,12 @@ const ImageDropzone = ({
       } catch (err) {
         setError(err?.message || "อัปโหลดรูปภาพไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
         notify(null);
+        notifyFile(null);
       } finally {
         setUploading(false);
       }
     },
-    [fileUrl, notify],
+    [fileUrl, notify, notifyFile, persistUpload],
   );
 
   const clearImage = useCallback(() => {
@@ -65,8 +79,9 @@ const ImageDropzone = ({
     setError("");
     setDragOver(false);
     notify(null);
+    notifyFile(null);
     if (inputRef.current) inputRef.current.value = "";
-  }, [fileUrl, notify]);
+  }, [fileUrl, notify, notifyFile]);
 
   const openPicker = () => inputRef.current?.click();
 

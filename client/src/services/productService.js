@@ -1,4 +1,9 @@
-import { api } from "./api.js";
+import { api, getApiBaseUrl } from "./api.js";
+
+function resolveProductImageUrl(url) {
+  if (!url || url.startsWith('http') || !url.startsWith('/api/uploads/')) return url;
+  return `${getApiBaseUrl().replace(/\/api\/?$/, '')}${url}`;
+}
 
 // Fallback products in case backend is loading/connecting
 const fallbackProducts = [
@@ -346,6 +351,63 @@ const fallbackProducts = [
 
 
 /**
+ * Normalize product object from MongoDB to guarantee consistent properties for frontend
+ * @param {Object} product
+ * @returns {Object} Normalized product
+ */
+export function normalizeProduct(product) {
+  if (!product) return null;
+  const name = product.name || product.title || "";
+  const category =
+    product.category?.slug ||
+    product.category_id?.slug ||
+    product.category_id?.name ||
+    product.category ||
+    "";
+  const imageUrl = resolveProductImageUrl(
+    product.imageUrl ||
+    product.images?.[0]?.image_url ||
+    product.image ||
+    product.variants?.[0]?.imageUrl ||
+    ""
+  );
+
+  const variants = (product.variants || []).map((v) => {
+    const color =
+      v.color ||
+      (v.size_or_color && !["S", "M", "L", "XL"].includes(v.size_or_color)
+        ? v.size_or_color
+        : "Standard");
+    const size =
+      v.size ||
+      (["S", "M", "L", "XL"].includes(v.size_or_color) ? v.size_or_color : "S");
+    return {
+      ...v,
+      _id: v._id || v.sku || `${product._id}-${color}-${size}`,
+      sku: v.sku || `${product.productId || "PROD"}-${color}-${size}`,
+      color,
+      colorCode: v.colorCode || "",
+      size,
+      price: v.price ?? product.price ?? 590,
+      stockQuantity: v.stockQuantity ?? v.stock_quantity ?? 10,
+      imageUrl: resolveProductImageUrl(v.imageUrl || imageUrl),
+      detailImages: (v.detailImages || []).map(resolveProductImageUrl),
+    };
+  });
+
+  return {
+    ...product,
+    _id: product._id || product.productId,
+    productId: product.productId || product._id,
+    name,
+    title: name,
+    category,
+    imageUrl,
+    variants,
+  };
+}
+
+/**
  * Fetch products from MongoDB via backend API
  * @param {Object} params - Query params (category, search, gender)
  * @returns {Promise<Array>} List of products
@@ -365,14 +427,17 @@ export async function getProducts(params = {}) {
   const queryString = query.toString() ? `?${query.toString()}` : "";
   try {
     const response = await api.get(`/products${queryString}`);
-    if (response && response.data) {
-      return response.data;
+    const list = response?.data || response;
+    if (Array.isArray(list)) {
+      return list.map(normalizeProduct);
     }
-    if (Array.isArray(response)) return response;
   } catch (err) {
     console.warn("Products API unavailable or error:", err.message);
+    if (!import.meta.env.DEV && import.meta.env.MODE !== "test") {
+      throw err;
+    }
   }
-  return fallbackProducts;
+  return fallbackProducts.map(normalizeProduct);
 }
 
 /**
@@ -389,24 +454,24 @@ export async function getProductById(productId) {
 
   try {
     const response = await api.get(`/products/${resolvedId}`);
-    if (response && response.data) {
-      return response.data;
-    }
-    if (response && (response.title || response.name || response._id)) {
-      return response;
+    const item = response?.data || response;
+    if (item && (item.title || item.name || item._id)) {
+      return normalizeProduct(item);
     }
   } catch (err) {
     console.warn("Product API unavailable or error:", err.message);
+    if (!import.meta.env.DEV && import.meta.env.MODE !== "test") {
+      throw err;
+    }
   }
 
   // Fallback to local fallbackProducts
   const target = String(resolvedId || "").toLowerCase();
-  return (
-    fallbackProducts.find(
-      (p) =>
-        p._id?.toLowerCase() === target ||
-        p.productId?.toLowerCase() === target ||
-        p.variants?.some((v) => v.sku?.toLowerCase() === target)
-    ) || null
+  const fallback = fallbackProducts.find(
+    (p) =>
+      p._id?.toLowerCase() === target ||
+      p.productId?.toLowerCase() === target ||
+      p.variants?.some((v) => v.sku?.toLowerCase() === target)
   );
-}
+  return fallback ? normalizeProduct(fallback) : null;
+}

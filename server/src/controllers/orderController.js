@@ -10,7 +10,12 @@ function sendOrderError(error, res, next) {
     'Variant for',
     'Not enough stock',
     'Invalid order status',
-    'Missing shipping fields'
+    'Missing shipping fields',
+    'Order already cancelled',
+    'Cannot cancel order',
+    'Invalid shipping method',
+    'Cancelled order status',
+    'Order status cannot change'
   ];
 
   if (badRequestMessages.some((message) => error.message.startsWith(message))) {
@@ -41,6 +46,35 @@ export async function getMyOrders(req, res, next) {
     res.status(HTTP_STATUS.OK).json({ success: true, data: orders });
   } catch (error) {
     next(error);
+  }
+}
+
+// เพิ่มฟังก์ชันสำหรับกดดู Order Detail รายการเดียว
+export async function getMyOrderDetail(req, res, next) {
+  try {
+    const userId = req.user._id || req.user.id;
+    const orderId = req.params.id;
+    const order = await orderService.getOrderById(orderId, userId);
+    
+    res.status(HTTP_STATUS.OK).json({ success: true, data: order });
+  } catch (error) {
+    sendOrderError(error, res, next);
+  }
+}
+
+export async function cancelOrder(req, res, next) {
+  try {
+    const userId = req.user._id || req.user.id;
+    const orderId = req.params.id;
+    const order = await orderService.cancelOrder(userId, orderId);
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Order cancelled successfully',
+      data: order
+    });
+  } catch (error) {
+    sendOrderError(error, res, next);
   }
 }
 

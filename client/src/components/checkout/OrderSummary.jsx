@@ -6,6 +6,8 @@ export default function OrderSummary({
   subtotal,
   shippingMethodId,
   currentStep,
+  userRank = 'MEMBER',
+  rankDiscountAmount = 0,
 }) {
   const selectedShipping =
     SHIPPING_METHODS.find((m) => m.id === shippingMethodId) ||
@@ -15,8 +17,9 @@ export default function OrderSummary({
   
   // Tax: calculated at step 3 and 4, or show calculated amount
   const taxRate = 0.06; // standard sales tax approximation
-  const taxAmount = currentStep >= 3 ? Math.round(subtotal * taxRate * 100) / 100 : 0;
-  const orderTotal = subtotal + shippingCost + taxAmount;
+  const discountedSubtotal = Math.max(0, subtotal - rankDiscountAmount);
+  const taxAmount = currentStep >= 3 ? Math.round(discountedSubtotal * taxRate * 100) / 100 : 0;
+  const orderTotal = discountedSubtotal + shippingCost + taxAmount;
 
   const totalItemsCount = cartItems.reduce(
     (acc, item) => acc + (item.quantity || 1),
@@ -82,8 +85,15 @@ export default function OrderSummary({
       <div className="space-y-2 text-sm pt-2 border-t border-gray-200">
         <div className="flex justify-between text-gray-700">
           <span>Subtotal</span>
-          <span className="font-semibold text-gray-900">฿{subtotal}</span>
+          <span className="font-semibold text-gray-900">฿{subtotal.toLocaleString()}</span>
         </div>
+
+        {rankDiscountAmount > 0 && (
+          <div className="flex justify-between text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-lg text-xs sm:text-sm">
+            <span>ส่วนลดสมาชิก ({userRank})</span>
+            <span>-฿{rankDiscountAmount.toLocaleString()}</span>
+          </div>
+        )}
 
         <div className="flex justify-between text-gray-700">
           <span>Shipping</span>

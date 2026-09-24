@@ -16,11 +16,30 @@ import contactRoutes from "./contact.route.js";
 import lookbookRoutes from "./lookbookRoutes.js";
 import adminLookbookRoutes from "./adminLookbookRoutes.js";
 import uploadRoutes from "./uploadRoutes.js";
+import recommendRoutes from "./recommendRoutes.js";
 
 const router = Router();
 
+// API base endpoint
+router.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "OCCASION API Server (Sprint 2)",
+    health: "/api/health",
+    endpoints: {
+      health: "/api/health",
+      auth: "/api/auth",
+      products: "/api/products",
+      lookbooks: "/api/lookbooks",
+      users: "/api/users",
+      orders: "/api/orders",
+    },
+  });
+});
+
 // Health check endpoint
 router.get("/health", (req, res) => {
+
   res.status(200).json({
     success: true,
     message: "Server is running",
@@ -28,6 +47,7 @@ router.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
     service: "OCCASION API Server (Sprint 2)",
     database: getDBStatus(),
+    passwordEmailConfigured: Boolean(process.env.SMTP_USER && process.env.SMTP_PASS),
   });
 });
 
@@ -48,5 +68,6 @@ router.use("/contact", contactRoutes);
 router.use("/lookbooks", lookbookRoutes);
 router.use("/admin/lookbooks", adminLookbookRoutes);
 router.use("/uploads", uploadRoutes);
+router.use("/recommend", recommendRoutes);
 
 export default router;

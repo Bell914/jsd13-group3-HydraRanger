@@ -1,5 +1,5 @@
 import fallbackData from "../data/look-data.json";
-import { API_URL } from "./api.js";
+import { resolveApiUrl, API_URL, api } from "./api.js";
 
 export function normalizeProductId(id) {
   if (id === undefined || id === null) return "";
@@ -61,7 +61,7 @@ function normalizeLookbook(lookbook) {
 }
 
 async function request(path) {
-  const response = await fetch(`${API_URL}${path}`);
+  const response = await fetch(`${resolveApiUrl()}${path}`);
   const result = await response.json().catch(() => ({}));
 
   if (!response.ok) {
@@ -90,6 +90,18 @@ export async function getLookbookData() {
 }
 
 export async function getLookbooks() {
+  try {
+    // ดึงจาก Backend API ก่อน
+    const response = await api.get("/lookbooks");
+    const rawData = response.data?.data || response.data;
+    if (Array.isArray(rawData)) {
+      return rawData.map(normalizeLookbook);
+    }
+  } catch (err) {
+    console.warn("API /lookbooks failed, falling back to local JSON data:", err.message);
+  }
+
+  // Fallback ไปใช้ไฟล์ JSON เดิมกรณี API ล้มเหลว
   const data = await getLookbookData();
   return data.looks || [];
 }
