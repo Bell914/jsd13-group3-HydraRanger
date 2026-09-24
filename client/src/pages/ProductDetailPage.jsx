@@ -252,16 +252,6 @@ export default function ProductDetailPage() {
       product.images.forEach((img) => addUnique(img?.image_url || img));
     }
 
-    // 4) Pad with existing images if less than 7 so all 7 slots are filled
-    if (list.length > 0 && list.length < 7) {
-      const originalCount = list.length;
-      let i = 0;
-      while (list.length < 7) {
-        list.push(list[i % originalCount]);
-        i++;
-      }
-    }
-
     return list.slice(0, 7);
   }, [product, selectedVariant, selectedColor]);
 

@@ -200,7 +200,7 @@ export const Navbar = () => {
                     }}
                     className="w-full text-center rounded-lg bg-[#2d568c] px-4 py-1.5 text-xs sm:text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
                   >
-                    TOPS
+                    เสื้อ
                   </Link>
                   <Link
                     to="/products?category=bottoms"
@@ -210,7 +210,7 @@ export const Navbar = () => {
                     }}
                     className="w-full text-center rounded-lg bg-accent px-4 py-1.5 text-xs sm:text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
                   >
-                    BOTTOMS
+                    กางเกง
                   </Link>
                 </div>
               </li>

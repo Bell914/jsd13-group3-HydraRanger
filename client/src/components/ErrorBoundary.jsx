@@ -18,7 +18,7 @@ export class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: 32, fontFamily: "Prompt, system-ui, sans-serif", background: "#fcf4ee", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ padding: 32, fontFamily: "Poppins, system-ui, sans-serif", background: "#fcf4ee", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
           <div style={{ maxWidth: 650, width: "100%", background: "#fff", padding: 32, borderRadius: 20, boxShadow: "0 10px 30px rgba(0, 70, 167, 0.1)", border: "1px solid #fed7aa" }}>
             <div style={{ display: "inline-flex", padding: "6px 12px", background: "#fee2e2", color: "#b91c1c", borderRadius: 8, fontSize: 13, fontWeight: "bold", marginBottom: 12 }}>
               ⚠️ Runtime Error Detected

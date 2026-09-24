@@ -18,8 +18,8 @@ export const ProductGallery = ({
         />
       </div>
 
-      {/* 7 Thumbnail Boxes */}
-      <div className="mt-3 grid grid-cols-7 gap-2 sm:gap-2.5 w-full">
+      {/* Thumbnail Boxes */}
+      <div className="mt-3 grid grid-flow-col auto-cols-fr gap-2 sm:gap-2.5 w-full">
         {thumbnails.slice(0, 7).map((thumb, idx) => {
           const isActive = activeThumbIndex === idx;
           return (
