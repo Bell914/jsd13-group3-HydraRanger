@@ -9,7 +9,10 @@ async function getTransporter() {
     const nodemailerModule = await import('nodemailer');
     const nodemailer = nodemailerModule.default || nodemailerModule;
 
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    const user = process.env.SMTP_USER || process.env.EMAIL_USER;
+    const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+
+    if (!user || !pass) {
       return null;
     }
 
@@ -18,8 +21,8 @@ async function getTransporter() {
       port: Number(process.env.SMTP_PORT) || 587,
       secure: process.env.SMTP_SECURE === 'true',
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+        user,
+        pass
       }
     });
   } catch (err) {
@@ -115,6 +118,51 @@ export async function sendWelcomeMemberEmail(user, couponCode = 'OCCWELCOME10') 
     return false;
   }
 }
+
+// 🚀 Welcome Coupon Email (ส่งโค้ด 5% ให้สมาชิกใหม่)
+export const sendWelcomeDiscountEmail = async ({ toEmail, username, couponCode = "WELCOME5", discountPercent = 5, expiresAt }) => {
+  const user = process.env.SMTP_USER || process.env.EMAIL_USER;
+
+  const formattedDate = expiresAt 
+    ? new Date(expiresAt).toLocaleDateString("th-TH", { year: "numeric", month: "long", day: "numeric" })
+    : "30 วันนับจากวันที่สมัคร";
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM || process.env.SMTP_FROM || `"HydraRanger Store" <${user || "support@hydraranger.com"}>`,
+    to: toEmail,
+    subject: `🎉 ยินดีต้อนรับสู่ HydraRanger! รับโค้ดส่วนลด ${discountPercent}% (${couponCode})`,
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; line-height: 1.6;">
+        <h2 style="color: #111827;">ยินดีต้อนรับคุณ ${username || "สมาชิกใหม่"}! 👋</h2>
+        <p>ขอบคุณที่ร่วมเป็นครอบครัวเดียวกับ <b>HydraRanger</b> เราขอมอบของขวัญต้อนรับพิเศษสำหรับการสั่งซื้อครั้งแรก:</p>
+        
+        <div style="background-color: #fdf2f2; border: 2px dashed #e11d48; border-radius: 8px; padding: 15px; text-align: center; margin: 20px 0;">
+          <span style="font-size: 28px; font-weight: bold; letter-spacing: 3px; color: #e11d48;">${couponCode}</span>
+          <p style="margin: 5px 0 0; color: #4b5563; font-size: 14px;">รับส่วนลดทันที ${discountPercent}%</p>
+        </div>
+
+        <p style="font-size: 13px; color: #6b7280;">
+          *เงื่อนไข: สิทธิ์เฉพาะสมาชิกใหม่ 1 บัญชี/1 ครั้ง หมดอายุวันที่ ${formattedDate}
+        </p>
+      </div>
+    `,
+  };
+
+  try {
+    const transporter = await getTransporter();
+    if (transporter) {
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`✅ Welcome coupon email sent to ${toEmail}`);
+      return { success: true, messageId: info.messageId };
+    } else {
+      console.log(`[Email Service - Simulated] Welcome coupon email for ${toEmail} with code ${couponCode} (${discountPercent}%)`);
+      return { success: true, simulated: true };
+    }
+  } catch (error) {
+    console.error("❌ Send welcome email failed:", error.message);
+    return { success: false, error: error.message };
+  }
+};
 
 export async function sendPasswordResetEmail(user, resetUrl) {
   if (!user?.email || !resetUrl) return false;

@@ -12,7 +12,7 @@ function getRequiredEnv(name) {
 }
 
 export const ENV = {
-  PORT: process.env.PORT || 5001,
+  PORT: process.env.PORT || 5002,
   NODE_ENV: process.env.NODE_ENV || "development",
   MONGODB_URI:
     process.env.MONGODB_URI || "mongodb://localhost:27017/occasion_db",

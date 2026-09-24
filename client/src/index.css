@@ -145,6 +145,21 @@ body {
 }
 
 @layer base {
+  html {
+    font-family: var(--font-primary);
+  }
+
+  body {
+    font-family: var(--font-primary);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+
   :focus-visible {
     outline: 3px solid color-mix(in srgb, var(--color-focus-ring) 70%, white);
     outline-offset: 3px;

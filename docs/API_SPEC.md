@@ -1,6 +1,6 @@
 # OCCASION API
 
-Base URL: `http://localhost:5001/api` · JSON ใช้ `camelCase`
+Base URL: `http://localhost:5002/api` · JSON ใช้ `camelCase`
 API ที่ต้อง Login ใช้ HttpOnly session cookie และ Frontend ต้องส่ง `credentials: include` โดยยังรองรับ `Authorization: Bearer <token>` สำหรับเครื่องมือภายนอก
 
 ## API ที่มีในโค้ด

@@ -59,7 +59,7 @@ export const resolveApiUrl = () => {
 
   // 4. If on localhost and no envUrl specified, use local server
   if (isLocalhost) {
-    return "http://localhost:5001/api";
+    return "http://localhost:5002/api";
   }
 
   // 5. Fallback: the deployed (real) backend on Render
