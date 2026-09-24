@@ -159,7 +159,7 @@ body {
 
 /* Keep the moving product strip behind the wordmark instead of clipping heads. */
 .hero-product-reel { inset: 0 0 3% 0; }
-.hero-product-reel__item { transform: scale(1.4); transform-origin: center center; }
+.hero-product-reel__item { transform: scale(1.55); transform-origin: center center; }
 .hero-product-reel__track:has(.hero-product-reel__link:hover), .hero-product-reel__track:focus-within { animation-play-state: paused; }
 .hero-product-reel__link { display: block; width: min(31vw, 370px); height: 100%; flex: 0 0 auto; cursor: pointer; }
 .hero-product-reel__link:focus-visible { outline: 3px solid #c46731; outline-offset: -4px; }
