@@ -49,6 +49,7 @@ const buildUserSession = (user) => {
     username: user.username,
     email: user.email,
     role: user.role,
+    birthday: user.birthday || null,
     createdAt: user.createdAt,
     isActive: user.isActive !== false,
     membership: user.membership || {
@@ -285,9 +286,10 @@ export const changePassword = async ({ userId, currentPassword, newPassword }) =
   return { success: true, message: 'Password updated successfully' };
 };
 
-export const updateProfile = async ({ userId, username, email, avatar }) => {
+export const updateProfile = async ({ userId, username, email, avatar, birthday }) => {
   const validatedUsername = (username || '').trim();
   const validatedEmail = (email || '').trim().toLowerCase();
+  const hasBirthday = birthday !== undefined;
 
   if (!isSyntheticId(userId)) {
     try {
@@ -311,6 +313,7 @@ export const updateProfile = async ({ userId, username, email, avatar }) => {
       if (validatedUsername) user.username = validatedUsername;
       if (validatedEmail) user.email = validatedEmail;
       if (typeof avatar === 'string') user.avatar = avatar.trim();
+      if (hasBirthday) user.birthday = birthday ? new Date(birthday) : null;
       await user.save();
       return user;
     } catch (error) {
@@ -340,6 +343,7 @@ export const updateProfile = async ({ userId, username, email, avatar }) => {
   if (validatedUsername) mockUser.username = validatedUsername;
   if (validatedEmail) mockUser.email = validatedEmail;
   if (typeof avatar === 'string') mockUser.avatar = avatar.trim();
+  if (hasBirthday) mockUser.birthday = birthday ? new Date(birthday) : null;
   const { password, ...safeUser } = mockUser;
   return safeUser;
 };

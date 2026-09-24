@@ -73,6 +73,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    birthday: {
+      type: Date,
+      default: null
+    },
     isActive: {
       type: Boolean,
       default: true

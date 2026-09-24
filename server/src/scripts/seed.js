@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
 import { connectDB } from '../config/db.js';
 import { ENV } from '../config/env.js';
-import { User, Item, Product, Lookbook, Category } from '../models/index.js';
+import { User, Item, Product, Lookbook, Category, Article } from '../models/index.js';
 import { productSeedData } from '../data/productSeedData.js';
+import { articleSeedData } from '../data/articleSeedData.js';
 import seedData from '../data/seedData.json' with { type: 'json' };
 import lookData from '../../../client/public/collection-2026/look-data.json' with { type: 'json' };
 
@@ -175,6 +176,18 @@ async function seedLookbooks(products) {
   console.log(`✅ Lookbooks ready: ${lookData.looks.length}`);
 }
 
+async function seedArticles() {
+  for (const articleData of articleSeedData) {
+    await Article.updateOne(
+      { articleId: articleData.articleId },
+      { $set: articleData },
+      { upsert: true, runValidators: true }
+    );
+  }
+
+  console.log(`✅ Articles ready: ${articleSeedData.length}`);
+}
+
 async function runSeed() {
   console.log('🌱 Starting safe database seed...');
   await connectDB();
@@ -188,6 +201,7 @@ async function runSeed() {
     await seedItems(users);
     const products = await seedProducts();
     await seedLookbooks(products);
+    await seedArticles();
     console.log('🎉 Database seed completed without deleting existing data');
   } catch (error) {
     console.error('❌ Seed error:', error.message);

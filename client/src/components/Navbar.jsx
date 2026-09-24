@@ -221,7 +221,7 @@ export const Navbar = () => {
                   aria-current={isActive("/lookbook") ? "page" : undefined}
                   className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/lookbook") ? "font-bold text-accent md:bg-accent/10" : ""}`}
                 >
-                  LOOKBOOKS
+                  เซ็ตเสื้อผ้า
                 </Link>
               </li>
 
@@ -231,7 +231,7 @@ export const Navbar = () => {
                   aria-current={isActive("/mix-and-match") ? "page" : undefined}
                   className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/mix-and-match") ? "font-bold text-accent md:bg-accent/10" : ""}`}
                 >
-                  MIX &amp; MATCH
+                  จับคู่เสื้อผ้า
                 </Link>
               </li>
 
@@ -252,7 +252,7 @@ export const Navbar = () => {
                     aria-current={isActive("/login") ? "page" : undefined}
                     className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/login") ? "font-bold text-accent md:bg-accent/10" : ""}`}
                   >
-                    {"SIGN IN"}
+                    {"เข้าสู่ระบบ"}
                   </Link>
                 </li>
               ) : (
