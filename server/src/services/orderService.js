@@ -292,6 +292,27 @@ export function getAllOrders() {
   return Order.find().populate('user', 'username email').sort({ createdAt: -1 });
 }
 
+function isTransactionUnavailable(error) {
+  return error?.code === 20 || /transaction numbers are only allowed/i.test(error?.message || '');
+}
+
+async function applyOrderStatusChanges(existingOrder, status, userId, netSpend, session = null) {
+  if (['cancelled', 'refunded'].includes(status) && existingOrder.stockReserved && !existingOrder.stockRestored) {
+    await restoreOrderStock(existingOrder.items, session);
+    existingOrder.stockRestored = true;
+  }
+
+  if (userId && !existingOrder.loyaltyProcessed && status === 'paid') {
+    await loyaltyService.processOrderSpending(userId, netSpend, 'ADD', session);
+    existingOrder.loyaltyProcessed = true;
+  } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {
+    await loyaltyService.processOrderSpending(userId, netSpend, 'SUBTRACT', session);
+    existingOrder.loyaltyProcessed = false;
+  }
+
+  await existingOrder.save(session ? { session } : undefined);
+}
+
 export async function updateOrderStatus(orderId, status) {
   if (!ORDER_STATUSES.includes(status)) throw new Error('Invalid order status');
 
@@ -309,43 +330,22 @@ export async function updateOrderStatus(orderId, status) {
   const userId = existingOrder.user?._id || existingOrder.user?.id || existingOrder.user;
   const netSpend = Math.max(0, existingOrder.subtotal - (existingOrder.discountAmount || 0));
 
-  let session = null;
+  let session;
   try {
-    if (['cancelled', 'refunded'].includes(status) && existingOrder.stockReserved && !existingOrder.stockRestored) {
-      await restoreOrderStock(existingOrder.items, session);
-      existingOrder.stockRestored = true;
-    }
-
     session = await mongoose.startSession();
     session.startTransaction();
-  } catch {
-    session = null;
-  }
+    await applyOrderStatusChanges(existingOrder, status, userId, netSpend, session);
+    await session.commitTransaction();
+  } catch (error) {
+    await session?.abortTransaction();
 
-  try {
-    if (userId && !existingOrder.loyaltyProcessed && status === 'paid') {
-      await loyaltyService.processOrderSpending(userId, netSpend, 'ADD', session);
-      existingOrder.loyaltyProcessed = true;
-    } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {
-      await loyaltyService.processOrderSpending(userId, netSpend, 'SUBTRACT', session);
-      existingOrder.loyaltyProcessed = false;
-    }
-
-    if (session) {
-      await existingOrder.save({ session });
-      await session.commitTransaction();
+    if (!session || isTransactionUnavailable(error)) {
+      await applyOrderStatusChanges(existingOrder, status, userId, netSpend);
     } else {
-      await existingOrder.save();
+      throw error;
     }
-  } catch (err) {
-    if (session) {
-      await session.abortTransaction();
-    }
-    throw err;
   } finally {
-    if (session) {
-      session.endSession();
-    }
+    await session?.endSession();
   }
 
   const order = await Order.findById(orderId).populate('user', 'username email');
