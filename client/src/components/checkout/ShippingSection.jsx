@@ -45,7 +45,7 @@ export default function ShippingSection({
   const validate = () => {
     const errs = {};
     if (!shippingData.firstName?.trim()) errs.firstName = "กรุณากรอกชื่อ";
-    if (!isSavedAddressSelected && !shippingData.lastName?.trim()) {
+    if (!shippingData.lastName?.trim()) {
       errs.lastName = "กรุณากรอกนามสกุล";
     }
     if (!shippingData.phone?.trim()) errs.phone = "กรุณากรอกเบอร์โทรศัพท์";

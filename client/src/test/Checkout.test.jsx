@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import CheckoutPage from "../pages/CheckoutPage";
 import { useCartStore } from "../store/cartStore";
 import { createOrder } from "../services/orderService.js";
+import { getAddresses } from "../services/userService.js";
 
 vi.stubEnv("VITE_STRIPE_PUBLISHABLE_KEY", "pk_test_checkout");
 
@@ -18,7 +19,7 @@ const apiMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("../services/orderService.js", () => ({ createOrder: vi.fn() }));
-vi.mock("../services/userService", () => ({ getAddresses: vi.fn().mockResolvedValue({ data: [] }) }));
+vi.mock("../services/userService.js", () => ({ getAddresses: vi.fn().mockResolvedValue({ data: [] }) }));
 vi.mock("../services/api.js", () => ({ api: apiMocks }));
 vi.mock("@stripe/stripe-js", () => ({ loadStripe: vi.fn(() => Promise.resolve({})) }));
 vi.mock("@stripe/react-stripe-js", () => ({
@@ -141,5 +142,28 @@ describe("Checkout order integration", () => {
     });
 
     expect(useCartStore.getState().cartItems).toEqual([]);
+  });
+
+  it("requires a last name when a saved address only has a one-word recipient name", async () => {
+    getAddresses.mockResolvedValueOnce({
+      data: [{
+        _id: "saved-address-one-word-name",
+        recipientName: "สมชาย",
+        phone: "0812345678",
+        addressDetail: "123 ถนนตัวอย่าง",
+        district: "บางรัก",
+        province: "กรุงเทพมหานคร",
+        zipCode: "10500",
+        isDefault: true,
+      }],
+    });
+
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByLabelText("นามสกุล")).toHaveValue(""));
+    fireEvent.click(screen.getByRole("button", { name: "ดำเนินการต่อ" }));
+
+    expect(await screen.findByText("กรุณากรอกนามสกุล")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "ช่องทางการชำระเงิน" })).not.toBeInTheDocument();
+    expect(createOrder).not.toHaveBeenCalled();
   });
 });
