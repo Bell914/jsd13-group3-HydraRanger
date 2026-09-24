@@ -105,6 +105,11 @@ export default function CheckoutPage() {
     setIsSubmitting(true); setSubmitError("");
     try {
       const payload = buildOrderPayload();
+      const invalidStockItem = cartItems.find((item) => {
+        const stock = Number(item.stockQuantity ?? item.stock_quantity);
+        return Number.isFinite(stock) && (stock < 1 || Number(item.quantity) > stock);
+      });
+      if (invalidStockItem) throw new Error(Number(invalidStockItem.stockQuantity ?? invalidStockItem.stock_quantity) < 1 ? "สินค้าหมดแล้ว" : "สินค้ามีไม่เพียงพอในสต็อก");
       if (paymentData.method === "credit-card") {
         if (!stripe || !elements) throw new Error("แบบฟอร์มบัตรยังโหลดไม่เสร็จ กรุณารอสักครู่แล้วลองใหม่");
         const secret = clientSecret;

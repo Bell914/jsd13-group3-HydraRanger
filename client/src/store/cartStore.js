@@ -20,6 +20,11 @@ const saveCart = (cart) => {
   }
 };
 
+const getStock = (variant) => {
+  const stock = Number(variant.stockQuantity ?? variant.stock_quantity ?? variant.stock ?? 0);
+  return Number.isFinite(stock) ? Math.max(0, stock) : 0;
+};
+
 export const useCartStore = create((set, get) => ({
   cartItems: loadInitialCart(),
 
@@ -42,7 +47,7 @@ export const useCartStore = create((set, get) => ({
       updatedItems = currentItems.map((item, idx) => {
         if (idx === existingIndex) {
           const newQty = item.quantity + quantity;
-          const maxStock = variant.stockQuantity || variant.stock_quantity || 99;
+          const maxStock = getStock(variant);
           return {
             ...item,
             quantity: Math.min(newQty, maxStock),
@@ -62,8 +67,8 @@ export const useCartStore = create((set, get) => ({
         size: variant.size,
         price: variant.price,
         imageUrl: variant.imageUrl || product.imageUrl,
-        quantity,
-        stockQuantity: variant.stockQuantity || variant.stock_quantity || 99,
+        quantity: Math.min(Math.max(1, Number(quantity) || 1), getStock(variant)),
+        stockQuantity: getStock(variant),
       };
       updatedItems = [...currentItems, newItem];
     }
@@ -88,7 +93,7 @@ export const useCartStore = create((set, get) => ({
     }
     const updatedItems = get().cartItems.map((item) =>
       item.variantId === variantId
-        ? { ...item, quantity: Math.min(quantity, item.stockQuantity || 99) }
+        ? { ...item, quantity: Math.min(quantity, getStock(item)) }
         : item
     );
     saveCart(updatedItems);

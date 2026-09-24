@@ -73,7 +73,7 @@ async function prepareOrderItems(items) {
     const variant = findVariant(product, item);
     if (!variant) throw new Error(`Variant for ${product.title} was not found`);
     if (variant.stock_quantity < quantity) {
-      throw new Error(`Not enough stock for ${product.title}`);
+      throw new Error(variant.stock_quantity <= 0 ? 'สินค้าหมดแล้ว' : 'สินค้ามีไม่เพียงพอในสต็อก');
     }
 
     preparedItems.push({
@@ -125,7 +125,7 @@ async function reserveOrderStock(items) {
       );
 
       if (!wasUpdated(result)) {
-        throw new Error(`Not enough stock for ${item.title}`);
+        throw new Error('สินค้ามีไม่เพียงพอในสต็อก');
       }
 
       reservedItems.push(item);
