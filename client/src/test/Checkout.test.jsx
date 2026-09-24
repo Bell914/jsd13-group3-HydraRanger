@@ -95,6 +95,37 @@ describe("Checkout order integration", () => {
     expect(useCartStore.getState().cartItems).toHaveLength(1);
   });
 
+  it("cancels the prepared order when leaving checkout step 4", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToCheckoutPaymentStep();
+    await screen.findByTestId("payment-element");
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[2]);
+
+    await waitFor(() => {
+      expect(apiMocks.post).toHaveBeenCalledWith("/payment/cancel-payment-intent", {
+        orderId: "order-mongo-id",
+      });
+    });
+    expect(screen.getByRole("heading", { name: "Payment" })).toBeInTheDocument();
+  });
+
+  it("cancels an order after payment fails so reserved stock can be released", async () => {
+    stripeMocks.confirmPayment.mockResolvedValueOnce({
+      error: { type: "card_error", message: "บัตรถูกปฏิเสธ" },
+    });
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToCheckoutPaymentStep();
+    await screen.findByTestId("payment-element");
+    fireEvent.click(screen.getByRole("button", { name: /ชำระเงินและยืนยันคำสั่งซื้อ/i }));
+
+    expect(await screen.findByText("ลองชำระเงินอีกครั้ง")).toBeInTheDocument();
+    expect(apiMocks.post).toHaveBeenCalledWith("/payment/cancel-payment-intent", {
+      orderId: "order-mongo-id",
+    });
+    expect(useCartStore.getState().cartItems).toHaveLength(1);
+  });
+
   it("does not allow increasing cart quantity beyond known stock", () => {
     const { updateQuantity } = useCartStore.getState();
     updateQuantity("v1", 99);

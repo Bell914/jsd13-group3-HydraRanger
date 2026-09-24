@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import jwt from 'jsonwebtoken';
 import express from 'express';
+import mongoose from 'mongoose';
 import { once } from 'node:events';
 import { ENV } from '../config/env.js';
 import { User } from '../models/User.js';
@@ -12,7 +13,7 @@ import { protect } from '../middleware/authMiddleware.js';
 import { rateLimit } from '../middleware/rateLimiterMiddleware.js';
 import { memoryUpload, MAX_RECOMMEND_IMAGE_SIZE } from '../middleware/recommendUploadMiddleware.js';
 import { updateProduct } from '../services/productService.js';
-import { canTransitionOrderStatus } from '../services/orderService.js';
+import { canTransitionOrderStatus, cancelOrder, getExpiredCardPaymentOrders } from '../services/orderService.js';
 import { createReview } from '../services/reviewService.js';
 import { resetPassword } from '../services/authService.js';
 import { matchesUploadedImageHeader } from '../middleware/uploadMiddleware.js';
@@ -133,6 +134,63 @@ test('reviews require a completed order', async (t) => {
   assert.equal(orderFilter.status, 'completed');
   assert.equal(String(orderFilter.user), 'aaaaaaaaaaaaaaaaaaaaaaaa');
   assert.equal(String(orderFilter['items.product']), 'cccccccccccccccccccccccc');
+});
+
+test('expired card payment lookup only selects unpaid card orders past their deadline', async (t) => {
+  const now = new Date('2026-09-24T12:00:00.000Z');
+  let filter;
+  t.mock.method(Order, 'find', (query) => {
+    filter = query;
+    return [];
+  });
+
+  await getExpiredCardPaymentOrders(now);
+
+  assert.equal(filter.status, 'pending');
+  assert.equal(filter.paymentMethod, 'credit-card');
+  assert.equal(filter.$or[0].paymentExpiresAt.$lte, now);
+  assert.equal(filter.$or[1].createdAt.$lte.toISOString(), '2026-09-24T11:30:00.000Z');
+});
+
+test('cancelling a pending order restores its reserved stock', async (t) => {
+  const userId = 'aaaaaaaaaaaaaaaaaaaaaaaa';
+  const order = {
+    _id: 'bbbbbbbbbbbbbbbbbbbbbbbb',
+    user: userId,
+    status: 'pending',
+    stockReserved: true,
+    stockRestored: false,
+    loyaltyProcessed: false,
+    subtotal: 200,
+    discountAmount: 0,
+    items: [{ product: 'cccccccccccccccccccccccc', variantId: 'dddddddddddddddddddddddd', quantity: 2 }],
+    async save() {}
+  };
+  let stock = 3;
+  let findByIdCalls = 0;
+
+  t.mock.method(Order, 'findOne', () => ({ populate: async () => order }));
+  t.mock.method(Order, 'findById', () => {
+    findByIdCalls += 1;
+    if (findByIdCalls === 1) return Promise.resolve(order);
+    return { populate: async () => order };
+  });
+  t.mock.method(Product, 'updateOne', async (_filter, update) => {
+    stock += update.$inc['variants.$.stock_quantity'];
+    return { modifiedCount: 1 };
+  });
+  t.mock.method(mongoose, 'startSession', async () => ({
+    startTransaction() {},
+    async commitTransaction() {},
+    async abortTransaction() {},
+    endSession() {}
+  }));
+
+  const cancelledOrder = await cancelOrder(userId, order._id);
+
+  assert.equal(cancelledOrder.status, 'cancelled');
+  assert.equal(cancelledOrder.stockRestored, true);
+  assert.equal(stock, 5);
 });
 
 test('duplicate review constraint is unique per user, product, and order', async (t) => {

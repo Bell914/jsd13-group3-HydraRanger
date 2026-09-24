@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
@@ -63,48 +63,63 @@ function StripePaymentForm({ onSubmit, isSubmitting }) {
 }
 
 function StripeIntentSetup({ orderPayload, onReady, onError }) {
-  const started = useRef(false);
-
   useEffect(() => {
-    if (started.current) return;
-    started.current = true;
+    let isActive = true;
+    let order = null;
+    let setupComplete = false;
+
+    async function cancelOrder() {
+      if (!order?._id) return;
+      try {
+        await api.post("/payment/cancel-payment-intent", { orderId: order._id });
+      } catch (error) {
+        console.error("Could not cancel unpaid order:", error);
+      }
+    }
 
     async function preparePayment() {
-      let order = null;
-
       try {
         // Save the order first; the server calculates and stores the final total.
         const orderResponse = await createOrder(orderPayload);
         order = orderResponse?.data || orderResponse;
+        if (!isActive) {
+          await cancelOrder();
+          return;
+        }
 
         const paymentResponse = await api.post("/payment/create-payment-intent", {
           orderId: order._id,
         });
         const clientSecret = paymentResponse.clientSecret || paymentResponse.data?.clientSecret;
         if (!clientSecret) throw new Error("ไม่สามารถเริ่มรายการชำระเงินได้");
+        if (!isActive) {
+          await cancelOrder();
+          return;
+        }
 
+        setupComplete = true;
         onReady(order, clientSecret);
       } catch (error) {
         // If Stripe setup fails, cancel the unpaid order so its stock is released.
-        if (order?._id) {
-          try {
-            await api.patch(`/orders/my/${order._id}/cancel`);
-          } catch (cancelError) {
-            console.error("Could not cancel unpaid order:", cancelError);
-          }
-        }
+        if (isActive) await cancelOrder();
 
-        onError(
-          error.data?.message ||
-            error.response?.data?.message ||
-            error.message ||
-            "เริ่มรายการชำระเงินไม่สำเร็จ",
-        );
+        if (isActive) {
+          onError(
+            error.data?.message ||
+              error.response?.data?.message ||
+              error.message ||
+              "เริ่มรายการชำระเงินไม่สำเร็จ",
+          );
+        }
       }
     }
 
     preparePayment();
-  }, [orderPayload, onReady, onError]);
+    return () => {
+      isActive = false;
+      if (!setupComplete) cancelOrder();
+    };
+  }, [orderPayload]);
 
   return null;
 }
@@ -162,6 +177,9 @@ export default function CheckoutPage() {
   const [clientSecret, setClientSecret] = useState("");
   const [intentError, setIntentError] = useState("");
   const [preparedOrder, setPreparedOrder] = useState(null);
+  const [preparedFingerprint, setPreparedFingerprint] = useState("");
+  const [paymentSetupPaused, setPaymentSetupPaused] = useState(false);
+  const cancellationRequests = useRef(new Set());
 
   useEffect(() => {
     async function loadSavedAddresses() {
@@ -199,6 +217,21 @@ export default function CheckoutPage() {
   const discountedSubtotal = Math.max(0, subtotal - rankDiscountAmount);
   const taxAmount = currentStep >= 3 ? Math.round(discountedSubtotal * 0.06 * 100) / 100 : 0;
   const totalAmount = discountedSubtotal + shippingCost + taxAmount;
+  const checkoutFingerprint = JSON.stringify({
+    email,
+    cartItems: cartItems.map((item) => ({
+      productId: item.productId || item.product_id || item._id,
+      variantId: item.variantId || item.variant_id,
+      quantity: item.quantity,
+      price: item.price,
+    })),
+    shippingData,
+    paymentMethod: paymentData.method,
+  });
+  const stripeOrderPayload = useMemo(
+    () => buildOrderPayload(),
+    [checkoutFingerprint],
+  );
 
   function buildOrderPayload() {
     return {
@@ -258,6 +291,39 @@ export default function CheckoutPage() {
     setAddressStore(addresses);
   }
 
+  async function discardPreparedPayment(order = preparedOrder) {
+    setPreparedOrder(null);
+    setPreparedFingerprint("");
+    setClientSecret("");
+    setIntentError("");
+
+    if (!order?._id || cancellationRequests.current.has(order._id)) return null;
+    cancellationRequests.current.add(order._id);
+
+    try {
+      return await api.post("/payment/cancel-payment-intent", {
+        orderId: order._id,
+      });
+    } catch (error) {
+      console.error("Could not cancel unpaid order:", error);
+      return null;
+    }
+  }
+
+  function goToStep(step) {
+    if (step !== 4 && preparedOrder) {
+      discardPreparedPayment();
+    }
+    setCurrentStep(step);
+  }
+
+  useEffect(() => {
+    if (!preparedOrder || !preparedFingerprint) return;
+    if (preparedFingerprint !== checkoutFingerprint) {
+      discardPreparedPayment(preparedOrder);
+    }
+  }, [checkoutFingerprint, preparedFingerprint, preparedOrder]);
+
   async function finishOrder(payload, existingOrder = null) {
     const response = existingOrder || await createOrder(payload);
     const order = response?.data || response;
@@ -297,6 +363,11 @@ export default function CheckoutPage() {
       totalAmount: order.totalAmount ?? totalAmount,
     });
 
+    if (existingOrder) {
+      setPreparedOrder(null);
+      setPreparedFingerprint("");
+      setClientSecret("");
+    }
     clearCart();
     return order;
   }
@@ -317,15 +388,40 @@ export default function CheckoutPage() {
         }
         if (!clientSecret) throw new Error("ไม่สามารถเริ่มรายการชำระเงินได้");
 
-        const result = await stripe.confirmPayment({
-          elements,
-          clientSecret,
-          confirmParams: { return_url: `${window.location.origin}/checkout` },
-          redirect: "if_required",
-        });
+        let result;
+        try {
+          result = await stripe.confirmPayment({
+            elements,
+            clientSecret,
+            confirmParams: { return_url: `${window.location.origin}/checkout` },
+            redirect: "if_required",
+          });
+        } catch (paymentError) {
+          const cancelResult = await discardPreparedPayment(preparedOrder);
+          setPaymentSetupPaused(true);
+          if (cancelResult?.paid && cancelResult.data) {
+            await finishOrder(payload, cancelResult.data);
+            return;
+          }
+          throw paymentError;
+        }
 
-        if (result.error) throw new Error(result.error.message);
+        if (result.error) {
+          const cancelResult = await discardPreparedPayment(preparedOrder);
+          setPaymentSetupPaused(true);
+          if (cancelResult?.paid && cancelResult.data) {
+            await finishOrder(payload, cancelResult.data);
+            return;
+          }
+          throw new Error(result.error.message);
+        }
         if (result.paymentIntent?.status !== "succeeded") {
+          const cancelResult = await discardPreparedPayment(preparedOrder);
+          setPaymentSetupPaused(true);
+          if (cancelResult?.paid && cancelResult.data) {
+            await finishOrder(payload, cancelResult.data);
+            return;
+          }
           throw new Error("การชำระเงินยังไม่สำเร็จ");
         }
         if (!preparedOrder) throw new Error("ไม่พบคำสั่งซื้อ กรุณาลองใหม่อีกครั้ง");
@@ -396,7 +492,7 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-gray-50/50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <CheckoutStepper currentStep={currentStep} onStepClick={setCurrentStep} />
+        <CheckoutStepper currentStep={currentStep} onStepClick={goToStep} />
 
         {submitError && (
           <div role="alert" className="mb-6 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -418,7 +514,7 @@ export default function CheckoutPage() {
 
             {currentStep === 2 && (
               <>
-                <ContactSection email={email} isCollapsed onEdit={() => setCurrentStep(1)} />
+                <ContactSection email={email} isCollapsed onEdit={() => goToStep(1)} />
                 <ShippingSection
                   shippingData={shippingData}
                   savedAddresses={savedAddresses}
@@ -433,8 +529,8 @@ export default function CheckoutPage() {
 
             {currentStep === 3 && (
               <>
-                <ContactSection email={email} isCollapsed onEdit={() => setCurrentStep(1)} />
-                <ShippingSection shippingData={shippingData} isCollapsed onEdit={() => setCurrentStep(2)} />
+                <ContactSection email={email} isCollapsed onEdit={() => goToStep(1)} />
+                <ShippingSection shippingData={shippingData} isCollapsed onEdit={() => goToStep(2)} />
                 <PaymentSection
                   paymentData={paymentData}
                   onChangePayment={setPaymentData}
@@ -442,40 +538,53 @@ export default function CheckoutPage() {
                     setSubmitError("");
                     setCurrentStep(4);
                   }}
-                  onBack={() => setCurrentStep(2)}
+                  onBack={() => goToStep(2)}
                 />
               </>
             )}
 
             {currentStep === 4 && (
               <>
-                <ContactSection email={email} isCollapsed onEdit={() => setCurrentStep(1)} />
-                <ShippingSection shippingData={shippingData} isCollapsed onEdit={() => setCurrentStep(2)} />
-                <PaymentSection paymentData={paymentData} isCollapsed onEdit={() => setCurrentStep(3)} />
+                <ContactSection email={email} isCollapsed onEdit={() => goToStep(1)} />
+                <ShippingSection shippingData={shippingData} isCollapsed onEdit={() => goToStep(2)} />
+                <PaymentSection paymentData={paymentData} isCollapsed onEdit={() => goToStep(3)} />
 
                 {paymentData.method === "credit-card" ? (
                   <div className="rounded-lg border border-gray-200 bg-white p-6">
                     <h2 className="mb-4 text-xl font-bold">ชำระเงินด้วยบัตร</h2>
                     {!clientSecret ? (
                       <>
-                        <Elements stripe={stripePromise}>
-                          <StripeIntentSetup
-                            orderPayload={buildOrderPayload()}
-                            onReady={(order, secret) => {
-                              setPreparedOrder(order);
-                              setClientSecret(secret || "");
-                              setIntentError("");
-                              setSubmitError("");
-                            }}
-                            onError={(message) => {
-                              setIntentError(message);
-                              setSubmitError(message);
-                            }}
-                          />
-                        </Elements>
-                        <p className="text-sm text-gray-600">
-                          {intentError || "กำลังเตรียมแบบฟอร์มชำระเงิน..."}
-                        </p>
+                        {paymentSetupPaused ? (
+                          <button
+                            type="button"
+                            onClick={() => setPaymentSetupPaused(false)}
+                            className="rounded-lg bg-[#D0021B] px-5 py-3 font-bold text-white"
+                          >
+                            ลองชำระเงินอีกครั้ง
+                          </button>
+                        ) : (
+                          <>
+                            <Elements stripe={stripePromise}>
+                              <StripeIntentSetup
+                                orderPayload={stripeOrderPayload}
+                                onReady={(order, secret) => {
+                                  setPreparedOrder(order);
+                                  setPreparedFingerprint(checkoutFingerprint);
+                                  setClientSecret(secret || "");
+                                  setIntentError("");
+                                  setSubmitError("");
+                                }}
+                                onError={(message) => {
+                                  setIntentError(message);
+                                  setSubmitError(message);
+                                }}
+                              />
+                            </Elements>
+                            <p className="text-sm text-gray-600">
+                              {intentError || "กำลังเตรียมแบบฟอร์มชำระเงิน..."}
+                            </p>
+                          </>
+                        )}
                       </>
                     ) : (
                       <Elements stripe={stripePromise} options={{ clientSecret }}>
@@ -489,7 +598,7 @@ export default function CheckoutPage() {
                     shippingData={shippingData}
                     paymentData={paymentData}
                     onEditStep={setCurrentStep}
-                    onBack={() => setCurrentStep(3)}
+                    onBack={() => goToStep(3)}
                     onPlaceOrder={() => handlePlaceOrder(null, null)}
                     isSubmitting={isSubmitting}
                   />

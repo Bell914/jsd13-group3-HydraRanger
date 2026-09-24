@@ -3,6 +3,48 @@ import { Order } from '../models/Order.js';
 import * as orderService from '../services/orderService.js';
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+let cleanupIsRunning = false;
+
+async function cancelUnpaidOrder(order, userId) {
+  await Order.updateOne(
+    { _id: order._id, user: userId, status: 'pending' },
+    { $set: { paymentCancellationRequested: true } }
+  );
+  order = await Order.findOne({ _id: order._id, user: userId });
+  if (!order) throw new Error('Order not found');
+
+  if (order.status === 'cancelled') return { paid: false, order };
+  if (order.status === 'paid') return { paid: true, order };
+  if (order.status !== 'pending') {
+    throw new Error('Order is not waiting for payment');
+  }
+
+  if (order.paymentIntentId) {
+    if (!stripe) throw new Error('Stripe is not configured');
+
+    let intent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
+    if (intent.status === 'succeeded') {
+      const paidOrder = await orderService.updateOrderStatus(order._id, 'paid');
+      return { paid: true, order: paidOrder };
+    }
+
+    if (intent.status !== 'canceled') {
+      try {
+        intent = await stripe.paymentIntents.cancel(order.paymentIntentId);
+      } catch (error) {
+        // A payment may have completed while cancellation was being requested.
+        intent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
+        if (intent.status !== 'succeeded') throw error;
+
+        const paidOrder = await orderService.updateOrderStatus(order._id, 'paid');
+        return { paid: true, order: paidOrder };
+      }
+    }
+  }
+
+  const cancelledOrder = await orderService.cancelOrder(userId, order._id);
+  return { paid: false, order: cancelledOrder };
+}
 
 export async function createPaymentIntent(req, res, next) {
   try {
@@ -26,9 +68,26 @@ export async function createPaymentIntent(req, res, next) {
       return res.status(200).json({ success: true, clientSecret: existingIntent.client_secret });
     }
 
+    // Lock setup so a simultaneous Back/cancel action cannot leave a live intent
+    // attached to an already-cancelled order.
+    const orderForSetup = await Order.findOneAndUpdate(
+      {
+        _id: order._id,
+        user: userId,
+        status: 'pending',
+        paymentCancellationRequested: false,
+        paymentIntentId: { $in: ['', null] }
+      },
+      { $set: { paymentSetupStartedAt: new Date() } },
+      { new: true }
+    );
+    if (!orderForSetup) {
+      return res.status(409).json({ success: false, message: 'Order payment was cancelled' });
+    }
+
     const intent = await stripe.paymentIntents.create(
       {
-        amount: Math.round(order.totalAmount * 100),
+        amount: Math.round(orderForSetup.totalAmount * 100),
         currency: 'thb',
         automatic_payment_methods: { enabled: true },
         metadata: { orderId: String(order._id), userId: String(userId) }
@@ -36,12 +95,64 @@ export async function createPaymentIntent(req, res, next) {
       { idempotencyKey: `occasion-order-${order._id}` }
     );
 
-    // Save the link before returning the client secret or allowing payment confirmation.
-    order.paymentIntentId = intent.id;
-    await order.save();
+    // Attach only while the order is still pending and not being canceled.
+    const linkedOrder = await Order.findOneAndUpdate(
+      {
+        _id: order._id,
+        user: userId,
+        status: 'pending',
+        paymentCancellationRequested: false,
+        paymentIntentId: { $in: ['', null] }
+      },
+      { $set: { paymentIntentId: intent.id, paymentSetupStartedAt: null } },
+      { new: true }
+    );
+
+    if (!linkedOrder) {
+      await stripe.paymentIntents.cancel(intent.id);
+      return res.status(409).json({ success: false, message: 'Order payment was cancelled' });
+    }
+
     return res.status(200).json({ success: true, clientSecret: intent.client_secret });
   } catch (error) {
     return next(error);
+  }
+}
+
+export async function cancelPaymentIntent(req, res, next) {
+  try {
+    const userId = req.user._id || req.user.id;
+    const order = await Order.findOne({ _id: req.body.orderId, user: userId });
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    const result = await cancelUnpaidOrder(order, userId);
+    return res.status(200).json({
+      success: true,
+      paid: result.paid,
+      data: result.order
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function cleanupExpiredCardPayments() {
+  if (cleanupIsRunning) return;
+  cleanupIsRunning = true;
+
+  try {
+    const expiredOrders = await orderService.getExpiredCardPaymentOrders();
+
+    for (const order of expiredOrders) {
+      try {
+        await cancelUnpaidOrder(order, order.user._id || order.user.id || order.user);
+      } catch (error) {
+        // Keep stock reserved if Stripe cannot confirm that payment was canceled.
+        console.error(`Could not clean up expired order ${order._id}:`, error.message);
+      }
+    }
+  } finally {
+    cleanupIsRunning = false;
   }
 }
 

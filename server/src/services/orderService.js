@@ -197,6 +197,10 @@ export async function createOrder(user, orderData) {
   const taxableSubtotal = Math.max(0, subtotal - discountAmount);
   const taxAmount = Math.round(taxableSubtotal * 0.06 * 100) / 100;
   const totalAmount = taxableSubtotal + shippingCost + taxAmount;
+  const paymentMethod = orderData.paymentMethod || 'credit-card';
+  const paymentExpiresAt = paymentMethod === 'credit-card'
+    ? new Date(Date.now() + 30 * 60 * 1000)
+    : null;
 
   await reserveOrderStock(items);
 
@@ -219,8 +223,9 @@ export async function createOrder(user, orderData) {
         deliveryNote: orderData.shippingAddress?.deliveryNote || ''
       },
       shippingMethod: orderData.shippingMethod || 'standard',
-      paymentMethod: orderData.paymentMethod || 'credit-card',
+      paymentMethod,
       paymentIntentId: orderData.paymentIntentId || '',
+      paymentExpiresAt,
       subtotal,
       discountAmount,
       couponCode,
@@ -237,6 +242,19 @@ export async function createOrder(user, orderData) {
   }
 
   return Order.findById(order._id).populate('user', 'username email');
+}
+
+export async function getExpiredCardPaymentOrders(now = new Date()) {
+  const oldOrderCutoff = new Date(now.getTime() - 30 * 60 * 1000);
+
+  return Order.find({
+    status: 'pending',
+    paymentMethod: 'credit-card',
+    $or: [
+      { paymentExpiresAt: { $lte: now } },
+      { paymentExpiresAt: null, createdAt: { $lte: oldOrderCutoff } }
+    ]
+  });
 }
 
 export async function getMyOrders(userId) {
