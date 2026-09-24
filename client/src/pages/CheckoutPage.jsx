@@ -62,25 +62,49 @@ function StripePaymentForm({ onSubmit, isSubmitting }) {
   );
 }
 
-function StripeIntentSetup({ amount, onReady, onError }) {
+function StripeIntentSetup({ orderPayload, onReady, onError }) {
   const started = useRef(false);
 
   useEffect(() => {
     if (started.current) return;
     started.current = true;
 
-    api
-      .post("/payment/create-payment-intent", {
-        amount: Math.round(amount * 100),
-        currency: "thb",
-      })
-      .then((response) => {
-        onReady(response.clientSecret || response.data?.clientSecret);
-      })
-      .catch((error) => {
-        onError(error.data?.message || error.message || "เริ่มรายการชำระเงินไม่สำเร็จ");
-      });
-  }, [amount, onReady, onError]);
+    async function preparePayment() {
+      let order = null;
+
+      try {
+        // Save the order first; the server calculates and stores the final total.
+        const orderResponse = await createOrder(orderPayload);
+        order = orderResponse?.data || orderResponse;
+
+        const paymentResponse = await api.post("/payment/create-payment-intent", {
+          orderId: order._id,
+        });
+        const clientSecret = paymentResponse.clientSecret || paymentResponse.data?.clientSecret;
+        if (!clientSecret) throw new Error("ไม่สามารถเริ่มรายการชำระเงินได้");
+
+        onReady(order, clientSecret);
+      } catch (error) {
+        // If Stripe setup fails, cancel the unpaid order so its stock is released.
+        if (order?._id) {
+          try {
+            await api.patch(`/orders/my/${order._id}/cancel`);
+          } catch (cancelError) {
+            console.error("Could not cancel unpaid order:", cancelError);
+          }
+        }
+
+        onError(
+          error.data?.message ||
+            error.response?.data?.message ||
+            error.message ||
+            "เริ่มรายการชำระเงินไม่สำเร็จ",
+        );
+      }
+    }
+
+    preparePayment();
+  }, [orderPayload, onReady, onError]);
 
   return null;
 }
@@ -137,6 +161,7 @@ export default function CheckoutPage() {
   const [submitError, setSubmitError] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [intentError, setIntentError] = useState("");
+  const [preparedOrder, setPreparedOrder] = useState(null);
 
   useEffect(() => {
     async function loadSavedAddresses() {
@@ -233,8 +258,8 @@ export default function CheckoutPage() {
     setAddressStore(addresses);
   }
 
-  async function finishOrder(payload) {
-    const response = await createOrder(payload);
+  async function finishOrder(payload, existingOrder = null) {
+    const response = existingOrder || await createOrder(payload);
     const order = response?.data || response;
     let upgradedRank = null;
 
@@ -244,7 +269,12 @@ export default function CheckoutPage() {
       if (newRank !== userRank) upgradedRank = newRank;
     }
 
-    await saveAddressIfRequested();
+    try {
+      await saveAddressIfRequested();
+    } catch (error) {
+      // Address saving is optional and must not hide a successful payment.
+      console.warn("Could not save shipping address:", error.message);
+    }
 
     setCompletedOrder({
       orderId: order.orderNumber || order.orderId || order._id,
@@ -298,16 +328,13 @@ export default function CheckoutPage() {
         if (result.paymentIntent?.status !== "succeeded") {
           throw new Error("การชำระเงินยังไม่สำเร็จ");
         }
-        payload.paymentIntentId = result.paymentIntent.id;
+        if (!preparedOrder) throw new Error("ไม่พบคำสั่งซื้อ กรุณาลองใหม่อีกครั้ง");
       }
 
-      const order = await finishOrder(payload);
-      if (paymentData.method === "credit-card" && order?._id) {
-        await api.post("/payment/bind-payment-intent", {
-          paymentIntentId: payload.paymentIntentId,
-          orderId: order._id,
-        });
-      }
+      await finishOrder(
+        payload,
+        paymentData.method === "credit-card" ? preparedOrder : null,
+      );
     } catch (error) {
       console.error("Order payment failed:", error);
       const message =
@@ -433,9 +460,17 @@ export default function CheckoutPage() {
                       <>
                         <Elements stripe={stripePromise}>
                           <StripeIntentSetup
-                            amount={totalAmount}
-                            onReady={setClientSecret}
-                            onError={setIntentError}
+                            orderPayload={buildOrderPayload()}
+                            onReady={(order, secret) => {
+                              setPreparedOrder(order);
+                              setClientSecret(secret || "");
+                              setIntentError("");
+                              setSubmitError("");
+                            }}
+                            onError={(message) => {
+                              setIntentError(message);
+                              setSubmitError(message);
+                            }}
                           />
                         </Elements>
                         <p className="text-sm text-gray-600">

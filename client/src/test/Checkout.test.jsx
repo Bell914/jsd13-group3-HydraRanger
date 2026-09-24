@@ -12,10 +12,14 @@ const stripeMocks = vi.hoisted(() => ({
   confirmPayment: vi.fn().mockResolvedValue({ paymentIntent: { id: "pi_test", status: "succeeded" } }),
   elements: {},
 }));
+const apiMocks = vi.hoisted(() => ({
+  post: vi.fn().mockResolvedValue({ clientSecret: "pi_secret_test" }),
+  patch: vi.fn().mockResolvedValue({ success: true }),
+}));
 
 vi.mock("../services/orderService", () => ({ createOrder: vi.fn() }));
 vi.mock("../services/userService", () => ({ getAddresses: vi.fn().mockResolvedValue({ data: [] }) }));
-vi.mock("../services/api.js", () => ({ api: { post: vi.fn().mockResolvedValue({ clientSecret: "pi_secret_test" }) } }));
+vi.mock("../services/api.js", () => ({ api: apiMocks }));
 vi.mock("@stripe/stripe-js", () => ({ loadStripe: vi.fn(() => Promise.resolve({})) }));
 vi.mock("@stripe/react-stripe-js", () => ({
   Elements: ({ children }) => <div>{children}</div>,
@@ -44,6 +48,7 @@ describe("Checkout order integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     stripeMocks.confirmPayment.mockResolvedValue({ paymentIntent: { id: "pi_test", status: "succeeded" } });
+    apiMocks.post.mockResolvedValue({ clientSecret: "pi_secret_test" });
     createOrder.mockResolvedValue({
       data: {
         _id: "order-mongo-id",
@@ -58,7 +63,7 @@ describe("Checkout order integration", () => {
     useCartStore.setState({ cartItems: [{ productId: "p1", variantId: "v1", name: "Oversized T-Shirt", price: 590, quantity: 2, stockQuantity: 5 }] });
   });
 
-  it("creates the order after successful payment, shows confirmation, then clears cart", async () => {
+  it("creates the order before payment, confirms it, then shows confirmation and clears cart", async () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToCheckoutPaymentStep();
     await screen.findByTestId("payment-element");
@@ -66,7 +71,16 @@ describe("Checkout order integration", () => {
 
     expect(await screen.findByText(/Your OCCASION order is confirmed!/i)).toBeInTheDocument();
     expect(stripeMocks.confirmPayment).toHaveBeenCalled();
-    expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({ paymentIntentId: "pi_test" }));
+    expect(apiMocks.post).toHaveBeenCalledWith("/payment/create-payment-intent", {
+      orderId: "order-mongo-id",
+    });
+    expect(createOrder).toHaveBeenCalledTimes(1);
+    expect(createOrder.mock.invocationCallOrder[0]).toBeLessThan(
+      apiMocks.post.mock.invocationCallOrder[0],
+    );
+    expect(apiMocks.post.mock.invocationCallOrder[0]).toBeLessThan(
+      stripeMocks.confirmPayment.mock.invocationCallOrder[0],
+    );
     expect(useCartStore.getState().cartItems).toEqual([]);
   });
 
@@ -74,10 +88,10 @@ describe("Checkout order integration", () => {
     createOrder.mockRejectedValueOnce(Object.assign(new Error("request failed"), { data: { message: "สินค้ามีไม่เพียงพอในสต็อก" } }));
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToCheckoutPaymentStep();
-    await screen.findByTestId("payment-element");
-    fireEvent.click(screen.getByRole("button", { name: /ชำระเงินและยืนยันคำสั่งซื้อ/i }));
 
     await waitFor(() => expect(screen.getAllByRole("alert").some((alert) => alert.textContent.includes("สินค้ามีไม่เพียงพอในสต็อก"))).toBe(true));
+    expect(apiMocks.post).not.toHaveBeenCalled();
+    expect(stripeMocks.confirmPayment).not.toHaveBeenCalled();
     expect(useCartStore.getState().cartItems).toHaveLength(1);
   });
 

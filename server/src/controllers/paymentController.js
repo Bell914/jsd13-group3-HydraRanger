@@ -7,27 +7,42 @@ const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SEC
 export async function createPaymentIntent(req, res, next) {
   try {
     if (!stripe) return res.status(503).json({ success: false, message: 'Stripe is not configured' });
-    const amount = Number(req.body.amount);
-    if (!Number.isInteger(amount) || amount < 50) return res.status(400).json({ success: false, message: 'Amount must be an integer of at least 50 satang' });
-    const intent = await stripe.paymentIntents.create({ amount, currency: 'thb', automatic_payment_methods: { enabled: true }, metadata: { userId: String(req.user._id || req.user.id) } });
-    res.status(200).json({ success: true, clientSecret: intent.client_secret });
-  } catch (error) { next(error); }
-}
-
-export async function bindPaymentIntent(req, res, next) {
-  try {
-    if (!stripe) return res.status(503).json({ success: false, message: 'Stripe is not configured' });
-    const { paymentIntentId, orderId } = req.body;
-    const order = await Order.findOne({ _id: orderId, user: req.user._id || req.user.id });
+    const userId = req.user._id || req.user.id;
+    const order = await Order.findOne({
+      _id: req.body.orderId,
+      user: userId
+    });
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
-    const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
-    if (intent.status !== 'succeeded' || intent.currency !== 'thb' || intent.amount !== Math.round(order.totalAmount * 100)) {
-      return res.status(400).json({ success: false, message: 'Payment does not match this order' });
+    if (order.status !== 'pending' || order.paymentMethod !== 'credit-card') {
+      return res.status(400).json({ success: false, message: 'Order is not waiting for card payment' });
     }
+
+    // Reuse an existing intent so retrying checkout does not create extra payments.
+    if (order.paymentIntentId) {
+      const existingIntent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
+      if (existingIntent.amount !== Math.round(order.totalAmount * 100) || existingIntent.currency !== 'thb') {
+        return res.status(400).json({ success: false, message: 'Payment does not match this order' });
+      }
+      return res.status(200).json({ success: true, clientSecret: existingIntent.client_secret });
+    }
+
+    const intent = await stripe.paymentIntents.create(
+      {
+        amount: Math.round(order.totalAmount * 100),
+        currency: 'thb',
+        automatic_payment_methods: { enabled: true },
+        metadata: { orderId: String(order._id), userId: String(userId) }
+      },
+      { idempotencyKey: `occasion-order-${order._id}` }
+    );
+
+    // Save the link before returning the client secret or allowing payment confirmation.
     order.paymentIntentId = intent.id;
     await order.save();
-    return res.status(200).json({ success: true });
-  } catch (error) { return next(error); }
+    return res.status(200).json({ success: true, clientSecret: intent.client_secret });
+  } catch (error) {
+    return next(error);
+  }
 }
 
 export async function stripeWebhook(req, res) {
@@ -40,9 +55,38 @@ export async function stripeWebhook(req, res) {
   if (event.type === 'payment_intent.succeeded') {
     const intent = event.data.object;
     try {
-      const order = await Order.findOne({ paymentIntentId: intent.id });
-      if (order && order.status === 'pending') await orderService.updateOrderStatus(order._id, 'paid');
-    } catch (error) { console.error('Could not update paid order from Stripe webhook:', error); return res.status(500).send('Webhook processing failed'); }
+      // Metadata lets us find the Order even if the webhook arrives before the
+      // paymentIntentId save has finished. The Order already exists at this point.
+      const order = await Order.findOne({
+        $or: [
+          { paymentIntentId: intent.id },
+          { _id: intent.metadata?.orderId, user: intent.metadata?.userId }
+        ]
+      });
+
+      if (!order) return res.status(500).send('Order for payment was not found');
+
+      const expectedAmount = Math.round(order.totalAmount * 100);
+      const intentMatchesOrder =
+        intent.currency === 'thb' &&
+        intent.amount === expectedAmount &&
+        String(order.user) === String(intent.metadata?.userId) &&
+        (!order.paymentIntentId || order.paymentIntentId === intent.id);
+
+      if (!intentMatchesOrder) return res.status(400).send('Payment does not match the order');
+
+      if (!order.paymentIntentId) {
+        order.paymentIntentId = intent.id;
+        await order.save();
+      }
+
+      if (order.status === 'pending') {
+        await orderService.updateOrderStatus(order._id, 'paid');
+      }
+    } catch (error) {
+      console.error('Could not update paid order from Stripe webhook:', error);
+      return res.status(500).send('Webhook processing failed');
+    }
   }
   return res.json({ received: true });
 }
