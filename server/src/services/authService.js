@@ -3,7 +3,9 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { User } from '../models/User.js';
 import { ENV } from '../config/env.js';
-import { sendPasswordResetEmail } from './emailService.js';
+// 🚀 เพิ่ม Import ระบบ Welcome Coupon และ Email
+import { createWelcomeCouponForUser } from './couponService.js';
+import { sendWelcomeDiscountEmail, sendPasswordResetEmail } from './emailService.js';
 
 // In-Memory mock store fallback if DB is offline
 const inMemoryUsers = [];
@@ -86,6 +88,21 @@ export const registerUser = async ({ username, email, password }) => {
       password,
       role: 'user'
     });
+
+    // 🚀 เพิ่ม: สร้าง Welcome Coupon 5% และส่ง Email อัตโนมัติในเบื้องหลัง
+    createWelcomeCouponForUser(user._id)
+      .then((coupon) => {
+        if (coupon) {
+          sendWelcomeDiscountEmail({
+            toEmail: user.email,
+            username: user.username,
+            couponCode: coupon.code,
+            discountPercent: coupon.discountValue,
+            expiresAt: coupon.expiresAt,
+          });
+        }
+      })
+      .catch((err) => console.error("Welcome coupon trigger error:", err.message));
 
     return buildUserSession(user);
   } catch (dbError) {
@@ -302,7 +319,8 @@ export const updateProfile = async ({ userId, username, email, avatar, birthday 
 
       if (changedUsername || changedEmail) {
         const existing = await User.findOne({
-          _id: { $ne: user._id },$or: [
+          _id: { $ne: user._id },
+          $or: [
             ...(changedEmail ? [{ email: validatedEmail }] : []),
             ...(changedUsername ? [{ username: validatedUsername }] : [])
           ]
@@ -401,7 +419,7 @@ export const forgotPassword = async (email) => {
       const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
       user.resetPasswordToken = hashedToken;
-      user.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // หมดอายุใน 1 ชั่วโมง
+      user.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
       await user.save();
 
       const clientUrl = ENV.CLIENT_URL || 'http://localhost:5173';
@@ -410,7 +428,6 @@ export const forgotPassword = async (email) => {
   } catch (error) {
     if (!isDbUnavailableError(error)) throw error;
 
-    // In-memory fallback เมื่อ DB ออฟไลน์
     const mockUser = inMemoryUsers.find((u) => u.email === targetEmail);
     if (mockUser) {
       const resetToken = crypto.randomBytes(32).toString('hex');
@@ -450,7 +467,6 @@ export const resetPassword = async ({ token, password }) => {
     if (!isDbUnavailableError(error)) throw error;
   }
 
-  // In-memory fallback
   const mockUser = inMemoryUsers.find(
     (u) => u.resetPasswordToken === hashedToken && u.resetPasswordExpires > Date.now()
   );

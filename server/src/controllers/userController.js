@@ -1,6 +1,6 @@
 import { HTTP_STATUS } from "../config/constants.js";
-import * as userService from "../services/userService.js";
 import { User } from "../models/User.js";
+import * as userService from "../services/userService.js";
 
 export const getUsers = async (req, res, next) => {
   try {

@@ -248,9 +248,21 @@ export const getCouponsForUser = (rank = MEMBERSHIP_RANKS.MEMBER, birthMonth = 8
 
   const coupons = [
     {
+      id: 'c-welcome-5',
+      code: 'WELCOME5',
+      title: 'คูปองต้อนรับสมาชิกใหม่ (Welcome Discount)',
+      discountType: 'percent',
+      discountValue: 5,
+      minSpend: 0,
+      expiresAt: '30 วันหลังสมัคร',
+      category: 'welcome',
+      badge: 'New Member 5%',
+      usable: true
+    },
+    {
       id: 'c-welcome',
       code: 'OCCWELCOME10',
-      title: 'คูปองต้อนรับสมาชิกใหม่',
+      title: 'คูปองต้อนรับสมาชิกใหม่ (Welcome Tier)',
       discountType: 'percent',
       discountValue: 10,
       minSpend: 500,
