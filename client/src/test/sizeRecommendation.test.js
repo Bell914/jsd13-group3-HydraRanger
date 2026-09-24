@@ -131,6 +131,21 @@ describe('Size recommendation edge cases', () => {
     expect(getSizeRecommendation(regularProfile, product, [], 'Blue').status).toBe('unavailable');
   });
 
+  it('only offers a larger in-stock size as an alternative', () => {
+    const bothSidesAvailable = { category: 'tops', variants: [
+      { size: 'S', color: 'Black', stock_quantity: 5 },
+      { size: 'M', color: 'Black', stock_quantity: 0 },
+      { size: 'L', color: 'Black', stock_quantity: 5 }
+    ] };
+    expect(getSizeRecommendation(regularProfile, bothSidesAvailable, [], 'Black').alternativeSize).toBe('L');
+
+    const smallerOnly = { category: 'tops', variants: [
+      { size: 'S', color: 'Black', stock_quantity: 5 },
+      { size: 'M', color: 'Black', stock_quantity: 0 }
+    ] };
+    expect(getSizeRecommendation(regularProfile, smallerOnly, [], 'Black').alternativeSize).toBeNull();
+  });
+
   it('does not enable purchase when stock is unknown', () => {
     const result = getSizeRecommendation(regularProfile, { category: 'tops', variants: [{ size: 'M' }] });
     expect(result.status).toBe('unavailable');

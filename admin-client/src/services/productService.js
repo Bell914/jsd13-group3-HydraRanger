@@ -111,6 +111,7 @@ export const productService = {
   },
 
   async deleteProduct(id) {
-    await request(`/admin/products/${id}`, { method: 'DELETE' });
+    const result = await request(`/admin/products/${id}`, { method: 'DELETE' });
+    return normalizeProduct(result.data);
   }
 };
