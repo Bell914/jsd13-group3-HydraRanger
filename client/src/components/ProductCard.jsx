@@ -59,9 +59,9 @@ export default function ProductCard({ product }) {
   const imgUrl = normalizeImageUrl(rawImg) || undefined;
 
   return (
-    <div className="relative group flex flex-col justify-between overflow-hidden rounded-2xl bg-[#0046a7] text-white shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl focus-within:ring-3 focus-within:ring-accent/45 aspect-[3/4] p-3">
+    <div className="relative group flex flex-col justify-between overflow-hidden rounded-2xl border border-[#e4ddd3] bg-[#f1eee8] text-[#263639] shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl focus-within:ring-3 focus-within:ring-accent/45 aspect-[3/4] p-3">
       {/* Product Image Box */}
-      <div className="relative w-full flex-1 overflow-hidden rounded-xl bg-white/95 p-3 flex items-center justify-center">
+      <div className="relative w-full flex-1 overflow-hidden rounded-xl bg-[#fbf8f3] p-3 flex items-center justify-center">
         <Link
           to={`/products/${targetId}`}
           className="absolute inset-0 flex items-center justify-center p-3"
@@ -81,7 +81,7 @@ export default function ProductCard({ product }) {
             <span>EARLY ACCESS</span>
           </span>
         ) : categoryName ? (
-          <span className="pointer-events-none absolute top-2 left-2 z-10 rounded-md bg-[#0046a7] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
+          <span className="pointer-events-none absolute top-2 left-2 z-10 rounded-md bg-[#263639] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
             {categoryName}
           </span>
         ) : null}
@@ -105,19 +105,19 @@ export default function ProductCard({ product }) {
       {/* Bottom Info Bar matching wireframe */}
       <Link
         to={`/products/${targetId}`}
-        className="pt-3 pb-1 flex items-center justify-between text-white hover:opacity-95"
+        className="pt-3 pb-1 flex items-center justify-between text-[#263639] hover:opacity-75"
       >
         <div className="flex flex-col">
-          <span className="text-sm sm:text-base font-extrabold tracking-wide text-white drop-shadow-sm">
+          <span className="text-sm sm:text-base font-extrabold tracking-wide text-[#263639]">
             {categoryLabel}
           </span>
-          <span className="text-[11px] text-white/80 line-clamp-1 max-w-[130px]">
+          <span className="text-[11px] text-[#526164] line-clamp-1 max-w-[130px]">
             {title}
           </span>
           {product.tags && product.tags.length > 0 && (
             <div className="mt-0.5 flex flex-wrap gap-1">
               {product.tags.slice(0, 2).map((t) => (
-                <span key={t} className="text-[9px] text-white/70">
+                <span key={t} className="text-[9px] text-[#697577]">
                   #{t}
                 </span>
               ))}
@@ -126,7 +126,7 @@ export default function ProductCard({ product }) {
         </div>
 
         <div className="text-right">
-          <span className="text-sm sm:text-base font-black text-amber-200">
+          <span className="text-sm sm:text-base font-black text-[#c46731]">
             ฿{minPrice.toLocaleString()}
           </span>
         </div>
