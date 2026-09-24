@@ -195,6 +195,7 @@ export default function CheckoutPage() {
           setShippingData((previous) => ({
             ...previous,
             ...getAddressFormData(defaultAddress),
+            selectedAddressId: String(defaultAddress._id || defaultAddress.id),
           }));
         }
       } catch (error) {
@@ -226,8 +227,7 @@ export default function CheckoutPage() {
     : 0;
   const totalDiscount = Math.max(rankDiscountAmount, couponDiscountAmount);
   const discountedSubtotal = Math.max(0, subtotal - totalDiscount);
-  const taxAmount = currentStep >= 3 ? Math.round(discountedSubtotal * 0.06 * 100) / 100 : 0;
-  const totalAmount = discountedSubtotal + shippingCost + taxAmount;
+  const totalAmount = discountedSubtotal + shippingCost;
   const checkoutFingerprint = JSON.stringify({
     email,
     cartItems: cartItems.map((item) => ({
@@ -397,7 +397,6 @@ export default function CheckoutPage() {
       userRank,
       upgradedRank,
       shippingCost: order.shippingCost ?? shippingCost,
-      taxAmount: order.taxAmount ?? taxAmount,
       totalAmount: order.totalAmount ?? totalAmount,
     });
 
@@ -415,6 +414,10 @@ export default function CheckoutPage() {
     setSubmitError("");
 
     try {
+      if (paymentData.method !== "credit-card") {
+        throw new Error("กรุณาเลือกชำระเงินด้วย Credit / Debit Card");
+      }
+
       const stockError = getStockError();
       if (stockError) throw new Error(stockError);
 
@@ -493,6 +496,7 @@ export default function CheckoutPage() {
     setShippingData((previous) => ({
       ...previous,
       ...getAddressFormData(address),
+      selectedAddressId: String(address._id || address.id),
     }));
   }
 
@@ -518,10 +522,10 @@ export default function CheckoutPage() {
   if (!cartItems.length) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-        <h1 className="mb-4 text-3xl font-bold">Your Cart is Empty</h1>
-        <p className="mb-8 text-gray-500">Please add items to your cart before checkout.</p>
+        <h1 className="mb-4 text-3xl font-bold">ตะกร้าสินค้าว่างเปล่า</h1>
+        <p className="mb-8 text-gray-500">กรุณาเพิ่มสินค้าลงในตะกร้าก่อนดำเนินการชำระเงิน</p>
         <Link to="/products" className="inline-block rounded-lg bg-black px-8 py-3 font-semibold text-white">
-          Explore Products
+          เลือกดูสินค้า
         </Link>
       </div>
     );
@@ -535,7 +539,7 @@ export default function CheckoutPage() {
         {submitError && (
           <div role="alert" className="mb-6 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             <span>{submitError}</span>
-            <button onClick={() => setSubmitError("")} className="font-bold">✕</button>
+            <button type="button" aria-label="ปิดข้อความแจ้งเตือน" onClick={() => setSubmitError("")} className="font-bold">✕</button>
           </div>
         )}
 
@@ -589,7 +593,7 @@ export default function CheckoutPage() {
 
                 {paymentData.method === "credit-card" ? (
                   <div className="rounded-lg border border-gray-200 bg-white p-6">
-                    <h2 className="mb-4 text-xl font-bold">ชำระเงินด้วยบัตร</h2>
+                    <h2 className="mb-4 text-xl font-bold">ชำระเงินด้วย Credit / Debit Card</h2>
                     {!clientSecret ? (
                       <>
                         {paymentSetupPaused ? (
@@ -625,21 +629,15 @@ export default function CheckoutPage() {
                         )}
                       </>
                     ) : (
-                      <Elements stripe={stripePromise} options={{ clientSecret }}>
+                        <Elements stripe={stripePromise} options={{ clientSecret, locale: "th" }}>
                         <StripePaymentForm onSubmit={handlePlaceOrder} isSubmitting={isSubmitting} />
                       </Elements>
                     )}
                   </div>
                 ) : (
-                  <ReviewSection
-                    email={email}
-                    shippingData={shippingData}
-                    paymentData={paymentData}
-                    onEditStep={setCurrentStep}
-                    onBack={() => goToStep(3)}
-                    onPlaceOrder={() => handlePlaceOrder(null, null)}
-                    isSubmitting={isSubmitting}
-                  />
+                  <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    กรุณาเลือกชำระเงินด้วย Credit / Debit Card
+                  </p>
                 )}
               </>
             )}
@@ -650,7 +648,6 @@ export default function CheckoutPage() {
               cartItems={cartItems}
               subtotal={subtotal}
               shippingMethodId={shippingData.shippingMethod}
-              currentStep={currentStep}
               userRank={userRank}
               rankDiscountAmount={rankDiscountAmount}
               appliedCoupon={appliedCoupon}

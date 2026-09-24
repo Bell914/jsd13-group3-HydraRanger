@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { UserPlus, Shield, AlertCircle, Eye, EyeOff, CheckCircle2, Mail, Tag, ArrowRight } from 'lucide-react';
 import { authService } from '../services/authService.js';
 import { useAuth } from '../context/Auth/useAuth.jsx';
@@ -8,7 +8,10 @@ import { validateForm } from '../utils/validation.js';
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { register } = useAuth();
+  const requestedRedirect = new URLSearchParams(location.search).get("redirect");
+  const redirectTo = requestedRedirect?.startsWith("/") ? requestedRedirect : "/";
 
   const [formData, setFormData] = useState({
     username: "",
@@ -105,7 +108,7 @@ export const RegisterPage = () => {
               type="button"
               variant="primary"
               icon={ArrowRight}
-              onClick={() => navigate("/")}
+              onClick={() => navigate(redirectTo, { replace: true })}
               className="w-full justify-center"
             >
               เริ่มช้อปปิ้งเลย
@@ -227,7 +230,7 @@ export const RegisterPage = () => {
         <div className="mt-6 border-t border-occasion-border/45 pt-5 text-center text-xs text-secondary">
           Already have an account?{" "}
           <Link
-            to="/login"
+            to={requestedRedirect ? `/login?redirect=${encodeURIComponent(requestedRedirect)}` : "/login"}
             className="rounded-sm font-semibold text-accent hover:text-accent-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
           >
             Sign in here

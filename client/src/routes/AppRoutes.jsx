@@ -13,6 +13,7 @@ import {
   ArticlePages,
   ProductDetailPage,
   CheckoutPage,
+  CheckoutAuthPage,
   ProfilePage,
   CartPage,
   LookbookListPage,
@@ -37,6 +38,7 @@ export const AppRoutes = () => {
       <Route path="/mix-and-match" element={<MixAndMatchPage />} />
       <Route path="/cart" element={<CartPage />} />
       <Route path="/checkout" element={<CheckoutPage />} />
+      <Route path="/checkout/auth" element={<CheckoutAuthPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />

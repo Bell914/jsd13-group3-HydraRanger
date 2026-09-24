@@ -220,9 +220,8 @@ export async function createOrder(user, orderData) {
     shippingCost = 0; // Platinum priority shipping is free
   }
 
-  const taxableSubtotal = Math.max(0, subtotal - discountAmount);
-  const taxAmount = Math.round(taxableSubtotal * 0.06 * 100) / 100;
-  const totalAmount = taxableSubtotal + shippingCost + taxAmount;
+  const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+  const totalAmount = discountedSubtotal + shippingCost;
   const paymentMethod = orderData.paymentMethod || 'credit-card';
   const paymentExpiresAt = paymentMethod === 'credit-card'
     ? new Date(Date.now() + 30 * 60 * 1000)
@@ -259,7 +258,6 @@ export async function createOrder(user, orderData) {
       couponCode,
       membershipTierAtPurchase,
       shippingCost,
-      taxAmount,
       totalAmount,
       loyaltyProcessed: false,
       stockReserved: true

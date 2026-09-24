@@ -4,8 +4,10 @@ const STORAGE_KEY = "occasion_cart";
 
 const loadInitialCart = () => {
   try {
+    if (typeof localStorage === "undefined") return [];
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
+    const parsed = saved ? JSON.parse(saved) : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
     console.error("Failed to load cart from localStorage:", error);
     return [];
@@ -14,6 +16,7 @@ const loadInitialCart = () => {
 
 const saveCart = (cart) => {
   try {
+    if (typeof localStorage === "undefined") return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
   } catch (error) {
     console.error("Failed to save cart to localStorage:", error);

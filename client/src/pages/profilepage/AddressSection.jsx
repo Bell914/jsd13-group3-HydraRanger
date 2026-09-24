@@ -195,6 +195,9 @@ export const AddressSection = () => {
         <div className="mb-5 rounded-xl border border-dashed p-8 text-center">
           <MapPin className="mx-auto mb-2 text-gray-400" />
           <p className="text-sm text-gray-600">ยังไม่มีข้อมูลที่อยู่จัดส่ง</p>
+          <Link to="/products" className="mt-2 inline-block text-sm font-semibold text-accent">
+            เลือกซื้อสินค้า
+          </Link>
         </div>
       ) : (
         <div className="mb-6 grid gap-4 sm:grid-cols-2">
