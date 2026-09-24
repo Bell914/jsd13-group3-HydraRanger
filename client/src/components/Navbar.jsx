@@ -181,7 +181,7 @@ export const Navbar = () => {
                       : ""
                   }`}
                 >
-                  PRODUCTS
+                  สินค้า
                 </Link>
 
                 {/* Dropdown on hover: Tops & Bottoms matching user screenshot (desktop only) */}
@@ -241,7 +241,7 @@ export const Navbar = () => {
                   aria-current={isActive("/article") ? "page" : undefined}
                   className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/article") ? "font-bold text-accent md:bg-accent/10" : ""}`}
                 >
-                  ARTICLE
+                  บทความ
                 </Link>
               </li>
 
