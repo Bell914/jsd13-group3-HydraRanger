@@ -1,49 +1,64 @@
-import { useState } from 'react';
-import { AlertCircle, KeyRound, Save } from 'lucide-react';
-import { useAuth } from '../../context/Auth/useAuth.jsx';
-import { normalizeImageUrl } from '../../utils/imageUtils.js';
-import { EmptyState } from './EmptyState.jsx';
+import { useState } from "react";
+import { AlertCircle, Cake, KeyRound, Save } from "lucide-react";
+import { useAuth } from "../../context/Auth/useAuth.jsx";
+import { normalizeImageUrl } from "../../utils/imageUtils.js";
+import { EmptyState } from "./EmptyState.jsx";
+
+const toDateInputValue = (date) => {
+  if (!date) return "";
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
 
 export const UserInfoSection = () => {
   const { user: authUser, updateProfile, changePassword } = useAuth();
-  const user = authUser || { username: 'Customer', email: 'user@example.com' };
+  const user = authUser || { username: "Customer", email: "user@example.com" };
   const [form, setForm] = useState({
-    username: user.username || '',
-    email: user.email || '',
-    avatar: user.avatar || '',
+    username: user.username || "",
+    email: user.email || "",
+    avatar: user.avatar || "",
+    birthday: toDateInputValue(user.birthday) || "",
   });
   const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
-  const [pwdForm, setPwdForm] = useState({ currentPassword: '', newPassword: '' });
-  const [pwdMsg, setPwdMsg] = useState('');
-  const [pwdError, setPwdError] = useState('');
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+  const [pwdForm, setPwdForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+  });
+  const [pwdMsg, setPwdMsg] = useState("");
+  const [pwdError, setPwdError] = useState("");
 
   const handleProfileChange = (field) => (e) => {
-    setSuccess('');
+    setSuccess("");
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     if (!authUser) {
-      setError('กรุณาเข้าสู่ระบบก่อนแก้ไขข้อมูล');
+      setError("กรุณาเข้าสู่ระบบก่อนแก้ไขข้อมูล");
       return;
     }
     setSaving(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
     try {
       await updateProfile({
         username: form.username,
         email: form.email,
         avatar: form.avatar,
+        birthday: form.birthday
+          ? new Date(form.birthday).toISOString()
+          : null,
       });
-      setSuccess('บันทึกข้อมูลส่วนตัวสำเร็จ');
+      setSuccess("บันทึกข้อมูลส่วนตัวสำเร็จ");
     } catch (err) {
       const apiError =
         err?.response?.data?.errors?.[0] || err?.response?.data?.message;
-      setError(apiError || 'บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      setError(apiError || "บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setSaving(false);
     }
@@ -52,19 +67,19 @@ export const UserInfoSection = () => {
   const handleChangePassword = async (e) => {
     e.preventDefault();
     if (!authUser) {
-      setError('กรุณาเข้าสู่ระบบก่อนเปลี่ยนรหัสผ่าน');
+      setError("กรุณาเข้าสู่ระบบก่อนเปลี่ยนรหัสผ่าน");
       return;
     }
-    setPwdMsg('');
-    setPwdError('');
+    setPwdMsg("");
+    setPwdError("");
     try {
       const res = await changePassword(pwdForm);
-      setPwdMsg(res?.data?.message || 'เปลี่ยนรหัสผ่านสำเร็จ');
-      setPwdForm({ currentPassword: '', newPassword: '' });
+      setPwdMsg(res?.data?.message || "เปลี่ยนรหัสผ่านสำเร็จ");
+      setPwdForm({ currentPassword: "", newPassword: "" });
     } catch (err) {
       const apiError =
         err?.response?.data?.errors?.[0] || err?.response?.data?.message;
-      setPwdError(apiError || 'เปลี่ยนรหัสผ่านไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      setPwdError(apiError || "เปลี่ยนรหัสผ่านไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     }
   };
 
@@ -91,33 +106,59 @@ export const UserInfoSection = () => {
               </div>
             )}
             <div>
-              <label htmlFor="profile-username" className="mb-1 block text-sm font-medium text-gray-600">
+              <label
+                htmlFor="profile-username"
+                className="mb-1 block text-sm font-medium text-gray-600"
+              >
                 Username
               </label>
               <input
                 id="profile-username"
                 type="text"
                 value={form.username}
-                onChange={handleProfileChange('username')}
+                onChange={handleProfileChange("username")}
                 required
                 minLength={3}
                 className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
               />
             </div>
             <div>
-              <label htmlFor="profile-email" className="mb-1 block text-sm font-medium text-gray-600">
+              <label
+                htmlFor="profile-email"
+                className="mb-1 block text-sm font-medium text-gray-600"
+              >
                 Email
               </label>
               <input
                 id="profile-email"
                 type="email"
                 value={form.email}
-                onChange={handleProfileChange('email')}
+                onChange={handleProfileChange("email")}
                 required
                 className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
               />
             </div>
             <div>
+              <label
+                htmlFor="profile-birthday"
+                className="mb-1 flex items-center gap-1.5 text-sm font-medium text-gray-600"
+              >
+                <Cake size={14} className="text-accent" />
+                วันเดือนปีเกิด (วันเกิดสำหรับคูปองส่วนลด)
+              </label>
+              <input
+                id="profile-birthday"
+                type="date"
+                value={form.birthday}
+                max={new Date().toISOString().split("T")[0]}
+                onChange={handleProfileChange("birthday")}
+                className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
+              />
+              <p className="mt-1 text-xs text-gray-400">
+                ใช้คำนวณคูปองวันเกิด (Birthday Reward) ตรงแท็บ "คูปองและรางวัล"
+              </p>
+            </div>
+            {/* <div>
               <label htmlFor="profile-avatar" className="mb-1 block text-sm font-medium text-gray-600">
                 รูปโปรไฟล์ (ลิงก์รูปภาพ)
               </label>
@@ -136,7 +177,7 @@ export const UserInfoSection = () => {
                   className="mt-3 h-20 w-20 rounded-full border border-gray-200 object-cover"
                 />
               )}
-            </div>
+            </div> */}
             <div className="flex items-center gap-3 pt-2">
               <button
                 type="submit"
@@ -144,12 +185,15 @@ export const UserInfoSection = () => {
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow hover:bg-primary-hover transition disabled:opacity-50 cursor-pointer"
               >
                 <Save size={16} />
-                {saving ? 'กำลังบันทึก…' : 'บันทึกข้อมูล'}
+                {saving ? "กำลังบันทึก…" : "บันทึกข้อมูล"}
               </button>
             </div>
           </form>
 
-          <form onSubmit={handleChangePassword} className="mt-10 space-y-4 border-t border-gray-200 pt-6">
+          <form
+            onSubmit={handleChangePassword}
+            className="mt-10 space-y-4 border-t border-gray-200 pt-6"
+          >
             <h3 className="inline-flex items-center gap-2 text-base font-bold text-primary">
               <KeyRound size={18} />
               เปลี่ยนรหัสผ่าน
@@ -166,7 +210,10 @@ export const UserInfoSection = () => {
               </div>
             )}
             <div>
-              <label htmlFor="pwd-current" className="mb-1 block text-sm font-medium text-gray-600">
+              <label
+                htmlFor="pwd-current"
+                className="mb-1 block text-sm font-medium text-gray-600"
+              >
                 รหัสผ่านปัจจุบัน
               </label>
               <input
@@ -185,7 +232,7 @@ export const UserInfoSection = () => {
               />
             </div>
             <div>
-              <label htmlFor="pwd-new" className="mb-1 block text-sm font-medium text-gray-600">
+<label htmlFor="pwd-new" className="mb-1 block text-sm font-medium text-gray-600">
                 รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)
               </label>
               <input

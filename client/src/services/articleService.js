@@ -19,12 +19,34 @@ export function normalizeArticle(article) {
   };
 }
 
-export async function getArticles() {
+export async function getArticles({ page = 1, limit = 9, category = '' } = {}) {
   const response = await api.get('/articles');
-  return (response.data || []).map(normalizeArticle);
+  const rawList = Array.isArray(response.data) ? response.data : [];
+  const normalized = rawList.map(normalizeArticle);
+
+  const filtered = category
+    ? normalized.filter(
+        (article) =>
+          String(article.category).toLowerCase() === String(category).toLowerCase()
+      )
+    : normalized;
+
+  const total = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const articles = filtered.slice((safePage - 1) * limit, safePage * limit);
+
+  return {
+    articles,
+    pagination: { page: safePage, limit, total, totalPages },
+  };
 }
 
 export async function getArticleById(id) {
-  const response = await api.get(`/articles/${id}`);
-  return normalizeArticle(response.data);
+  try {
+    const response = await api.get(`/articles/${encodeURIComponent(id)}`);
+    return normalizeArticle(response.data);
+  } catch {
+    return null;
+  }
 }

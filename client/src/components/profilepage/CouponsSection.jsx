@@ -7,10 +7,15 @@ export const CouponsSection = ({ user }) => {
   const currentRank = user?.membership?.rank || 'MEMBER';
   const theme = getRankTheme(currentRank);
   const [copiedCode, setCopiedCode] = useState(null);
-  const [selectedBirthMonth, setSelectedBirthMonth] = useState(
-    new Date().getMonth() + 1
-  );
+  const [selectedBirthMonth, setSelectedBirthMonth] = useState(() => {
+    const profileBirthday = user?.birthday ? new Date(user.birthday) : null;
+    if (profileBirthday && !Number.isNaN(profileBirthday.getTime())) {
+      return profileBirthday.getMonth() + 1;
+    }
+    return new Date().getMonth() + 1;
+  });
 
+  const profileBirthday = user?.birthday ? new Date(user.birthday) : null;
   const coupons = getCouponsForUser(currentRank, selectedBirthMonth);
 
   const handleCopyCode = (code) => {
@@ -83,6 +88,16 @@ export const CouponsSection = ({ user }) => {
               <p className="text-xs text-gray-600 mt-0.5">
                 รับส่วนลดพิเศษ 1 ครั้งในเดือนเกิดของคุณตามระดับสมาชิกปัจจุบัน
               </p>
+              {profileBirthday && (
+                <p className="text-[11px] text-pink-700 font-semibold mt-1">
+                  มาจากวันเกิดในโปรไฟล์:{' '}
+                  {profileBirthday.toLocaleDateString('th-TH', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </p>
+              )}
             </div>
           </div>
 

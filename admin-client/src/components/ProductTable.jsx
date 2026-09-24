@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Image } from 'lucide-react';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5002/api';
 const IMAGE_SERVER_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 const getProductImageUrl = (product) => {

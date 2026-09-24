@@ -37,7 +37,7 @@ export const validateLoginInput = ({ email, password }) => {
   };
 };
 
-export const validateUpdateProfileInput = ({ username, email }) => {
+export const validateUpdateProfileInput = ({ username, email, birthday }) => {
   const errors = [];
 
   if (
@@ -53,6 +53,15 @@ export const validateUpdateProfileInput = ({ username, email }) => {
     (typeof email !== 'string' || !emailRegex.test(email.trim()))
   ) {
     errors.push('A valid email address is required');
+  }
+
+  if (birthday !== undefined && birthday !== null && birthday !== '') {
+    const birthDate = new Date(birthday);
+    if (Number.isNaN(birthDate.getTime())) {
+      errors.push('A valid birthday date is required');
+    } else if (birthDate.getTime() > Date.now()) {
+      errors.push('Birthday cannot be in the future');
+    }
   }
 
   return {
