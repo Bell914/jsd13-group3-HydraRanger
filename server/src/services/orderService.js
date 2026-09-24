@@ -8,6 +8,8 @@ import {
   VALID_COUPONS,
   SHIPPING_METHODS_CONFIG
 } from '../config/membershipConfig.js';
+import { Coupon } from '../models/couponModel.js';
+import { markCouponAsUsed, refundCouponUsage } from './couponService.js';
 
 const SHIPPING_COSTS = {
   standard: 0,
@@ -146,15 +148,36 @@ export async function createOrder(user, orderData) {
 
   // 2. Validate coupon if provided
   const couponCode = orderData.couponCode ? String(orderData.couponCode).trim().toUpperCase() : '';
+  let appliedDbCoupon = null;
   if (couponCode) {
-    const coupon = VALID_COUPONS[couponCode];
-    if (coupon) {
-      if (subtotal >= (coupon.minSpend || 0)) {
-        if (coupon.type === 'percent') {
-          const couponDiscount = Math.round((subtotal * coupon.value) / 100);
-          calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
-        } else if (coupon.type === 'fixed') {
-          calculatedDiscount = Math.max(calculatedDiscount, coupon.value);
+    // 2.1 First check dynamic user coupons in MongoDB (e.g. WELCOME5)
+    try {
+      const dbCoupon = await Coupon.findOne({
+        code: couponCode,
+        userId: user?._id || user?.id,
+        isUsed: false,
+        expiresAt: { $gt: new Date() }
+      });
+      if (dbCoupon) {
+        appliedDbCoupon = dbCoupon;
+        const couponDiscount = Math.round((subtotal * dbCoupon.discountValue) / 100);
+        calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
+      }
+    } catch (couponErr) {
+      console.warn('Coupon lookup warning:', couponErr.message);
+    }
+
+    // 2.2 Fallback to static VALID_COUPONS (Tier coupons, birthday coupons)
+    if (!appliedDbCoupon) {
+      const coupon = VALID_COUPONS[couponCode];
+      if (coupon) {
+        if (subtotal >= (coupon.minSpend || 0)) {
+          if (coupon.type === 'percent') {
+            const couponDiscount = Math.round((subtotal * coupon.value) / 100);
+            calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
+          } else if (coupon.type === 'fixed') {
+            calculatedDiscount = Math.max(calculatedDiscount, coupon.value);
+          }
         }
       }
     }
@@ -215,6 +238,15 @@ export async function createOrder(user, orderData) {
   } catch (error) {
     await restoreOrderStock(items);
     throw error;
+  }
+
+  // Mark dynamic coupon as used
+  if (appliedDbCoupon) {
+    try {
+      await markCouponAsUsed(appliedDbCoupon._id, order._id);
+    } catch (err) {
+      console.error('Failed to mark coupon as used:', err.message);
+    }
   }
 
   return Order.findById(order._id).populate('user', 'username email');
@@ -299,6 +331,19 @@ export async function updateOrderStatus(orderId, status) {
     }
   }
 
+  // Refund coupon if order was cancelled or refunded
+  if (['cancelled', 'refunded'].includes(status) && existingOrder.couponCode && userId) {
+    try {
+      await refundCouponUsage({
+        code: existingOrder.couponCode,
+        userId,
+        orderId: existingOrder._id
+      });
+    } catch (refundErr) {
+      console.warn('Coupon refund warning on updateOrderStatus:', refundErr.message);
+    }
+  }
+
   const order = await Order.findById(orderId).populate('user', 'username email');
   return order;
 }
@@ -322,6 +367,20 @@ export async function cancelOrder(userId, orderId) {
       await restoreOrderStock(order.items);
     }
     order.stockRestored = true;
+
+    // Refund coupon if applicable
+    if (order.couponCode) {
+      try {
+        await refundCouponUsage({
+          code: order.couponCode,
+          userId,
+          orderId: order._id
+        });
+      } catch (refundErr) {
+        console.warn('Coupon refund warning on cancelOrder:', refundErr.message);
+      }
+    }
+
     return order.save();
   }
 
