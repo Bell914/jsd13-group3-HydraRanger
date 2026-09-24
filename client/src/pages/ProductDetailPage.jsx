@@ -119,7 +119,9 @@ export default function ProductDetailPage() {
           setAllProducts(prodList || []);
 
           if (normProd.variants && normProd.variants.length > 0) {
-            const firstVariant = normProd.variants[0];
+            const firstVariant = normProd.variants.find((variant) => (
+              Number(variant.stock_quantity ?? variant.stockQuantity) > 0
+            )) || normProd.variants[0];
             setSelectedColor(firstVariant.color || "");
             setSelectedSize(firstVariant.size || "S");
             const variantImg =
@@ -266,6 +268,13 @@ export default function ProductDetailPage() {
   // Handle color change
   const handleColorChange = (color) => {
     setSelectedColor(color);
+    const availableVariant = product?.variants?.find((variant) => (
+      variant.color === color && Number(variant.stock_quantity ?? variant.stockQuantity) > 0
+    ));
+    if (availableVariant) {
+      setSelectedSize(availableVariant.size || availableVariant.size_or_color);
+      setQuantity(1);
+    }
     const variantWithImage = product?.variants?.find(
       (v) => v.color === color && v.imageUrl
     );

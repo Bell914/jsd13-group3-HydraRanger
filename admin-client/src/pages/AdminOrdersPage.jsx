@@ -1,17 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Menu } from 'lucide-react';
-import { useOutletContext } from 'react-router-dom';
-import { useAdminAuth } from '../context/useAdminAuth.js';
+import { AdminTopbar } from '../components/AdminTopbar.jsx';
 import { getOrders, updateOrderStatus } from '../services/orderService.js';
-
-const STATUS_OPTIONS = [
-  ['pending', 'รอตรวจสอบ'],
-  ['paid', 'ชำระเงินแล้ว'],
-  ['processing', 'กำลังเตรียมสินค้า'],
-  ['shipped', 'จัดส่งแล้ว'],
-  ['completed', 'สำเร็จ'],
-  ['cancelled', 'ยกเลิก']
-];
+import { NEXT_STATUSES, STATUS_OPTIONS } from '../utils/orderStatus.js';
 
 function formatMoney(value) {
   return new Intl.NumberFormat('th-TH', {
@@ -30,8 +20,6 @@ function formatDate(value) {
 }
 
 export function AdminOrdersPage() {
-  const { user } = useAdminAuth();
-  const { openSidebar } = useOutletContext();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState('');
@@ -79,13 +67,7 @@ export function AdminOrdersPage() {
 
   return (
     <div className="admin-content">
-      <header className="admin-topbar">
-        <button type="button" className="mobile-menu" onClick={openSidebar} aria-label="เปิดเมนู">
-          <Menu size={20} />
-        </button>
-        <strong className="topbar-title">คำสั่งซื้อ</strong>
-        <div className="admin-profile"><strong>{user?.username ?? 'Admin'}</strong></div>
-      </header>
+      <AdminTopbar title="คำสั่งซื้อ" />
 
       <main className="data-page">
         <header className="page-heading">
@@ -135,7 +117,7 @@ export function AdminOrdersPage() {
                           disabled={savingId === order._id}
                           onChange={(event) => changeStatus(order._id, event.target.value)}
                         >
-                          {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                          {STATUS_OPTIONS.filter(([value]) => NEXT_STATUSES[order.status]?.includes(value)).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                         </select>
                       </td>
                     </tr>

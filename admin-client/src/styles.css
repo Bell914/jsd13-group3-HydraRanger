@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-:root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #0046a7; background: #fcf4ee; }
+:root { font-family: "Prompt", ui-sans-serif, system-ui, sans-serif; color: #0046a7; background: #fcf4ee; }
 
 @theme {
   --color-background: #fcf4ee;
@@ -11,7 +11,7 @@
   --color-primary-hover: #003985;
   --color-accent-hover: #b81159;
   --color-occasion-border: #a6afc4;
-  --font-sans: "Prompt", Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Prompt", ui-sans-serif, system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
 html { min-width: 320px; }
@@ -107,7 +107,7 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
 .product-table td { padding: 12px 20px; border-bottom: 1px solid #f3f4f6; }
 .product-table tbody tr:hover { background: #f9fafb; }
 .product-thumbnail { width: 48px; height: 48px; display: grid; place-items: center; overflow: hidden; border: 1px solid #e5e7eb; border-radius: 9px; background: #f3f4f6; color: #9ca3af; }
-.product-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+.product-thumbnail img { width: 100%; height: 100%; object-fit: contain; }
 .product-thumbnail-placeholder { color: #9ca3af; }
 .product-name { display: block; color: #1f2937; font-size: 14px; }
 .product-table small { display: block; margin-top: 4px; color: #6b7280; font-size: 12px; }
@@ -116,7 +116,7 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
 .data-table td { padding: 14px 20px; border-bottom: 1px solid #f3f4f6; }
 .data-table tbody tr:hover { background: #f9fafb; }
 .data-table small { display: block; margin-top: 4px; color: #6b7280; font-size: 12px; }
-.lookbook-thumbnail { width: 72px; height: 52px; border-radius: 8px; object-fit: cover; background: #f3f4f6; }
+.lookbook-thumbnail { width: 72px; height: 52px; border-radius: 8px; object-fit: contain; background: #f3f4f6; }
 .status-select { min-width: 140px; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; color: #374151; font-size: 14px; }
 .status-select:focus { border-color: #e2156d; outline: none; box-shadow: 0 0 0 2px #ffd6e7; }
 .review-list { display: grid; gap: 14px; }
@@ -193,7 +193,7 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
 .lookbook-modal .product-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .lookbook-modal .form-wide { grid-column: 1 / -1; }
 .lookbook-preview { overflow: hidden; height: 220px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; }
-.lookbook-preview img { width: 100%; height: 100%; object-fit: cover; }
+.lookbook-preview img { width: 100%; height: 100%; object-fit: contain; }
 .lookbook-items { display: grid; gap: 12px; padding: 16px; border: 1px solid #e5e7eb; border-radius: 10px; }
 .lookbook-items legend { padding: 0 6px; color: #374151; font-size: 13px; font-weight: 800; }
 .lookbook-item-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -223,7 +223,7 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
 .field [aria-invalid="true"] { border-color: #ef4444; }
 .field-error { color: #dc2626; font-size: 10px; }
 .image-preview { width: 150px; height: 150px; overflow: hidden; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; }
-.image-preview img { width: 100%; height: 100%; object-fit: cover; }
+.image-preview img { width: 100%; height: 100%; object-fit: contain; }
 .image-preview-gallery { display: flex; flex-wrap: wrap; gap: 10px; }
 .image-preview-empty, .image-preview-error { display: grid; place-items: center; min-height: 90px; margin: 0; padding: 12px; border: 1px dashed #d1d5db; border-radius: 10px; background: #fff; color: #6b7280; font-size: 11px; text-align: center; }
 .image-preview-error { border-color: #fca5a5; background: #fef2f2; color: #b91c1c; }
@@ -357,6 +357,32 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
   .review-card { padding: 14px; }
   .review-card > header { flex-direction: column; }
   .review-card footer button { min-height: 40px; }
+}
+
+/* Shared admin presentation: square controls and readable labels. */
+.admin-shell *, .login-shell * { border-radius: 0 !important; }
+.admin-shell, .login-shell { font-family: "Prompt", ui-sans-serif, system-ui, sans-serif; font-size: 16px; }
+.admin-topbar { min-height: 68px; }
+.topbar-title, .admin-profile { font-size: 16px; }
+.primary-action { min-width: 150px; min-height: 46px; padding: 10px 16px; font-size: 16px; }
+.product-search input, .filters select, .filter-button { min-height: 46px; font-size: 16px; }
+.product-table, .data-table, .status-select, .sidebar-link, .sidebar-logout { font-size: 15px; }
+.product-table th, .data-table th, .product-table small, .data-table small,
+.product-table td::before, .data-table td::before, .summary-card p, .summary-card small,
+.chart-card header p, .review-card small, .row-actions button, .review-card footer button,
+.notification-panel p, .notification-panel li, .notification-item time,
+.field > span, .field-error, .customer-form .field small:not(.field-error),
+.eyebrow, .nav-group-label, .sidebar-brand small, .live-data-note,
+.chart-type, .bar-column, .bar-column small, .monthly-row,
+.secondary-action, .remove-variant, .cancel-action, .delete-action { font-size: 14px; }
+.field input, .field select, .field textarea, form input, form label, form button { font-size: 16px; }
+.product-thumbnail { width: 64px; height: 64px; }
+.lookbook-thumbnail { width: 100px; height: 76px; }
+.product-thumbnail img, .lookbook-thumbnail, .lookbook-preview img, .image-preview img { object-position: center; }
+@media (max-width: 620px) {
+  .admin-topbar { min-height: 62px; }
+  .admin-profile strong { display: block; max-width: 115px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+  .primary-action { width: 100%; }
 }
 
 @media (max-height: 520px) and (orientation: landscape) {

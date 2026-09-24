@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Menu, Star } from 'lucide-react';
-import { useOutletContext } from 'react-router-dom';
-import { useAdminAuth } from '../context/useAdminAuth.js';
+import { Star } from 'lucide-react';
+import { AdminTopbar } from '../components/AdminTopbar.jsx';
 import { getReviews, updateReviewVisibility } from '../services/reviewService.js';
 
 function formatDate(value) {
@@ -13,8 +12,6 @@ function formatDate(value) {
 }
 
 export function AdminReviewsPage() {
-  const { user } = useAdminAuth();
-  const { openSidebar } = useOutletContext();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState('');
@@ -67,11 +64,7 @@ export function AdminReviewsPage() {
 
   return (
     <div className="admin-content">
-      <header className="admin-topbar">
-        <button type="button" className="mobile-menu" onClick={openSidebar} aria-label="เปิดเมนู"><Menu size={20} /></button>
-        <strong className="topbar-title">รีวิวสินค้า</strong>
-        <div className="admin-profile"><strong>{user?.username ?? 'Admin'}</strong></div>
-      </header>
+      <AdminTopbar title="รีวิวสินค้า" />
 
       <main className="data-page">
         <header className="page-heading">
@@ -94,7 +87,7 @@ export function AdminReviewsPage() {
           </div>
         </section>
         {loading && reviews.length === 0 && <p className="dashboard-message">กำลังโหลด Reviews…</p>}
-        {!loading && !error && reviews.length === 0 && <div className="empty-state"><strong>ยังไม่มีรีวิวสินค้า</strong><p>เฉพาะลูกค้าที่มี Order ชำระแล้วเท่านั้นที่สร้างรีวิวได้</p></div>}
+        {!loading && !error && reviews.length === 0 && <div className="empty-state"><strong>ยังไม่มีรีวิวสินค้า</strong><p>เฉพาะลูกค้าที่มี Order สำเร็จแล้วเท่านั้นที่สร้างรีวิวได้</p></div>}
         {!loading && reviews.length > 0 && visibleReviews.length === 0 && <div className="empty-state"><strong>ไม่พบรีวิวที่ตรงกับตัวกรอง</strong><p>ลองเปลี่ยนคำค้นหาหรือสถานะ</p></div>}
 
         {visibleReviews.length > 0 && (

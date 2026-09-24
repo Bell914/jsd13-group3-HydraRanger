@@ -47,6 +47,7 @@ router.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
     service: "OCCASION API Server (Sprint 2)",
     database: getDBStatus(),
+    passwordEmailConfigured: Boolean(process.env.SMTP_USER && process.env.SMTP_PASS),
   });
 });
 

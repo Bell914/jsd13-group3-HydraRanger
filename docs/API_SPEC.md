@@ -1,38 +1,41 @@
 # OCCASION API
 
 Base URL: `http://localhost:5001/api` · JSON ใช้ `camelCase`
-API ที่ต้อง Login ส่ง `Authorization: Bearer <token>`
+API ที่ต้อง Login ใช้ HttpOnly session cookie และ Frontend ต้องส่ง `credentials: include` โดยยังรองรับ `Authorization: Bearer <token>` สำหรับเครื่องมือภายนอก
 
 ## API ที่มีในโค้ด
 
 | Method | Path | ข้อมูล / สิทธิ์ |
 |---|---|---|
-| GET | `/health` | ตรวจ Server |
+| GET | `/health` | ตรวจ Server, Database และสถานะการตั้งค่าอีเมล Reset Password |
 | POST | `/auth/register` | username, email, password |
-| POST | `/auth/login` | email, password; คืน `data.token` |
+| POST | `/auth/login` | email, password; ตั้ง Customer session cookie |
 | GET | `/auth/me` | ต้อง Login |
-| POST | `/auth/refresh` | `{token}` ที่ยังไม่หมดอายุ |
+| POST | `/auth/refresh` | ต่ออายุ session จาก cookie หรือ Bearer token |
 | POST | `/auth/change-password` | currentPassword, newPassword; ต้อง Login |
-| POST | `/admin/auth/login` | email, password ของ Admin |
-| GET | `/admin/auth/me` | Admin Token |
+| POST | `/admin/auth/login` | email, password ของ Admin; ตั้ง Admin session cookie |
+| GET | `/admin/auth/me` | Admin session |
 | GET | `/products`, `/products/:id` | สินค้า active: รายการ / รายชิ้น |
-| GET, POST | `/admin/products` | Admin: รายการ active / เพิ่ม |
+| GET, POST | `/admin/products` | Admin: ดูรายการทั้ง active/inactive / เพิ่ม |
 | PUT, DELETE | `/admin/products/:id` | Admin: แก้ / ซ่อน |
-| GET | `/admin/dashboard` | Admin Token |
-| POST | `/orders` | Customer Token; สร้างคำสั่งซื้อ |
-| GET | `/orders/my` | Customer Token; Order ของตนเอง |
-| GET | `/admin/orders` | Admin Token; Order ทั้งหมด |
-| PATCH | `/admin/orders/:id/status` | Admin Token; `{status}` |
-| GET | `/admin/customers` | Admin Token; ลูกค้า role `user` |
-| PUT | `/admin/customers/:id` | Admin Token; แก้ `{username, avatar}` |
-| PATCH | `/admin/customers/:id/status` | Admin Token; `{isActive}` ระงับ/เปิดบัญชี |
-| POST | `/reviews` | Customer Token; รีวิวสินค้าจาก Order ที่ชำระแล้ว |
+| GET | `/admin/dashboard` | Admin session |
+| POST | `/orders` | Customer session; สร้างคำสั่งซื้อ |
+| GET | `/orders/my` | Customer session; Order ของตนเอง |
+| GET | `/admin/orders` | Admin session; Order ทั้งหมด |
+| PATCH | `/admin/orders/:id/status` | Admin session; `{status}` |
+| GET | `/admin/customers` | Admin session; ลูกค้า role `user` |
+| PUT | `/admin/customers/:id` | Admin session; แก้ `{username, avatar}` |
+| PATCH | `/admin/customers/:id/status` | Admin session; `{isActive}` ระงับ/เปิดบัญชี |
+| POST | `/reviews` | Customer session; รีวิวสินค้าได้เมื่อ Order เป็น `completed` |
 | GET | `/reviews/product/:productId` | รีวิวที่แสดงอยู่ คะแนนเฉลี่ย และจำนวนรีวิว |
-| GET | `/admin/reviews` | Admin Token; รีวิวทั้งหมดรวมที่ถูกซ่อน |
-| PATCH | `/admin/reviews/:id/visibility` | Admin Token; `{isVisible}` |
+| GET | `/admin/reviews` | Admin session; รีวิวทั้งหมดรวมที่ถูกซ่อน |
+| PATCH | `/admin/reviews/:id/visibility` | Admin session; `{isVisible}` |
 | GET | `/lookbooks`, `/lookbooks/:id` | Lookbook ที่เปิดแสดง พร้อมข้อมูลสินค้า |
-| GET, POST | `/admin/lookbooks` | Admin Token; ดูทั้งหมด / เพิ่ม Lookbook |
-| PUT | `/admin/lookbooks/:id` | Admin Token; แก้ไข Lookbook |
+| GET, POST | `/admin/lookbooks` | Admin session; ดูทั้งหมด / เพิ่ม Lookbook |
+| PUT | `/admin/lookbooks/:id` | Admin session; แก้ไข Lookbook |
+| POST | `/uploads` | Admin session; อัปโหลด JPG/PNG/WebP/GIF ไม่เกิน 5 MB และจำกัด 30 ครั้งต่อ 15 นาที |
+| GET | `/uploads/:id` | อ่านรูปสินค้าที่บันทึกใน GridFS |
+| POST | `/recommend` | วิเคราะห์รูป Mix & Match ไม่เกิน 2 รูป และจำกัด 10 ครั้งต่อ 15 นาที |
 | PATCH | `/admin/lookbooks/:id/status` | Admin Token; `{isActive}` ซ่อน/เปิดแสดง |
 | GET | `/users/me/size-profile` | Customer Token; อ่านข้อมูล Size & Fit ของตนเอง |
 | PUT | `/users/me/size-profile` | Customer Token; บันทึกสัดส่วนพร้อม Consent |

@@ -55,6 +55,11 @@ export function SizeRecommendationCard({ isLoggedIn, isLoading, recommendation, 
             : 'ยังไม่พบสินค้าพร้อมซื้อในไซส์และสีนี้ กรุณาตรวจสอบตัวเลือกสินค้า'}
         </p>
       )}
+      {recommendation.alternativeSize && (
+        <button type="button" onClick={() => onApply(recommendation.alternativeSize)} className="mt-3 mr-2 rounded-xl border border-accent bg-white px-4 py-2 text-sm font-bold text-accent hover:bg-accent/5">
+          เลือกไซส์ใกล้เคียง {recommendation.alternativeSize}
+        </button>
+      )}
       <button type="button" disabled={!canApply} onClick={() => onApply(recommendation.size)} className="mt-3 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
         เลือกไซส์ {recommendation.size}
       </button>

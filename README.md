@@ -51,8 +51,15 @@ MONGODB_URI=mongodb://127.0.0.1:27017/occasion_db
 JWT_SECRET=replace_with_your_own_long_random_secret
 JWT_EXPIRES_IN=7d
 CLIENT_URL=http://localhost:5173
+ADMIN_CLIENT_URL=http://localhost:5174
+TRUST_PROXY=1
 ADMIN_EMAIL=admin@occasion.dev
 ADMIN_PASSWORD=replace_with_your_own_admin_password
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASS=
 ```
 
 ### 3. ตั้งค่า Frontend ทั้งสองแอป
