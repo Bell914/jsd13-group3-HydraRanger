@@ -17,18 +17,6 @@ export const Footer = () => {
   return (
     <footer id="Footer" className="bg-[#263639] text-[#f7f2ec]">
       <div className="max-w-6xl w-full mx-auto px-4 py-8">
-        <div className="mx-auto flex max-w-4xl flex-col items-center justify-between gap-3 rounded-xl bg-[#987b76] px-6 py-3.5 shadow-md sm:flex-row sm:px-7 sm:py-4">
-          <p className="text-[#f7f2ec] font-medium text-base sm:text-lg text-center sm:text-left">
-            Become a member and get 10% off for first purchase
-          </p>
-          <Link
-            to="/register"
-            className="min-h-11 inline-flex items-center cursor-pointer whitespace-nowrap rounded-xl border border-[#f7f2ec] bg-[#f7f2ec] px-6 py-2.5 font-bold text-[#263639] shadow transition hover:bg-[#efc3bc] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#987b76] active:translate-y-px"
-          >
-            Subscribe
-          </Link>
-        </div>
-
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 my-10">
           <div>
             <h4 className="font-bold text-lg mb-4 text-[#efc3bc]">สินค้า</h4>

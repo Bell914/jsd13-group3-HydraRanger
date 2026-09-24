@@ -62,8 +62,7 @@ export const HomePage = () => {
       <section id="main" className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <section className="body-reference-section" aria-labelledby="recommend-products-title">
           <TextHomepage
-            textheader={"RECOMMEND PRODUCT"}
-            textdisc={"สินค้าแนะนำเลือกช็อปตามใจ"}
+            textheader={"สินค้าแนะนำเลือกช็อปตามใจ"}
           />
           <div className="product-click-grid">
             {recProducts.map((el, index) => (
@@ -79,8 +78,7 @@ export const HomePage = () => {
         {/* Lookbook Section */}
         <section className="body-reference-section lookbook-section" aria-labelledby="recommend-lookbook-title">
           <TextHomepage
-            textheader={"RECOMMEND LOOKBOOK"}
-            textdisc={"LookBooks ลุคสุดพิเศษที่ได้รับความนิยม"}
+            textheader={"ลุคสุดพิเศษที่ได้รับความนิยม"}
           />
           <div className="product-click-grid product-click-grid--lookbook">
             {recommendedLooks.slice(1, 4).map((el, index) => (
@@ -96,8 +94,7 @@ export const HomePage = () => {
         {/* Special Product Marquee Section */}
         <section className="body-reference-section" aria-labelledby="special-products-title">
           <TextHomepage
-            textheader={"Special Product"}
-            textdisc={"สินค้าพิเศษเฉพาะช่วงนี้เท่านั้น"}
+            textheader={"สินค้าพิเศษเฉพาะช่วงนี้เท่านั้น"}
           />
           <div className="product-click-grid">
             {recommendedProducts.slice(0, 3).map((product, idx) => (
@@ -112,8 +109,7 @@ export const HomePage = () => {
 
         {/* Article Section */}
         <TextHomepage
-          textheader={"Article"}
-          textdisc={"อ่านบทความพิเศษช่วงนี้เท่านั้น"}
+          textheader={"อ่านบทความพิเศษช่วงนี้เท่านั้น"}
           className="article-section-heading"
         />
 
@@ -190,7 +186,6 @@ export const HomePage = () => {
 
         <section className="team-section" aria-labelledby="team-title">
           <div className="team-section__heading">
-            <p>THE PEOPLE BEHIND OCCASION</p>
             <h2 id="team-title">Meet the Crew</h2>
             <span>Hover each card to reveal their character.</span>
           </div>
