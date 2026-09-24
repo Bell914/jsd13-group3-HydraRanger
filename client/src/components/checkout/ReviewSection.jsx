@@ -14,6 +14,7 @@ export default function ReviewSection({
 }) {
   return (
     <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-900">ตรวจสอบคำสั่งซื้อ</h2>
       {/* 1. Contact Summary */}
       <ContactSection
         email={email}
@@ -38,13 +39,13 @@ export default function ReviewSection({
       {/* Terms & Place Order Box */}
       <div className="bg-gray-100 rounded-lg p-6 border border-gray-200">
         <p className="text-xs text-gray-600 text-center mb-6">
-          By placing an order, you agree to be bound by OCCASION's{" "}
+          เมื่อยืนยันคำสั่งซื้อ ถือว่าคุณยอมรับ{" "}
           <span className="underline cursor-pointer font-medium hover:text-black">
-            Terms of Use
+            ข้อกำหนดการใช้งาน
           </span>{" "}
-          and{" "}
+          และ{" "}
           <span className="underline cursor-pointer font-medium hover:text-black">
-            Privacy Policy
+            นโยบายความเป็นส่วนตัว
           </span>
           .
         </p>
@@ -65,7 +66,7 @@ export default function ReviewSection({
             onClick={onPlaceOrder}
             className="w-full sm:flex-1 py-3.5 bg-[#D0021B] hover:bg-[#b00217] text-white font-bold text-sm tracking-wider uppercase rounded-lg transition-colors shadow-xs text-center cursor-pointer disabled:opacity-50"
           >
-            {isSubmitting ? "PROCESSING..." : "PLACE ORDER"}
+            {isSubmitting ? "กำลังดำเนินการ..." : "ยืนยันการสั่งซื้อ"}
           </button>
         </div>
       </div>

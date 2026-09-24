@@ -66,7 +66,6 @@ const orderSchema = new mongoose.Schema(
     couponCode: { type: String, default: '', trim: true },
     membershipTierAtPurchase: { type: String, default: 'MEMBER', trim: true },
     shippingCost: { type: Number, required: true, min: 0 },
-    taxAmount: { type: Number, required: true, min: 0 },
     totalAmount: { type: Number, required: true, min: 0 },
     status: { type: String, enum: ORDER_STATUSES, default: 'pending', index: true },
     loyaltyProcessed: { type: Boolean, default: false, index: true },

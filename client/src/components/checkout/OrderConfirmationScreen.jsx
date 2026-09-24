@@ -7,23 +7,32 @@ import {
   ShoppingBag,
   ArrowRight,
   PackageCheck,
-  Mail,
-  HelpCircle,
   Sparkles,
 } from "lucide-react";
 import CheckoutStepper from "./CheckoutStepper";
 
+const RANK_LABELS = {
+  MEMBER: "สมาชิก",
+  BRONZE: "บรอนซ์",
+  SILVER: "ซิลเวอร์",
+  GOLD: "โกลด์",
+  PLATINUM: "แพลทินัม",
+};
+
+const getRankLabel = (rank) => RANK_LABELS[rank] || rank;
+
 export default function OrderConfirmationScreen({ orderData }) {
   const [copied, setCopied] = useState(false);
+  const [trackingNumber] = useState(
+    () =>
+      orderData?.trackingNumber ||
+      `OCC-${new Date().getFullYear()}-${Math.floor(10000000 + Math.random() * 90000000)}`,
+  );
 
-  const trackingNumber =
-    orderData?.trackingNumber ||
-    `OCC-${new Date().getFullYear()}-${Math.floor(10000000 + Math.random() * 90000000)}`;
-
-  const orderDate = new Date().toLocaleDateString("en-US", {
-    month: "numeric",
+  const orderDate = new Date().toLocaleDateString("th-TH", {
+    month: "long",
     day: "numeric",
-    year: "2-digit",
+    year: "numeric",
   });
 
   const handleCopyTracking = () => {
@@ -42,7 +51,6 @@ export default function OrderConfirmationScreen({ orderData }) {
     userRank = "MEMBER",
     upgradedRank,
     shippingCost = 0,
-    taxAmount = 0,
     totalAmount = 0,
   } = orderData || {};
 
@@ -52,64 +60,62 @@ export default function OrderConfirmationScreen({ orderData }) {
       <CheckoutStepper currentStep={4} onStepClick={() => {}} />
 
       {/* 2. Main Order Confirmed Card (Styled for OCCASION Clothing Brand) */}
-      <div className="rounded-3xl overflow-hidden shadow-xl border border-neutral-800/10 bg-gradient-to-b from-[#1E293B] via-[#0F172A] to-[#020617] text-white p-6 sm:p-10 text-center relative mb-8">
-        {/* Soft atmospheric ambient glow */}
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative mb-8 overflow-hidden rounded-2xl border border-gray-100 bg-gray-50/50 p-6 text-center text-gray-900 shadow-sm sm:p-10">
 
         {/* Fashion Delivery Icon */}
-        <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 mb-6 text-white shadow-inner">
-          <PackageCheck className="w-9 h-9 sm:w-11 sm:h-11 text-emerald-400" />
+        <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 text-orange-600 shadow-sm sm:h-20 sm:w-20">
+          <PackageCheck className="h-9 w-9 sm:h-11 sm:w-11" />
         </div>
 
         {/* Rank Upgrade Celebration Banner */}
         {upgradedRank && (
-          <div className="mb-6 max-w-md mx-auto p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border border-amber-400/40 text-center backdrop-blur-xs shadow-inner">
-            <div className="inline-flex items-center gap-2 text-amber-300 font-black text-sm">
-              <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
-              <span>ยินดีด้วย! คำสั่งซื้อนี้ทำให้คุณเลื่อนระดับเป็น {upgradedRank} 🎉</span>
+          <div className="mx-auto mb-6 max-w-md rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-center shadow-sm">
+            <div className="inline-flex items-center gap-2 text-sm font-black text-amber-800">
+              <Sparkles className="h-4 w-4 shrink-0 text-amber-600" />
+              <span>ยินดีด้วย! คำสั่งซื้อนี้ทำให้คุณเลื่อนระดับเป็น {getRankLabel(upgradedRank)} 🎉</span>
             </div>
-            <p className="text-[11px] text-amber-100/80 mt-1">
-              ระบบปลดล็อกสิทธิพิเศษและส่วนลด On-top ใหม่ให้คุณทันที
+            <p className="mt-1 text-[11px] text-amber-800">
+              ระบบปลดล็อกสิทธิพิเศษและส่วนลดเพิ่มเติมให้คุณทันที
             </p>
           </div>
         )}
 
         {/* Main Heading */}
         <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight mb-3">
-          Your OCCASION order is confirmed!
+          คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!
         </h2>
-        <p className="text-sm sm:text-base text-gray-300 max-w-md mx-auto font-light leading-relaxed mb-6">
-          Are you smiling? You're totally smiling. Get ready to elevate your
-          everyday wardrobe.
+        <p className="mx-auto mb-6 max-w-md text-sm font-light leading-relaxed text-gray-600 sm:text-base">
+          เตรียมพร้อมยกระดับสไตล์การแต่งกายของคุณได้เลย!
         </p>
 
         {/* Divider with Truck */}
-        <div className="flex items-center justify-center gap-4 my-6 opacity-75 max-w-xs mx-auto">
-          <div className="h-px bg-white/30 flex-1" />
-          <Truck className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-          <div className="h-px bg-white/30 flex-1" />
+        <div className="mx-auto my-6 flex max-w-xs items-center justify-center gap-4">
+          <div className="h-px flex-1 bg-gray-200" />
+          <Truck className="h-5 w-5 flex-shrink-0 text-orange-600" />
+          <div className="h-px flex-1 bg-gray-200" />
         </div>
 
-        <p className="text-xs sm:text-sm text-gray-400 uppercase tracking-widest font-semibold mb-2">
-          No need to camp out by the mailbox!
+        <p className="mb-2 text-xs font-semibold text-gray-700 sm:text-sm">
+          ไม่ต้องนั่งเฝ้าหน้าตู้โพสต์แมน!
         </p>
-        <p className="text-sm text-gray-300 mb-2">
-          Use this number to track your package:
+        <p className="mb-2 text-sm text-gray-600">
+          ใช้หมายเลขนี้เพื่อติดตามพัสดุของคุณ:
         </p>
 
         {/* Tracking Code with copy button */}
-        <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20 hover:bg-white/15 transition-all mb-8">
-          <span className="font-mono text-base sm:text-lg font-bold tracking-wider underline underline-offset-4 decoration-emerald-400">
+        <div className="mb-8 inline-flex items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2 text-gray-900 transition-colors hover:bg-orange-100">
+          <span className="font-mono text-base font-bold tracking-wider underline decoration-orange-600 underline-offset-4 sm:text-lg">
             {trackingNumber}
           </span>
           <button
             type="button"
             onClick={handleCopyTracking}
-            title="Copy tracking number"
-            className="p-1.5 rounded-lg hover:bg-white/20 transition-colors text-gray-300 hover:text-white cursor-pointer"
+            title="คัดลอกหมายเลขติดตามพัสดุ"
+            aria-label={copied ? "คัดลอกหมายเลขแล้ว" : "คัดลอกหมายเลขติดตามพัสดุ"}
+            className="cursor-pointer rounded-lg p-1.5 text-orange-700 transition-colors hover:bg-orange-100 hover:text-orange-800"
           >
             {copied ? (
-              <Check className="w-4 h-4 text-emerald-400" />
+              <Check className="h-4 w-4 text-emerald-600" />
             ) : (
               <Copy className="w-4 h-4" />
             )}
@@ -117,25 +123,25 @@ export default function OrderConfirmationScreen({ orderData }) {
         </div>
 
         {/* 3. The Inner White Receipt Sheet */}
-        <div className="bg-white text-gray-900 rounded-2xl p-5 sm:p-8 text-left shadow-2xl max-w-2xl mx-auto">
-          <h3 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-6 tracking-tight">
-            Here's what we're packing for you:
+        <div className="mx-auto max-w-2xl rounded-2xl border border-gray-100 bg-white p-5 text-left text-gray-900 shadow-sm sm:p-8">
+          <h3 className="mb-6 text-center text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
+            รายการสินค้าที่เรากำลังเตรียมจัดส่งให้คุณ:
           </h3>
 
           <div className="flex flex-wrap items-center justify-between text-xs sm:text-sm text-gray-500 pb-4 border-b border-gray-200 gap-2">
             <span>
-              Order #: <strong className="text-gray-900">{orderId}</strong>
+              หมายเลขคำสั่งซื้อ: <strong className="text-gray-900">{orderId}</strong>
             </span>
             <span>
-              Order Date: <strong className="text-gray-900">{orderDate}</strong>
+              วันที่สั่งซื้อ: <strong className="text-gray-900">{orderDate}</strong>
             </span>
           </div>
 
           {/* Items Table Header */}
           <div className="grid grid-cols-12 text-xs font-bold text-gray-400 uppercase tracking-wider py-3 border-b border-gray-100">
-            <span className="col-span-7 sm:col-span-8">ITEM</span>
-            <span className="col-span-2 text-center">QTY</span>
-            <span className="col-span-3 sm:col-span-2 text-right">COST</span>
+            <span className="col-span-7 sm:col-span-8">รายการสินค้า</span>
+            <span className="col-span-2 text-center">จำนวน</span>
+            <span className="col-span-3 sm:col-span-2 text-right">ราคา</span>
           </div>
 
           {/* Items List */}
@@ -161,9 +167,9 @@ export default function OrderConfirmationScreen({ orderData }) {
                     <div>
                       <p className="font-bold text-gray-950">{item.name}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        {item.color && <span>{item.color}</span>}
+                        {item.color && <span>สี {item.color}</span>}
                         {item.color && item.size && <span> · </span>}
-                        {item.size && <span>Size {item.size}</span>}
+                        {item.size && <span>ไซซ์ {item.size}</span>}
                       </p>
                       <p className="text-xs font-semibold text-gray-900 mt-1">
                         ฿{item.price}
@@ -182,7 +188,7 @@ export default function OrderConfirmationScreen({ orderData }) {
               ))
             ) : (
               <div className="py-4 text-center text-sm text-gray-500">
-                1x OCCASION Signature Apparel
+                สินค้าคอลเลกชัน Signature จาก OCCASION 1 ชิ้น
               </div>
             )}
           </div>
@@ -191,17 +197,16 @@ export default function OrderConfirmationScreen({ orderData }) {
           <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-600">
             <p>
               <strong className="text-gray-900 uppercase">
-                SHIPPING METHOD:
+                วิธีการจัดส่ง:
               </strong>{" "}
               {shippingData?.shippingMethod === "express"
-                ? "Express Shipping (2-4 Business Days)"
+                ? "จัดส่งด่วน (2-4 วันทำการ)"
                 : shippingData?.shippingMethod === "priority"
-                ? "Priority Express (1-2 Business Days)"
-                : "Free Standard Shipping (2-6 Business Days) (via Kerry Express / Flash)"}
+                ? "จัดส่งพิเศษ (1-2 วันทำการ)"
+                : "จัดส่งแบบมาตรฐานฟรี (2-6 วันทำการ) (โดย Kerry Express / Flash)"}
             </p>
             <p className="italic text-gray-400 mt-1">
-              *Some outer perimeter regions may take up to 7 business days for
-              delivery.
+              *พื้นที่ห่างไกลหรือต่างจังหวัดอาจใช้เวลาจัดส่งสูงสุด 7 วันทำการ
             </p>
           </div>
 
@@ -210,79 +215,73 @@ export default function OrderConfirmationScreen({ orderData }) {
 
           {/* Sent To Section */}
           <div className="text-xs sm:text-sm">
-            <h4 className="text-sm font-bold text-gray-900 mb-2">Sent to:</h4>
+            <h4 className="mb-2 text-sm font-bold text-gray-900">จัดส่งไปยัง:</h4>
             <div className="text-gray-700 space-y-0.5">
               <p className="font-bold text-gray-900">
-                {shippingData?.firstName || "Valued"}{" "}
-                {shippingData?.lastName || "Customer"}
+                {[shippingData?.firstName, shippingData?.lastName].filter(Boolean).join(" ") || "ลูกค้า"}
               </p>
-              <p>{shippingData?.address || "123 Fashion Blvd"}</p>
+              <p>{shippingData?.address || "123 ถนนแฟชั่น"}</p>
               <p>
-                {shippingData?.city || "Bangkok"},{" "}
-                {shippingData?.state || "Bangkok"}{" "}
+                {shippingData?.city || "กรุงเทพมหานคร"},{" "}
+                {shippingData?.state || "กรุงเทพมหานคร"}{" "}
                 {shippingData?.zipCode || "10110"},{" "}
-                {shippingData?.location || "Thailand"}
+                {shippingData?.location || "ประเทศไทย"}
               </p>
               {shippingData?.phone && (
-                <p className="text-gray-500">Tel: {shippingData.phone}</p>
+                <p className="text-gray-500">เบอร์โทรศัพท์: {shippingData.phone}</p>
               )}
-              <p className="text-gray-500">Email: {email}</p>
+              <p className="text-gray-500">อีเมล: {email}</p>
             </div>
           </div>
 
           {/* Financial Summary */}
           <div className="mt-6 pt-4 border-t border-gray-200 space-y-1.5 text-xs sm:text-sm">
             <div className="flex justify-between text-gray-600">
-              <span>Subtotal</span>
+              <span>ราคารวมสินค้า</span>
               <span>฿{subtotal.toLocaleString()}</span>
             </div>
             {rankDiscountAmount > 0 && (
               <div className="flex justify-between text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-lg">
-                <span>Member Discount ({userRank})</span>
+                <span>ส่วนลดสมาชิก ({getRankLabel(userRank)})</span>
                 <span>-฿{rankDiscountAmount.toLocaleString()}</span>
               </div>
             )}
             <div className="flex justify-between text-gray-600">
-              <span>Shipping</span>
-              <span>{shippingCost === 0 ? "FREE" : `฿${shippingCost}`}</span>
-            </div>
-            <div className="flex justify-between text-gray-600">
-              <span>Tax (Included)</span>
-              <span>฿{taxAmount.toLocaleString()}</span>
+              <span>ค่าจัดส่ง</span>
+              <span>{shippingCost === 0 ? "ฟรี" : `฿${shippingCost}`}</span>
             </div>
             <div className="flex justify-between text-base font-extrabold text-gray-950 pt-3 border-t border-gray-200">
-              <span>Total Paid</span>
+              <span>ยอดชำระสุทธิ</span>
               <span className="text-[#D0021B]">฿{totalAmount}</span>
             </div>
           </div>
         </div>
 
         {/* Customer Care Note */}
-        <p className="mt-8 text-xs sm:text-sm text-gray-400">
-          If you have any questions about your order, please{" "}
+        <p className="mt-8 text-xs text-gray-600 sm:text-sm">
+          หากมีข้อสงสัยเกี่ยวกับคำสั่งซื้อของคุณ โปรด{" "}
           <a
             href="mailto:support@occasion.com"
-            className="text-white underline font-semibold hover:text-emerald-400 transition-colors"
+            className="font-semibold text-orange-700 underline transition-colors hover:text-orange-800"
           >
-            contact customer care
+            ติดต่อฝ่ายบริการลูกค้า
           </a>
-          .
         </p>
 
         {/* Action Buttons */}
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             to="/products"
-            className="w-full sm:w-auto px-8 py-3.5 bg-white text-gray-900 hover:bg-gray-100 font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm tracking-wide"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-black px-8 py-3.5 text-sm font-bold tracking-wide text-white shadow-sm transition-all hover:bg-gray-800 sm:w-auto"
           >
             <ShoppingBag className="w-4 h-4" />
-            <span>CONTINUE SHOPPING</span>
+            <span>เลือกซื้อสินค้าต่อ</span>
           </Link>
           <Link
             to="/"
-            className="w-full sm:w-auto px-6 py-3.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl border border-white/20 transition-all flex items-center justify-center gap-2 text-sm"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 px-6 py-3.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 sm:w-auto"
           >
-            <span>HOME</span>
+            <span>กลับหน้าแรก</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

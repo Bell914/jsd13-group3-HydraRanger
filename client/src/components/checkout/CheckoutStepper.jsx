@@ -2,16 +2,16 @@ import React from "react";
 
 export default function CheckoutStepper({ currentStep, onStepClick }) {
   const steps = [
-    { id: 1, label: "Contact" },
-    { id: 2, label: "Shipping" },
-    { id: 3, label: "Payment" },
-    { id: 4, label: "Review" },
+    { id: 1, label: "ข้อมูลติดต่อ" },
+    { id: 2, label: "ที่อยู่จัดส่ง" },
+    { id: 3, label: "ชำระเงิน" },
+    { id: 4, label: "ตรวจสอบออเดอร์" },
   ];
 
   return (
     <div className="w-full flex flex-col items-center mb-8">
       <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-8 tracking-tight">
-        Checkout
+        ชำระเงิน
       </h1>
 
       {/* Stepper container */}
@@ -29,7 +29,7 @@ export default function CheckoutStepper({ currentStep, onStepClick }) {
                   type="button"
                   disabled={!isClickable}
                   onClick={() => isClickable && onStepClick(step.id)}
-                  aria-label={`Go to step ${step.label}`}
+                  aria-label={`ไปยังขั้นตอน ${step.label}`}
                   className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all ${
                     isCompleted
                       ? "bg-[#0055aa] text-white cursor-pointer hover:bg-[#004488]"
