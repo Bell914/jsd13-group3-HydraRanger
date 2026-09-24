@@ -79,18 +79,18 @@ export const Navbar = () => {
       <nav
         ref={navRef}
         aria-label="เมนูหลัก"
-        className="relative z-50 w-full border-b border-occasion-border/40 bg-surface py-3 shadow-sm"
+        className="relative z-50 w-full border-b border-occasion-border/40 bg-surface py-2 sm:py-3 shadow-sm"
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link
             to="/"
             aria-label="OCCASION หน้าแรก"
-            className="flex h-16 w-48 shrink-0 items-center justify-center overflow-hidden rounded-lg focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
+            className="flex h-12 w-36 shrink-0 items-center justify-center overflow-hidden rounded-lg focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 sm:h-16 sm:w-48"
           >
             <img
               src={assets.newlogo}
               alt="OCCASION"
-              className="h-auto w-48 max-w-none"
+              className="h-auto w-36 max-w-none sm:w-48"
             />
           </Link>
 
