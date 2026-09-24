@@ -166,18 +166,18 @@ body {
 .hero-product-reel__link .hero-product-reel__item { width: 100%; }
 
 @media (max-width: 700px) {
-  .hero-product-reel { inset: 0 0 5% 0; }
+  .hero-product-reel { inset: 7% 0 5% 0; }
   .hero-product-reel__link { width: 76vw; }
-  .hero-product-reel__item { transform: scale(1.58); transform-origin: center center; }
+  .hero-product-reel__item { transform: scale(1.5); transform-origin: center top; object-position: center top; }
 }
 
 @media (max-width: 480px) {
   .hero-poster { min-height: 680px; }
   .hero-poster__wordmark { top: 7%; font-size: 23vw; }
-  .hero-product-reel { inset: 2% 0 4% 0; }
+  .hero-product-reel { inset: 7% 0 4% 0; }
   .hero-product-reel__track { padding-left: 45vw; }
   .hero-product-reel__link { width: 82vw; }
-  .hero-product-reel__item { transform: scale(1.58); object-position: center 46%; }
+  .hero-product-reel__item { transform: scale(1.5); transform-origin: center top; object-position: center top; }
   .hero-poster__details { bottom: 10%; left: 5%; max-width: 54%; }
   .hero-poster__details p { display: none; }
   .hero-poster__tags { gap: 4px; }
