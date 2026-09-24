@@ -36,7 +36,7 @@ export async function createReview(userId, reviewData) {
   });
 
   if (!order) {
-    throw new Error('Only customers with a completed order can review this product');
+    throw new Error('สามารถรีวิวได้เฉพาะสินค้าที่จัดส่งเสร็จสิ้น (completed) แล้วเท่านั้น');
   }
 
   const product = await Product.findById(reviewData.productId);
