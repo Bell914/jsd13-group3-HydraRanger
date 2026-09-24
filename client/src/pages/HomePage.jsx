@@ -7,10 +7,12 @@ import { TextHomepage } from "../components/TextHomepage.jsx";
 import { SpecialProducts } from "../components/SpecialProducts.jsx";
 import { getProducts } from "../services/productService.js";
 import { getLookbooks } from "../services/lookbookService.js";
+import { getArticles, normalizeArticle } from "../services/articleService.js";
 
 export const HomePage = () => {
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [recommendedLooks, setRecommendedLooks] = useState([]);
+  const [articles, setArticles] = useState(() => fashionNews.map(normalizeArticle));
 
   useEffect(() => {
     let mounted = true;
@@ -30,6 +32,11 @@ export const HomePage = () => {
       .catch(() => {
         if (mounted) setRecommendedLooks([]);
       });
+    getArticles()
+      .then((articleData) => {
+        if (mounted) setArticles(articleData);
+      })
+      .catch(() => {});
     return () => {
       mounted = false;
     };
@@ -132,7 +139,7 @@ export const HomePage = () => {
             id="article-grid"
             className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3"
           >
-            {fashionNews.slice(1, 4).map((article) => (
+            {articles.slice(0, 3).map((article) => (
               <div
                 key={article.id}
                 className="card bg-base-100 flex flex-col justify-between w-full shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden"
@@ -152,7 +159,7 @@ export const HomePage = () => {
                       {article.title}
                     </h2>
                     <p className="text-sm sm:text-base text-base-content/70 mt-2 line-clamp-3">
-                      {article.description}
+                      {article.description || article.category}
                     </p>
                   </div>
 

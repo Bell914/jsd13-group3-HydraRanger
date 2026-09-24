@@ -17,6 +17,8 @@ import lookbookRoutes from "./lookbookRoutes.js";
 import adminLookbookRoutes from "./adminLookbookRoutes.js";
 import uploadRoutes from "./uploadRoutes.js";
 import recommendRoutes from "./recommendRoutes.js";
+import articleRoutes from "./articleRoutes.js";
+import adminArticleRoutes from "./adminArticleRoutes.js";
 
 const router = Router();
 
@@ -31,6 +33,7 @@ router.get("/", (req, res) => {
       auth: "/api/auth",
       products: "/api/products",
       lookbooks: "/api/lookbooks",
+      articles: "/api/articles",
       users: "/api/users",
       orders: "/api/orders",
     },
@@ -69,5 +72,7 @@ router.use("/lookbooks", lookbookRoutes);
 router.use("/admin/lookbooks", adminLookbookRoutes);
 router.use("/uploads", uploadRoutes);
 router.use("/recommend", recommendRoutes);
+router.use("/articles", articleRoutes);
+router.use("/admin/articles", adminArticleRoutes);
 
 export default router;
