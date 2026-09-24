@@ -426,6 +426,8 @@ export default function ProductDetailPage() {
 
         {/* DETAILS ACCORDION: รายละเอียด & วัสดุ/การดูแล */}
         <ProductAccordionDetails
+          product={product}
+          selectedVariant={selectedVariant}
           isDetailsOpen={isDetailsOpen}
           setIsDetailsOpen={setIsDetailsOpen}
           isMaterialsOpen={isMaterialsOpen}
