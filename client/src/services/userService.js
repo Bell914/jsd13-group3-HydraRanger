@@ -37,6 +37,10 @@ export const addAddress = async (addressData) => {
   return await api.post('/users/addresses', addressData);
 };
 
+export const updateAddress = async (addressId, addressData) => {
+  return await api.put(`/users/addresses/${addressId}`, addressData);
+};
+
 export const deleteAddress = async (addressId) => {
   return await api.delete(`/users/addresses/${addressId}`);
 };

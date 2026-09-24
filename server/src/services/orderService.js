@@ -73,7 +73,7 @@ async function prepareOrderItems(items) {
     const variant = findVariant(product, item);
     if (!variant) throw new Error(`Variant for ${product.title} was not found`);
     if (variant.stock_quantity < quantity) {
-      throw new Error(`Not enough stock for ${product.title}`);
+      throw new Error(variant.stock_quantity <= 0 ? 'สินค้าหมดแล้ว' : 'สินค้ามีไม่เพียงพอในสต็อก');
     }
 
     preparedItems.push({
@@ -82,6 +82,8 @@ async function prepareOrderItems(items) {
       sku: variant.sku,
       title: product.title,
       variant: variant.size_or_color,
+      color: variant.color || '',
+      size: variant.size || '',
       imageUrl: getImageUrl(product),
       unitPrice: variant.price,
       quantity,
@@ -125,7 +127,7 @@ async function reserveOrderStock(items) {
       );
 
       if (!wasUpdated(result)) {
-        throw new Error(`Not enough stock for ${item.title}`);
+        throw new Error('สินค้ามีไม่เพียงพอในสต็อก');
       }
 
       reservedItems.push(item);
@@ -195,6 +197,10 @@ export async function createOrder(user, orderData) {
   const taxableSubtotal = Math.max(0, subtotal - discountAmount);
   const taxAmount = Math.round(taxableSubtotal * 0.06 * 100) / 100;
   const totalAmount = taxableSubtotal + shippingCost + taxAmount;
+  const paymentMethod = orderData.paymentMethod || 'credit-card';
+  const paymentExpiresAt = paymentMethod === 'credit-card'
+    ? new Date(Date.now() + 30 * 60 * 1000)
+    : null;
 
   await reserveOrderStock(items);
 
@@ -217,7 +223,9 @@ export async function createOrder(user, orderData) {
         deliveryNote: orderData.shippingAddress?.deliveryNote || ''
       },
       shippingMethod: orderData.shippingMethod || 'standard',
-      paymentMethod: orderData.paymentMethod || 'credit-card',
+      paymentMethod,
+      paymentIntentId: orderData.paymentIntentId || '',
+      paymentExpiresAt,
       subtotal,
       discountAmount,
       couponCode,
@@ -236,8 +244,33 @@ export async function createOrder(user, orderData) {
   return Order.findById(order._id).populate('user', 'username email');
 }
 
-export function getMyOrders(userId) {
-  return Order.find({ user: userId }).sort({ createdAt: -1 });
+export async function getExpiredCardPaymentOrders(now = new Date()) {
+  const oldOrderCutoff = new Date(now.getTime() - 30 * 60 * 1000);
+
+  return Order.find({
+    status: 'pending',
+    paymentMethod: 'credit-card',
+    $or: [
+      { paymentExpiresAt: { $lte: now } },
+      { paymentExpiresAt: null, createdAt: { $lte: oldOrderCutoff } }
+    ]
+  });
+}
+
+export async function getMyOrders(userId) {
+  const orders = await Order.find({ user: userId }).sort({ createdAt: -1 }).lean();
+  return orders.map((order) => ({
+    ...order,
+    userId: String(order.user),
+    items: order.items.map((item) => ({
+      ...item,
+      productId: String(item.product),
+      name: item.title,
+      price: item.unitPrice,
+      color: item.color || '',
+      size: item.size || ''
+    }))
+  }));
 }
 
 export async function getOrderById(orderId, userId) {
