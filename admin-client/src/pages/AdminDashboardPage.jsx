@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Banknote, Menu, Package, PackageCheck, ShoppingCart, Users } from 'lucide-react';
-import { useOutletContext } from 'react-router-dom';
-import { AdminNotifications } from '../components/AdminNotifications.jsx';
-import { useAdminAuth } from '../context/useAdminAuth.js';
+import { Banknote, Package, PackageCheck, ShoppingCart, Users } from 'lucide-react';
+import { AdminTopbar } from '../components/AdminTopbar.jsx';
 import { getDashboardSummary } from '../services/dashboardService.js';
 
 function SummaryCard({ label, value, detail, Icon }) {
@@ -41,12 +39,11 @@ function formatMoney(value) {
 }
 
 export function AdminDashboardPage() {
-  const { user } = useAdminAuth();
-  const { openSidebar } = useOutletContext();
   const [summary, setSummary] = useState(null);
-  const [notificationDate, setNotificationDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('all');
 
   async function loadDashboard() {
     setLoading(true);
@@ -55,7 +52,6 @@ export function AdminDashboardPage() {
     try {
       const dashboardData = await getDashboardSummary();
       setSummary(dashboardData);
-      setNotificationDate(new Date());
     } catch (loadError) {
       setError(loadError.message);
     } finally {
@@ -67,47 +63,19 @@ export function AdminDashboardPage() {
     loadDashboard();
   }, []);
 
-  const categoryStock = summary?.stockByCategory || [];
+  const allCategoryStock = summary?.stockByCategory || [];
+  const categoryStock = allCategoryStock.filter((item) => {
+    const matchesCategory = category === 'all' || item.category === category;
+    return matchesCategory && item.category.toLowerCase().includes(search.trim().toLowerCase());
+  });
   const monthlyOrders = summary?.monthlyOrders || [];
   const highestStock = Math.max(1, ...categoryStock.map((item) => item.stock));
   const highestMonthlyCount = Math.max(1, ...monthlyOrders.map((item) => item.count));
   const linePoints = createLinePoints(monthlyOrders, highestMonthlyCount);
   const linePath = linePoints.map((point) => `${point.x},${point.y}`).join(' ');
-  const notifications = [];
-  if (summary?.lowStockCount > 0) {
-    notifications.push({
-      message: `มีสินค้าใกล้หมด ${summary.lowStockCount} รายการ`,
-      date: notificationDate,
-      path: '/products',
-    });
-  }
-  if (summary?.inactiveProductCount > 0) {
-    notifications.push({
-      message: `มีสินค้าที่ไม่แสดง ${summary.inactiveProductCount} รายการ`,
-      date: notificationDate,
-      path: '/products',
-    });
-  }
-  if (summary?.pendingOrderCount > 0) {
-    notifications.push({
-      message: `มี Order รอตรวจสอบ ${summary.pendingOrderCount} รายการ`,
-      date: notificationDate,
-      path: '/orders',
-    });
-  }
-
   return (
     <div className="admin-content">
-      <header className="admin-topbar">
-        <button type="button" className="mobile-menu" onClick={openSidebar} aria-label="เปิดเมนู">
-          <Menu size={20} />
-        </button>
-        <strong className="topbar-title">ภาพรวมร้านค้า</strong>
-        <div className="admin-profile">
-          <AdminNotifications items={notifications} />
-          <strong>{user?.username ?? 'Admin'} (Admin Supervisor)</strong>
-        </div>
-      </header>
+      <AdminTopbar title="ภาพรวมร้านค้า" />
 
       <main className="dashboard-page">
         <header className="page-heading">
@@ -119,6 +87,19 @@ export function AdminDashboardPage() {
             {loading ? 'กำลังโหลด…' : 'อัปเดตข้อมูล'}
           </button>
         </header>
+
+        <section className="filter-toolbar" aria-label="ค้นหาและกรองกราฟสต็อก">
+          <label className="product-search plain-search">
+            <span className="sr-only">ค้นหาหมวดหมู่สินค้าในกราฟ</span>
+            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ค้นหาหมวดหมู่ในกราฟ..." />
+          </label>
+          <div className="filters">
+            <select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="กรองหมวดหมู่ในกราฟ">
+              <option value="all">ทุกหมวดหมู่</option>
+              {allCategoryStock.map((item) => <option key={item.category} value={item.category}>{item.category}</option>)}
+            </select>
+          </div>
+        </section>
 
         {error && (
           <div className="dashboard-error" role="alert">
@@ -149,6 +130,7 @@ export function AdminDashboardPage() {
                   <span className="chart-type">Bar Chart</span>
                 </header>
                 <div className="bar-chart" role="img" aria-label="กราฟแท่งจำนวนสต็อกแยกตามหมวดหมู่">
+                  {categoryStock.length === 0 && <p>ไม่พบหมวดหมู่ที่ค้นหา</p>}
                   {categoryStock.map((item) => (
                     <div className="bar-column" key={item.category}>
                       <span>{item.stock}</span>
