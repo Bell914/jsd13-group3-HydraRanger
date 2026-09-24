@@ -92,30 +92,11 @@ export const resetApiBaseUrl = () => {
 };
 
 class ApiClient {
-  getToken() {
-    return localStorage.getItem("occasion_token");
-  }
-
-  setToken(token) {
-    if (token) {
-      localStorage.setItem("occasion_token", token);
-    } else {
-      localStorage.removeItem("occasion_token");
-    }
-  }
-
   getHeaders(customHeaders = {}) {
-    const headers = {
+    return {
       "Content-Type": "application/json",
       ...customHeaders,
     };
-
-    const token = this.getToken();
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    return headers;
   }
 
   async request(endpoint, options = {}, _retried = false) {
@@ -125,6 +106,7 @@ class ApiClient {
     const config = {
       ...options,
       headers,
+      credentials: "include",
     };
 
     try {
@@ -172,28 +154,19 @@ class ApiClient {
   }
 
   async tryRefresh() {
-    const token = this.getToken();
-    if (!token) return false;
-
     try {
       const response = await fetch(`${resolveApiUrl()}/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
+        credentials: "include",
+        body: JSON.stringify({}),
       });
 
       if (!response.ok) {
-        this.setToken(null);
         localStorage.removeItem("occasion_user");
         return false;
       }
-
-      const data = await response.json().catch(() => ({}));
-      if (data?.data?.token) {
-        this.setToken(data.data.token);
-        return true;
-      }
-      return false;
+      return true;
     } catch {
       return false;
     }

@@ -1,26 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AdminTopbar } from '../components/AdminTopbar.jsx';
 import { getOrders, updateOrderStatus } from '../services/orderService.js';
-
-const STATUS_OPTIONS = [
-  ['pending', 'รอตรวจสอบ'],
-  ['paid', 'ชำระเงินแล้ว'],
-  ['processing', 'กำลังเตรียมสินค้า'],
-  ['shipped', 'จัดส่งแล้ว'],
-  ['completed', 'สำเร็จ'],
-  ['cancelled', 'ยกเลิก'],
-  ['refunded', 'คืนเงิน']
-];
-
-const NEXT_STATUSES = {
-  pending: ['pending', 'paid', 'cancelled'],
-  paid: ['paid', 'processing', 'cancelled', 'refunded'],
-  processing: ['processing', 'shipped', 'cancelled', 'refunded'],
-  shipped: ['shipped', 'completed', 'refunded'],
-  completed: ['completed', 'refunded'],
-  cancelled: ['cancelled'],
-  refunded: ['refunded']
-};
+import { NEXT_STATUSES, STATUS_OPTIONS } from '../utils/orderStatus.js';
 
 function formatMoney(value) {
   return new Intl.NumberFormat('th-TH', {

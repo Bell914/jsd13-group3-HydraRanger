@@ -9,7 +9,6 @@ import {
   validateLoginInput,
   validateChangePasswordInput,
   validateUpdateProfileInput,
-  validateRefreshToken,
   validateForgotPasswordInput,
   validateResetPasswordInput
 } from '../validators/authValidator.js';
@@ -42,7 +41,8 @@ const resetPasswordLimiter = rateLimit({
 
 router.post('/register', registerLimiter, validate(validateRegisterInput), authController.register);
 router.post('/login', loginLimiter, validate(validateLoginInput), authController.login);
-router.post('/refresh', validate(validateRefreshToken), authController.refresh);
+router.post('/refresh', authController.refresh);
+router.post('/logout', authController.logout);
 router.post('/change-password', protect, validate(validateChangePasswordInput), authController.changePassword);
 router.put('/profile', protect, validate(validateUpdateProfileInput), authController.updateProfile);
 router.get('/me', protect, authController.getMe);

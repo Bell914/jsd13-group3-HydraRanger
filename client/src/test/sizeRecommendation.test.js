@@ -45,6 +45,20 @@ describe('Personalized Size Recommendation', () => {
     expect(result.reason).toContain('รอบเอวและรอบสะโพก');
   });
 
+  it('uses the product waist and hips chart for bottoms', () => {
+    const product = {
+      category: 'bottoms',
+      variants: [{ size: 'S', stockQuantity: 1 }, { size: 'M', stockQuantity: 1 }],
+      size_chart: [
+        { size_name: 'S', garment_waist_actual: 80, garment_hips_actual: 100 },
+        { size_name: 'M', garment_waist_actual: 88, garment_hips_actual: 108 }
+      ]
+    };
+    const result = getSizeRecommendation(regularProfile, product, ['S', 'M']);
+    expect(result.size).toBe('M');
+    expect(result.source).toContain('ตารางรอบเอวและสะโพก');
+  });
+
   it('does not recommend a size before the customer saves a profile', () => {
     expect(getSizeRecommendation(null, {}, ['S', 'M', 'L'])).toBeNull();
   });

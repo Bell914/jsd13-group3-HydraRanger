@@ -96,11 +96,12 @@ function wasUpdated(result) {
   return (result.modifiedCount ?? result.nModified ?? 0) === 1;
 }
 
-async function restoreOrderStock(items) {
+async function restoreOrderStock(items, session = null) {
   for (const item of items) {
     await Product.updateOne(
       { _id: item.product, 'variants._id': item.variantId },
-      { $inc: { 'variants.$.stock_quantity': item.quantity } }
+      { $inc: { 'variants.$.stock_quantity': item.quantity } },
+      session ? { session } : undefined
     );
   }
 }
@@ -272,18 +273,16 @@ export async function updateOrderStatus(orderId, status) {
 
   existingOrder.status = status;
 
-  if (['cancelled', 'refunded'].includes(status)) {
-    if (existingOrder.stockReserved && !existingOrder.stockRestored) {
-      await restoreOrderStock(existingOrder.items);
-      existingOrder.stockRestored = true;
-    }
-  }
-
   const userId = existingOrder.user?._id || existingOrder.user?.id || existingOrder.user;
   const netSpend = Math.max(0, existingOrder.subtotal - (existingOrder.discountAmount || 0));
 
   let session = null;
   try {
+    if (['cancelled', 'refunded'].includes(status) && existingOrder.stockReserved && !existingOrder.stockRestored) {
+      await restoreOrderStock(existingOrder.items, session);
+      existingOrder.stockRestored = true;
+    }
+
     session = await mongoose.startSession();
     session.startTransaction();
   } catch {
@@ -324,28 +323,15 @@ export async function cancelOrder(userId, orderId) {
     throw new Error('Order not found');
   }
 
-  const order = await Order.findOneAndUpdate(
-    {
-      _id: orderId,
-      user: userId,
-      status: { $in: ['pending', 'paid'] }
-    },
-    { status: 'cancelled' },
-    { new: true, runValidators: true }
-  );
-
-  if (order) {
-    if (order.stockReserved && !order.stockRestored) {
-      await restoreOrderStock(order.items);
-    }
-    order.stockRestored = true;
-    return order.save();
-  }
-
   const existingOrder = await getOrderById(orderId, userId);
 
   if (existingOrder.status === 'cancelled') {
     throw new Error('Order already cancelled');
   }
-  throw new Error('Cannot cancel order in current status');
+  if (!['pending', 'paid'].includes(existingOrder.status)) {
+    throw new Error('Cannot cancel order in current status');
+  }
+
+  // Keep stock and loyalty changes in one status-transition path.
+  return updateOrderStatus(orderId, 'cancelled');
 }

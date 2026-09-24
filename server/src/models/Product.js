@@ -34,7 +34,9 @@ variantSchema.virtual('stockQuantity').get(function () {
 const sizeChartSchema = new mongoose.Schema(
   {
     size_name: { type: String, required: true, trim: true },
-    garment_chest_actual: { type: Number, required: true, min: 1 }
+    garment_chest_actual: { type: Number, min: 1 },
+    garment_waist_actual: { type: Number, min: 1 },
+    garment_hips_actual: { type: Number, min: 1 }
   },
   { _id: false }
 );

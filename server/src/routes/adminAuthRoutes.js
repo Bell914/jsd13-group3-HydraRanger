@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { adminLogin } from "../controllers/authController.js";
+import { adminLogin, adminLogout } from "../controllers/authController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 import { rateLimit } from "../middleware/rateLimiterMiddleware.js";
 import { validate } from "../middleware/validatorMiddleware.js";
@@ -24,5 +24,6 @@ router.post(
 router.get("/me", protect, authorize("admin"), (req, res) => {
   res.json({ success: true, data: req.user });
 });
+router.post("/logout", adminLogout);
 
 export default router;
