@@ -115,8 +115,9 @@ export const markCouponAsUsed = async (couponId, orderId) => {
 
 // 5. คืนสิทธิ์การใช้งานคูปองกรณี Order ถูก Cancel หรือ Refund
 export const refundCouponUsage = async ({ code, userId, orderId }) => {
+  if (!code || !userId || !orderId) return null;
   return await Coupon.findOneAndUpdate(
-    { code: code.toUpperCase(), userId },
+    { code: code.trim().toUpperCase(), userId, orderId, isUsed: true },
     {
       isUsed: false,
       usedAt: null,

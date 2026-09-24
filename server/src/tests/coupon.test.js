@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
 import { Coupon } from '../models/couponModel.js';
-import { validateCoupon, claimCouponAtomically } from '../services/couponService.js';
+import { validateCoupon, claimCouponAtomically, refundCouponUsage } from '../services/couponService.js';
 import { createOrder } from '../services/orderService.js';
 import { Order } from '../models/Order.js';
 import { Product } from '../models/Product.js';
@@ -52,9 +52,8 @@ test('two concurrent createOrder calls persist only one discounted order and res
     Object.assign(coupon, update.$set);
     return { ...coupon };
   });
-  t.mock.method(Coupon, 'findByIdAndUpdate', async (_id, update) => Object.assign(coupon, update.$set));
   t.mock.method(Order, 'create', async (data) => {
-    const order = { ...data, _id: new mongoose.Types.ObjectId() };
+    const order = { ...data };
     orders.push(order);
     return order;
   });
@@ -72,6 +71,54 @@ test('two concurrent createOrder calls persist only one discounted order and res
   assert.equal(coupon.isUsed, true);
   assert.equal(String(coupon.orderId), String(orders[0]._id));
 });
+
+test('an old order cannot release a coupon claimed by a newer checkout', async (t) => {
+  const userId = new mongoose.Types.ObjectId();
+  const oldOrderId = new mongoose.Types.ObjectId();
+  const orderId = new mongoose.Types.ObjectId();
+  const coupon = { code: 'WELCOME5', userId, orderId, isUsed: true };
+  t.mock.method(Coupon, 'findOneAndUpdate', async (filter, update) => {
+    if (!Object.entries(filter).every(([key, value]) => String(coupon[key]) === String(value))) return null;
+    return Object.assign(coupon, update);
+  });
+  assert.equal(await refundCouponUsage({ code: 'WELCOME5', userId, orderId: oldOrderId }), null);
+  assert.equal(coupon.isUsed, true);
+  assert.equal(await refundCouponUsage({ code: 'WELCOME5', userId }), null);
+  await refundCouponUsage({ code: ' welcome5 ', userId, orderId });
+  assert.equal(coupon.isUsed, false);
+  assert.equal(coupon.orderId, null);
+});
+
+for (const failure of ['stock', 'order']) {
+  test(`failed ${failure} creation releases the coupon owned by that checkout`, async (t) => {
+    const user = { _id: new mongoose.Types.ObjectId(), email: 'test@example.com' };
+    const productId = new mongoose.Types.ObjectId();
+    const variantId = new mongoose.Types.ObjectId();
+    const coupon = { code: 'WELCOME5', userId: user._id, isUsed: false, discountValue: 5 };
+    t.mock.method(Product, 'findOne', async () => ({ _id: productId, title: 'Shirt',
+      variants: [{ _id: variantId, sku: 'TEST', price: 1000, stock_quantity: 10 }] }));
+    const stock = t.mock.method(Product, 'updateOne', async () => ({ modifiedCount: failure === 'stock' ? 0 : 1 }));
+    const creates = t.mock.method(Order, 'create', async () => { throw new Error('Order persistence failed'); });
+    t.mock.method(Coupon, 'findOneAndUpdate', async (filter, update) => {
+      if (filter.isUsed === false) {
+        assert.ok(update.$set.orderId);
+        Object.assign(coupon, update.$set);
+        return { ...coupon };
+      }
+      assert.equal(String(filter.orderId), String(coupon.orderId));
+      assert.equal(String(filter.userId), String(user._id));
+      assert.equal(filter.isUsed, true);
+      return Object.assign(coupon, update);
+    });
+    const data = { couponCode: 'WELCOME5', items: [{ productId, variantId, sku: 'TEST', quantity: 1 }],
+      shippingAddress: { firstName: 'Test', lastName: 'User', phone: '0800000000', address: 'Street', city: 'Bangkok', zipCode: '10100' } };
+    await assert.rejects(createOrder(user, data), failure === 'stock' ? /สต็อก/ : /Order persistence failed/);
+    assert.equal(coupon.isUsed, false);
+    assert.equal(coupon.orderId, null);
+    assert.equal(creates.mock.callCount(), failure === 'stock' ? 0 : 1);
+    assert.equal(stock.mock.callCount(), failure === 'stock' ? 1 : 2);
+  });
+}
 
 test('validateCoupon queries with both code and userId to isolate user accounts', async (t) => {
   const userAId = new mongoose.Types.ObjectId();

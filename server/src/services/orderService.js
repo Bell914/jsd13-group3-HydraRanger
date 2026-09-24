@@ -8,8 +8,7 @@ import {
   VALID_COUPONS,
   SHIPPING_METHODS_CONFIG
 } from '../config/membershipConfig.js';
-import { Coupon } from '../models/couponModel.js';
-import { markCouponAsUsed, refundCouponUsage, claimCouponAtomically } from './couponService.js';
+import { refundCouponUsage, claimCouponAtomically } from './couponService.js';
 
 const SHIPPING_COSTS = {
   standard: 0,
@@ -167,6 +166,7 @@ export async function createOrder(user, orderData) {
   // 2. Validate coupon if provided
   const couponCode = orderData.couponCode ? String(orderData.couponCode).trim().toUpperCase() : '';
   let appliedDbCoupon = null;
+  const orderId = new mongoose.Types.ObjectId();
   if (couponCode) {
     // 2.1 First attempt atomic claim on dynamic user coupons in MongoDB (e.g. WELCOME5)
     const userId = user?._id || user?.id;
@@ -175,6 +175,7 @@ export async function createOrder(user, orderData) {
         appliedDbCoupon = await claimCouponAtomically({
           code: couponCode,
           userId,
+          orderId,
         });
         if (appliedDbCoupon) {
           const couponDiscount = Math.round((subtotal * appliedDbCoupon.discountValue) / 100);
@@ -227,11 +228,13 @@ export async function createOrder(user, orderData) {
     ? new Date(Date.now() + 30 * 60 * 1000)
     : null;
 
-  await reserveOrderStock(items);
-
   let order;
+  let stockReserved = false;
   try {
+    await reserveOrderStock(items);
+    stockReserved = true;
     order = await Order.create({
+      _id: orderId,
       orderNumber: createOrderNumber(),
       user: user._id || user.id,
       customerEmail: orderData.email || user.email,
@@ -262,29 +265,15 @@ export async function createOrder(user, orderData) {
       stockReserved: true
     });
   } catch (error) {
-    await restoreOrderStock(items);
-    // Rollback atomic coupon claim if order creation failed
-    if (appliedDbCoupon) {
-      try {
-        await Coupon.findByIdAndUpdate(appliedDbCoupon._id, {
-          $set: { isUsed: false, usedAt: null, orderId: null }
-        });
-      } catch (rollbackErr) {
-        console.error('Failed to rollback coupon usage:', rollbackErr.message);
+    try {
+      if (stockReserved) await restoreOrderStock(items);
+    } finally {
+      // Only release the claim owned by this failed checkout, including stock failures.
+      if (appliedDbCoupon) {
+        await refundCouponUsage({ code: couponCode, userId: user._id || user.id, orderId });
       }
     }
     throw error;
-  }
-
-  // Associate orderId with claimed dynamic coupon
-  if (appliedDbCoupon) {
-    try {
-      await Coupon.findByIdAndUpdate(appliedDbCoupon._id, {
-        $set: { orderId: order._id }
-      });
-    } catch (err) {
-      console.error('Failed to attach orderId to coupon:', err.message);
-    }
   }
 
   return Order.findById(order._id).populate('user', 'username email');
