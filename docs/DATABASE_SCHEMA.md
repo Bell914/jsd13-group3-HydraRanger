@@ -9,6 +9,7 @@
 | User | username, email, password, role, avatar |
 | Product | productId, name, description, category, gender, tags[], availableDate, imageUrl, variants[], isActive |
 | Lookbook | lookbookId, name, nameTh, concept, occasion[], styleTags[], imageUrl, items[], regularPrice, setPrice, saving, isActive |
+| Article | title, excerpt, content, category, imageUrl, author, publishedAt, isPublished |
 | Order | orderNumber, user, customerEmail, items[], shippingAddress, subtotal, shippingCost, taxAmount, totalAmount, status |
 | Review | user, product, order, rating, comment, isVisible |
 
@@ -18,6 +19,7 @@
 - **Product:** `productId` เป็นรหัสธุรกิจไม่ซ้ำ; API ใช้ `_id`; ลบด้วย `isActive=false`
 - **Variant:** เก็บใน `variants[]` อย่างน้อย 1 รายการ มี `_id`, sku, color, size, price, stockQuantity และข้อมูลเสริม colorCode, imageUrl, detailImages[]
 - **Lookbook Item:** `product` อ้าง Product `_id`; `defaultVariantSku` ระบุ Variant
+- **Article:** เนื้อหาเก็บเป็นข้อความธรรมดา; Public API ส่งเฉพาะรายการที่ `isPublished=true`
 - **ข้อจำกัด:** Schema กำหนดราคา/Stock ≥ 0; API กำหนดราคา > 0 และ Stock เป็นจำนวนเต็ม มี unique index ที่ `variants.sku`; ต้องตรวจ SKU ซ้ำภายในสินค้าเพิ่มเติม
 
 ## Cart ที่เสนอ — ยังไม่มี Model

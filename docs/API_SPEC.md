@@ -37,6 +37,10 @@ API ที่ต้อง Login ใช้ HttpOnly session cookie และ Fron
 | GET | `/uploads/:id` | อ่านรูปสินค้าที่บันทึกใน GridFS |
 | POST | `/recommend` | วิเคราะห์รูป Mix & Match ไม่เกิน 2 รูป และจำกัด 10 ครั้งต่อ 15 นาที |
 | PATCH | `/admin/lookbooks/:id/status` | Admin Token; `{isActive}` ซ่อน/เปิดแสดง |
+| GET | `/articles`, `/articles/:id` | บทความที่เผยแพร่แล้ว: รายการ / รายละเอียด |
+| GET, POST | `/admin/articles` | Admin Token; ดูทั้งหมด / เพิ่มบทความ |
+| PUT | `/admin/articles/:id` | Admin Token; แก้ไขบทความ |
+| PATCH | `/admin/articles/:id/status` | Admin Token; `{isPublished}` เผยแพร่/ซ่อน |
 | GET | `/users/me/size-profile` | Customer Token; อ่านข้อมูล Size & Fit ของตนเอง |
 | PUT | `/users/me/size-profile` | Customer Token; บันทึกสัดส่วนพร้อม Consent |
 | DELETE | `/users/me/size-profile` | Customer Token; ลบข้อมูลสัดส่วนของตนเอง |
@@ -125,6 +129,23 @@ Server อ่านราคาและสต็อกจาก Product ใน 
 ```
 
 Server คำนวณ `saving` จาก `regularPrice - setPrice` และตรวจว่า Product กับ Variant SKU มีอยู่จริงก่อนบันทึก
+
+### เพิ่ม / แก้บทความ
+
+```json
+{
+  "title": "แต่งตัวให้เหมาะกับโอกาส",
+  "excerpt": "แนวทางเลือกเสื้อผ้าสำหรับแต่ละงาน",
+  "content": "เนื้อหาบทความแบบข้อความธรรมดา",
+  "category": "Style Guide",
+  "imageUrl": "/api/uploads/IMAGE_ID",
+  "author": "OCCASION",
+  "publishedAt": "2026-09-24",
+  "isPublished": true
+}
+```
+
+Admin อัปโหลดรูปผ่าน `POST /uploads` ได้เหมือนรูปสินค้า บทความที่ `isPublished=false` จะไม่ออกจาก Public API
 
 ## Personalized Size Profile API
 
