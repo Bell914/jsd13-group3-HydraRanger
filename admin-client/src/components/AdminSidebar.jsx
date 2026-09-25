@@ -8,7 +8,7 @@ const menuItems = [
   { path: '/orders', label: 'Orders' },
   { path: '/customers', label: 'Customers' },
   { path: '/lookbooks', label: 'Lookbooks' },
-  { path: '/articles', label: 'Articles' },
+  { path: '/articles', label: 'บทความ' },
 ];
 
 export function AdminSidebar({ isOpen, onClose }) {
