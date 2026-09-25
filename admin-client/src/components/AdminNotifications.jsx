@@ -34,7 +34,6 @@ export function AdminNotifications({ items = [] }) {
         aria-expanded={isOpen}
       >
         <Bell size={18} />
-        {items.length > 0 && <span />}
       </button>
 
       {isOpen && (
