@@ -16,6 +16,7 @@ import { canTransitionOrderStatus, cancelOrder, getExpiredPendingPaymentOrders, 
 import { resetPassword } from '../services/authService.js';
 import { matchesUploadedImageHeader } from '../middleware/uploadMiddleware.js';
 import recommendRoutes from '../routes/recommendRoutes.js';
+import { findInvalidGarmentSlots } from '../controllers/recommendController.js';
 
 function response() {
   return {
@@ -284,4 +285,41 @@ test('recommend uploads reject oversized, unsupported and spoofed images before 
   }
   const limited = await fetch(recommendUrl, { method: 'POST' });
   assert.equal(limited.status, 429);
+});
+
+test('non-clothing uploads are flagged before ranking', () => {
+  const images = [{ frame: 'top' }, { frame: 'bottom' }];
+
+  assert.deepEqual(
+    findInvalidGarmentSlots(images, {
+      validation: [
+        { frame: 'top', isClothing: true },
+        { frame: 'bottom', isClothing: true },
+      ],
+    }),
+    [],
+  );
+
+  assert.deepEqual(
+    findInvalidGarmentSlots(images, {
+      validation: [
+        { frame: 'top', isClothing: false },
+        { frame: 'bottom', isClothing: true },
+      ],
+    }),
+    ['top'],
+  );
+
+  assert.deepEqual(
+    findInvalidGarmentSlots(images, {
+      validation: [
+        { frame: 'top', isClothing: true },
+        { frame: 'bottom', isClothing: false },
+      ],
+    }),
+    ['bottom'],
+  );
+
+  assert.deepEqual(findInvalidGarmentSlots([{ frame: 'top' }], {}), []);
+  assert.deepEqual(findInvalidGarmentSlots([{ frame: 'top' }], { validation: [] }), []);
 });
