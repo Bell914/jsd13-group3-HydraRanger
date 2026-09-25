@@ -9,7 +9,6 @@ import {
   ProductGallery,
   ProductBuySection,
   ProductAccordionDetails,
-  ProductReviews,
   MatchingProducts,
   OccasionLookSection,
   ProductSizeGuideModal,
@@ -425,9 +424,6 @@ export default function ProductDetailPage() {
           isMaterialsOpen={isMaterialsOpen}
           setIsMaterialsOpen={setIsMaterialsOpen}
         />
-
-        {/* REVIEWS SECTION */}
-        <ProductReviews />
 
         {/* RELATED PRODUCTS: สินค้าที่เข้ากันได้ดี */}
         <MatchingProducts products={matchingProducts} />

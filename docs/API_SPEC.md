@@ -26,10 +26,6 @@ API ที่ต้อง Login ใช้ HttpOnly session cookie และ Fron
 | GET | `/admin/customers` | Admin session; ลูกค้า role `user` |
 | PUT | `/admin/customers/:id` | Admin session; แก้ `{username, avatar}` |
 | PATCH | `/admin/customers/:id/status` | Admin session; `{isActive}` ระงับ/เปิดบัญชี |
-| POST | `/reviews` | Customer session; รีวิวสินค้าได้เมื่อ Order เป็น `completed` |
-| GET | `/reviews/product/:productId` | รีวิวที่แสดงอยู่ คะแนนเฉลี่ย และจำนวนรีวิว |
-| GET | `/admin/reviews` | Admin session; รีวิวทั้งหมดรวมที่ถูกซ่อน |
-| PATCH | `/admin/reviews/:id/visibility` | Admin session; `{isVisible}` |
 | GET | `/lookbooks`, `/lookbooks/:id` | Lookbook ที่เปิดแสดง พร้อมข้อมูลสินค้า |
 | GET, POST | `/admin/lookbooks` | Admin session; ดูทั้งหมด / เพิ่ม Lookbook |
 | PUT | `/admin/lookbooks/:id` | Admin session; แก้ไข Lookbook |
@@ -94,19 +90,6 @@ API ที่ต้อง Login ใช้ HttpOnly session cookie และ Fron
 ```
 
 Server อ่านราคาและสต็อกจาก Product ใน MongoDB เอง ไม่ใช้ราคาหรือยอดรวมจากหน้าบ้าน สถานะที่รองรับคือ `pending`, `paid`, `processing`, `shipped`, `completed`, `cancelled`
-
-### สร้างรีวิวสินค้า
-
-```json
-{
-  "orderId": "ORDER_MONGODB_ID",
-  "productId": "PRODUCT_MONGODB_ID",
-  "rating": 5,
-  "comment": "สินค้าคุณภาพดีและตรงปก"
-}
-```
-
-ลูกค้าต้องเป็นเจ้าของ Order ซึ่งมีสินค้านี้ และ Order ต้องอยู่ในสถานะ `paid`, `processing`, `shipped` หรือ `completed` ลูกค้ารีวิวสินค้าเดิมได้หนึ่งครั้งต่อ Order
 
 ### เพิ่ม / แก้ Lookbook
 
