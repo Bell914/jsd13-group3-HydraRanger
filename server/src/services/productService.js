@@ -103,9 +103,22 @@ export async function getProducts({ includeInactive = false, category, search } 
     if (mongoose.Types.ObjectId.isValid(category)) {
       filter.category_id = category;
     } else {
-      const categoryDocument = await Category.findOne({ slug: category });
+      const escapedCategory = category.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const categoryDocument = await Category.findOne({
+        slug: { $regex: new RegExp(`^${escapedCategory}$`, 'i') }
+      });
       if (categoryDocument) {
         filter.category_id = categoryDocument._id;
+      } else {
+        const categoryByName = await Category.findOne({
+          name: { $regex: new RegExp(`^${escapedCategory}$`, 'i') }
+        });
+        if (categoryByName) {
+          filter.category_id = categoryByName._id;
+        } else {
+          // Explicitly assign non-matching ObjectId so it won't fall back to returning all products
+          filter.category_id = new mongoose.Types.ObjectId();
+        }
       }
     }
   }

@@ -425,11 +425,12 @@ export async function getProducts(params = {}) {
   }
 
   const queryString = query.toString() ? `?${query.toString()}` : "";
+  let list = null;
   try {
     const response = await api.get(`/products${queryString}`);
-    const list = response?.data || response;
-    if (Array.isArray(list)) {
-      return list.map(normalizeProduct);
+    const data = response?.data || response;
+    if (Array.isArray(data)) {
+      list = data.map(normalizeProduct);
     }
   } catch (err) {
     console.warn("Products API unavailable or error:", err.message);
@@ -437,7 +438,20 @@ export async function getProducts(params = {}) {
       throw err;
     }
   }
-  return fallbackProducts.map(normalizeProduct);
+
+  if (!list) {
+    list = fallbackProducts.map(normalizeProduct);
+  }
+
+  if (params.category && params.category !== "all") {
+    const targetCat = params.category.toLowerCase();
+    list = list.filter((p) => {
+      const pCat = (p.category || p.category_id?.slug || "").toLowerCase();
+      return pCat === targetCat;
+    });
+  }
+
+  return list;
 }
 
 /**
