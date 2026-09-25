@@ -11,7 +11,6 @@
 | Lookbook | lookbookId, name, nameTh, concept, occasion[], styleTags[], imageUrl, items[], regularPrice, setPrice, saving, isActive |
 | Article | title, excerpt, content, category, imageUrl, author, publishedAt, isPublished |
 | Order | orderNumber, user, customerEmail, items[], shippingAddress, subtotal, shippingCost, taxAmount, totalAmount, status |
-| Review | user, product, order, rating, comment, isVisible |
 
 ทุก Model ข้างต้นมี `_id`, `createdAt`, `updatedAt`
 

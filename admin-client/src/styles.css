@@ -120,16 +120,6 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
 .article-thumbnail { width: 72px; height: 52px; border-radius: 8px; object-fit: cover; background: #f3f4f6; }
 .status-select { min-width: 140px; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; color: #374151; font-size: 14px; }
 .status-select:focus { border-color: #e2156d; outline: none; box-shadow: 0 0 0 2px #ffd6e7; }
-.review-list { display: grid; gap: 14px; }
-.review-card { padding: 18px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; }
-.review-card.is-hidden { background: #f9fafb; opacity: .75; }
-.review-card > header, .review-card > footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-.review-card header strong { display: block; color: #1f2937; }
-.review-card header small, .review-card footer small { display: block; margin-top: 4px; color: #6b7280; }
-.review-card > p { margin: 10px 0 16px; color: #374151; line-height: 1.6; }
-.review-rating { display: flex; gap: 3px; margin-top: 12px; color: #f59e0b; }
-.review-card footer button { min-width: 96px; padding: 8px 11px; border: 1px solid #a6afc4; border-radius: 8px; background: #f3f5fa; color: #0046a7; font-size: 12px; font-weight: 700; }
-.review-card footer button.danger { border-color: #fecaca; background: #fef2f2; color: #dc2626; }
 .capitalize { text-transform: capitalize; font-weight: 600; }
 .price { color: #1f2937; font-weight: 800; }
 .stock { color: #374151; font-weight: 700; }
@@ -300,7 +290,6 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
   .data-table td::before { content: attr(data-label); flex: 0 0 38%; color: #6b7280; font-size: 12px; font-weight: 800; text-align: left; }
   .data-table td:last-child { border-bottom: 0; }
   .status-select { max-width: 58%; }
-  .review-card > header, .review-card > footer { align-items: flex-start; }
   .lookbook-item-row { grid-template-columns: 1fr; }
   .lookbook-modal .product-form { grid-template-columns: 1fr; }
   .lookbook-modal .form-wide { grid-column: auto; }
@@ -359,9 +348,6 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
   .row-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .row-actions button { width: 100%; }
   .table-footer { align-items: flex-start; gap: 8px; }
-  .review-card { padding: 14px; }
-  .review-card > header { flex-direction: column; }
-  .review-card footer button { min-height: 40px; }
 }
 
 /* Shared admin presentation: square controls and readable labels. */
@@ -374,7 +360,7 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
 .product-table, .data-table, .status-select, .sidebar-link, .sidebar-logout { font-size: 15px; }
 .product-table th, .data-table th, .product-table small, .data-table small,
 .product-table td::before, .data-table td::before, .summary-card p, .summary-card small,
-.chart-card header p, .review-card small, .row-actions button, .review-card footer button,
+.chart-card header p, .row-actions button,
 .notification-panel p, .notification-panel li, .notification-item time,
 .field > span, .field-error, .customer-form .field small:not(.field-error),
 .eyebrow, .nav-group-label, .sidebar-brand small, .live-data-note,

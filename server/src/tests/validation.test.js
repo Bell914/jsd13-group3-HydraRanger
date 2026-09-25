@@ -4,7 +4,6 @@ import { validateIdParam, validateProductIdParam } from '../validators/commonVal
 import { validateContactInput } from '../validators/contactValidator.js';
 import { validateCustomerStatus } from '../validators/customerValidator.js';
 import { validateCreateOrder, validateOrderStatus } from '../validators/orderValidator.js';
-import { validateReviewInput } from '../validators/reviewValidator.js';
 import { validateProductInput } from '../validators/productValidator.js';
 import { validateResetPasswordInput } from '../validators/authValidator.js';
 import { validateArticleInput, validateArticleStatus } from '../validators/articleValidator.js';
@@ -80,16 +79,6 @@ test('product accepts all six rubric fields with zero stock', () => {
 test('customer status only accepts a boolean', () => {
   assert.equal(validateCustomerStatus({ isActive: 'false' }).isValid, false);
   assert.equal(validateCustomerStatus({ isActive: false }).isValid, true);
-});
-
-test('review rejects an invalid rating and IDs', () => {
-  const result = validateReviewInput({
-    orderId: 'bad-id',
-    productId: 'bad-id',
-    rating: 6,
-    comment: 'ok review'
-  });
-  assert.equal(result.isValid, false);
 });
 
 test('contact form rejects an invalid email and short message', () => {
