@@ -107,6 +107,13 @@ npm run test:conn --prefix server
 
 คำสั่งเหล่านี้เป็นคำสั่งที่มีใน `package.json` ไม่ได้หมายความว่าผลทดสอบผ่านแล้ว และ `test:conn` ต้องตั้ง environment กับเปิดฐานข้อมูลให้พร้อมก่อน
 
+ถ้าฐานข้อมูลทดสอบมีสินค้าเก่าที่ยังไม่มี `size_chart` ให้ตรวจรายการก่อน แล้วจึงเติมเฉพาะสินค้าหมวด Tops/Bottoms ที่มีไซส์มาตรฐาน:
+
+```bash
+npm run backfill:size-charts --prefix server -- --dry-run
+npm run backfill:size-charts --prefix server
+```
+
 ## เอกสารและการทำงานร่วมกัน
 
 - [API Specification](docs/API_SPEC.md)
