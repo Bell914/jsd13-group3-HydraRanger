@@ -3,7 +3,12 @@ import AuthContext from "./AuthContext.jsx";
 import { authService } from "../../services/authService.js";
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => authService.getCurrentUser());
+  // Local storage is only a display cache.  It must never establish an
+  // authenticated UI state: the HttpOnly session cookie is the authority and
+  // is verified by /auth/me below.  Starting from null prevents a previous
+  // user's name/profile from flashing on a shared device after their session
+  // has expired or their cookie has been cleared.
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
