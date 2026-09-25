@@ -9,6 +9,7 @@ const menuItems = [
   { path: '/customers', label: 'Customers' },
   { path: '/lookbooks', label: 'Lookbooks' },
   { path: '/articles', label: 'บทความ' },
+  { path: '/coupons', label: 'Coupon' },
 ];
 
 export function AdminSidebar({ isOpen, onClose }) {
