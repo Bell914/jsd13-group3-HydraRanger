@@ -8,7 +8,8 @@ export const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/";
+  const requestedRedirect = new URLSearchParams(location.search).get("redirect");
+  const from = location.state?.from?.pathname || (requestedRedirect?.startsWith("/") ? requestedRedirect : "/");
 
   const [formData, setFormData] = useState({
     email: "",
@@ -122,7 +123,7 @@ export const LoginPage = () => {
           <div className="mt-6 border-t border-occasion-border/45 pt-5 text-center text-xs text-secondary">
             Don't have an account?{" "}
             <Link
-              to="/register"
+              to={requestedRedirect ? `/register?redirect=${encodeURIComponent(requestedRedirect)}` : "/register"}
               className="rounded-sm font-semibold text-accent hover:text-accent-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
             >
               Register here

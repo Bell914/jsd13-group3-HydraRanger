@@ -1,25 +1,26 @@
 import React, { useState } from "react";
 import { Gift, ChevronDown, Plus, Minus } from "lucide-react";
+import { normalizeProvince, THAI_PROVINCES } from "../../constants/provinces.js";
 
 export const SHIPPING_METHODS = [
   {
     id: "standard",
-    name: "STANDARD SHIPPING (FREE)",
-    duration: "2-6 business days",
+    name: "จัดส่งมาตรฐาน (ฟรี)",
+    duration: "2-6 วันทำการ",
     price: 0,
-    estimatedDelivery: "Sat, Aug 8",
+    estimatedDelivery: "ภายใน 2-6 วันทำการ",
   },
   {
     id: "express",
-    name: "EXPRESS SHIPPING (฿50.00)",
-    duration: "in 2-4 business days",
+    name: "จัดส่งด่วน (฿50.00)",
+    duration: "ภายใน 2-4 วันทำการ",
     price: 50,
     estimatedDelivery: "2-4 วันทำการ",
   },
   {
     id: "priority",
-    name: "PRIORITY SHIPPING (฿100.00)",
-    duration: "in 1-2 business days",
+    name: "จัดส่งพิเศษ (฿100.00)",
+    duration: "ภายใน 1-2 วันทำการ",
     price: 100,
     estimatedDelivery: "1-2 วันทำการ",
   },
@@ -40,15 +41,18 @@ export default function ShippingSection({
     Boolean(shippingData.deliveryNote)
   );
   const [errors, setErrors] = useState({});
+  const isSavedAddressSelected = Boolean(shippingData.selectedAddressId);
 
   const validate = () => {
     const errs = {};
     if (!shippingData.firstName?.trim()) errs.firstName = "กรุณากรอกชื่อ";
-    if (!shippingData.lastName?.trim()) errs.lastName = "กรุณากรอกนามสกุล";
+    if (!shippingData.lastName?.trim()) {
+      errs.lastName = "กรุณากรอกนามสกุล";
+    }
     if (!shippingData.phone?.trim()) errs.phone = "กรุณากรอกเบอร์โทรศัพท์";
     if (!shippingData.address?.trim()) errs.address = "กรุณากรอกที่อยู่จัดส่ง";
-    if (!shippingData.city?.trim()) errs.city = "กรุณากรอกเมือง/อำเภอ";
-    if (!shippingData.state?.trim()) errs.state = "กรุณาเลือกหรือระบุรัฐ/จังหวัด";
+    if (!shippingData.city?.trim()) errs.city = "กรุณากรอกอำเภอ / เขต";
+    if (!shippingData.state?.trim()) errs.state = "กรุณาเลือกหรือระบุจังหวัด";
     if (!shippingData.zipCode?.trim()) errs.zipCode = "กรุณากรอกรหัสไปรษณีย์";
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -64,19 +68,21 @@ export default function ShippingSection({
   const selectedMethod =
     SHIPPING_METHODS.find((m) => m.id === shippingData.shippingMethod) ||
     SHIPPING_METHODS[0];
+  const currentProvince = normalizeProvince(shippingData.state);
+  const hasUnlistedProvince = currentProvince && !THAI_PROVINCES.includes(currentProvince);
 
   // Collapsed View for Step 3 and 4
   if (isCollapsed) {
     return (
       <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-xs mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xl font-bold text-gray-900">Shipping</h2>
+          <h2 className="text-xl font-bold text-gray-900">ที่อยู่จัดส่ง</h2>
           <button
             type="button"
             onClick={onEdit}
             className="text-sm font-semibold text-gray-900 underline hover:text-gray-600 transition-colors cursor-pointer"
           >
-            Edit
+            แก้ไข
           </button>
         </div>
         <div className="text-sm text-gray-700 space-y-1">
@@ -85,8 +91,7 @@ export default function ShippingSection({
           </p>
           <p>
             {shippingData.address || "-"}, {shippingData.city || ""},{" "}
-            {shippingData.state || ""} {shippingData.zipCode || ""},{" "}
-            {shippingData.location || "Thailand"}
+            {shippingData.state || ""} {shippingData.zipCode || ""}
           </p>
           <p className="text-gray-600">{shippingData.phone || "-"}</p>
           <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col">
@@ -94,7 +99,7 @@ export default function ShippingSection({
               {selectedMethod.name}
             </span>
             <span className="text-xs font-semibold text-gray-800 mt-0.5">
-              Arrives by {selectedMethod.estimatedDelivery}
+              คาดว่าจะได้รับ {selectedMethod.estimatedDelivery}
             </span>
           </div>
         </div>
@@ -105,7 +110,7 @@ export default function ShippingSection({
   // Active Edit Form for Step 2
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-xs mb-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Shipping</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">ที่อยู่จัดส่ง</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {onSelectAddress && (
@@ -121,7 +126,7 @@ export default function ShippingSection({
               value={shippingData.selectedAddressId || ""}
               onChange={(event) => {
                 const addressId = event.target.value;
-                if (addressId === "__new" || !addressId) {
+                if (!addressId) {
                   onAddNewAddress?.();
                   return;
                 }
@@ -139,37 +144,9 @@ export default function ShippingSection({
                   {address.isDefault ? " (ที่อยู่หลัก)" : ""} — {address.addressDetail || address.addressLine}, {address.district}
                 </option>
               ))}
-              <option value="__new">+ เพิ่มที่อยู่ใหม่</option>
             </select>
           </div>
         )}
-        {/* Location Dropdown */}
-        <div>
-          <label
-            htmlFor="shipping-location"
-            className="block text-sm font-medium text-gray-800 mb-1"
-          >
-            Location
-          </label>
-          <div className="relative">
-            <select
-              id="shipping-location"
-              value={shippingData.location || "Thailand"}
-              onChange={(e) =>
-                onChangeShipping({ ...shippingData, location: e.target.value })
-              }
-              className="w-full appearance-none px-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 cursor-pointer pr-10"
-            >
-              <option value="Thailand">ประเทศไทย (Thailand)</option>
-              <option value="United States">สหรัฐอเมริกา (United States)</option>
-              <option value="Singapore">สิงคโปร์ (Singapore)</option>
-              <option value="Japan">ญี่ปุ่น (Japan)</option>
-              <option value="United Kingdom">สหราชอาณาจักร (United Kingdom)</option>
-              <option value="Australia">ออสเตรเลีย (Australia)</option>
-            </select>
-            <ChevronDown className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
-        </div>
 
         {/* First & Last Name */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -178,18 +155,19 @@ export default function ShippingSection({
               htmlFor="shipping-first-name"
               className="block text-sm font-medium text-gray-800 mb-1"
             >
-              First name
+              ชื่อ
             </label>
             <input
               id="shipping-first-name"
               type="text"
+              disabled={isSavedAddressSelected}
               value={shippingData.firstName || ""}
               placeholder="สมชาย"
               onChange={(e) => {
                 onChangeShipping({ ...shippingData, firstName: e.target.value });
                 if (errors.firstName) setErrors({ ...errors, firstName: null });
               }}
-              className={`w-full px-3.5 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 ${
+              className={`w-full px-3.5 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 ${
                 errors.firstName
                   ? "border-red-500 focus:ring-red-200"
                   : "border-gray-300 focus:ring-blue-100 focus:border-blue-600"
@@ -205,18 +183,19 @@ export default function ShippingSection({
               htmlFor="shipping-last-name"
               className="block text-sm font-medium text-gray-800 mb-1"
             >
-              Last name
+              นามสกุล
             </label>
             <input
               id="shipping-last-name"
               type="text"
+              disabled={isSavedAddressSelected}
               value={shippingData.lastName || ""}
               placeholder="ใจดี"
               onChange={(e) => {
                 onChangeShipping({ ...shippingData, lastName: e.target.value });
                 if (errors.lastName) setErrors({ ...errors, lastName: null });
               }}
-              className={`w-full px-3.5 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 ${
+              className={`w-full px-3.5 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 ${
                 errors.lastName
                   ? "border-red-500 focus:ring-red-200"
                   : "border-gray-300 focus:ring-blue-100 focus:border-blue-600"
@@ -234,18 +213,19 @@ export default function ShippingSection({
             htmlFor="shipping-phone"
             className="block text-sm font-medium text-gray-800 mb-1"
           >
-            Phone number
+            เบอร์โทรศัพท์
           </label>
           <input
             id="shipping-phone"
             type="tel"
+            disabled={isSavedAddressSelected}
             value={shippingData.phone || ""}
             placeholder="0812345678"
             onChange={(e) => {
               onChangeShipping({ ...shippingData, phone: e.target.value });
               if (errors.phone) setErrors({ ...errors, phone: null });
             }}
-            className={`w-full px-3.5 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 ${
+            className={`w-full px-3.5 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 ${
               errors.phone
                 ? "border-red-500 focus:ring-red-200"
                 : "border-gray-300 focus:ring-blue-100 focus:border-blue-600"
@@ -265,18 +245,19 @@ export default function ShippingSection({
             htmlFor="shipping-address"
             className="block text-sm font-medium text-gray-800 mb-1"
           >
-            Address
+            บ้านเลขที่ / ถนน / อาคาร
           </label>
           <input
             id="shipping-address"
             type="text"
+            disabled={isSavedAddressSelected}
             value={shippingData.address || ""}
             placeholder="123/45 ซอยสุขุมวิท 21 ถนนสุขุมวิท อาคาร/หมู่บ้าน (ถ้ามี)"
             onChange={(e) => {
               onChangeShipping({ ...shippingData, address: e.target.value });
               if (errors.address) setErrors({ ...errors, address: null });
             }}
-            className={`w-full px-3.5 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 ${
+            className={`w-full px-3.5 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 ${
               errors.address
                 ? "border-red-500 focus:ring-red-200"
                 : "border-gray-300 focus:ring-blue-100 focus:border-blue-600"
@@ -295,7 +276,7 @@ export default function ShippingSection({
             className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-800 hover:text-black transition-colors underline cursor-pointer"
           >
             {showDeliveryNote ? <Minus className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-            <span>{showDeliveryNote ? "ซ่อนโน้ตถึงพนักงานจัดส่ง" : "เพิ่มโน้ตถึงพนักงานจัดส่ง"}</span>
+            <span>{showDeliveryNote ? "ซ่อนคำแนะนำการจัดส่ง" : "เพิ่มคำแนะนำการจัดส่งถึงพนักงาน"}</span>
           </button>
 
           {showDeliveryNote && (
@@ -318,18 +299,19 @@ export default function ShippingSection({
               htmlFor="shipping-city"
               className="block text-sm font-medium text-gray-800 mb-1"
             >
-              City
+              อำเภอ / เขต
             </label>
             <input
               id="shipping-city"
               type="text"
+              disabled={isSavedAddressSelected}
               value={shippingData.city || ""}
               placeholder="เขตวัฒนา / อำเภอเมือง"
               onChange={(e) => {
                 onChangeShipping({ ...shippingData, city: e.target.value });
                 if (errors.city) setErrors({ ...errors, city: null });
               }}
-              className={`w-full px-3.5 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 ${
+              className={`w-full px-3.5 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 ${
                 errors.city
                   ? "border-red-500 focus:ring-red-200"
                   : "border-gray-300 focus:ring-blue-100 focus:border-blue-600"
@@ -345,29 +327,30 @@ export default function ShippingSection({
               htmlFor="shipping-state"
               className="block text-sm font-medium text-gray-800 mb-1"
             >
-              State
+              จังหวัด
             </label>
             <div className="relative">
               <select
                 id="shipping-state"
-                value={shippingData.state || ""}
+                disabled={isSavedAddressSelected}
+                value={currentProvince}
                 onChange={(e) => {
                   onChangeShipping({ ...shippingData, state: e.target.value });
                   if (errors.state) setErrors({ ...errors, state: null });
                 }}
-                className={`w-full appearance-none px-3.5 py-2.5 bg-white border rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 cursor-pointer pr-8 ${
+                className={`w-full appearance-none px-3.5 py-2.5 bg-white border rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 cursor-pointer pr-8 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 ${
                   errors.state
                     ? "border-red-500 focus:ring-red-200"
                     : "border-gray-300 focus:ring-blue-100 focus:border-blue-600"
                 }`}
               >
                 <option value="">เลือกจังหวัด...</option>
-                <option value="Bangkok">กรุงเทพมหานคร</option>
-                <option value="Chiang Mai">เชียงใหม่</option>
-                <option value="Phuket">ภูเก็ต</option>
-                <option value="Nonthaburi">นนทบุรี</option>
-                <option value="Samut Prakan">สมุทรปราการ</option>
-                <option value="Other">จังหวัดอื่นๆ</option>
+                {hasUnlistedProvince && (
+                  <option value={currentProvince}>{currentProvince}</option>
+                )}
+                {THAI_PROVINCES.map((province) => (
+                  <option key={province} value={province}>{province}</option>
+                ))}
               </select>
               <ChevronDown className="w-4 h-4 text-gray-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -381,18 +364,19 @@ export default function ShippingSection({
               htmlFor="shipping-zip"
               className="block text-sm font-medium text-gray-800 mb-1"
             >
-              Zip code
+              รหัสไปรษณีย์
             </label>
             <input
               id="shipping-zip"
               type="text"
+              disabled={isSavedAddressSelected}
               value={shippingData.zipCode || ""}
               placeholder="10110"
               onChange={(e) => {
                 onChangeShipping({ ...shippingData, zipCode: e.target.value });
                 if (errors.zipCode) setErrors({ ...errors, zipCode: null });
               }}
-              className={`w-full px-3.5 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 ${
+              className={`w-full px-3.5 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 ${
                 errors.zipCode
                   ? "border-red-500 focus:ring-red-200"
                   : "border-gray-300 focus:ring-blue-100 focus:border-blue-600"
@@ -405,7 +389,7 @@ export default function ShippingSection({
         </div>
 
         {/* Save address checkbox */}
-        <div className="pt-1">
+        {!isSavedAddressSelected && <div className="pt-1">
           <label className="flex items-center gap-2 text-sm text-gray-800 cursor-pointer select-none">
             <input
               type="checkbox"
@@ -420,7 +404,7 @@ export default function ShippingSection({
             />
             <span>บันทึกที่อยู่นี้ลงในบัญชีของฉัน</span>
           </label>
-        </div>
+        </div>}
 
         {/* Shipping Method Radios */}
         <div className="pt-3">
@@ -491,7 +475,7 @@ export default function ShippingSection({
           )}
         </div>
 
-        {/* Bottom Buttons: ย้อนกลับ (Back) and CONTINUE */}
+        {/* ปุ่มย้อนกลับและดำเนินการต่อ */}
         <div className="flex flex-col-reverse sm:flex-row items-center gap-3 sm:gap-4 pt-6">
           <button
             type="button"
@@ -504,7 +488,7 @@ export default function ShippingSection({
             type="submit"
             className="w-full sm:flex-1 py-3.5 bg-[#D0021B] hover:bg-[#b00217] text-white font-bold text-sm tracking-wider uppercase rounded-lg transition-colors shadow-xs text-center cursor-pointer"
           >
-            CONTINUE
+            ดำเนินการต่อ
           </button>
         </div>
       </form>

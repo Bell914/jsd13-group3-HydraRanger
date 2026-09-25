@@ -1,11 +1,10 @@
 import React, { useState } from "react";
-import { Check, CreditCard, Plus } from "lucide-react";
+import { CreditCard, Plus, QrCode, Wallet } from "lucide-react";
 
 const PAYMENT_OPTIONS = [
-  { id: "paypal", name: "PayPal" },
-  { id: "afterpay", name: "Afterpay" },
-  { id: "klarna", name: "Klarna" },
-  { id: "credit-card", name: "Credit / Debit Card" },
+  { id: "promptpay", name: "PromptPay", icon: QrCode },
+  { id: "paypal", name: "PayPal", icon: Wallet },
+  { id: "credit-card", name: "Credit / Debit Card", icon: CreditCard },
 ];
 
 export default function PaymentSection({
@@ -16,27 +15,15 @@ export default function PaymentSection({
   onContinue,
   onBack,
 }) {
-  const [selectedMethod, setSelectedMethod] = useState(
-    paymentData.method || "credit-card",
-  );
-  const [giftCardCode, setGiftCardCode] = useState("");
-  const [giftCardOpen, setGiftCardOpen] = useState(false);
-  const [giftCardApplied, setGiftCardApplied] = useState(false);
+  const selectedMethod = paymentData.method || "credit-card";
+  const SelectedPaymentIcon = PAYMENT_OPTIONS.find((option) => option.id === selectedMethod)?.icon || CreditCard;
   const [error, setError] = useState("");
-
-  function selectPaymentMethod(method) {
-    setSelectedMethod(method);
-    onChangePayment({ method });
-  }
 
   function handleSubmit(event) {
     event.preventDefault();
     setError("");
 
-    if (
-      selectedMethod === "credit-card" &&
-      !import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
-    ) {
+    if (selectedMethod === "credit-card" && !import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
       setError("ระบบชำระเงินยังไม่ได้ตั้งค่า Stripe");
       return;
     }
@@ -45,29 +32,21 @@ export default function PaymentSection({
     onContinue();
   }
 
-  function applyGiftCard() {
-    if (giftCardCode.trim()) setGiftCardApplied(true);
-  }
-
   if (isCollapsed) {
     return (
       <div className="mb-6 rounded-lg border border-gray-200 bg-white p-5 shadow-xs">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">Payment</h2>
+          <h2 className="text-xl font-bold text-gray-900">ช่องทางการชำระเงิน</h2>
           {onEdit && (
             <button type="button" onClick={onEdit} className="text-sm font-semibold underline">
-              Edit
+              แก้ไข
             </button>
           )}
         </div>
         <div className="flex items-center gap-3">
-          <CreditCard className="h-5 w-5" />
+          <SelectedPaymentIcon className="h-5 w-5" />
           <span className="text-sm font-medium">
-            {paymentData.method === "paypal"
-              ? "PayPal"
-              : paymentData.method === "promptpay"
-                ? "PromptPay QR"
-                : "ชำระผ่านบัตรเครดิต/เดบิต"}
+            {PAYMENT_OPTIONS.find((option) => option.id === selectedMethod)?.name || "Credit / Debit Card"}
           </span>
         </div>
       </div>
@@ -76,45 +55,7 @@ export default function PaymentSection({
 
   return (
     <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-xs">
-      <h2 className="mb-6 text-2xl font-bold text-gray-900">Payment</h2>
-
-      <div className="mb-4 rounded-lg border border-gray-200 p-4">
-        <strong className="flex items-center gap-2 text-sm">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black font-serif text-xs text-white">
-            Ω
-          </span>
-          Use my Gift Card
-        </strong>
-
-        {!giftCardApplied ? (
-          <div className="mt-3">
-            <button
-              type="button"
-              onClick={() => setGiftCardOpen(!giftCardOpen)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold underline"
-            >
-              <Plus size={14} /> ใส่รหัส Gift Card
-            </button>
-            {giftCardOpen && (
-              <div className="mt-3 flex gap-2">
-                <input
-                  value={giftCardCode}
-                  onChange={(event) => setGiftCardCode(event.target.value)}
-                  placeholder="กรอกรหัส Gift Card หรือคูปองส่วนลด"
-                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-xs"
-                />
-                <button type="button" onClick={applyGiftCard} className="rounded bg-black px-4 py-2 text-xs text-white">
-                  ใช้งาน
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <p className="mt-2 flex items-center gap-1 text-xs font-medium text-green-600">
-            <Check size={16} /> ใช้รหัส {giftCardCode} เรียบร้อยแล้ว
-          </p>
-        )}
-      </div>
+      <h2 className="mb-6 text-2xl font-bold text-gray-900">ช่องทางการชำระเงิน</h2>
 
       <form onSubmit={handleSubmit} className="space-y-3">
         {PAYMENT_OPTIONS.map((option) => {
@@ -124,11 +65,15 @@ export default function PaymentSection({
             <div key={option.id} className="overflow-hidden rounded-lg border border-gray-200">
               <button
                 type="button"
-                onClick={() => selectPaymentMethod(option.id)}
-                className="flex w-full items-center justify-between px-4 py-3.5 text-left hover:bg-gray-50"
+                aria-pressed={isSelected}
+                onClick={() => {
+                  setError("");
+                  onChangePayment({ method: option.id });
+                }}
+                className={`flex w-full items-center justify-between px-4 py-3.5 text-left hover:bg-gray-50 ${isSelected ? "bg-gray-50" : ""}`}
               >
                 <span className="flex items-center gap-3">
-                  {option.id === "credit-card" && <CreditCard size={20} />}
+                  <option.icon size={20} aria-hidden="true" />
                   <span className="text-sm font-semibold">{option.name}</span>
                 </span>
                 <Plus className={`h-4 w-4 transition-transform ${isSelected ? "rotate-45" : ""}`} />
@@ -136,6 +81,23 @@ export default function PaymentSection({
               {isSelected && option.id === "credit-card" && (
                 <p className="border-t bg-gray-50 p-4 text-sm text-gray-600">
                   กรอกข้อมูลบัตรอย่างปลอดภัยผ่าน Stripe ในขั้นตอนถัดไป
+                </p>
+              )}
+              {isSelected && option.id === "promptpay" && (
+                <div className="flex items-center gap-4 border-t bg-gray-50 p-4">
+                  <div aria-label="QR Code จำลองสำหรับเดโม" className="grid h-20 w-20 grid-cols-5 gap-0.5 rounded bg-white p-1 ring-1 ring-gray-200">
+                    {[1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1].map((pixel, index) => (
+                      <span key={index} className={pixel ? "bg-gray-900" : "bg-white"} />
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    QR Code จำลองสำหรับเดโมเท่านั้น<br />ไม่มีการรับชำระเงินจริง
+                  </p>
+                </div>
+              )}
+              {isSelected && option.id === "paypal" && (
+                <p className="border-t bg-gray-50 p-4 text-sm text-gray-600">
+                  PayPal (โหมดทดสอบระบบ - ไม่มีการตัดเงินจริง)
                 </p>
               )}
             </div>
@@ -149,7 +111,7 @@ export default function PaymentSection({
             ย้อนกลับ
           </button>
           <button type="submit" className="w-full rounded-lg bg-[#D0021B] py-3.5 text-sm font-bold tracking-wider text-white sm:flex-1">
-            CONTINUE
+            ดำเนินการต่อ
           </button>
         </div>
       </form>

@@ -59,9 +59,9 @@ export default function ProductCard({ product }) {
   const imgUrl = normalizeImageUrl(rawImg) || undefined;
 
   return (
-    <div className="relative group flex flex-col justify-between overflow-hidden rounded-2xl border border-[#e4ddd3] bg-[#f1eee8] text-[#263639] shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl focus-within:ring-3 focus-within:ring-accent/45 aspect-[3/4] p-3">
+    <article className="relative group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#e4ddd3] bg-[#f1eee8] text-[#263639] shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg focus-within:ring-3 focus-within:ring-accent/45 p-2.5 sm:p-3">
       {/* Product Image Box */}
-      <div className="relative w-full flex-1 overflow-hidden rounded-xl bg-[#fbf8f3] p-3 flex items-center justify-center">
+      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-[#fbf8f3] p-3 flex items-center justify-center">
         <Link
           to={`/products/${targetId}`}
           className="absolute inset-0 flex items-center justify-center p-3"
@@ -105,13 +105,13 @@ export default function ProductCard({ product }) {
       {/* Bottom Info Bar matching wireframe */}
       <Link
         to={`/products/${targetId}`}
-        className="pt-3 pb-1 flex items-center justify-between text-[#263639] hover:opacity-75"
+        className="flex min-h-[92px] items-end justify-between gap-3 px-1 pb-1 pt-3 text-[#263639] hover:opacity-75"
       >
         <div className="flex flex-col">
           <span className="text-sm sm:text-base font-extrabold tracking-wide text-[#263639]">
             {categoryLabel}
           </span>
-          <span className="text-[11px] text-[#526164] line-clamp-1 max-w-[130px]">
+          <span className="line-clamp-2 text-[11px] leading-4 text-[#526164]">
             {title}
           </span>
           {product.tags && product.tags.length > 0 && (
@@ -125,13 +125,13 @@ export default function ProductCard({ product }) {
           )}
         </div>
 
-        <div className="text-right">
+        <div className="shrink-0 self-end text-right">
           <span className="text-sm sm:text-base font-black text-[#c46731]">
             ฿{minPrice.toLocaleString()}
           </span>
         </div>
       </Link>
-    </div>
+    </article>
   );
 }
 

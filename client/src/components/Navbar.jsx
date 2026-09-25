@@ -22,6 +22,43 @@ export const Navbar = () => {
   const [isProductsHovered, setIsProductsHovered] = useState(false);
   const navRef = useRef(null);
   const searchButtonRef = useRef(null);
+  const productsTimeoutRef = useRef(null);
+
+  const handleMouseEnterProducts = () => {
+    if (productsTimeoutRef.current) {
+      clearTimeout(productsTimeoutRef.current);
+    }
+    setIsProductsHovered(true);
+  };
+
+  const handleMouseLeaveProducts = () => {
+    productsTimeoutRef.current = setTimeout(() => {
+      setIsProductsHovered(false);
+    }, 150);
+  };
+
+  const handleCategorySelect = (category) => {
+    if (productsTimeoutRef.current) {
+      clearTimeout(productsTimeoutRef.current);
+    }
+    setIsProductsHovered(false);
+    setIsMobileMenuOpen(false);
+    navigate(`/products?category=${category}`, {
+      state: { scrollTo: "products", timestamp: Date.now() },
+    });
+    const section = document.getElementById("products-section");
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (productsTimeoutRef.current) {
+        clearTimeout(productsTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const closeSearch = useCallback(() => {
     setIsSearchOpen(false);
@@ -168,9 +205,9 @@ export const Navbar = () => {
               </li>
 
               <li
-                className="relative group flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0"
-                onMouseEnter={() => setIsProductsHovered(true)}
-                onMouseLeave={() => setIsProductsHovered(false)}
+                className="relative group flex w-full flex-col items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:flex-row md:border-b-0 md:px-2 md:pb-0"
+                onMouseEnter={handleMouseEnterProducts}
+                onMouseLeave={handleMouseLeaveProducts}
               >
                 <Link
                   to="/products"
@@ -184,34 +221,46 @@ export const Navbar = () => {
                   สินค้า
                 </Link>
 
-                {/* Dropdown on hover: Tops & Bottoms matching user screenshot (desktop only) */}
+                {/* Mobile categories sub-links */}
+                <div className="flex w-full items-center justify-center gap-2 pt-1 md:hidden">
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect("tops")}
+                    className="flex-1 rounded-lg bg-primary/10 py-1.5 text-center text-xs font-bold text-primary transition hover:bg-primary hover:text-white cursor-pointer"
+                  >
+TOPS
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect("bottoms")}
+                    className="flex-1 rounded-lg bg-accent/10 py-1.5 text-center text-xs font-bold text-accent transition hover:bg-accent hover:text-white cursor-pointer"
+                  >
+                    BOTTOMS
+                  </button>
+                </div>
                 <div
-                  className={`hidden flex-col gap-2 md:flex md:absolute md:top-full md:left-1/2 md:-translate-x-1/2 z-50 w-28 transition-all duration-200 ${
+                  className={`hidden flex-col gap-1.5 rounded-xl border border-occasion-border/40 bg-surface p-2 shadow-lg md:flex md:absolute md:top-[calc(100%+0.35rem)] md:left-1/2 md:-translate-x-1/2 z-50 w-32 transition-all duration-200 before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 before:content-[''] ${
                     isProductsHovered
-                      ? "opacity-100 visible translate-y-0"
+                      ? "opacity-100 visible translate-y-0 pointer-events-auto"
                       : "opacity-0 invisible md:-translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:pointer-events-auto"
                   }`}
+                  onMouseEnter={handleMouseEnterProducts}
+                  onMouseLeave={handleMouseLeaveProducts}
                 >
-                  <Link
-                    to="/products?category=tops"
-                    onClick={() => {
-                      setIsProductsHovered(false);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="w-full text-center rounded-lg bg-[#2d568c] px-4 py-1.5 text-xs sm:text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect("tops")}
+                    className="w-full rounded-lg bg-primary px-4 py-2 text-center text-xs font-bold tracking-wide text-white transition-all hover:bg-primary-hover active:scale-[0.98] cursor-pointer sm:text-sm"
                   >
-                    เสื้อ
-                  </Link>
-                  <Link
-                    to="/products?category=bottoms"
-                    onClick={() => {
-                      setIsProductsHovered(false);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="w-full text-center rounded-lg bg-accent px-4 py-1.5 text-xs sm:text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                    TOPS
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect("bottoms")}
+                    className="w-full rounded-lg bg-accent px-4 py-2 text-center text-xs font-bold tracking-wide text-white transition-all hover:bg-accent-hover active:scale-[0.98] cursor-pointer sm:text-sm"
                   >
-                    กางเกง
-                  </Link>
+                    BOTTOMS
+                  </button>
                 </div>
               </li>
 

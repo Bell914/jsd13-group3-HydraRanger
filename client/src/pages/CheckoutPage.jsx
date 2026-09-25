@@ -9,6 +9,7 @@ import { useAuth } from "../context/Auth/useAuth.jsx";
 import { getAddresses, addAddress } from "../services/userService.js";
 import { createOrder } from "../services/orderService.js";
 import { api } from "../services/api.js";
+import { normalizeProvince } from "../constants/provinces.js";
 import {
   RANK_DISCOUNT_PERCENT,
   FREE_SHIPPING_MINIMUM,
@@ -126,16 +127,16 @@ function StripeIntentSetup({ orderPayload, onReady, onError }) {
 }
 
 function getAddressFormData(address) {
-  const nameParts = (address.recipientName || "").trim().split(/\s+/);
+  const nameParts = (address.recipientName || "").trim().split(/\s+/).filter(Boolean);
 
   return {
     selectedAddressId: String(address._id || address.id),
-    firstName: nameParts[0] || "",
-    lastName: nameParts.slice(1).join(" "),
+    firstName: address.firstName?.trim() || nameParts[0] || "",
+    lastName: address.lastName?.trim() || nameParts.slice(1).join(" "),
     phone: address.phone || "",
     address: address.addressDetail || address.addressLine || "",
     city: address.district || "",
-    state: address.province || "",
+    state: normalizeProvince(address.province || address.state),
     zipCode: address.zipCode || address.postalCode || "",
     saveAddress: false,
   };
@@ -195,6 +196,7 @@ export default function CheckoutPage() {
           setShippingData((previous) => ({
             ...previous,
             ...getAddressFormData(defaultAddress),
+            selectedAddressId: String(defaultAddress._id || defaultAddress.id),
           }));
         }
       } catch (error) {
@@ -226,8 +228,7 @@ export default function CheckoutPage() {
     : 0;
   const totalDiscount = Math.max(rankDiscountAmount, couponDiscountAmount);
   const discountedSubtotal = Math.max(0, subtotal - totalDiscount);
-  const taxAmount = currentStep >= 3 ? Math.round(discountedSubtotal * 0.06 * 100) / 100 : 0;
-  const totalAmount = discountedSubtotal + shippingCost + taxAmount;
+  const totalAmount = discountedSubtotal + shippingCost;
   const checkoutFingerprint = JSON.stringify({
     email,
     cartItems: cartItems.map((item) => ({
@@ -365,9 +366,10 @@ export default function CheckoutPage() {
   async function finishOrder(payload, existingOrder = null) {
     const response = existingOrder || await createOrder(payload);
     const order = response?.data || response;
+    const isMockPayment = ["promptpay", "paypal"].includes(payload.paymentMethod);
     let upgradedRank = null;
 
-    if (currentUser) {
+    if (currentUser && !isMockPayment) {
       const spending = Number(currentUser.membership?.accumulatedSpending || 0);
       const newRank = calculateRankFromSpending(spending + (order.subtotal ?? discountedSubtotal));
       if (newRank !== userRank) upgradedRank = newRank;
@@ -397,8 +399,10 @@ export default function CheckoutPage() {
       userRank,
       upgradedRank,
       shippingCost: order.shippingCost ?? shippingCost,
-      taxAmount: order.taxAmount ?? taxAmount,
       totalAmount: order.totalAmount ?? totalAmount,
+      paymentMode: ["promptpay", "paypal"].includes(payload.paymentMethod)
+        ? "mock"
+        : "stripe",
     });
 
     if (existingOrder) {
@@ -415,12 +419,17 @@ export default function CheckoutPage() {
     setSubmitError("");
 
     try {
+      const paymentMethod = paymentData.method || "credit-card";
+      if (!["credit-card", "promptpay", "paypal"].includes(paymentMethod)) {
+        throw new Error("กรุณาเลือกช่องทางการชำระเงินที่รองรับ");
+      }
+
       const stockError = getStockError();
       if (stockError) throw new Error(stockError);
 
       const payload = buildOrderPayload();
 
-      if (paymentData.method === "credit-card") {
+      if (paymentMethod === "credit-card") {
         if (!stripe || !elements) {
           throw new Error("แบบฟอร์มบัตรยังโหลดไม่เสร็จ กรุณาลองใหม่");
         }
@@ -467,7 +476,7 @@ export default function CheckoutPage() {
 
       await finishOrder(
         payload,
-        paymentData.method === "credit-card" ? preparedOrder : null,
+        paymentMethod === "credit-card" ? preparedOrder : null,
       );
     } catch (error) {
       console.error("Order payment failed:", error);
@@ -493,6 +502,7 @@ export default function CheckoutPage() {
     setShippingData((previous) => ({
       ...previous,
       ...getAddressFormData(address),
+      selectedAddressId: String(address._id || address.id),
     }));
   }
 
@@ -518,10 +528,10 @@ export default function CheckoutPage() {
   if (!cartItems.length) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-        <h1 className="mb-4 text-3xl font-bold">Your Cart is Empty</h1>
-        <p className="mb-8 text-gray-500">Please add items to your cart before checkout.</p>
+        <h1 className="mb-4 text-3xl font-bold">ตะกร้าสินค้าว่างเปล่า</h1>
+        <p className="mb-8 text-gray-500">กรุณาเพิ่มสินค้าลงในตะกร้าก่อนดำเนินการชำระเงิน</p>
         <Link to="/products" className="inline-block rounded-lg bg-black px-8 py-3 font-semibold text-white">
-          Explore Products
+          เลือกดูสินค้า
         </Link>
       </div>
     );
@@ -535,7 +545,7 @@ export default function CheckoutPage() {
         {submitError && (
           <div role="alert" className="mb-6 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             <span>{submitError}</span>
-            <button onClick={() => setSubmitError("")} className="font-bold">✕</button>
+            <button type="button" aria-label="ปิดข้อความแจ้งเตือน" onClick={() => setSubmitError("")} className="font-bold">✕</button>
           </div>
         )}
 
@@ -589,7 +599,7 @@ export default function CheckoutPage() {
 
                 {paymentData.method === "credit-card" ? (
                   <div className="rounded-lg border border-gray-200 bg-white p-6">
-                    <h2 className="mb-4 text-xl font-bold">ชำระเงินด้วยบัตร</h2>
+                    <h2 className="mb-4 text-xl font-bold">ชำระเงินด้วย Credit / Debit Card</h2>
                     {!clientSecret ? (
                       <>
                         {paymentSetupPaused ? (
@@ -625,21 +635,37 @@ export default function CheckoutPage() {
                         )}
                       </>
                     ) : (
-                      <Elements stripe={stripePromise} options={{ clientSecret }}>
+                        <Elements stripe={stripePromise} options={{ clientSecret, locale: "th" }}>
                         <StripePaymentForm onSubmit={handlePlaceOrder} isSubmitting={isSubmitting} />
                       </Elements>
                     )}
                   </div>
                 ) : (
-                  <ReviewSection
-                    email={email}
-                    shippingData={shippingData}
-                    paymentData={paymentData}
-                    onEditStep={setCurrentStep}
-                    onBack={() => goToStep(3)}
-                    onPlaceOrder={() => handlePlaceOrder(null, null)}
-                    isSubmitting={isSubmitting}
-                  />
+                  <>
+                    <div role="status" className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                      {paymentData.method === "promptpay" ? (
+                        <div className="flex items-center gap-4">
+                          <div aria-label="QR Code จำลองสำหรับเดโม" className="grid h-24 w-24 shrink-0 grid-cols-5 gap-0.5 rounded bg-white p-1 ring-1 ring-amber-300">
+                            {[1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1].map((pixel, index) => (
+                              <span key={index} className={pixel ? "bg-gray-900" : "bg-white"} />
+                            ))}
+                          </div>
+                          <p>QR Code นี้เป็นภาพจำลองสำหรับเดโมเท่านั้น ไม่มีการรับชำระเงินจริง</p>
+                        </div>
+                      ) : (
+                        <p>PayPal (โหมดทดสอบระบบ - ไม่มีการตัดเงินจริง)</p>
+                      )}
+                    </div>
+                    <ReviewSection
+                      email={email}
+                      shippingData={shippingData}
+                      paymentData={paymentData}
+                      onEditStep={setCurrentStep}
+                      onBack={() => goToStep(3)}
+                      onPlaceOrder={() => handlePlaceOrder(null, null)}
+                      isSubmitting={isSubmitting}
+                    />
+                  </>
                 )}
               </>
             )}
@@ -650,7 +676,6 @@ export default function CheckoutPage() {
               cartItems={cartItems}
               subtotal={subtotal}
               shippingMethodId={shippingData.shippingMethod}
-              currentStep={currentStep}
               userRank={userRank}
               rankDiscountAmount={rankDiscountAmount}
               appliedCoupon={appliedCoupon}

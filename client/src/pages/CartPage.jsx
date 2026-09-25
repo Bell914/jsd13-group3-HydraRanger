@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   ArrowLeft,
@@ -12,8 +12,10 @@ import {
 } from "lucide-react";
 import useCartStore from "../store/cartStore.js";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
+import { authService } from "../services/authService.js";
 
 export default function CartPage() {
+  const navigate = useNavigate();
   const { cartItems, updateQuantity, removeFromCart, clearCart, getTotalPrice } =
     useCartStore();
 
@@ -26,16 +28,20 @@ export default function CartPage() {
   const shippingFee = subtotal >= 1000 || subtotal === 0 ? 0 : 50;
   const grandTotal = subtotal + shippingFee;
 
+  const handleCheckout = () => {
+    navigate(authService.getCurrentUser() ? "/checkout" : "/checkout/auth");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50/50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header with Title, Item Count, and Clear Cart Button (จุดที่ 1: ขยับปุ่มลงมาติดเส้นขีด) */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-2 pb-4 border-b border-gray-200">
-          <div className="flex items-center gap-3">
+          <div className="flex items-baseline gap-3">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-primary">
               Shopping Cart
             </h1>
-            <span className="text-sm font-medium text-secondary">
+            <span className="mt-1 text-sm font-medium text-secondary">
               ({totalItemsCount} ชิ้น)
             </span>
           </div>
@@ -224,14 +230,15 @@ export default function CartPage() {
                   </span>
                 </div>
 
-                <Link
-                  to="/checkout"
+                <button
+                  type="button"
+                  onClick={handleCheckout}
                   aria-label="Proceed to Checkout"
                   className="group relative w-full mt-4 py-4 px-6 bg-gray-950 hover:bg-black text-white font-bold text-sm tracking-wider uppercase rounded-xl flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg transition-all active:scale-[0.99] cursor-pointer"
                 >
                   <span>ดำเนินการชำระเงิน</span>
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </Link>
+                </button>
 
                 <div className="mt-5 pt-5 border-t border-gray-100 flex items-center justify-center gap-2 text-xs text-gray-500">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
