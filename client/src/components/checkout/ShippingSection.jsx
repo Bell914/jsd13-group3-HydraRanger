@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Gift, ChevronDown, Plus, Minus } from "lucide-react";
+import { normalizeProvince, THAI_PROVINCES } from "../../constants/provinces.js";
 
 export const SHIPPING_METHODS = [
   {
@@ -67,6 +68,8 @@ export default function ShippingSection({
   const selectedMethod =
     SHIPPING_METHODS.find((m) => m.id === shippingData.shippingMethod) ||
     SHIPPING_METHODS[0];
+  const currentProvince = normalizeProvince(shippingData.state);
+  const hasUnlistedProvince = currentProvince && !THAI_PROVINCES.includes(currentProvince);
 
   // Collapsed View for Step 3 and 4
   if (isCollapsed) {
@@ -330,7 +333,7 @@ export default function ShippingSection({
               <select
                 id="shipping-state"
                 disabled={isSavedAddressSelected}
-                value={shippingData.state || ""}
+                value={currentProvince}
                 onChange={(e) => {
                   onChangeShipping({ ...shippingData, state: e.target.value });
                   if (errors.state) setErrors({ ...errors, state: null });
@@ -342,12 +345,12 @@ export default function ShippingSection({
                 }`}
               >
                 <option value="">เลือกจังหวัด...</option>
-                <option value="Bangkok">กรุงเทพมหานคร</option>
-                <option value="Chiang Mai">เชียงใหม่</option>
-                <option value="Phuket">ภูเก็ต</option>
-                <option value="Nonthaburi">นนทบุรี</option>
-                <option value="Samut Prakan">สมุทรปราการ</option>
-                <option value="Other">จังหวัดอื่นๆ</option>
+                {hasUnlistedProvince && (
+                  <option value={currentProvince}>{currentProvince}</option>
+                )}
+                {THAI_PROVINCES.map((province) => (
+                  <option key={province} value={province}>{province}</option>
+                ))}
               </select>
               <ChevronDown className="w-4 h-4 text-gray-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>

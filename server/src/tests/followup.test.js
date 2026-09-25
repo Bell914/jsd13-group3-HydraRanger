@@ -13,7 +13,7 @@ import { protect } from '../middleware/authMiddleware.js';
 import { rateLimit } from '../middleware/rateLimiterMiddleware.js';
 import { memoryUpload, MAX_RECOMMEND_IMAGE_SIZE } from '../middleware/recommendUploadMiddleware.js';
 import { getProducts, updateProduct } from '../services/productService.js';
-import { canTransitionOrderStatus, cancelOrder, getExpiredCardPaymentOrders, updateOrderStatus} from '../services/orderService.js';
+import { canTransitionOrderStatus, cancelOrder, getExpiredPendingPaymentOrders, updateOrderStatus} from '../services/orderService.js';
 import { createReview } from '../services/reviewService.js';
 import { resetPassword } from '../services/authService.js';
 import { matchesUploadedImageHeader } from '../middleware/uploadMiddleware.js';
@@ -194,7 +194,7 @@ test('reviews require a completed order', async (t) => {
   assert.equal(String(orderFilter['items.product']), 'cccccccccccccccccccccccc');
 });
 
-test('expired card payment lookup only selects unpaid card orders past their deadline', async (t) => {
+test('expired pending payment lookup includes card and mock methods past their deadline', async (t) => {
   const now = new Date('2026-09-24T12:00:00.000Z');
   let filter;
   t.mock.method(Order, 'find', (query) => {
@@ -202,11 +202,13 @@ test('expired card payment lookup only selects unpaid card orders past their dea
     return [];
   });
 
-  await getExpiredCardPaymentOrders(now);
+  await getExpiredPendingPaymentOrders(now);
 
   assert.equal(filter.status, 'pending');
-  assert.equal(filter.paymentMethod, 'credit-card');
+  assert.deepEqual(filter.paymentMethod, { $in: ['credit-card', 'promptpay', 'paypal'] });
   assert.equal(filter.$or[0].paymentExpiresAt.$lte, now);
+  assert.equal(filter.$or[1].paymentMethod, 'credit-card');
+  assert.equal(filter.$or[1].paymentExpiresAt, null);
   assert.equal(filter.$or[1].createdAt.$lte.toISOString(), '2026-09-24T11:30:00.000Z');
 });
 

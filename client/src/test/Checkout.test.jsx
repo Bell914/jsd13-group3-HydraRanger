@@ -35,7 +35,7 @@ const fillShippingForm = () => {
   fireEvent.change(screen.getByLabelText("เบอร์โทรศัพท์"), { target: { value: "0812345678" } });
   fireEvent.change(screen.getByLabelText("บ้านเลขที่ / ถนน / อาคาร"), { target: { value: "123 Street" } });
   fireEvent.change(screen.getByLabelText("อำเภอ / เขต"), { target: { value: "Bangkok" } });
-  fireEvent.change(screen.getByLabelText("จังหวัด"), { target: { value: "Bangkok" } });
+  fireEvent.change(screen.getByLabelText("จังหวัด"), { target: { value: "กรุงเทพมหานคร" } });
   fireEvent.change(screen.getByLabelText("รหัสไปรษณีย์"), { target: { value: "10110" } });
 };
 
@@ -45,9 +45,17 @@ const goToCheckoutPaymentStep = () => {
   fireEvent.click(screen.getByRole("button", { name: "ดำเนินการต่อ" }));
 };
 
+const goToCheckoutReviewStep = (paymentMethod) => {
+  fillShippingForm();
+  fireEvent.click(screen.getAllByRole("button", { name: "ดำเนินการต่อ" })[0]);
+  fireEvent.click(screen.getByRole("button", { name: paymentMethod }));
+  fireEvent.click(screen.getByRole("button", { name: "ดำเนินการต่อ" }));
+};
+
 describe("Checkout order integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv("VITE_STRIPE_PUBLISHABLE_KEY", "pk_test_checkout");
     stripeMocks.confirmPayment.mockResolvedValue({ paymentIntent: { id: "pi_test", status: "succeeded" } });
     apiMocks.post.mockResolvedValue({ clientSecret: "pi_secret_test" });
     createOrder.mockResolvedValue({
@@ -160,6 +168,7 @@ describe("Checkout order integration", () => {
 
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     await waitFor(() => expect(screen.getByLabelText("นามสกุล")).toHaveValue(""));
+    expect(screen.getByLabelText("ชื่อ")).toHaveValue("สมชาย");
     fireEvent.click(screen.getByRole("button", { name: "ดำเนินการต่อ" }));
 
     expect(await screen.findByText("กรุณากรอกนามสกุล")).toBeInTheDocument();
@@ -167,14 +176,108 @@ describe("Checkout order integration", () => {
     expect(createOrder).not.toHaveBeenCalled();
   });
 
-  it("only offers Stripe card payments in checkout", async () => {
+  it("splits a saved address recipientName into first and last name", async () => {
+    getAddresses.mockResolvedValueOnce({
+      data: [{
+        _id: "saved-address-full-name",
+        recipientName: "สมชาย ใจดี",
+        phone: "0812345678",
+        addressDetail: "123 ถนนตัวอย่าง",
+        district: "บางรัก",
+        province: "กรุงเทพมหานคร",
+        zipCode: "10500",
+        isDefault: true,
+      }],
+    });
+
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
-    goToCheckoutPaymentStep();
-    await screen.findByTestId("payment-element");
+    await waitFor(() => expect(screen.getByLabelText("นามสกุล")).toHaveValue("ใจดี"));
+
+    expect(screen.getByLabelText("ชื่อ")).toHaveValue("สมชาย");
+  });
+
+  it("maps an English saved province to the matching Thai Checkout option", async () => {
+    getAddresses.mockResolvedValueOnce({
+      data: [{
+        _id: "saved-address-bangkok-english",
+        recipientName: "Somchai Jaidee",
+        phone: "0812345678",
+        addressDetail: "123 ถนนตัวอย่าง",
+        district: "บางรัก",
+        province: "  bAnGkOk City  ",
+        zipCode: "10500",
+        isDefault: true,
+      }],
+    });
+
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByLabelText("จังหวัด")).toHaveValue("กรุงเทพมหานคร"));
+    fireEvent.click(screen.getByRole("button", { name: "ดำเนินการต่อ" }));
+
+    expect(screen.getByRole("heading", { name: "ช่องทางการชำระเงิน" })).toBeInTheDocument();
+  });
+
+  it("keeps an unknown saved province visible as a temporary Checkout option", async () => {
+    getAddresses.mockResolvedValueOnce({
+      data: [{
+        _id: "saved-address-custom-province",
+        recipientName: "Somchai Jaidee",
+        phone: "0812345678",
+        addressDetail: "123 ถนนตัวอย่าง",
+        district: "ตัวอย่าง",
+        province: "Example Province",
+        zipCode: "10500",
+        isDefault: true,
+      }],
+    });
+
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+
+    const provinceSelect = await screen.findByLabelText("จังหวัด");
+    await waitFor(() => expect(provinceSelect).toHaveValue("Example Province"));
+    expect(screen.getByRole("option", { name: "Example Province" })).toBeInTheDocument();
+  });
+
+  it("offers PromptPay, PayPal, and Stripe in checkout", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    fillShippingForm();
+    fireEvent.click(screen.getAllByRole("button", { name: "ดำเนินการต่อ" })[0]);
 
     expect(screen.getByText("Credit / Debit Card")).toBeInTheDocument();
-    expect(screen.queryByText("PromptPay")).not.toBeInTheDocument();
-    expect(screen.queryByText("PayPal")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "PromptPay" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "PayPal" })).toBeInTheDocument();
+  });
+
+  it("requires Stripe configuration for card payments but allows PromptPay demo", async () => {
+    vi.stubEnv("VITE_STRIPE_PUBLISHABLE_KEY", "");
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    fillShippingForm();
+    fireEvent.click(screen.getAllByRole("button", { name: "ดำเนินการต่อ" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "ดำเนินการต่อ" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("ระบบชำระเงินยังไม่ได้ตั้งค่า Stripe");
+    fireEvent.click(screen.getByRole("button", { name: "PromptPay" }));
+    fireEvent.click(screen.getByRole("button", { name: "ดำเนินการต่อ" }));
+
+    expect(await screen.findByText("QR Code นี้เป็นภาพจำลองสำหรับเดโมเท่านั้น ไม่มีการรับชำระเงินจริง")).toBeInTheDocument();
+    expect(createOrder).not.toHaveBeenCalled();
+  });
+
+  it.each(["promptpay", "paypal"])("creates a pending demo order for %s without charging and clears the cart", async (method) => {
+    const methodLabel = method === "promptpay" ? "PromptPay" : "PayPal";
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToCheckoutReviewStep(methodLabel);
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      method === "promptpay" ? "QR Code นี้เป็นภาพจำลอง" : "โหมดทดสอบระบบ - ไม่มีการตัดเงินจริง",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "ยืนยันการสั่งซื้อ" }));
+
+    expect(await screen.findByText(/โหมดจำลองสำหรับเดโม: สร้างคำสั่งซื้อสถานะรอชำระเงินเพื่อทดสอบแล้ว/)).toBeInTheDocument();
     expect(createOrder).toHaveBeenCalledTimes(1);
+    expect(createOrder.mock.calls[0][0]).toMatchObject({ paymentMethod: method });
+    expect(apiMocks.post).not.toHaveBeenCalled();
+    expect(stripeMocks.confirmPayment).not.toHaveBeenCalled();
+    expect(useCartStore.getState().cartItems).toEqual([]);
   });
 });

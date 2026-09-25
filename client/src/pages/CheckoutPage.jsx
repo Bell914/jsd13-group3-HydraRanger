@@ -9,6 +9,7 @@ import { useAuth } from "../context/Auth/useAuth.jsx";
 import { getAddresses, addAddress } from "../services/userService.js";
 import { createOrder } from "../services/orderService.js";
 import { api } from "../services/api.js";
+import { normalizeProvince } from "../constants/provinces.js";
 import {
   RANK_DISCOUNT_PERCENT,
   FREE_SHIPPING_MINIMUM,
@@ -126,16 +127,16 @@ function StripeIntentSetup({ orderPayload, onReady, onError }) {
 }
 
 function getAddressFormData(address) {
-  const nameParts = (address.recipientName || "").trim().split(/\s+/);
+  const nameParts = (address.recipientName || "").trim().split(/\s+/).filter(Boolean);
 
   return {
     selectedAddressId: String(address._id || address.id),
-    firstName: nameParts[0] || "",
-    lastName: nameParts.slice(1).join(" "),
+    firstName: address.firstName?.trim() || nameParts[0] || "",
+    lastName: address.lastName?.trim() || nameParts.slice(1).join(" "),
     phone: address.phone || "",
     address: address.addressDetail || address.addressLine || "",
     city: address.district || "",
-    state: address.province || "",
+    state: normalizeProvince(address.province || address.state),
     zipCode: address.zipCode || address.postalCode || "",
     saveAddress: false,
   };
@@ -365,9 +366,10 @@ export default function CheckoutPage() {
   async function finishOrder(payload, existingOrder = null) {
     const response = existingOrder || await createOrder(payload);
     const order = response?.data || response;
+    const isMockPayment = ["promptpay", "paypal"].includes(payload.paymentMethod);
     let upgradedRank = null;
 
-    if (currentUser) {
+    if (currentUser && !isMockPayment) {
       const spending = Number(currentUser.membership?.accumulatedSpending || 0);
       const newRank = calculateRankFromSpending(spending + (order.subtotal ?? discountedSubtotal));
       if (newRank !== userRank) upgradedRank = newRank;
@@ -398,6 +400,9 @@ export default function CheckoutPage() {
       upgradedRank,
       shippingCost: order.shippingCost ?? shippingCost,
       totalAmount: order.totalAmount ?? totalAmount,
+      paymentMode: ["promptpay", "paypal"].includes(payload.paymentMethod)
+        ? "mock"
+        : "stripe",
     });
 
     if (existingOrder) {
@@ -414,8 +419,9 @@ export default function CheckoutPage() {
     setSubmitError("");
 
     try {
-      if (paymentData.method !== "credit-card") {
-        throw new Error("กรุณาเลือกชำระเงินด้วย Credit / Debit Card");
+      const paymentMethod = paymentData.method || "credit-card";
+      if (!["credit-card", "promptpay", "paypal"].includes(paymentMethod)) {
+        throw new Error("กรุณาเลือกช่องทางการชำระเงินที่รองรับ");
       }
 
       const stockError = getStockError();
@@ -423,7 +429,7 @@ export default function CheckoutPage() {
 
       const payload = buildOrderPayload();
 
-      if (paymentData.method === "credit-card") {
+      if (paymentMethod === "credit-card") {
         if (!stripe || !elements) {
           throw new Error("แบบฟอร์มบัตรยังโหลดไม่เสร็จ กรุณาลองใหม่");
         }
@@ -470,7 +476,7 @@ export default function CheckoutPage() {
 
       await finishOrder(
         payload,
-        paymentData.method === "credit-card" ? preparedOrder : null,
+        paymentMethod === "credit-card" ? preparedOrder : null,
       );
     } catch (error) {
       console.error("Order payment failed:", error);
@@ -635,9 +641,31 @@ export default function CheckoutPage() {
                     )}
                   </div>
                 ) : (
-                  <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                    กรุณาเลือกชำระเงินด้วย Credit / Debit Card
-                  </p>
+                  <>
+                    <div role="status" className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                      {paymentData.method === "promptpay" ? (
+                        <div className="flex items-center gap-4">
+                          <div aria-label="QR Code จำลองสำหรับเดโม" className="grid h-24 w-24 shrink-0 grid-cols-5 gap-0.5 rounded bg-white p-1 ring-1 ring-amber-300">
+                            {[1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1].map((pixel, index) => (
+                              <span key={index} className={pixel ? "bg-gray-900" : "bg-white"} />
+                            ))}
+                          </div>
+                          <p>QR Code นี้เป็นภาพจำลองสำหรับเดโมเท่านั้น ไม่มีการรับชำระเงินจริง</p>
+                        </div>
+                      ) : (
+                        <p>PayPal (โหมดทดสอบระบบ - ไม่มีการตัดเงินจริง)</p>
+                      )}
+                    </div>
+                    <ReviewSection
+                      email={email}
+                      shippingData={shippingData}
+                      paymentData={paymentData}
+                      onEditStep={setCurrentStep}
+                      onBack={() => goToStep(3)}
+                      onPlaceOrder={() => handlePlaceOrder(null, null)}
+                      isSubmitting={isSubmitting}
+                    />
+                  </>
                 )}
               </>
             )}

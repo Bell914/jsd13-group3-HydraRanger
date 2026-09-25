@@ -223,7 +223,7 @@ export async function createOrder(user, orderData) {
   const discountedSubtotal = Math.max(0, subtotal - discountAmount);
   const totalAmount = discountedSubtotal + shippingCost;
   const paymentMethod = orderData.paymentMethod || 'credit-card';
-  const paymentExpiresAt = paymentMethod === 'credit-card'
+  const paymentExpiresAt = ['credit-card', 'promptpay', 'paypal'].includes(paymentMethod)
     ? new Date(Date.now() + 30 * 60 * 1000)
     : null;
 
@@ -277,15 +277,19 @@ export async function createOrder(user, orderData) {
   return Order.findById(order._id).populate('user', 'username email');
 }
 
-export async function getExpiredCardPaymentOrders(now = new Date()) {
+export async function getExpiredPendingPaymentOrders(now = new Date()) {
   const oldOrderCutoff = new Date(now.getTime() - 30 * 60 * 1000);
 
   return Order.find({
     status: 'pending',
-    paymentMethod: 'credit-card',
+    paymentMethod: { $in: ['credit-card', 'promptpay', 'paypal'] },
     $or: [
       { paymentExpiresAt: { $lte: now } },
-      { paymentExpiresAt: null, createdAt: { $lte: oldOrderCutoff } }
+      {
+        paymentMethod: 'credit-card',
+        paymentExpiresAt: null,
+        createdAt: { $lte: oldOrderCutoff }
+      }
     ]
   });
 }

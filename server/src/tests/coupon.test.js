@@ -72,6 +72,43 @@ test('two concurrent createOrder calls persist only one discounted order and res
   assert.equal(String(coupon.orderId), String(orders[0]._id));
 });
 
+for (const paymentMethod of ['promptpay', 'paypal']) {
+  test(`${paymentMethod} mock checkout persists a pending order with an expiry`, async (t) => {
+    const user = { _id: new mongoose.Types.ObjectId(), email: 'test@example.com' };
+    const productId = new mongoose.Types.ObjectId();
+    const variantId = new mongoose.Types.ObjectId();
+    let persistedOrder;
+
+    t.mock.method(Product, 'findOne', async () => ({
+      _id: productId,
+      title: 'Demo shirt',
+      variants: [{ _id: variantId, sku: 'DEMO', price: 500, stock_quantity: 5 }]
+    }));
+    t.mock.method(Product, 'updateOne', async () => ({ modifiedCount: 1 }));
+    t.mock.method(Order, 'create', async (data) => {
+      persistedOrder = { ...data, status: 'pending' };
+      return persistedOrder;
+    });
+    t.mock.method(Order, 'findById', () => ({ populate: async () => persistedOrder }));
+
+    const now = Date.now();
+    await createOrder(user, {
+      paymentMethod,
+      items: [{ productId, variantId, sku: 'DEMO', quantity: 1 }],
+      shippingAddress: {
+        firstName: 'Demo', lastName: 'Customer', phone: '0800000000',
+        address: 'Demo Street', city: 'Bangkok', zipCode: '10100'
+      }
+    });
+
+    assert.equal(persistedOrder.paymentMethod, paymentMethod);
+    assert.equal(persistedOrder.status, 'pending');
+    assert.ok(persistedOrder.paymentExpiresAt instanceof Date);
+    assert.ok(persistedOrder.paymentExpiresAt.getTime() > now);
+    assert.ok(persistedOrder.paymentExpiresAt.getTime() <= now + 30 * 60 * 1000);
+  });
+}
+
 test('an old order cannot release a coupon claimed by a newer checkout', async (t) => {
   const userId = new mongoose.Types.ObjectId();
   const oldOrderId = new mongoose.Types.ObjectId();
