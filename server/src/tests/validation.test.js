@@ -110,7 +110,6 @@ test('ID validator accepts only a 24-character MongoDB ID', () => {
 test('product ID parameter validator rejects malformed IDs', () => {
   assert.equal(validateProductIdParam({ productId: 'bad-id' }).isValid, false);
 });
-
 test('article requires its public content and accepts a valid draft', () => {
   const missingContent = validateArticleInput({ title: 'New article' });
   assert.equal(missingContent.isValid, false);
