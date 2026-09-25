@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-:root { font-family: "Prompt", ui-sans-serif, system-ui, sans-serif; color: #0046a7; background: #fcf4ee; }
+:root { font-family: "Prompt", "Kanit", system-ui, sans-serif; color: #0046a7; background: #fcf4ee; }
 
 @theme {
   --color-background: #fcf4ee;
@@ -11,7 +11,7 @@
   --color-primary-hover: #003985;
   --color-accent-hover: #b81159;
   --color-occasion-border: #a6afc4;
-  --font-sans: "Prompt", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Prompt", "Kanit", system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
 html { min-width: 320px; }
@@ -70,8 +70,10 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
 .admin-profile { display: flex; align-items: center; gap: 16px; color: #374151; font-size: 13px; }
 .notification-area { position: relative; }
 .notification { position: relative; padding: 8px; border: 0; background: transparent; color: #9ca3af; }
+.notification.has-notifications { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: #dc2626; color: #fff; }
+.notification.has-notifications:hover, .notification.has-notifications[aria-expanded="true"] { border-radius: 50%; background: #b91c1c; color: #fff; }
 .notification:hover, .notification[aria-expanded="true"] { border-radius: 8px; background: #fff0f6; color: #e2156d; }
-.notification span { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: #ef4444; }
+.notification span { position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: #fff; }
 .notification-panel { position: absolute; top: calc(100% + 8px); right: 0; z-index: 40; width: min(300px, calc(100vw - 24px)); padding: 14px; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; box-shadow: 0 12px 30px rgba(15, 23, 42, .14); }
 .notification-panel strong { color: #1f2937; font-size: 13px; }
 .notification-panel p { margin: 10px 0 0; color: #6b7280; font-size: 12px; }
@@ -139,7 +141,6 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
 .page-button { padding: 6px 11px; border: 0; border-radius: 6px; background: #0046a7; color: #fff; }
 .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
 .summary-card { padding: 18px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .04); }
-.summary-icon { width: 38px; height: 38px; display: grid; place-items: center; margin-bottom: 14px; border-radius: 10px; background: #fdf2f8; color: #e2156d; }
 .summary-card p { margin: 0; color: #6b7280; font-size: 13px; }
 .summary-card > strong { display: block; margin: 5px 0; color: #1f2937; font-size: 22px; }
 .summary-card small { color: #059669; font-size: 12px; }
@@ -350,9 +351,8 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
   .table-footer { align-items: flex-start; gap: 8px; }
 }
 
-/* Shared admin presentation: square controls and readable labels. */
-.admin-shell *, .login-shell * { border-radius: 0 !important; }
-.admin-shell, .login-shell { font-family: "Prompt", ui-sans-serif, system-ui, sans-serif; font-size: 16px; }
+/* Shared admin presentation with readable labels. */
+.admin-shell, .login-shell { font-family: "Prompt", "Kanit", system-ui, sans-serif; font-size: 16px; }
 .admin-topbar { min-height: 68px; }
 .topbar-title, .admin-profile { font-size: 16px; }
 .primary-action { min-width: 150px; min-height: 46px; padding: 10px 16px; font-size: 16px; }

@@ -40,7 +40,7 @@ export function AdminTopbar({ title }) {
       <strong className="topbar-title">{title}</strong>
       <div className="admin-profile">
         <AdminNotifications items={notifications} />
-        <strong>{user?.username || 'Admin'} (Admin)</strong>
+        <strong>{user?.username || 'Admin'} (Supervisor)</strong>
       </div>
     </header>
   );
