@@ -8,7 +8,7 @@ import {
   VALID_COUPONS,
   SHIPPING_METHODS_CONFIG
 } from '../config/membershipConfig.js';
-import { refundCouponUsage, claimCouponAtomically } from './couponService.js';
+import { refundCouponUsage, claimCouponAtomically, getActiveGeneralCoupon } from './couponService.js';
 
 const SHIPPING_COSTS = {
   standard: 0,
@@ -155,6 +155,9 @@ function validateShippingAddress(address) {
 }
 
 export async function createOrder(user, orderData) {
+  // Capture the checkout start once so time-based fields belong to the same
+  // request, even when inventory preparation takes a little while.
+  const checkoutStartedAt = new Date();
   validateShippingAddress(orderData.shippingAddress);
   const items = await prepareOrderItems(orderData.items);
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
@@ -188,10 +191,13 @@ export async function createOrder(user, orderData) {
 
     // 2.2 Fallback to static VALID_COUPONS (Tier coupons, birthday coupons)
     if (!appliedDbCoupon) {
-      const coupon = VALID_COUPONS[couponCode];
+      const coupon = await getActiveGeneralCoupon(couponCode, subtotal) || VALID_COUPONS[couponCode];
       if (coupon) {
         if (subtotal >= (coupon.minSpend || 0)) {
-          if (coupon.type === 'percent') {
+          if (coupon.type === 'GENERAL') {
+            const couponDiscount = Math.round((subtotal * coupon.discountValue) / 100);
+            calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
+          } else if (coupon.type === 'percent') {
             const couponDiscount = Math.round((subtotal * coupon.value) / 100);
             calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
           } else if (coupon.type === 'fixed') {
@@ -224,7 +230,7 @@ export async function createOrder(user, orderData) {
   const totalAmount = discountedSubtotal + shippingCost;
   const paymentMethod = orderData.paymentMethod || 'credit-card';
   const paymentExpiresAt = ['credit-card', 'promptpay', 'paypal'].includes(paymentMethod)
-    ? new Date(Date.now() + 30 * 60 * 1000)
+    ? new Date(checkoutStartedAt.getTime() + 30 * 60 * 1000)
     : null;
 
   let order;

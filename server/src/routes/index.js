@@ -19,6 +19,7 @@ import couponRoutes from "./couponRoutes.js";
 import paymentRoutes from "./paymentRoutes.js";
 import articleRoutes from "./articleRoutes.js";
 import adminArticleRoutes from "./adminArticleRoutes.js";
+import adminCouponRoutes from "./adminCouponRoutes.js";
 
 const router = Router();
 
@@ -73,5 +74,6 @@ router.use("/recommend", recommendRoutes);
 router.use("/coupons", couponRoutes);
 router.use("/articles", articleRoutes);
 router.use("/admin/articles", adminArticleRoutes);
+router.use("/admin/coupons", adminCouponRoutes);
 
 export default router;
