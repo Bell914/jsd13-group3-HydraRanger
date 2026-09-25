@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import morgan from "morgan";
 import path from "node:path";
@@ -51,6 +52,7 @@ app.use(
 app.post("/api/payment/webhook", express.raw({ type: "application/json" }), stripeWebhook);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Let the Admin website display the same product images as the customer website.
 app.use("/collection-2026", express.static(productImageFolder));
