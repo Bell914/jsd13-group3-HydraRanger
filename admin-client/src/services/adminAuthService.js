@@ -1,13 +1,20 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5002/api';
 const USER_KEY = 'occasion_admin_user';
+const TOKEN_KEY = 'occasion_admin_session_token';
+
+function getSessionToken() {
+  return sessionStorage.getItem(TOKEN_KEY);
+}
 
 async function request(path, options = {}) {
   try {
+    const token = getSessionToken();
     const response = await fetch(API_BASE_URL + path, {
       ...options,
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers
       }
     });
@@ -34,6 +41,9 @@ export const adminAuthService = {
     if (response.data?.user?.role !== 'admin') {
       throw new Error('บัญชีนี้ไม่มีสิทธิ์ Admin');
     }
+    if (response.data?.token) {
+      sessionStorage.setItem(TOKEN_KEY, response.data.token);
+    }
     localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
     return response.data.user;
   },
@@ -55,6 +65,7 @@ export const adminAuthService = {
     } finally {
       localStorage.removeItem('occasion_admin_token');
       localStorage.removeItem(USER_KEY);
+      sessionStorage.removeItem(TOKEN_KEY);
     }
   },
 

@@ -8,13 +8,11 @@ import { ENV } from '../config/env.js';
 import { User } from '../models/User.js';
 import { Order } from '../models/Order.js';
 import { Product } from '../models/Product.js';
-import { Review } from '../models/Review.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { rateLimit } from '../middleware/rateLimiterMiddleware.js';
 import { memoryUpload, MAX_RECOMMEND_IMAGE_SIZE } from '../middleware/recommendUploadMiddleware.js';
 import { getProducts, updateProduct } from '../services/productService.js';
 import { canTransitionOrderStatus, cancelOrder, getExpiredPendingPaymentOrders, updateOrderStatus} from '../services/orderService.js';
-import { createReview } from '../services/reviewService.js';
 import { resetPassword } from '../services/authService.js';
 import { matchesUploadedImageHeader } from '../middleware/uploadMiddleware.js';
 import recommendRoutes from '../routes/recommendRoutes.js';
@@ -173,27 +171,6 @@ test('persistent image upload validates file signatures', () => {
   assert.equal(matchesUploadedImageHeader({ mimetype: 'image/png', buffer: Buffer.from('not png') }), false);
 });
 
-test('reviews require a completed order', async (t) => {
-  let orderFilter;
-  t.mock.method(Order, 'findOne', async (filter) => {
-    orderFilter = filter;
-    return null;
-  });
-
-  await assert.rejects(
-    createReview('aaaaaaaaaaaaaaaaaaaaaaaa', {
-      orderId: 'bbbbbbbbbbbbbbbbbbbbbbbb',
-      productId: 'cccccccccccccccccccccccc',
-      rating: 5,
-      comment: 'great product'
-    }),
-    /สามารถรีวิวได้เฉพาะสินค้าที่จัดส่งเสร็จสิ้น \(completed\) แล้วเท่านั้น/
-  );
-  assert.equal(orderFilter.status, 'completed');
-  assert.equal(String(orderFilter.user), 'aaaaaaaaaaaaaaaaaaaaaaaa');
-  assert.equal(String(orderFilter['items.product']), 'cccccccccccccccccccccccc');
-});
-
 test('expired pending payment lookup includes card and mock methods past their deadline', async (t) => {
   const now = new Date('2026-09-24T12:00:00.000Z');
   let filter;
@@ -251,17 +228,6 @@ test('cancelling a pending order restores its reserved stock', async (t) => {
   assert.equal(cancelledOrder.status, 'cancelled');
   assert.equal(cancelledOrder.stockRestored, true);
   assert.equal(stock, 5);
-});
-
-test('duplicate review constraint is unique per user, product, and order', async (t) => {
-  const indexes = Review.schema.indexes();
-  assert.ok(indexes.some(([keys, options]) => keys.user === 1 && keys.product === 1 && keys.order === 1 && options.unique));
-  t.mock.method(Order, 'findOne', async () => ({ _id: 'bbbbbbbbbbbbbbbbbbbbbbbb' }));
-  t.mock.method(Product, 'findById', async () => ({ _id: 'cccccccccccccccccccccccc' }));
-  t.mock.method(Review, 'create', async () => { const error = new Error('duplicate'); error.code = 11000; throw error; });
-  await assert.rejects(createReview('aaaaaaaaaaaaaaaaaaaaaaaa', {
-    orderId: 'bbbbbbbbbbbbbbbbbbbbbbbb', productId: 'cccccccccccccccccccccccc', rating: 5, comment: 'great product'
-  }), (error) => error.code === 11000);
 });
 
 test('password reset revokes existing sessions', async (t) => {

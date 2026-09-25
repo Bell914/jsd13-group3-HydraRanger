@@ -1,5 +1,5 @@
 import React from "react";
-import { Heart, Share2, Ruler, Minus, Plus, ShoppingBag, Sparkles } from "lucide-react";
+import { Heart, Share2, Minus, Plus, ShoppingBag } from "lucide-react";
 import { SizeRecommendationCard } from './SizeRecommendationCard.jsx';
 
 export const ProductBuySection = ({
@@ -61,7 +61,6 @@ export const ProductBuySection = ({
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               {product.isEarlyAccess && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-400 to-yellow-400 px-2 py-0.5 text-xs font-black uppercase text-gray-950 shadow-xs">
-                  <Sparkles size={12} className="text-gray-950" />
                   <span>EARLY ACCESS</span>
                 </span>
               )}
@@ -76,7 +75,6 @@ export const ProductBuySection = ({
             </div>
             {product.isEarlyAccess && (
               <div className="mt-2.5 flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-                <Sparkles size={14} className="text-amber-600 shrink-0" />
                 <span>
                   <strong>Early Access Exclusive:</strong> สิทธิพิเศษช้อปสินค้าคอลเลกชันใหม่ก่อนใคร สำหรับสมาชิก <strong>SILVER</strong> ขึ้นไป
                 </span>
@@ -162,7 +160,6 @@ export const ProductBuySection = ({
               onClick={onOpenSizeGuide}
               className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:text-accent underline transition cursor-pointer"
             >
-              <Ruler size={14} />
               <span>ตารางไซส์</span>
             </button>
           </div>

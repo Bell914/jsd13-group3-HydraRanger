@@ -7,7 +7,6 @@ const menuItems = [
   { path: '/products', label: 'Products' },
   { path: '/orders', label: 'Orders' },
   { path: '/customers', label: 'Customers' },
-  { path: '/reviews', label: 'Reviews' },
   { path: '/lookbooks', label: 'Lookbooks' },
   { path: '/articles', label: 'Articles' },
 ];

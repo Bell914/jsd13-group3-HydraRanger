@@ -4,7 +4,6 @@ import { validateIdParam, validateProductIdParam } from '../validators/commonVal
 import { validateContactInput } from '../validators/contactValidator.js';
 import { validateCustomerStatus } from '../validators/customerValidator.js';
 import { validateCreateOrder, validateOrderStatus } from '../validators/orderValidator.js';
-import { validateReviewInput } from '../validators/reviewValidator.js';
 import { validateProductInput } from '../validators/productValidator.js';
 import { validateResetPasswordInput } from '../validators/authValidator.js';
 import { validateArticleInput, validateArticleStatus } from '../validators/articleValidator.js';
@@ -82,16 +81,6 @@ test('customer status only accepts a boolean', () => {
   assert.equal(validateCustomerStatus({ isActive: false }).isValid, true);
 });
 
-test('review rejects an invalid rating and IDs', () => {
-  const result = validateReviewInput({
-    orderId: 'bad-id',
-    productId: 'bad-id',
-    rating: 6,
-    comment: 'ok review'
-  });
-  assert.equal(result.isValid, false);
-});
-
 test('contact form rejects an invalid email and short message', () => {
   const result = validateContactInput({
     name: 'Test User',
@@ -110,7 +99,6 @@ test('ID validator accepts only a 24-character MongoDB ID', () => {
 test('product ID parameter validator rejects malformed IDs', () => {
   assert.equal(validateProductIdParam({ productId: 'bad-id' }).isValid, false);
 });
-
 test('article requires its public content and accepts a valid draft', () => {
   const missingContent = validateArticleInput({ title: 'New article' });
   assert.equal(missingContent.isValid, false);

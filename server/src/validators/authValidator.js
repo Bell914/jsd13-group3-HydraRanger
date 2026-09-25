@@ -98,7 +98,6 @@ export const validateRefreshToken = ({ token }) => {
     errors: isValid ? [] : ['Token is required']
   };
 };
-
 export const validateForgotPasswordInput = ({ email }) => {
   const isValid = typeof email === 'string' && /^\S+@\S+\.\S+$/.test(email.trim());
   return {

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Ruler, X } from "lucide-react";
+import { X } from "lucide-react";
 import {
   BODY_SIZE_GUIDE,
   formatMeasurementRange,
@@ -31,7 +31,6 @@ export const ProductSizeGuideModal = ({ isOpen, onClose, product }) => {
       <div className="relative w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl">
         <div className="flex items-center justify-between border-b pb-3">
           <h3 className="text-lg font-bold text-primary flex items-center gap-2">
-            <Ruler size={18} />
             <span>ตารางสัดส่วนร่างกาย (Size Guide)</span>
           </h3>
           <button
