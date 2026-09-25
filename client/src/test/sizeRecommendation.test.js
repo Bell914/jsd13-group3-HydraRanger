@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getSizeRecommendation } from '../utils/sizeRecommendation.js';
 
 const regularProfile = {
+  consentGiven: true,
   chestCm: 90,
   waistCm: 76,
   hipsCm: 96,
@@ -61,6 +62,14 @@ describe('Personalized Size Recommendation', () => {
 
   it('does not recommend a size before the customer saves a profile', () => {
     expect(getSizeRecommendation(null, {}, ['S', 'M', 'L'])).toBeNull();
+  });
+
+  it('requires explicit consent before using body measurements', () => {
+    const missingConsent = { ...regularProfile, consentGiven: undefined };
+    const declinedConsent = { ...regularProfile, consentGiven: false };
+
+    expect(getSizeRecommendation(missingConsent, {}, ['S', 'M', 'L'])).toBeNull();
+    expect(getSizeRecommendation(declinedConsent, {}, ['S', 'M', 'L'])).toBeNull();
   });
 });
 

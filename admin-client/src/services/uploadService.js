@@ -1,15 +1,14 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5002/api';
+import { adminRequest } from './adminApi.js';
 
 export async function uploadProductImage(file) {
   const form = new FormData();
   form.append('file', file);
-  const response = await fetch(`${API_BASE_URL}/uploads`, {
+  const result = await adminRequest('/uploads', {
     method: 'POST',
-    credentials: 'include',
-    body: form
+    body: form,
+    errorMessage: 'อัปโหลดรูปไม่สำเร็จ',
+    networkMessage: 'เชื่อมต่อ Upload API ไม่ได้ กรุณาตรวจสอบว่า Server เปิดอยู่'
   });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.message || 'อัปโหลดรูปไม่สำเร็จ');
   return result.data.url;
 }
 
