@@ -1,138 +1,68 @@
-# OCCASION API
+# OCCASION API Specification — Sprint 3
 
-Base URL: `http://localhost:5002/api` · JSON ใช้ `camelCase`
-API ที่ต้อง Login ใช้ HttpOnly session cookie และ Frontend ต้องส่ง `credentials: include` โดยยังรองรับ `Authorization: Bearer <token>` สำหรับเครื่องมือภายนอก
+Base URL ในเครื่อง: `http://localhost:5002/api`
 
-## API ที่มีในโค้ด
+JSON ใช้ `camelCase` ยกเว้นโครงสร้าง Product รุ่นปัจจุบันที่คงชื่อฐานข้อมูลบางฟิลด์ เช่น `category_id`, `is_active`, `stock_quantity` และ `size_chart`
 
-| Method | Path | ข้อมูล / สิทธิ์ |
-|---|---|---|
-| GET | `/health` | ตรวจ Server, Database และสถานะการตั้งค่าอีเมล Reset Password |
-| POST | `/auth/register` | username, email, password |
-| POST | `/auth/login` | email, password; ตั้ง Customer session cookie |
-| GET | `/auth/me` | ต้อง Login |
-| POST | `/auth/refresh` | ต่ออายุ session จาก cookie หรือ Bearer token |
-| POST | `/auth/change-password` | currentPassword, newPassword; ต้อง Login |
-| POST | `/admin/auth/login` | email, password ของ Admin; ตั้ง Admin session cookie |
-| GET | `/admin/auth/me` | Admin session |
-| GET | `/products`, `/products/:id` | สินค้า active: รายการ / รายชิ้น |
-| GET, POST | `/admin/products` | Admin: ดูรายการทั้ง active/inactive / เพิ่ม |
-| PUT, DELETE | `/admin/products/:id` | Admin: แก้ / ซ่อน |
-| GET | `/admin/dashboard` | Admin session |
-| POST | `/orders` | Customer session; สร้างคำสั่งซื้อ |
-| GET | `/orders/my` | Customer session; Order ของตนเอง |
-| GET | `/admin/orders` | Admin session; Order ทั้งหมด |
-| PATCH | `/admin/orders/:id/status` | Admin session; `{status}` |
-| GET | `/admin/customers` | Admin session; ลูกค้า role `user` |
-| PUT | `/admin/customers/:id` | Admin session; แก้ `{username, avatar}` |
-| PATCH | `/admin/customers/:id/status` | Admin session; `{isActive}` ระงับ/เปิดบัญชี |
-| GET | `/lookbooks`, `/lookbooks/:id` | Lookbook ที่เปิดแสดง พร้อมข้อมูลสินค้า |
-| GET, POST | `/admin/lookbooks` | Admin session; ดูทั้งหมด / เพิ่ม Lookbook |
-| PUT | `/admin/lookbooks/:id` | Admin session; แก้ไข Lookbook |
-| POST | `/uploads` | Admin session; อัปโหลด JPG/PNG/WebP/GIF ไม่เกิน 5 MB และจำกัด 30 ครั้งต่อ 15 นาที |
-| GET | `/uploads/:id` | อ่านรูปสินค้าที่บันทึกใน GridFS |
-| POST | `/recommend` | วิเคราะห์รูป Mix & Match ไม่เกิน 2 รูป และจำกัด 10 ครั้งต่อ 15 นาที ตรวจว่ารูปเป็นเสื้อผ้าจริงก่อน (ถ้ารูปไม่ใช่เสื้อผ้าคืน `422 { success:false, message, data:{ invalidSlots } }`) |
-| PATCH | `/admin/lookbooks/:id/status` | Admin Token; `{isActive}` ซ่อน/เปิดแสดง |
-| GET | `/articles`, `/articles/:id` | บทความที่เผยแพร่แล้ว: รายการ / รายละเอียด |
-| GET, POST | `/admin/articles` | Admin Token; ดูทั้งหมด / เพิ่มบทความ |
-| PUT | `/admin/articles/:id` | Admin Token; แก้ไขบทความ |
-| PATCH | `/admin/articles/:id/status` | Admin Token; `{isPublished}` เผยแพร่/ซ่อน |
-| GET | `/users/me/size-profile` | Customer Token; อ่านข้อมูล Size & Fit ของตนเอง |
-| PUT | `/users/me/size-profile` | Customer Token; บันทึกสัดส่วนพร้อม Consent |
-| DELETE | `/users/me/size-profile` | Customer Token; ลบข้อมูลสัดส่วนของตนเอง |
+API ที่ต้อง Login อ่าน HttpOnly cookie แยกระหว่าง Customer (`occasion_session`) และ Admin (`occasion_admin_session`) Frontend ต้องส่ง `credentials: include` และยังรองรับ `Authorization: Bearer <token>` สำหรับเครื่องมือภายนอก
 
-### เพิ่ม / แก้ Product
+## Public API
 
-```json
-{
-  "name": "T-Shirt",
-  "description": "เสื้อยืด",
-  "category": "tops",
-  "gender": "unisex",
-  "tags": ["casual"],
-  "availableDate": "2026-09-01",
-  "variants": [
-    {"sku": "TOP-WHT-S", "color": "white", "size": "S", "price": 590, "stockQuantity": 10}
-  ]
-}
-```
+| Method | Path | หน้าที่ |
+| --- | --- | --- |
+| GET | `/` | ข้อมูล API และลิงก์ endpoint หลัก |
+| GET | `/health` | สถานะ Server, Database และบริการที่ตั้งค่าไว้ |
+| GET | `/products`, `/products/:id` | สินค้าที่เปิดขายและรายละเอียดสินค้า |
+| GET | `/lookbooks`, `/lookbooks/:id` | Lookbook ที่เปิดแสดง |
+| GET | `/articles`, `/articles/:id` | บทความที่เผยแพร่แล้ว |
+| GET | `/uploads/:id` | อ่านรูปจาก GridFS |
+| POST | `/recommend` | วิเคราะห์รูป Mix & Match สูงสุด 2 รูป |
+| POST | `/contact` | ส่งแบบฟอร์มติดต่อหลังผ่าน validation |
+| GET | `/items`, `/items/:id` | Legacy Item API สำหรับ compatibility |
 
-- `:id` ใช้ MongoDB `_id`; PUT ส่งข้อมูลบังคับครบ
-- ราคา > 0; Stock เป็นจำนวนเต็ม ≥ 0; DELETE ตั้ง `isActive=false`
-- สำเร็จคืน `{success: true, data}`: เพิ่ม 201, อ่าน/แก้ 200; ลบคืน 200 พร้อม message ไม่มี data
-- Validator คืน 400 พร้อม `{success: false, message, errors}`; ไม่พบ Product คืน 404; Mongoose Error บางกรณียังคืน 500
+`POST /recommend` รับ multipart fields ชื่อ `top` และ `bottom` อย่างน้อยหนึ่งรูป รองรับ JPG, PNG, WebP และ GIF ไม่เกิน 5 MB ต่อไฟล์ ระบบตรวจ MIME และ file signature ก่อนส่งให้ Gemini หากรูปไม่ใช่เสื้อผ้าจะคืน `422` พร้อม `data.invalidSlots`
 
-## Order API
+## Authentication
 
-`POST /orders` รับข้อมูลจาก Checkout:
+| Method | Path | สิทธิ์/ผลลัพธ์ |
+| --- | --- | --- |
+| POST | `/auth/register` | สมัคร Customer และตั้ง session |
+| POST | `/auth/login` | Login Customer |
+| POST | `/auth/refresh` | ต่ออายุ session |
+| POST | `/auth/logout` | ล้าง Customer session |
+| GET | `/auth/me` | Customer ที่ Login |
+| PUT | `/auth/profile` | แก้ Profile |
+| POST | `/auth/change-password` | เปลี่ยนรหัสผ่านและยกเลิก token เก่า |
+| POST | `/auth/forgot-password` | ขออีเมล Reset Password |
+| POST | `/auth/reset-password/:token` | ตั้งรหัสผ่านใหม่ด้วย token |
+| POST | `/admin/auth/login` | Login Admin และตั้ง Admin session |
+| GET | `/admin/auth/me` | ตรวจ Admin session |
+| POST | `/admin/auth/logout` | ล้าง Admin session |
 
-```json
-{
-  "email": "customer@example.com",
-  "items": [
-    {"productId": "PRODUCT_MONGODB_ID", "variantId": "VARIANT_MONGODB_ID", "sku": "TOP-WHT-S", "quantity": 2}
-  ],
-  "shippingAddress": {
-    "firstName": "Occasion",
-    "lastName": "Customer",
-    "phone": "0812345678",
-    "address": "123 ถนนสุขุมวิท",
-    "city": "Bangkok",
-    "state": "Bangkok",
-    "zipCode": "10110",
-    "location": "Thailand",
-    "deliveryNote": ""
-  },
-  "shippingMethod": "standard",
-  "shippingCost": 0,
-  "paymentMethod": "credit-card"
-}
-```
+SMTP ต้องตั้ง `SMTP_USER` และ `SMTP_PASS` ก่อน Forgot Password และ Welcome Coupon จะส่งอีเมลจริง
 
-Server อ่านราคาและสต็อกจาก Product ใน MongoDB เอง ไม่ใช้ราคาหรือยอดรวมจากหน้าบ้าน สถานะที่รองรับคือ `pending`, `paid`, `processing`, `shipped`, `completed`, `cancelled`
+## Customer API
 
-### เพิ่ม / แก้ Lookbook
+| Method | Path | หน้าที่ |
+| --- | --- | --- |
+| GET, POST | `/users/addresses` | อ่าน/เพิ่มที่อยู่ของ Customer |
+| PUT, DELETE | `/users/addresses/:addressId` | แก้/ลบที่อยู่ |
+| PATCH | `/users/addresses/:addressId/default` | ตั้งที่อยู่หลัก |
+| GET, PUT, DELETE | `/users/me/size-profile` | อ่าน/บันทึก/ลบ Size Profile ของตนเอง |
+| POST | `/lookbooks/:id/favorite` | เพิ่มหรือลบ Favorite Lookbook |
+| POST | `/orders` | สร้าง Order จากข้อมูลที่ Server ตรวจราคาและ stock แล้ว |
+| GET | `/orders/my` | Order History ของ Customer |
+| GET | `/orders/my/:id` | รายละเอียด Order ของตนเอง |
+| PATCH | `/orders/my/:id/cancel` | ยกเลิก Order ตามสถานะที่ระบบอนุญาต |
+| POST | `/payment/create-payment-intent` | สร้างหรือใช้ Stripe PaymentIntent เดิมของ Order |
+| POST | `/payment/cancel-payment-intent` | ยกเลิก PaymentIntent ที่ยังชำระไม่สำเร็จ |
+| POST | `/coupons/validate` | ตรวจ Coupon กับผู้ใช้และยอดสั่งซื้อ |
+| POST | `/items` | เพิ่ม Legacy Item; ต้อง Login |
+| PUT, DELETE | `/items/:id` | แก้/ลบ Legacy Item; ต้อง Login |
 
-```json
-{
-  "lookbookId": "LOOK-011",
-  "name": "Sunday Brunch",
-  "nameTh": "มื้อสายวันอาทิตย์",
-  "concept": "ลุคสบายสำหรับวันหยุด",
-  "occasion": ["Brunch", "Weekend"],
-  "styleTags": ["casual", "relaxed"],
-  "imageUrl": "/collection-2026/lookbook/look-11.png",
-  "items": [
-    {"product": "PRODUCT_MONGODB_ID", "defaultVariantSku": "TOP001-OW-S"}
-  ],
-  "regularPrice": 1480,
-  "setPrice": 1290,
-  "isActive": true
-}
-```
+Stripe ส่ง webhook เข้า `POST /api/payment/webhook` โดย Server ตรวจ `STRIPE_WEBHOOK_SECRET` ก่อนเปลี่ยนสถานะ Order
 
-Server คำนวณ `saving` จาก `regularPrice - setPrice` และตรวจว่า Product กับ Variant SKU มีอยู่จริงก่อนบันทึก
-
-### เพิ่ม / แก้บทความ
-
-```json
-{
-  "title": "แต่งตัวให้เหมาะกับโอกาส",
-  "excerpt": "แนวทางเลือกเสื้อผ้าสำหรับแต่ละงาน",
-  "content": "เนื้อหาบทความแบบข้อความธรรมดา",
-  "category": "Style Guide",
-  "imageUrl": "/api/uploads/IMAGE_ID",
-  "author": "OCCASION",
-  "publishedAt": "2026-09-24",
-  "isPublished": true
-}
-```
-
-Admin อัปโหลดรูปผ่าน `POST /uploads` ได้เหมือนรูปสินค้า บทความที่ `isPublished=false` จะไม่ออกจาก Public API
-
-## Personalized Size Profile API
-
-`PUT /users/me/size-profile`
+### Size Profile
 
 ```json
 {
@@ -146,19 +76,95 @@ Admin อัปโหลดรูปผ่าน `POST /uploads` ได้เห
 
 - `preferredFit` รองรับ `fitted`, `regular`, `relaxed`
 - ต้องยืนยัน Consent ก่อนบันทึก
-- ลูกค้าอ่าน แก้ไข และลบได้เฉพาะข้อมูลของตนเอง
-- Admin Customer API ไม่ส่งข้อมูลสัดส่วนรายบุคคล
-- หน้าสินค้าใช้ `size_chart` ก่อน หากไม่มีจะใช้เกณฑ์ S/M/L มาตรฐานและแสดงความมั่นใจระดับปานกลาง
+- Customer เข้าถึงได้เฉพาะข้อมูลตนเอง และ Admin Customer API ไม่ส่ง `sizeProfile`
+- Product Detail ใช้ `size_chart` ก่อน หากไม่มีจะใช้เกณฑ์ S/M/L กลางและแจ้งระดับความมั่นใจ
+- คำแนะนำเลือกเฉพาะไซส์ของสินค้า ส่วนสต็อกของสี/ไซส์แสดงเป็นสถานะแยกกัน
 
-## Cart API ที่เสนอ — ยังไม่มี Route
+## Admin API
 
-| Method | Path | Body |
-|---|---|---|
-| GET | `/cart` | — |
-| POST | `/cart/items` | `{productId, variantId, quantity}` |
-| PATCH | `/cart/items/:itemId` | `{quantity}` |
-| DELETE | `/cart/items/:itemId` | — |
+ทุก endpoint ด้านล่างต้องมี Admin session และ role `admin`
 
-ใช้ Product/Variant `_id`; `itemId` คือรายการใน Cart Server ดึงเจ้าของจาก Token ตรวจ Variant, จำนวนเต็ม ≥ 1 และ Stock แล้วคำนวณราคาจาก MongoDB ผู้ใช้เข้าถึงได้เฉพาะ Cart ตนเอง
+| Method | Path | หน้าที่ |
+| --- | --- | --- |
+| GET | `/admin/dashboard` | ยอดสรุปสำหรับ Dashboard |
+| GET, POST | `/admin/products` | อ่านสินค้าทั้งหมด/เพิ่มสินค้า |
+| PUT, DELETE | `/admin/products/:id` | แก้ไข/ซ่อนสินค้า |
+| GET | `/admin/orders` | อ่าน Order ทั้งหมด |
+| PATCH | `/admin/orders/:id/status` | เปลี่ยนสถานะ Order |
+| GET | `/admin/customers` | อ่าน Customer โดยไม่ส่ง Size Profile |
+| PUT | `/admin/customers/:id` | แก้ username/avatar |
+| PATCH | `/admin/customers/:id/status` | ระงับ/เปิดบัญชี |
+| GET | `/users` | Legacy Admin User list |
+| GET | `/users/:id` | Customer อ่านได้เฉพาะตนเอง; Admin อ่านผู้ใช้รายคน |
+| GET, POST | `/admin/lookbooks` | อ่านทั้งหมด/เพิ่ม Lookbook |
+| PUT | `/admin/lookbooks/:id` | แก้ Lookbook |
+| PATCH | `/admin/lookbooks/:id/status` | เปิด/ซ่อน Lookbook |
+| GET, POST | `/admin/articles` | อ่านทั้งหมด/เพิ่มบทความ |
+| PUT | `/admin/articles/:id` | แก้บทความ |
+| PATCH | `/admin/articles/:id/status` | เผยแพร่/ซ่อนบทความ |
+| GET, POST | `/admin/coupons` | อ่าน/เพิ่ม General Coupon |
+| PUT | `/admin/coupons/:id` | แก้ Coupon |
+| PATCH | `/admin/coupons/:id/status` | เปิด/ปิด Coupon |
+| POST | `/uploads` | อัปโหลดรูปหนึ่งไฟล์เข้า GridFS |
 
-**ต้องตกลงก่อนเชื่อม:** Response ของ Cart และ Auth หลัก (`/auth` หรือ `/newuser`) ส่วน Product ยังต้องเพิ่ม Validation Tag/วันที่ผิดรูปแบบ
+Review endpoints ไม่มีอยู่ในระบบปัจจุบัน
+
+## Product Payload
+
+```json
+{
+  "productId": "TOP-001",
+  "category_id": "CATEGORY_MONGODB_ID",
+  "title": "Everyday T-Shirt",
+  "description": "เสื้อยืด Unisex",
+  "tags": ["casual"],
+  "gender": "unisex",
+  "is_active": true,
+  "images": [
+    {"image_url": "/api/uploads/IMAGE_ID", "display_order": 0}
+  ],
+  "variants": [
+    {
+      "sku": "TOP-WHT-M",
+      "size_or_color": "M / White",
+      "size": "M",
+      "color": "White",
+      "price": 590,
+      "stock_quantity": 10
+    }
+  ],
+  "size_chart": [
+    {
+      "size_name": "M",
+      "garment_chest_actual": 104,
+      "garment_waist_actual": 100,
+      "garment_hips_actual": 104
+    }
+  ]
+}
+```
+
+- Product ต้องมีอย่างน้อยหนึ่ง variant
+- ราคาและ stock ต้องไม่ติดลบ; API ตรวจราคาและรูปแบบข้อมูลเพิ่มเติม
+- ไม่ส่ง `size_chart` ตอนแก้ไขหมายถึงเก็บค่าเดิม ส่ง array เพื่อแทนที่ และส่ง `[]` เพื่อล้าง
+- `DELETE /admin/products/:id` เป็น soft delete โดยปิด `is_active`
+
+## Rate Limits
+
+| Endpoint | Limit ต่อ IP |
+| --- | --- |
+| Customer Login | 20 ครั้ง / 15 นาที |
+| Admin Login | 10 ครั้ง / 15 นาที |
+| Register | 10 ครั้ง / 1 ชั่วโมง |
+| Forgot Password | 5 ครั้ง / 1 ชั่วโมง |
+| Reset Password | 10 ครั้ง / 1 ชั่วโมง |
+| Mix & Match | 10 ครั้ง / 15 นาที |
+| Admin Upload | 30 ครั้ง / 15 นาที |
+
+ตัวนับใช้ MongoDB ร่วมกันเมื่อฐานข้อมูลพร้อม และ fallback เป็น memory ของ process เมื่อ shared store ใช้งานไม่ได้
+
+## ขอบเขตที่ยังไม่มี
+
+- Cart อยู่ใน Customer Client; ยังไม่มี Cart model หรือ `/cart` route
+- `/items` เป็น legacy compatibility API ส่วน Product flow หลักใช้ `/products`
+- Review feature ถูกถอดออกแล้ว
