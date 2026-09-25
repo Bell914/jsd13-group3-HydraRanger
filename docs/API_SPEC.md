@@ -31,7 +31,7 @@ API ที่ต้อง Login ใช้ HttpOnly session cookie และ Fron
 | PUT | `/admin/lookbooks/:id` | Admin session; แก้ไข Lookbook |
 | POST | `/uploads` | Admin session; อัปโหลด JPG/PNG/WebP/GIF ไม่เกิน 5 MB และจำกัด 30 ครั้งต่อ 15 นาที |
 | GET | `/uploads/:id` | อ่านรูปสินค้าที่บันทึกใน GridFS |
-| POST | `/recommend` | วิเคราะห์รูป Mix & Match ไม่เกิน 2 รูป และจำกัด 10 ครั้งต่อ 15 นาที |
+| POST | `/recommend` | วิเคราะห์รูป Mix & Match ไม่เกิน 2 รูป และจำกัด 10 ครั้งต่อ 15 นาที ตรวจว่ารูปเป็นเสื้อผ้าจริงก่อน (ถ้ารูปไม่ใช่เสื้อผ้าคืน `422 { success:false, message, data:{ invalidSlots } }`) |
 | PATCH | `/admin/lookbooks/:id/status` | Admin Token; `{isActive}` ซ่อน/เปิดแสดง |
 | GET | `/articles`, `/articles/:id` | บทความที่เผยแพร่แล้ว: รายการ / รายละเอียด |
 | GET, POST | `/admin/articles` | Admin Token; ดูทั้งหมด / เพิ่มบทความ |

@@ -103,9 +103,7 @@ describe("Product Wishlist Feature", () => {
       imageUrl: "/images/blazer.jpg",
     };
 
-    it("redirects to /login when non-authenticated user clicks save", async () => {
-      const user = userEvent.setup();
-
+    it("hides the save button when the user is not authenticated", () => {
       render(
         <AuthContext.Provider value={mockAuthValue(false)}>
           <MemoryRouter initialEntries={["/products"]}>
@@ -117,10 +115,7 @@ describe("Product Wishlist Feature", () => {
         </AuthContext.Provider>
       );
 
-      const saveBtn = screen.getByRole("button", { name: "บันทึกในรายการโปรด" });
-      await user.click(saveBtn);
-
-      expect(screen.getByText("Login Page Mock")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "บันทึกในรายการโปรด" })).not.toBeInTheDocument();
       expect(useWishlistStore.getState().isWishlisted("prod-100")).toBe(false);
     });
 

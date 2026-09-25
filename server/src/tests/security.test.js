@@ -54,7 +54,7 @@ test('protected API also reads a JWT from the HttpOnly session cookie', async ()
     id: 'mock-user-security-test', email: 'test@example.com', role: 'user', tokenVersion: 0
   });
   await protect(
-    { headers: { cookie: `occasion_session=${token}` }, originalUrl: '/api/auth/me' },
+    { cookies: { occasion_session: token }, originalUrl: '/api/auth/me' },
     response,
     () => {}
   );

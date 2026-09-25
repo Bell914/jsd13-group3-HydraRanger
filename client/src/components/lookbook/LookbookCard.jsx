@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Heart } from "lucide-react";
 import { normalizeImageUrl } from "../../utils/imageUtils.js";
 import { useLookbookStore } from "../../store/lookbookStore.js";
+import { useAuth } from "../../context/Auth/useAuth.jsx";
 
 export default function LookbookCard({ look, isInitialFavorited = false }) {
   if (!look) return null;
@@ -10,31 +11,16 @@ export default function LookbookCard({ look, isInitialFavorited = false }) {
   const isFavorite = useLookbookStore((state) => state.isFavorite(look.id));
   const toggleFavorite = useLookbookStore((state) => state.toggleFavorite);
 
+  let isAuthenticated = false;
+  try {
+    const auth = useAuth();
+    isAuthenticated = Boolean(auth?.isAuthenticated);
+  } catch {
+    isAuthenticated = false;
+  }
+
   const imgUrl = normalizeImageUrl(look.image);
   const itemsCount = look.items?.length || 2;
-
-  const handleFavoriteClick = async (e) => {
-    e.preventDefault(); // ป้องกันการเปลี่ยนหน้าเมื่อกดปุ่ม Bookmark
-    e.stopPropagation();
-
-    if (!isAuthenticated) {
-      alert("กรุณาเข้าสู่ระบบก่อนบันทึก Lookbook");
-      navigate("/login");
-      return;
-    }
-
-    if (loading) return;
-
-    try {
-      setLoading(true);
-      const res = await toggleFavoriteLookbook(look.id || look._id);
-      setIsFavorited(res.isFavorited);
-    } catch (error) {
-      console.error("Failed to toggle favorite lookbook:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <article
@@ -67,21 +53,23 @@ export default function LookbookCard({ look, isInitialFavorited = false }) {
             </span>
           )}
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              toggleFavorite(look);
-            }}
-            className={`rounded-full bg-white/90 p-2 text-secondary shadow-md backdrop-blur-sm transition cursor-pointer hover:scale-110 pointer-events-auto ${
-              isFavorite ? "text-red-500" : "hover:text-red-500"
-            }`}
-            title={isFavorite ? "ลบออกจากลุคโปรด" : "บันทึกเป็นลุคโปรด"}
-            aria-label={isFavorite ? "ลบออกจากลุคโปรด" : "บันทึกเป็นลุคโปรด"}
-          >
-            <Heart size={16} fill={isFavorite ? "currentColor" : "none"} />
-          </button>
+          {isAuthenticated && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleFavorite(look);
+                }}
+                className={`rounded-full p-2 text-red-500 shadow-md backdrop-blur-sm transition cursor-pointer hover:scale-110 pointer-events-auto ${
+                  isFavorite ? "bg-red-50" : "bg-white/90 hover:bg-red-50"
+                }`}
+                title={isFavorite ? "ลบออกจากลุคโปรด" : "บันทึกเป็นลุคโปรด"}
+                aria-label={isFavorite ? "ลบออกจากลุคโปรด" : "บันทึกเป็นลุคโปรด"}
+              >
+                <Heart size={16} fill={isFavorite ? "currentColor" : "none"} />
+              </button>
+            )}
         </div>
       </div>
 

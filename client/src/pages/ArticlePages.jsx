@@ -16,7 +16,7 @@ export const ArticlePages = () => {
   } = useArticleStore();
 
   useEffect(() => {
-    fetchArticles();
+    fetchArticles({ page: 1 });
   }, []);
 
   const handlePageChange = (pageNumber) => {

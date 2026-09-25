@@ -28,6 +28,25 @@ function bucketOf(colorName) {
   return "";
 }
 
+/**
+ * ค้นหาสล็อต (top/bottom) ที่ Gemini ระบุว่ารูปที่ส่งเข้าไปไม่ใช่เสื้อผ้า
+ * เพื่อกันไม่ให้เอารูปปลอม ๆ (หน้าคน สัตว์ วิว ฯลฯ) ไปวิเคราะห์
+ * @param {Array<{frame: 'top'|'bottom'}>} images
+ * @param {{validation?: Array<{frame: string, isClothing: boolean}>}} analysis
+ * @returns {Array<'top'|'bottom'>}
+ */
+export function findInvalidGarmentSlots(images, analysis) {
+  const validation = Array.isArray(analysis?.validation)
+    ? analysis.validation
+    : [];
+  const invalid = [];
+  for (const image of images || []) {
+    const check = validation.find((v) => v && v.frame === image.frame);
+    if (check && check.isClothing === false) invalid.push(image.frame);
+  }
+  return invalid;
+}
+
 function itemSignature(item) {
   const product = item?.product || {};
   const variants = product.variants || item?.variants || [];
@@ -171,6 +190,23 @@ export async function recommendLookbooks(req, res, next) {
     }
 
     const analysis = await analyzeClothingImage(images);
+
+    const invalidSlots = findInvalidGarmentSlots(images, analysis);
+    if (invalidSlots.length > 0) {
+      const labels = invalidSlots.map((slot) =>
+        slot === "bottom" ? "กางเกง / ท่อนล่าง" : "เสื้อ / ท่อนบน",
+      );
+      console.warn(
+        `⛔ [Mix & Match] รูปไม่ใช่เสื้อผ้า: ${invalidSlots.join(", ")} | ` +
+          `${new Date().toISOString()}`,
+      );
+      return res.status(HTTP_STATUS.UNPROCESSABLE_ENTITY).json({
+        success: false,
+        message: `รูปที่อัปโหลด (${labels.join(", ")}) ไม่ใช่เสื้อผ้า กรุณาอัปโหลดรูปเสื้อผ้าจริงเพื่อให้ AI แนะนำลุค`,
+        data: { invalidSlots },
+      });
+    }
+
     const lookbooks = await lookbookService.getPublicLookbooks();
 
     const publicLooks = lookbooks

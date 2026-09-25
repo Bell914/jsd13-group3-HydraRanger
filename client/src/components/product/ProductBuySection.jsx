@@ -91,19 +91,21 @@ export const ProductBuySection = ({
             >
               <Share2 size={20} />
             </button>
-            <button
-              type="button"
-              onClick={onToggleWishlist}
-              className={`rounded-full p-2 transition cursor-pointer ${
-                isWishlisted
-                  ? "text-red-500 hover:bg-red-50"
-                  : "text-secondary hover:bg-slate-200"
-              }`}
-              title="บันทึกในรายการโปรด"
-              aria-label="บันทึกสินค้านี้ในรายการโปรด"
-            >
-              <Heart size={20} fill={isWishlisted ? "currentColor" : "none"} />
-            </button>
+            {isLoggedIn && (
+              <button
+                type="button"
+                onClick={onToggleWishlist}
+                className={`rounded-full p-2 transition cursor-pointer ${
+                  isWishlisted
+                    ? "text-red-500 hover:bg-red-50"
+                    : "text-secondary hover:bg-slate-200"
+                }`}
+                title="บันทึกในรายการโปรด"
+                aria-label="บันทึกสินค้านี้ในรายการโปรด"
+              >
+                <Heart size={20} fill={isWishlisted ? "currentColor" : "none"} />
+              </button>
+            )}
           </div>
         </div>
 
