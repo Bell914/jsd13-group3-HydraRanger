@@ -49,10 +49,10 @@ export function parseCookies(header = '') {
 }
 
 export function getRequestToken(req) {
-  const authorization = req.headers.authorization || '';
+  const authorization = req.headers?.authorization || '';
   if (authorization.startsWith('Bearer ')) return authorization.slice(7);
 
-  const cookies = parseCookies(req.headers.cookie);
+  const cookies = req.cookies || {};
   const adminRoute = req.originalUrl?.includes('/admin/') || req.originalUrl?.includes('/uploads');
   return adminRoute ? cookies[ADMIN_COOKIE] : cookies[CUSTOMER_COOKIE];
 }

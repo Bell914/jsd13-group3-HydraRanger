@@ -1,28 +1,19 @@
 import { useEffect, useState } from "react";
 import {
-  AlertCircle,
   ChevronDown,
   ChevronUp,
   CreditCard,
   MapPin,
   Package,
-  Star,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/Auth/useAuth.jsx";
 import { getMyOrders } from "../../services/orderService.js";
 import { normalizeImageUrl } from "../../utils/imageUtils.js";
-import { useReviewStore } from "../../store/reviewStore.js";
 import { EmptyState } from "./EmptyState.jsx";
-
-const REVIEWABLE_STATUS = "completed";
 
 function getProductId(item) {
   return item.product?._id || item.productId || item.product;
-}
-
-function getReviewKey(orderId, productId) {
-  return `${orderId}:${productId}`;
 }
 
 function getStatusClass(status) {
@@ -36,9 +27,7 @@ function getStatusClass(status) {
   return "bg-amber-50 text-amber-700";
 }
 
-function OrderItem({ order, item, reviewed, onWriteReview }) {
-  const productId = getProductId(item);
-  const canReview = order.status === REVIEWABLE_STATUS && !reviewed;
+function OrderItem({ item }) {
   const productName = item.title || item.name || "สินค้า";
   const unitPrice = item.unitPrice ?? item.price ?? 0;
   const lineTotal = item.lineTotal ?? unitPrice * item.quantity;
@@ -67,26 +56,12 @@ function OrderItem({ order, item, reviewed, onWriteReview }) {
         <span className="text-sm font-medium">
           ฿{Number(lineTotal).toLocaleString("th-TH")}
         </span>
-        {canReview && (
-          <button
-            type="button"
-            onClick={() => onWriteReview(order, item)}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:opacity-80"
-          >
-            <Star size={13} /> เขียนรีวิว
-          </button>
-        )}
-        {reviewed && (
-          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
-            <Star size={13} /> รีวิวแล้ว
-          </span>
-        )}
       </div>
     </div>
   );
 }
 
-function OrderDetails({ order, reviewedKeys, onWriteReview }) {
+function OrderDetails({ order }) {
   const total = order.totalAmount ?? order.total ?? 0;
   const shippingAddress = order.shippingAddress || {};
   const recipientName = [shippingAddress.firstName, shippingAddress.lastName]
@@ -98,15 +73,10 @@ function OrderDetails({ order, reviewedKeys, onWriteReview }) {
       <div className="space-y-2">
         {order.items?.map((item, index) => {
           const productId = getProductId(item);
-          const isReviewed = reviewedKeys.includes(getReviewKey(order._id, productId));
-
           return (
             <OrderItem
               key={`${item.sku || productId}-${index}`}
-              order={order}
               item={item}
-              reviewed={isReviewed}
-              onWriteReview={onWriteReview}
             />
           );
         })}
@@ -143,119 +113,12 @@ function OrderDetails({ order, reviewedKeys, onWriteReview }) {
   );
 }
 
-function ReviewModal({
-  target,
-  rating,
-  comment,
-  submitting,
-  error,
-  onRate,
-  onComment,
-  onClose,
-  onSubmit,
-}) {
-  if (!target) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="review-modal-title"
-        className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl sm:p-6"
-      >
-        <div className="mb-4 flex items-start justify-between gap-4">
-          <div>
-            <h3 id="review-modal-title" className="text-lg font-bold">เขียนรีวิวสินค้า</h3>
-            <p className="mt-1 text-sm text-gray-500">{target.title}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={submitting}
-            aria-label="ปิดหน้าต่าง"
-            className="rounded-lg px-2 py-1 text-gray-500 hover:bg-gray-100"
-          >
-            ✕
-          </button>
-        </div>
-
-        {error && (
-          <p role="alert" className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {error}
-          </p>
-        )}
-
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <p className="mb-2 text-sm font-medium">ให้คะแนนสินค้า</p>
-            <div className="flex items-center gap-1" role="radiogroup" aria-label="คะแนนรีวิว">
-              {[1, 2, 3, 4, 5].map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => onRate(value)}
-                  aria-label={`${value} ดาว`}
-                  aria-checked={rating === value}
-                  role="radio"
-                  className="p-1"
-                >
-                  <Star
-                    size={26}
-                    className={value <= rating ? "fill-amber-400 text-amber-400" : "text-gray-300"}
-                  />
-                </button>
-              ))}
-              <span className="ml-2 text-sm">{rating ? `${rating}/5` : ""}</span>
-            </div>
-          </div>
-
-          <label className="block text-sm font-medium">
-            ความคิดเห็น
-            <textarea
-              value={comment}
-              onChange={(event) => onComment(event.target.value)}
-              rows={4}
-              maxLength={1000}
-              placeholder="เล่าประสบการณ์การใช้สินค้า..."
-              className="mt-1 w-full resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm"
-            />
-          </label>
-
-          <div className="flex justify-end gap-3">
-            <button type="button" onClick={onClose} disabled={submitting} className="rounded-xl border px-4 py-2 text-sm">
-              ยกเลิก
-            </button>
-            <button type="submit" disabled={submitting} className="rounded-xl bg-accent px-5 py-2 text-sm font-semibold text-white disabled:opacity-50">
-              {submitting ? "กำลังส่ง..." : "ส่งรีวิว"}
-            </button>
-          </div>
-        </form>
-      </section>
-    </div>
-  );
-}
-
 export const OrderHistorySection = () => {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [ordersError, setOrdersError] = useState("");
   const [expandedOrderId, setExpandedOrderId] = useState("");
-
-  const reviewTarget = useReviewStore((state) => state.reviewTarget);
-  const rating = useReviewStore((state) => state.rating);
-  const comment = useReviewStore((state) => state.comment);
-  const submitting = useReviewStore((state) => state.submitting);
-  const reviewMessage = useReviewStore((state) => state.message);
-  const reviewError = useReviewStore((state) => state.error);
-  const reviewedKeys = useReviewStore((state) => state.reviewedKeys);
-  const openReview = useReviewStore((state) => state.openReview);
-  const closeReview = useReviewStore((state) => state.closeReview);
-  const setRating = useReviewStore((state) => state.setRating);
-  const setComment = useReviewStore((state) => state.setComment);
-  const submitReview = useReviewStore((state) => state.submitReview);
-  const loadMyReviews = useReviewStore((state) => state.loadMyReviews);
 
   useEffect(() => {
     let isMounted = true;
@@ -286,33 +149,9 @@ export const OrderHistorySection = () => {
     };
   }, [user]);
 
-  useEffect(() => {
-    if (user) loadMyReviews();
-  }, [user, loadMyReviews]);
-
-  function startReview(order, item) {
-    openReview(order._id, getProductId(item), item.title || item.name || "สินค้า");
-  }
-
-  function handleSubmitReview(event) {
-    event.preventDefault();
-    submitReview();
-  }
-
   return (
     <div>
       <h2 className="mb-4 text-lg font-semibold">ประวัติการสั่งซื้อ (Order History)</h2>
-
-      {reviewMessage && (
-        <p className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
-          {reviewMessage}
-        </p>
-      )}
-      {reviewError && !reviewTarget && (
-        <p role="alert" className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-          <AlertCircle size={18} /> {reviewError}
-        </p>
-      )}
 
       {loading ? (
         <EmptyState title="กำลังโหลดประวัติการสั่งซื้อ..." />
@@ -359,7 +198,7 @@ export const OrderHistorySection = () => {
                 </button>
 
                 {isExpanded && (
-                  <OrderDetails order={order} reviewedKeys={reviewedKeys} onWriteReview={startReview} />
+                  <OrderDetails order={order} />
                 )}
               </article>
             );
@@ -367,17 +206,6 @@ export const OrderHistorySection = () => {
         </div>
       )}
 
-      <ReviewModal
-        target={reviewTarget}
-        rating={rating}
-        comment={comment}
-        submitting={submitting}
-        error={reviewError}
-        onRate={setRating}
-        onComment={setComment}
-        onClose={closeReview}
-        onSubmit={handleSubmitReview}
-      />
     </div>
   );
 };

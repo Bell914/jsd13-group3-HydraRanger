@@ -180,7 +180,7 @@ async function seedArticles() {
   for (const articleData of articleSeedData) {
     await Article.updateOne(
       { articleId: articleData.articleId },
-      { $set: articleData },
+      { $set: { ...articleData, isPublished: articleData.isPublished ?? true } },
       { upsert: true, runValidators: true }
     );
   }

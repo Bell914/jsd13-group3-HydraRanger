@@ -92,7 +92,11 @@ export const useWishlistStore = create((set, get) => ({
   },
 
   clearWishlist: () => {
-    saveWishlist([]);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (error) {
+      console.error("Failed to clear wishlist from localStorage:", error);
+    }
     set({ wishlist: [] });
   },
 }));

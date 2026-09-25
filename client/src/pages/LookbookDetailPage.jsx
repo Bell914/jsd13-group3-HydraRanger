@@ -5,6 +5,7 @@ import { getLookbookById, getProductDetailUrl } from "../services/lookbookServic
 import { LoadingSpinner } from "../components/LoadingSpinner.jsx";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
 import { useLookbookStore } from "../store/lookbookStore.js";
+import { useAuth } from "../context/Auth/useAuth.jsx";
 
 export default function LookbookDetailPage() {
   const { lookId } = useParams();
@@ -14,6 +15,14 @@ export default function LookbookDetailPage() {
   const [error, setError] = useState("");
   const isFavorite = useLookbookStore((state) => state.isFavorite(lookId));
   const toggleFavorite = useLookbookStore((state) => state.toggleFavorite);
+
+  let isAuthenticated = false;
+  try {
+    const auth = useAuth();
+    isAuthenticated = Boolean(auth?.isAuthenticated);
+  } catch {
+    isAuthenticated = false;
+  }
 
   const loadLook = async () => {
     setLoading(true);
@@ -124,19 +133,19 @@ export default function LookbookDetailPage() {
                   <span className="text-xs font-semibold text-secondary">
                     {look.name}
                   </span>
+                  {isAuthenticated && (
                   <button
                     type="button"
                     onClick={() => toggleFavorite(look)}
-                    className={`rounded-full p-2 transition cursor-pointer ${
-                      isFavorite
-                        ? "text-red-500 hover:bg-red-50"
-                        : "text-secondary hover:bg-slate-200 hover:text-red-500"
+                    className={`rounded-full p-2 transition cursor-pointer hover:scale-110 ${
+                      isFavorite ? "text-red-500 bg-red-50" : "text-red-500 hover:bg-red-50"
                     }`}
                     title={isFavorite ? "ลบออกจากลุคโปรด" : "บันทึกเป็นลุคโปรด"}
                     aria-label={isFavorite ? "ลบออกจากลุคโปรด" : "บันทึกเป็นลุคโปรด"}
                   >
                     <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
                   </button>
+                )}
                 </div>
               </div>
 

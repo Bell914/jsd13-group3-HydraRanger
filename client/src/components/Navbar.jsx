@@ -214,7 +214,7 @@ export const Navbar = () => {
                   aria-current={isActive("/products") ? "page" : undefined}
                   className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${
                     isActive("/products")
-                      ? "font-bold text-primary md:underline md:decoration-accent md:decoration-2 md:underline-offset-4"
+                      ? "font-bold text-accent md:bg-accent/10"
                       : ""
                   }`}
                 >
@@ -228,18 +228,16 @@ export const Navbar = () => {
                     onClick={() => handleCategorySelect("tops")}
                     className="flex-1 rounded-lg bg-primary/10 py-1.5 text-center text-xs font-bold text-primary transition hover:bg-primary hover:text-white cursor-pointer"
                   >
-                    TOPS
+                    เสื้อ
                   </button>
                   <button
                     type="button"
                     onClick={() => handleCategorySelect("bottoms")}
                     className="flex-1 rounded-lg bg-accent/10 py-1.5 text-center text-xs font-bold text-accent transition hover:bg-accent hover:text-white cursor-pointer"
                   >
-                    BOTTOMS
+                    กางเกง
                   </button>
                 </div>
-
-                {/* Product categories (desktop only) */}
                 <div
                   className={`hidden flex-col gap-1.5 rounded-xl border border-occasion-border/40 bg-surface p-2 shadow-lg md:flex md:absolute md:top-[calc(100%+0.35rem)] md:left-1/2 md:-translate-x-1/2 z-50 w-32 transition-all duration-200 before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 before:content-[''] ${
                     isProductsHovered
@@ -254,14 +252,14 @@ export const Navbar = () => {
                     onClick={() => handleCategorySelect("tops")}
                     className="w-full rounded-lg bg-primary px-4 py-2 text-center text-xs font-bold tracking-wide text-white transition-all hover:bg-primary-hover active:scale-[0.98] cursor-pointer sm:text-sm"
                   >
-                    TOPS
+                    เสื้อ
                   </button>
                   <button
                     type="button"
                     onClick={() => handleCategorySelect("bottoms")}
                     className="w-full rounded-lg bg-accent px-4 py-2 text-center text-xs font-bold tracking-wide text-white transition-all hover:bg-accent-hover active:scale-[0.98] cursor-pointer sm:text-sm"
                   >
-                    BOTTOMS
+                    กางเกง
                   </button>
                 </div>
               </li>
@@ -272,7 +270,7 @@ export const Navbar = () => {
                   aria-current={isActive("/lookbook") ? "page" : undefined}
                   className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/lookbook") ? "font-bold text-accent md:bg-accent/10" : ""}`}
                 >
-                  เซ็ตเสื้อผ้า
+                  ลุกบุ๊ก
                 </Link>
               </li>
 
@@ -282,7 +280,7 @@ export const Navbar = () => {
                   aria-current={isActive("/mix-and-match") ? "page" : undefined}
                   className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/mix-and-match") ? "font-bold text-accent md:bg-accent/10" : ""}`}
                 >
-                  จับคู่เสื้อผ้า
+                  มิก & แมตช์
                 </Link>
               </li>
 

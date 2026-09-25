@@ -11,8 +11,18 @@ Respond with STRICT JSON only (no markdown, no extra text):
 {
   "styles": ["up to 3 short english lowercase style words, e.g. casual, minimal, street, office, resort, vintage, sporty"],
   "garment_types": ["top" | "bottom" | "both" | "other"],
-  "colors": [{"name": "english color name", "hex": "#rrggbb"}]
-}`;
+  "colors": [{"name": "english color name", "hex": "#rrggbb"}],
+  "valid": [
+    {"frame": "top" | "bottom", "is_clothing": true | false, "type": "top" | "bottom" | "both" | "other"}
+  ]
+}
+
+Rules for "valid":
+- Include exactly ONE entry per provided image, in the same order as the inputs.
+- Set the "frame" to match the slot of that image (first image = "top", second = "bottom").
+- "is_clothing" must be true ONLY if the image really shows a wearable garment.
+- Set "is_clothing" to false for photos of people's faces, animals, landscapes, screenshots of text, product barcode/logo shots, empty backgrounds, or anything that is not clothing.
+- "type" = the category of the garment in that image ("other" when it is not a top or bottom garment).`;
 
 const RANK_PROMPT = `You are a fashion stylist. A customer uploaded photos of a top garment and/or a bottom garment they own.
 
@@ -36,7 +46,7 @@ Lookbooks:
 /**
  * Call Gemini with one or two images and ask for a structured description.
  * @param {Array<{mimeType: string, data: string, frame: 'top'|'bottom'}>} images
- * @returns {Promise<{styles: string[], garment_types: string[], colors: Array<{name:string, hex:string}>}>}
+ * @returns {Promise<{styles: string[], garment_types: string[], colors: Array<{name:string, hex:string}>, validation: Array<{frame: string, isClothing: boolean, type: string}>}>}
  */
 export async function analyzeClothingImage(images) {
   if (!ENV.GEMINI_API_KEY) {
@@ -112,6 +122,17 @@ function parseAnalysisJson(text) {
         ? data.colors
             .filter((c) => c && c.name)
             .map((c) => ({ name: String(c.name), hex: c.hex || "" }))
+        : [],
+      validation: Array.isArray(data.valid)
+        ? data.valid
+            .filter((v) => v && typeof v === "object")
+            .map((v) => ({
+              frame: String(v.frame || "").toLowerCase(),
+              isClothing:
+                v.is_clothing === true ||
+                String(v.is_clothing || "").toLowerCase() === "true",
+              type: String(v.type || "").toLowerCase(),
+            }))
         : [],
     };
   } catch {
