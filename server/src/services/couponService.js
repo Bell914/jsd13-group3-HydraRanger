@@ -33,17 +33,27 @@ export const validateCoupon = async ({ code, userId, subtotal }) => {
   if (!userId) throw new Error("กรุณาเข้าสู่ระบบก่อนใช้งานคูปอง");
 
   // Query ด้วยทั้ง code และ userId เพื่อป้องกันการชนกันของคูปอง WELCOME5 ของแต่ละบัญชี
-  const coupon = await Coupon.findOne({
+  let coupon = await Coupon.findOne({
     code: code.trim().toUpperCase(),
     userId,
   });
+
+  // General coupons are created by an administrator and are reusable; they
+  // remain protected by the authenticated validation endpoint.
+  if (!coupon) {
+    coupon = await Coupon.findOne({
+      code: code.trim().toUpperCase(),
+      type: "GENERAL",
+      isActive: true,
+    });
+  }
 
   if (!coupon) {
     throw new Error("ไม่พบโค้ดส่วนลดนี้ในระบบ หรือคุณไม่มีสิทธิ์ใช้งาน");
   }
 
   // ตรวจสอบว่าถูกใช้แล้วหรือยัง
-  if (coupon.isUsed) {
+  if (coupon.type !== "GENERAL" && coupon.isUsed) {
     throw new Error("คูปองนี้ถูกใช้งานไปแล้ว ไม่สามารถใช้ซ้ำได้");
   }
 
@@ -53,7 +63,7 @@ export const validateCoupon = async ({ code, userId, subtotal }) => {
   }
 
   // ตรวจสอบยอดซื้อขั้นต่ำ
-  const minPurchase = WELCOME_COUPON?.MIN_PURCHASE || 0;
+  const minPurchase = coupon.minPurchase ?? WELCOME_COUPON?.MIN_PURCHASE ?? 0;
   if (subtotal < minPurchase) {
     throw new Error(`ยอดซื้อขั้นต่ำต้องไม่น้อยกว่า ฿${minPurchase}`);
   }
@@ -72,6 +82,18 @@ export const validateCoupon = async ({ code, userId, subtotal }) => {
   };
 };
 
+export const getActiveGeneralCoupon = async (code, subtotal = 0) => {
+  if (!code) return null;
+  const coupon = await Coupon.findOne({
+    code: code.trim().toUpperCase(),
+    type: "GENERAL",
+    isActive: true,
+    expiresAt: { $gt: new Date() },
+  });
+  if (!coupon || subtotal < (coupon.minPurchase || 0)) return null;
+  return coupon;
+};
+
 // 3. Claim coupon แบบ Atomic เพื่อป้องกัน Race Condition / Double Claim เมื่อมี 2 checkout พร้อมกัน
 export const claimCouponAtomically = async ({ code, userId, orderId = null }) => {
   if (!code || !userId) return null;
@@ -80,6 +102,7 @@ export const claimCouponAtomically = async ({ code, userId, orderId = null }) =>
     {
       code: code.trim().toUpperCase(),
       userId,
+      type: "WELCOME",
       isUsed: false,
       expiresAt: { $gt: new Date() },
     },

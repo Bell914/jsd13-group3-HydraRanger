@@ -16,7 +16,7 @@ test('shared WELCOME5 code resolves the owning account even when another account
     expiresAt: new Date(Date.now() + 86400000),
   }));
   t.mock.method(Coupon, 'findOne', async (query) => coupons.find((coupon) =>
-    coupon.code === query.code && (!query.userId || String(coupon.userId) === String(query.userId))
+    coupon.code === query.code && query.userId && String(coupon.userId) === String(query.userId)
   ) || null);
   const result = await validateCoupon({ code: ' welcome5 ', userId: userB, subtotal: 1000 });
   assert.equal(String(result.couponId), String(coupons[1]._id));
@@ -52,6 +52,7 @@ test('two concurrent createOrder calls persist only one discounted order and res
     Object.assign(coupon, update.$set);
     return { ...coupon };
   });
+  t.mock.method(Coupon, 'findOne', async () => null);
   t.mock.method(Order, 'create', async (data) => {
     const order = { ...data };
     orders.push(order);
@@ -105,7 +106,9 @@ for (const paymentMethod of ['promptpay', 'paypal']) {
     assert.equal(persistedOrder.status, 'pending');
     assert.ok(persistedOrder.paymentExpiresAt instanceof Date);
     assert.ok(persistedOrder.paymentExpiresAt.getTime() > now);
-    assert.ok(persistedOrder.paymentExpiresAt.getTime() <= now + 30 * 60 * 1000);
+    // Allow a small amount of scheduling time between taking `now` and the
+    // service receiving the request; the expiry remains a 30-minute window.
+    assert.ok(persistedOrder.paymentExpiresAt.getTime() <= now + 30 * 60 * 1000 + 1000);
   });
 }
 
