@@ -86,11 +86,11 @@ export function AdminCustomersPage() {
 
   return (
     <div className="admin-content">
-      <AdminTopbar title="ลูกค้า" />
+      <AdminTopbar title="Customers" />
 
       <main className="data-page">
         <header className="page-heading">
-          <div><h1>Customers</h1><p>บัญชีลูกค้าจริงจาก MongoDB</p></div>
+          <div><h1>ลูกค้า</h1><p>บัญชีลูกค้าจริงจาก MongoDB</p></div>
           <button type="button" className="primary-action" onClick={loadCustomers} disabled={loading}>
             {loading ? 'กำลังโหลด…' : 'อัปเดตข้อมูล'}
           </button>

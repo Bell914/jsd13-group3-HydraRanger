@@ -151,12 +151,12 @@ export function AdminProductsPage() {
 
   return (
     <div className="admin-content">
-      <AdminTopbar title="สินค้า" />
+      <AdminTopbar title="Products" />
 
       <main className="products-page">
         <header className="page-heading">
           <div>
-            <h1>จัดการสินค้าทั้งหมด (Products)</h1>
+            <h1>จัดการสินค้าทั้งหมด</h1>
             <p>จัดการคลังสินค้า เพิ่ม แก้ไข และตรวจสอบสถานะสินค้าในระบบ</p>
           </div>
           <button type="button" className="primary-action" onClick={openCreateForm}>
