@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { CreditCard, Plus } from "lucide-react";
+import { CreditCard, Plus, QrCode, Wallet } from "lucide-react";
 
 const PAYMENT_OPTIONS = [
+  { id: "promptpay", name: "PromptPay", icon: QrCode },
+  { id: "paypal", name: "PayPal", icon: Wallet },
   { id: "credit-card", name: "Credit / Debit Card", icon: CreditCard },
 ];
 
@@ -13,22 +15,20 @@ export default function PaymentSection({
   onContinue,
   onBack,
 }) {
-  const selectedMethod = "credit-card";
+  const selectedMethod = paymentData.method || "credit-card";
+  const SelectedPaymentIcon = PAYMENT_OPTIONS.find((option) => option.id === selectedMethod)?.icon || CreditCard;
   const [error, setError] = useState("");
 
   function handleSubmit(event) {
     event.preventDefault();
     setError("");
 
-    if (
-      selectedMethod === "credit-card" &&
-      !import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
-    ) {
+    if (selectedMethod === "credit-card" && !import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
       setError("ระบบชำระเงินยังไม่ได้ตั้งค่า Stripe");
       return;
     }
 
-    onChangePayment({ method: "credit-card" });
+    onChangePayment({ method: selectedMethod });
     onContinue();
   }
 
@@ -44,9 +44,9 @@ export default function PaymentSection({
           )}
         </div>
         <div className="flex items-center gap-3">
-          <CreditCard className="h-5 w-5" />
+          <SelectedPaymentIcon className="h-5 w-5" />
           <span className="text-sm font-medium">
-            Credit / Debit Card
+            {PAYMENT_OPTIONS.find((option) => option.id === selectedMethod)?.name || "Credit / Debit Card"}
           </span>
         </div>
       </div>
@@ -66,7 +66,11 @@ export default function PaymentSection({
               <button
                 type="button"
                 aria-pressed={isSelected}
-                className="flex w-full items-center justify-between px-4 py-3.5 text-left"
+                onClick={() => {
+                  setError("");
+                  onChangePayment({ method: option.id });
+                }}
+                className={`flex w-full items-center justify-between px-4 py-3.5 text-left hover:bg-gray-50 ${isSelected ? "bg-gray-50" : ""}`}
               >
                 <span className="flex items-center gap-3">
                   <option.icon size={20} aria-hidden="true" />
@@ -77,6 +81,23 @@ export default function PaymentSection({
               {isSelected && option.id === "credit-card" && (
                 <p className="border-t bg-gray-50 p-4 text-sm text-gray-600">
                   กรอกข้อมูลบัตรอย่างปลอดภัยผ่าน Stripe ในขั้นตอนถัดไป
+                </p>
+              )}
+              {isSelected && option.id === "promptpay" && (
+                <div className="flex items-center gap-4 border-t bg-gray-50 p-4">
+                  <div aria-label="QR Code จำลองสำหรับเดโม" className="grid h-20 w-20 grid-cols-5 gap-0.5 rounded bg-white p-1 ring-1 ring-gray-200">
+                    {[1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1].map((pixel, index) => (
+                      <span key={index} className={pixel ? "bg-gray-900" : "bg-white"} />
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    QR Code จำลองสำหรับเดโมเท่านั้น<br />ไม่มีการรับชำระเงินจริง
+                  </p>
+                </div>
+              )}
+              {isSelected && option.id === "paypal" && (
+                <p className="border-t bg-gray-50 p-4 text-sm text-gray-600">
+                  PayPal (โหมดทดสอบระบบ - ไม่มีการตัดเงินจริง)
                 </p>
               )}
             </div>

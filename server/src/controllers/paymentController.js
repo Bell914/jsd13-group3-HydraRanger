@@ -136,12 +136,12 @@ export async function cancelPaymentIntent(req, res, next) {
   }
 }
 
-export async function cleanupExpiredCardPayments() {
+export async function cleanupExpiredPendingPayments() {
   if (cleanupIsRunning) return;
   cleanupIsRunning = true;
 
   try {
-    const expiredOrders = await orderService.getExpiredCardPaymentOrders();
+    const expiredOrders = await orderService.getExpiredPendingPaymentOrders();
 
     for (const order of expiredOrders) {
       try {

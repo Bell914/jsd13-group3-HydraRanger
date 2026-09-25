@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Gift, ChevronDown, Plus, Minus } from "lucide-react";
-import { THAI_PROVINCES } from "../../constants/provinces.js";
+import { normalizeProvince, THAI_PROVINCES } from "../../constants/provinces.js";
 
 export const SHIPPING_METHODS = [
   {
@@ -68,6 +68,8 @@ export default function ShippingSection({
   const selectedMethod =
     SHIPPING_METHODS.find((m) => m.id === shippingData.shippingMethod) ||
     SHIPPING_METHODS[0];
+  const currentProvince = normalizeProvince(shippingData.state);
+  const hasUnlistedProvince = currentProvince && !THAI_PROVINCES.includes(currentProvince);
 
   // Collapsed View for Step 3 and 4
   if (isCollapsed) {
@@ -331,7 +333,7 @@ export default function ShippingSection({
               <select
                 id="shipping-state"
                 disabled={isSavedAddressSelected}
-                value={shippingData.state || ""}
+                value={currentProvince}
                 onChange={(e) => {
                   onChangeShipping({ ...shippingData, state: e.target.value });
                   if (errors.state) setErrors({ ...errors, state: null });
@@ -343,6 +345,9 @@ export default function ShippingSection({
                 }`}
               >
                 <option value="">เลือกจังหวัด...</option>
+                {hasUnlistedProvince && (
+                  <option value={currentProvince}>{currentProvince}</option>
+                )}
                 {THAI_PROVINCES.map((province) => (
                   <option key={province} value={province}>{province}</option>
                 ))}

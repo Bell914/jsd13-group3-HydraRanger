@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { AlertCircle, MapPin, Pencil, Plus, Save, Star, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAddressStore } from "../../store/addressStore.js";
-import { THAI_PROVINCES } from "../../constants/provinces.js";
+import { normalizeProvince, THAI_PROVINCES } from "../../constants/provinces.js";
 import {
   addAddress,
   deleteAddress,
@@ -41,7 +41,7 @@ function getAddressForm(address) {
     addressDetail: address.addressDetail || address.addressLine || "",
     subdistrict: address.subdistrict || "",
     district: address.district || "",
-    province: address.province || "",
+    province: normalizeProvince(address.province || address.state),
     zipCode: address.zipCode || address.postalCode || "",
     isDefault: Boolean(address.isDefault),
   };
@@ -60,6 +60,8 @@ export const AddressSection = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const currentProvince = normalizeProvince(form.province);
+  const hasUnlistedProvince = currentProvince && !THAI_PROVINCES.includes(currentProvince);
 
   async function loadAddresses() {
     const response = await getAddresses();
@@ -261,11 +263,12 @@ export const AddressSection = () => {
               {field === "province" ? (
                 <select
                   required
-                  value={form.province}
+                  value={currentProvince}
                   onChange={(event) => setForm({ ...form, province: event.target.value })}
                   className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
                 >
                   <option value="">เลือกจังหวัด...</option>
+                  {hasUnlistedProvince && <option value={currentProvince}>{currentProvince}</option>}
                   {THAI_PROVINCES.map((province) => <option key={province} value={province}>{province}</option>)}
                 </select>
               ) : (

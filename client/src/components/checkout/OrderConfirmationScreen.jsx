@@ -26,7 +26,9 @@ export default function OrderConfirmationScreen({ orderData }) {
   const [trackingNumber] = useState(
     () =>
       orderData?.trackingNumber ||
-      `OCC-${new Date().getFullYear()}-${Math.floor(10000000 + Math.random() * 90000000)}`,
+      (orderData?.paymentMode === "mock"
+        ? ""
+        : `OCC-${new Date().getFullYear()}-${Math.floor(10000000 + Math.random() * 90000000)}`),
   );
 
   const orderDate = new Date().toLocaleDateString("th-TH", {
@@ -52,6 +54,7 @@ export default function OrderConfirmationScreen({ orderData }) {
     upgradedRank,
     shippingCost = 0,
     totalAmount = 0,
+    paymentMode,
   } = orderData || {};
 
   return (
@@ -87,6 +90,11 @@ export default function OrderConfirmationScreen({ orderData }) {
         <p className="mx-auto mb-6 max-w-md text-sm font-light leading-relaxed text-gray-600 sm:text-base">
           เตรียมพร้อมยกระดับสไตล์การแต่งกายของคุณได้เลย!
         </p>
+        {paymentMode === "mock" && (
+          <p role="status" className="mx-auto mb-6 max-w-xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            โหมดจำลองสำหรับเดโม: สร้างคำสั่งซื้อสถานะรอชำระเงินเพื่อทดสอบแล้ว แต่ไม่ได้เชื่อมต่อเพื่อรับชำระเงินจริง คำสั่งซื้อจะหมดอายุภายใน 30 นาทีหากไม่มีการยืนยันการชำระเงิน
+          </p>
+        )}
 
         {/* Divider with Truck */}
         <div className="mx-auto my-6 flex max-w-xs items-center justify-center gap-4">
@@ -95,32 +103,34 @@ export default function OrderConfirmationScreen({ orderData }) {
           <div className="h-px flex-1 bg-gray-200" />
         </div>
 
-        <p className="mb-2 text-xs font-semibold text-gray-700 sm:text-sm">
-          ไม่ต้องนั่งเฝ้าหน้าตู้โพสต์แมน!
-        </p>
-        <p className="mb-2 text-sm text-gray-600">
-          ใช้หมายเลขนี้เพื่อติดตามพัสดุของคุณ:
-        </p>
-
-        {/* Tracking Code with copy button */}
-        <div className="mb-8 inline-flex items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2 text-gray-900 transition-colors hover:bg-orange-100">
-          <span className="font-mono text-base font-bold tracking-wider underline decoration-orange-600 underline-offset-4 sm:text-lg">
-            {trackingNumber}
-          </span>
-          <button
-            type="button"
-            onClick={handleCopyTracking}
-            title="คัดลอกหมายเลขติดตามพัสดุ"
-            aria-label={copied ? "คัดลอกหมายเลขแล้ว" : "คัดลอกหมายเลขติดตามพัสดุ"}
-            className="cursor-pointer rounded-lg p-1.5 text-orange-700 transition-colors hover:bg-orange-100 hover:text-orange-800"
-          >
-            {copied ? (
-              <Check className="h-4 w-4 text-emerald-600" />
-            ) : (
-              <Copy className="w-4 h-4" />
-            )}
-          </button>
-        </div>
+        {trackingNumber ? (
+          <>
+            <p className="mb-2 text-xs font-semibold text-gray-700 sm:text-sm">
+              ไม่ต้องนั่งเฝ้าหน้าตู้โพสต์แมน!
+            </p>
+            <p className="mb-2 text-sm text-gray-600">
+              ใช้หมายเลขนี้เพื่อติดตามพัสดุของคุณ:
+            </p>
+            <div className="mb-8 inline-flex items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2 text-gray-900 transition-colors hover:bg-orange-100">
+              <span className="font-mono text-base font-bold tracking-wider underline decoration-orange-600 underline-offset-4 sm:text-lg">
+                {trackingNumber}
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyTracking}
+                title="คัดลอกหมายเลขติดตามพัสดุ"
+                aria-label={copied ? "คัดลอกหมายเลขแล้ว" : "คัดลอกหมายเลขติดตามพัสดุ"}
+                className="cursor-pointer rounded-lg p-1.5 text-orange-700 transition-colors hover:bg-orange-100 hover:text-orange-800"
+              >
+                {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
+          </>
+        ) : (
+          <p className="mb-8 text-sm text-gray-600">
+            หมายเลขติดตามพัสดุจะแสดงเมื่อมีข้อมูลการจัดส่ง
+          </p>
+        )}
 
         {/* 3. The Inner White Receipt Sheet */}
         <div className="mx-auto max-w-2xl rounded-2xl border border-gray-100 bg-white p-5 text-left text-gray-900 shadow-sm sm:p-8">
