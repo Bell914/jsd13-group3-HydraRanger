@@ -12,16 +12,31 @@ const variantSchema = new mongoose.Schema(
   {
     sku: { type: String, required: true, trim: true },
     size_or_color: { type: String, required: true, trim: true },
+    size: { type: String, default: '', trim: true },
+    color: { type: String, default: '', trim: true },
+    colorCode: { type: String, default: '', trim: true },
     price: { type: Number, required: true, min: 0 },
-    stock_quantity: { type: Number, default: 0, min: 0 }
+    stock_quantity: { type: Number, default: 0, min: 0 },
+    imageUrl: { type: String, default: '', trim: true },
+    detailImages: { type: [String], default: [] }
   },
-  { _id: true }
+  {
+    _id: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
+
+variantSchema.virtual('stockQuantity').get(function () {
+  return this.stock_quantity;
+});
 
 const sizeChartSchema = new mongoose.Schema(
   {
-    size_name: { type: String, trim: true },
-    garment_chest_actual: { type: Number }
+    size_name: { type: String, required: true, trim: true },
+    garment_chest_actual: { type: Number, min: 1 },
+    garment_waist_actual: { type: Number, min: 1 },
+    garment_hips_actual: { type: Number, min: 1 }
   },
   { _id: false }
 );

@@ -8,6 +8,21 @@ import { validateSizeProfile } from '../validators/sizeProfileValidator.js';
 
 const router = Router();
 
+router.get('/addresses', protect, authorize(USER_ROLES.USER), userController.getAddresses);
+router.post('/addresses', protect, authorize(USER_ROLES.USER), userController.addAddress);
+router.put('/addresses/:addressId', protect, authorize(USER_ROLES.USER), userController.updateAddress);
+router.delete(
+  '/addresses/:addressId',
+  protect,
+  authorize(USER_ROLES.USER),
+  userController.deleteAddress
+);
+router.patch(
+  '/addresses/:addressId/default',
+  protect,
+  authorize(USER_ROLES.USER),
+  userController.setDefaultAddress
+);
 router.get('/me/size-profile', protect, authorize(USER_ROLES.USER), userController.getMySizeProfile);
 router.put(
   '/me/size-profile',

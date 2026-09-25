@@ -1,40 +1,12 @@
 import { User } from '../models/User.js';
 
 export const getAllUsers = async () => {
-  try {
-    return await User.find().select('-password -sizeProfile');
-  } catch {
-    return [
-      {
-        id: 'mock-1',
-        username: 'OccasionAdmin',
-        email: 'admin@occasion.dev',
-        role: 'admin',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'mock-2',
-        username: 'OccasionDev',
-        email: 'developer@occasion.dev',
-        role: 'user',
-        createdAt: new Date().toISOString()
-      }
-    ];
-  }
+  return User.find().select('-password -sizeProfile');
 };
 
 export const getUserById = async (id, includeSizeProfile = false) => {
-  try {
-    const fields = includeSizeProfile ? '-password' : '-password -sizeProfile';
-    return await User.findById(id).select(fields);
-  } catch {
-    return {
-      id,
-      username: 'OccasionMember',
-      email: 'member@occasion.dev',
-      role: 'user'
-    };
-  }
+  const fields = includeSizeProfile ? '-password' : '-password -sizeProfile';
+  return User.findById(id).select(fields);
 };
 
 export async function getSizeProfile(userId) {

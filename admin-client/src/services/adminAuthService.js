@@ -1,15 +1,13 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
-const TOKEN_KEY = 'occasion_admin_token';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5002/api';
 const USER_KEY = 'occasion_admin_user';
 
 async function request(path, options = {}) {
   try {
-    const token = localStorage.getItem(TOKEN_KEY);
     const response = await fetch(API_BASE_URL + path, {
       ...options,
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers
       }
     });
@@ -36,7 +34,6 @@ export const adminAuthService = {
     if (response.data?.user?.role !== 'admin') {
       throw new Error('บัญชีนี้ไม่มีสิทธิ์ Admin');
     }
-    localStorage.setItem(TOKEN_KEY, response.data.token);
     localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
     return response.data.user;
   },
@@ -50,13 +47,15 @@ export const adminAuthService = {
     return response.data;
   },
 
-  logout() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-  },
-
-  getToken() {
-    return localStorage.getItem(TOKEN_KEY);
+  async logout() {
+    try {
+      await request('/admin/auth/logout', { method: 'POST' });
+    } catch {
+      // Local session data must still be cleared when the server is unavailable.
+    } finally {
+      localStorage.removeItem('occasion_admin_token');
+      localStorage.removeItem(USER_KEY);
+    }
   },
 
   getUser() {

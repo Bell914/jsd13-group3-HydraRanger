@@ -42,7 +42,9 @@ export async function getDashboardSummary() {
   const monthlyOrders = getLastSixMonths();
 
   orders.forEach((order) => {
-    if (order.status !== 'cancelled') totalRevenue += order.totalAmount || 0;
+    if (['paid', 'processing', 'shipped', 'completed'].includes(order.status)) {
+      totalRevenue += order.totalAmount || 0;
+    }
     if (order.status === 'pending') pendingOrderCount += 1;
 
     const createdDate = new Date(order.createdAt);

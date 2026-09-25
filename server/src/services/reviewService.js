@@ -3,7 +3,7 @@ import { Order } from '../models/Order.js';
 import { Product } from '../models/Product.js';
 import { Review } from '../models/Review.js';
 
-const PAID_ORDER_STATUSES = ['paid', 'processing', 'shipped', 'completed'];
+const REVIEWABLE_ORDER_STATUS = 'completed';
 
 function validateReviewInput(reviewData) {
   const rating = Number(reviewData.rating);
@@ -31,12 +31,12 @@ export async function createReview(userId, reviewData) {
   const order = await Order.findOne({
     _id: reviewData.orderId,
     user: userId,
-    status: { $in: PAID_ORDER_STATUSES },
+    status: REVIEWABLE_ORDER_STATUS,
     'items.product': reviewData.productId
   });
 
   if (!order) {
-    throw new Error('Only customers with a paid order can review this product');
+    throw new Error('สามารถรีวิวได้เฉพาะสินค้าที่จัดส่งเสร็จสิ้น (completed) แล้วเท่านั้น');
   }
 
   const product = await Product.findById(reviewData.productId);
@@ -61,6 +61,12 @@ export async function getVisibleProductReviews(productId) {
     : reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
 
   return { reviews, count: reviews.length, averageRating };
+}
+
+export function getMyReviews(userId) {
+  return Review.find({ user: userId })
+    .select('product order rating comment isVisible createdAt')
+    .sort({ createdAt: -1 });
 }
 
 export function getAllReviews() {

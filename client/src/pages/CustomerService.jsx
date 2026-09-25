@@ -1,18 +1,16 @@
 import React, { useState } from "react";
 import { useContactStore } from "../store/useContactStore.js"; // ปรับ path ให้ตรงกับโปรเจกต์ของคุณ
+import { Modal } from "../components/ui/Modal.jsx";
+
+const initialFormData = { name: "", email: "", phone: "", topic: "", message: "" };
 
 export default function CustomerService() {
   // 1. ดึง State และ Action มาจาก Store
   const { loading, statusMsg, submitContactForm } = useContactStore();
 
   // 2. State สำหรับเก็บข้อมูลฟอร์ม (เก็บไว้ใน Component ดีที่สุด เพราะอัปเดตบ่อยตอนพิมพ์)
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    topic: "",
-    message: "",
-  });
+  const [formData, setFormData] = useState(initialFormData);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -25,14 +23,15 @@ export default function CustomerService() {
     // เรียกใช้ฟังก์ชันจาก Store
     const isSuccess = await submitContactForm(formData);
 
-    // ถ้าส่งสำเร็จ ให้เคลียร์ข้อมูลในฟอร์ม
+    // ถ้าส่งสำเร็จ ให้แสดง modal success และเคลียร์ข้อมูลในฟอร์ม
     if (isSuccess) {
-      setFormData({ name: "", email: "", phone: "", topic: "", message: "" });
+      setFormData(initialFormData);
+      setShowSuccessModal(true);
     }
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen flex flex-col font-['Prompt']">
+    <div className="bg-gray-50 min-h-screen flex flex-col font-['Poppins']">
       <div className="w-full flex-1 flex justify-center py-10 px-4">
         <main className="w-full max-w-4xl text-left">
           {/* ... โค้ดส่วน Header และ Cards (FAQ) ด้านบนคงเดิม ไม่เปลี่ยนแปลง ... */}
@@ -152,6 +151,27 @@ export default function CustomerService() {
         </main>
       </div>
       <footer id="footer-container"></footer>
+
+      {/* Modal แจ้งเตือนเมื่อส่งข้อความสำเร็จ */}
+      <Modal
+        open={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="ส่งข้อความสำเร็จ"
+        footer={
+          <button
+            type="button"
+            onClick={() => setShowSuccessModal(false)}
+            className="px-6 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-medium text-sm rounded-lg transition"
+          >
+            ปิด
+          </button>
+        }
+      >
+        <p className="text-sm leading-relaxed">
+          ขอบคุณที่ติดต่อทีมงาน OCCASION
+          เจ้าหน้าที่จะติดต่อกลับไปหาท่านโดยเร็วที่สุดผ่านช่องทางที่ระบุไว้
+        </p>
+      </Modal>
     </div>
   );
 }

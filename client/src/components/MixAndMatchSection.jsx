@@ -1,22 +1,92 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ImageDropzone from "./ImageDropzone.jsx";
 import { RecommendProduct } from "../pages/RecommendProduct.jsx";
-import lookData from "../data/look-data.json";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
-
-const looksData =
-  lookData?.looks || lookData?.default?.looks || [];
+import { getLookbooks } from "../services/lookbookService.js";
+import { recommendLookbooks } from "../services/recommendService.js";
 
 const MixAndMatchSection = ({ assets }) => {
-  const [topUrl, setTopUrl] = useState("");
-  const [bottomUrl, setBottomUrl] = useState("");
+  const [topFile, setTopFile] = useState(null);
+  const [bottomFile, setBottomFile] = useState(null);
+  const [recommendedLooks, setRecommendedLooks] = useState([]);
+  const [recommending, setRecommending] = useState(false);
+  const [aiRanked, setAiRanked] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+const recommendationRequestId = useRef(0);
 
-  const hasAnyUpload = Boolean(topUrl || bottomUrl);
+  useEffect(() => {
+    let mounted = true;
+    getLookbooks()
+      .then((lookbooks) => {
+        if (!mounted) return;
+        setRecommendedLooks(
+          (Array.isArray(lookbooks) ? lookbooks : []).map((look) => ({
+            ...look,
+            image: normalizeImageUrl(look?.image),
+          })),
+        );
+      })
+      .catch(() => {
+        if (mounted) setRecommendedLooks([]);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-  const recommendedLooks = looksData.slice(0, 3).map((look) => ({
-    ...look,
-    image: normalizeImageUrl(look?.image),
-  }));
+  const hasFiles = Boolean(topFile || bottomFile);
+
+const resetRecommendation = () => {
+    recommendationRequestId.current += 1;
+    setConfirmed(false);
+    setAiRanked(false);
+    setRecommending(false);
+  };
+
+  const handleTopFileChange = (file) => {
+    setTopFile(file);
+    resetRecommendation();
+  };
+
+  const handleBottomFileChange = (file) => {
+    setBottomFile(file);
+    resetRecommendation();
+  };
+
+  const confirmRecommend = () => {
+    const files = [];
+    if (topFile) files.push({ name: "top", file: topFile });
+    if (bottomFile) files.push({ name: "bottom", file: bottomFile });
+    if (files.length === 0) return;
+
+const requestId = recommendationRequestId.current + 1;
+    recommendationRequestId.current = requestId;
+    setConfirmed(true);
+    setRecommending(true);
+    recommendLookbooks(files)
+      .then(({ lookbooks }) => {
+if (requestId !== recommendationRequestId.current) return;
+        if (lookbooks.length > 0) {
+          setRecommendedLooks(
+            lookbooks.map((look) => ({
+              ...look,
+              image: normalizeImageUrl(look?.imageUrl || look?.image),
+            })),
+          );
+          setAiRanked(true);
+        }
+      })
+.catch(() => {
+        if (requestId === recommendationRequestId.current) {
+          setAiRanked(false);
+        }
+      })
+      .finally(() => {
+        if (requestId === recommendationRequestId.current) {
+          setRecommending(false);
+        }
+      });
+  };
 
   return (
     <div className="my-12 flex flex-col gap-8 rounded-2xl bg-accent p-6 sm:p-10">
@@ -70,31 +140,49 @@ const MixAndMatchSection = ({ assets }) => {
         <ImageDropzone
           assets={assets}
           label="อัปโหลดเสื้อ / ท่อนบน"
-          onChange={setTopUrl}
+          onFileChange={handleTopFileChange}
+          persistUpload={false}
         />
         <ImageDropzone
           assets={assets}
           label="อัปโหลดกางเกง / ท่อนล่าง"
-          onChange={setBottomUrl}
+          onFileChange={handleBottomFileChange}
+          persistUpload={false}
         />
-        {topUrl && bottomUrl ? (
+        <button
+          type="button"
+          onClick={confirmRecommend}
+          disabled={!hasFiles || recommending}
+          className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-bold uppercase tracking-wider transition-all ${
+            !hasFiles || recommending
+              ? "cursor-not-allowed bg-white/20 text-white/60"
+              : "cursor-pointer bg-white text-foreground hover:opacity-85 active:scale-95"
+          }`}
+        >
+          {recommending ? "กำลังวิเคราะห์..." : "ยืนยันการอัปโหลด"}
+        </button>
+        {recommending ? (
           <p className="text-center text-xs text-white/80">
-            อัปโหลดครบทั้ง 2 ชิ้น! ดูเซ็ตแนะนำด้านล่าง
+            กำลังวิเคราะห์รูปด้วย AI หาลุคใกล้เคียง...
           </p>
-        ) : hasAnyUpload ? (
+        ) : hasFiles && !confirmed ? (
           <p className="text-center text-xs text-white/80">
-            อัปโหลดแค่ชิ้นเดียวก็ได้ เซ็ตแนะนำแสดงด้านล่างแล้ว
+            เลือกภาพแล้ว กด "ยืนยันการอัปโหลด" เพื่อให้ AI วิเคราะห์ลุค
+          </p>
+        ) : confirmed ? (
+          <p className="text-center text-xs text-white/80">
+            การวิเคราะห์เสร็จสิ้น ดูเซ็ตแนะนำด้านล่าง
           </p>
         ) : (
           <p className="text-center text-xs text-white/80">
-            อัปโหลดเสื้อหรือกางเกงอย่างน้อย 1 ชิ้น แล้วดูเซ็ตแนะนำ
+            อัปโหลดเสื้อหรือกางเกงอย่างน้อย 1 ชิ้น แล้วกดยืนยันเพื่อดูเซ็ตแนะนำ
           </p>
         )}
       </div>
       </div>
 
       {/* เซ็ตแนะนำ Lookbook ใกล้เคียงกับที่ลูกค้าเลือก */}
-      {hasAnyUpload && (
+      {confirmed ? (
         <div className="border-t border-white/20 pt-8">
           <div className="mb-6 text-center md:text-left">
             <p className="text-sm font-bold tracking-wider text-white opacity-80">
@@ -103,18 +191,40 @@ const MixAndMatchSection = ({ assets }) => {
             <h3 className="mt-1 text-2xl font-bold text-white">
               เซ็ตแนะนำที่แมตช์กับชิ้นส่วนที่คุณเลือก
             </h3>
+            {recommending ? (
+              <p className="mt-1 text-xs text-white/70">
+                กำลังวิเคราะห์รูปด้วย AI...
+              </p>
+            ) : aiRanked ? (
+              <p className="mt-1 text-xs text-white/70">
+                จัดอันดับโดย AI จากรูปที่คุณอัปโหลด
+              </p>
+            ) : null}
           </div>
-          <div className="grid grid-cols-1 gap-6 sm:px-0 md:grid-cols-3">
-            {recommendedLooks.map((look, index) => (
-              <RecommendProduct
-                key={look.id || `lookbook-${index}`}
-                product={look}
-                index={index}
+
+          {recommending ? (
+            <div className="flex flex-col items-center justify-center gap-4 rounded-2xl bg-white/10 py-16">
+              <span
+                className="h-10 w-10 animate-spin rounded-full border-3 border-white/30 border-t-white"
+                aria-hidden="true"
               />
-            ))}
-          </div>
+              <p className="text-sm font-medium text-white/85">
+                กำลังประมวลผลด้วย AI... รอสักครู่
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 sm:px-0 md:grid-cols-3">
+              {recommendedLooks.slice(0, 3).map((look, index) => (
+                <RecommendProduct
+                  key={look._id || look.id || `lookbook-${index}`}
+                  product={look}
+                  index={index}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

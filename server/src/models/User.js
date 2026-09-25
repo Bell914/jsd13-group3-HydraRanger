@@ -2,6 +2,23 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { USER_ROLES } from '../config/constants.js';
 
+// Schema สำหรับ Shipping Address / Addresses
+const addressSchema = new mongoose.Schema(
+  {
+    recipientName: { type: String, required: true, trim: true },
+    phone: { type: String, required: true, trim: true },
+    addressLine: { type: String, required: true, trim: true },
+    addressDetail: { type: String, trim: true, default: '' },
+    subdistrict: { type: String, trim: true, default: '' },
+    district: { type: String, trim: true, default: '' },
+    province: { type: String, trim: true, default: '' },
+    postalCode: { type: String, required: true, trim: true },
+    isDefault: { type: Boolean, default: false }
+  },
+  { timestamps: true }
+);
+
+// Schema สำหรับ Size Profile
 const sizeProfileSchema = new mongoose.Schema(
   {
     chestCm: { type: Number, min: 60, max: 160, required: true },
@@ -17,6 +34,8 @@ const sizeProfileSchema = new mongoose.Schema(
   },
   { _id: false }
 );
+
+
 
 const userSchema = new mongoose.Schema(
   {
@@ -42,7 +61,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, 'Password is required'],
-      minlength: [6, 'Password must be at least 6 characters'],
+      minlength: [8, 'Password must be at least 8 characters'],
       select: false
     },
     role: {
@@ -54,13 +73,69 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    birthday: {
+      type: Date,
+      default: null
+    },
     isActive: {
       type: Boolean,
       default: true
     },
+    membership: {
+      rank: {
+        type: String,
+        enum: ['MEMBER', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM'],
+        default: 'MEMBER'
+      },
+      accumulatedSpending: {
+        type: Number,
+        default: 0,
+        min: 0
+      },
+      rankUpdatedAt: {
+        type: Date,
+        default: Date.now
+      },
+      rankExpiresAt: {
+        type: Date
+      },
+      orderCount: {
+        type: Number,
+        default: 0,
+        min: 0
+      }
+    },
+    shippingAddresses: {
+      type: [addressSchema],
+      default: []
+    },
+    addresses: [addressSchema],
+    favoriteLookbooks: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Lookbook'
+      }
+    ],
+    tokenVersion: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
     sizeProfile: {
       type: sizeProfileSchema,
       default: undefined
+    },
+
+    // ==========================================
+    // Forgot / Reset Password Fields
+    // ==========================================
+    resetPasswordToken: {
+      type: String,
+      default: null
+    },
+    resetPasswordExpires: {
+      type: Date,
+      default: null
     }
   },
   {
@@ -68,7 +143,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Hash password before saving
+// Hash password ก่อน save
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
@@ -76,7 +151,7 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-// Method to compare entered password with hashed password
+// Method เปรียบเทียบรหัสผ่าน
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };

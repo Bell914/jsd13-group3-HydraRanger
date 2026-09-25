@@ -1,16 +1,11 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
-const TOKEN_KEY = 'occasion_admin_token';
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5002/api';
 async function sendRequest(path, options = {}) {
-  const token = localStorage.getItem(TOKEN_KEY);
-  if (!token) throw new Error('ไม่พบสิทธิ์ Admin กรุณาเข้าสู่ระบบใหม่');
-
   try {
     const response = await fetch(`${API_BASE_URL}${path}`, {
       ...options,
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
         ...options.headers
       }
     });

@@ -4,8 +4,10 @@ const STORAGE_KEY = "occasion_cart";
 
 const loadInitialCart = () => {
   try {
+    if (typeof localStorage === "undefined") return [];
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
+    const parsed = saved ? JSON.parse(saved) : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
     console.error("Failed to load cart from localStorage:", error);
     return [];
@@ -14,10 +16,16 @@ const loadInitialCart = () => {
 
 const saveCart = (cart) => {
   try {
+    if (typeof localStorage === "undefined") return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
   } catch (error) {
     console.error("Failed to save cart to localStorage:", error);
   }
+};
+
+const getStock = (variant) => {
+  const stock = Number(variant.stockQuantity ?? variant.stock_quantity ?? variant.stock ?? 0);
+  return Number.isFinite(stock) ? Math.max(0, stock) : 0;
 };
 
 export const useCartStore = create((set, get) => ({
@@ -25,6 +33,11 @@ export const useCartStore = create((set, get) => ({
 
   addToCart: ({ product, variant, quantity = 1 }) => {
     const currentItems = get().cartItems;
+    const stockQuantity = getStock(variant);
+
+    // Do not add an item that has no stock.
+    if (stockQuantity === 0) return currentItems;
+
     const prodId = product._id || product.productId || "product";
     const colorKey = variant.color || "std";
     const sizeKey = variant.size || "std";
@@ -42,10 +55,9 @@ export const useCartStore = create((set, get) => ({
       updatedItems = currentItems.map((item, idx) => {
         if (idx === existingIndex) {
           const newQty = item.quantity + quantity;
-          const maxStock = variant.stockQuantity || variant.stock_quantity || 99;
           return {
             ...item,
-            quantity: Math.min(newQty, maxStock),
+            quantity: Math.min(newQty, stockQuantity),
           };
         }
         return item;
@@ -62,8 +74,8 @@ export const useCartStore = create((set, get) => ({
         size: variant.size,
         price: variant.price,
         imageUrl: variant.imageUrl || product.imageUrl,
-        quantity,
-        stockQuantity: variant.stockQuantity || variant.stock_quantity || 99,
+        quantity: Math.min(Math.max(1, Number(quantity) || 1), stockQuantity),
+        stockQuantity,
       };
       updatedItems = [...currentItems, newItem];
     }
@@ -86,11 +98,16 @@ export const useCartStore = create((set, get) => ({
       get().removeFromCart(variantId);
       return;
     }
-    const updatedItems = get().cartItems.map((item) =>
-      item.variantId === variantId
-        ? { ...item, quantity: Math.min(quantity, item.stockQuantity || 99) }
-        : item
-    );
+    const updatedItems = get().cartItems
+      .filter((item) => item.variantId !== variantId || getStock(item) > 0)
+      .map((item) => {
+        if (item.variantId !== variantId) return item;
+
+        return {
+          ...item,
+          quantity: Math.min(quantity, getStock(item)),
+        };
+      });
     saveCart(updatedItems);
     set({ cartItems: updatedItems });
   },

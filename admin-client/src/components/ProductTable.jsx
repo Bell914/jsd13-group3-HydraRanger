@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Image } from 'lucide-react';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5002/api';
 const IMAGE_SERVER_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 const getProductImageUrl = (product) => {
@@ -59,8 +59,9 @@ const getSummary = (product) => {
     price = Math.min(...prices);
   }
 
-  let status = 'สินค้าหมด';
-  if (totalStock > 0) {
+  const isActive = product.isActive !== false && product.is_active !== false;
+  let status = isActive ? 'สินค้าหมด' : 'ซ่อนจากหน้าร้าน';
+  if (isActive && totalStock > 0) {
     status = 'พร้อมขาย';
   }
 
@@ -117,7 +118,7 @@ export function ProductTable({ products, onEdit, onDelete }) {
                     </span>
                   </td>
                   <td data-label="สถานะ">
-                    <span className={`status ${summary.totalStock > 0 ? 'active' : 'empty'}`}>
+                    <span className={`status ${product.isActive === false || product.is_active === false ? 'suspended' : summary.totalStock > 0 ? 'active' : 'empty'}`}>
                       {summary.status}
                     </span>
                   </td>
@@ -126,15 +127,15 @@ export function ProductTable({ products, onEdit, onDelete }) {
                       <button type="button" aria-label={`แก้ไข ${product.name}`} title="แก้ไข" onClick={() => onEdit(product)}>
                         แก้ไข
                       </button>
-                      <button
+                      {(product.isActive !== false && product.is_active !== false) && <button
                         type="button"
                         className="danger"
                         aria-label={`ลบ ${product.name}`}
                         title="ลบ"
                         onClick={() => onDelete(product)}
                       >
-                        ลบ
-                      </button>
+                        ปิดการขาย
+                      </button>}
                     </div>
                   </td>
                 </tr>

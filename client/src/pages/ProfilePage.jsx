@@ -1,183 +1,58 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { User, Heart, BookOpen, MapPin, Package, AlertCircle, Save, KeyRound, Plus, Pencil, Trash2, Ruler } from 'lucide-react';
-import { Card } from '../components';
-import { useAuth } from '../context/Auth/useAuth.jsx';
-import { useWishlistStore } from '../store/wishlistStore.js';
-import { useAddressStore, emptyAddress } from '../store/addressStore.js';
-import { useLookbookStore } from '../store/lookbookStore.js';
-import { normalizeImageUrl } from '../utils/imageUtils.js';
-import { SizeProfileSection } from '../components/profile/SizeProfileSection.jsx';
+import React, { useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import {
+  User,
+  Heart,
+  BookOpen,
+  MapPin,
+  Package,
+  Ruler,
+  Crown,
+  Ticket,
+  Loader2,
+} from "lucide-react";
+import { Card } from "../components/index.js";
+import { useAuth } from "../context/Auth/useAuth.jsx";
+import { UserInfoSection } from "../components/profilepage/UserInfoSection.jsx";
+import { WishlistSection } from "../components/profilepage/WishlistSection.jsx";
+import { LookbooksSection } from "../components/profilepage/LookbooksSection.jsx";
+import { AddressSection } from "../components/profilepage/AddressSection.jsx";
+import { OrderHistorySection } from "../components/profilepage/OrderHistorySection.jsx";
+import { SizeProfileSection } from "../components/profilepage/SizeProfileSection.jsx";
+import { MembershipSection } from "../components/profilepage/MembershipSection.jsx";
+import { CouponsSection } from "../components/profilepage/CouponsSection.jsx";
 
-// Component แสดงผลเมื่อไม่มีข้อมูล (Empty State)
-const EmptyState = ({ message, subtitle }) => (
-  <div className="text-center py-12 border border-dashed border-gray-200 rounded-xl">
-    <p className="text-gray-500 font-medium">{message}</p>
-    {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
-  </div>
-);
+const tabs = [
+  { id: "profile", label: "ข้อมูลส่วนตัว", icon: User },
+  { id: "membership", label: "Membership & Loyalty", icon: Crown },
+  { id: "coupons", label: "คูปองและรางวัล (Vouchers)", icon: Ticket },
+  { id: "size-profile", label: "Size & Fit", icon: Ruler },
+  { id: "wishlist", label: "Wishlist", icon: Heart },
+  { id: "lookbooks", label: "Favorite Lookbooks", icon: BookOpen },
+  { id: "addresses", label: "Shipping Addresses", icon: MapPin },
+  { id: "orders", label: "Order History", icon: Package },
+];
 
 export const ProfilePage = () => {
-  const { user: authUser, updateProfile, changePassword } = useAuth();
-  const [activeTab, setActiveTab] = useState('profile');
-  const [error, setError] = useState(''); // Error state สำหรับกรณี fetch ข้อมูลล้มเหลว
-  const [success, setSuccess] = useState('');
-  const wishlist = useWishlistStore((state) => state.wishlist);
-  const removeFromWishlist = useWishlistStore(
-    (state) => state.removeFromWishlist
-  );
-  const addresses = useAddressStore((state) => state.addresses);
-  const addAddress = useAddressStore((state) => state.addAddress);
-  const updateAddress = useAddressStore((state) => state.updateAddress);
-  const removeAddress = useAddressStore((state) => state.removeAddress);
-  const setDefaultAddress = useAddressStore((state) => state.setDefaultAddress);
-  const favoriteLookbooks = useLookbookStore((state) => state.favorites);
-  const removeFavoriteLookbook = useLookbookStore((state) => state.removeFavorite);
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") || "profile";
+  const { loading, user } = useAuth();
+  const [activeTab, setActiveTab] = useState(initialTab);
 
-  // ข้อมูลผู้ใช้จาก Auth context พร้อม fallback
-  const user = authUser || { username: 'Customer', email: 'user@example.com' };
-  const orders = [];
-
-  const [form, setForm] = useState({
-    username: user.username || '',
-    email: user.email || '',
-    avatar: user.avatar || '',
-  });
-  const [saving, setSaving] = useState(false);
-  const [pwdForm, setPwdForm] = useState({ currentPassword: '', newPassword: '' });
-  const [pwdMsg, setPwdMsg] = useState('');
-  const [pwdError, setPwdError] = useState('');
-  const [addrForm, setAddrForm] = useState(emptyAddress);
-  const [editingAddrId, setEditingAddrId] = useState(null);
-  const [addrMsg, setAddrMsg] = useState('');
-  const [addrError, setAddrError] = useState('');
-
-  const handleProfileChange = (field) => (e) => {
-    setSuccess('');
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleSaveProfile = async (e) => {
-    e.preventDefault();
-    if (!authUser) {
-      setError('กรุณาเข้าสู่ระบบก่อนแก้ไขข้อมูล');
-      return;
-    }
-    setSaving(true);
-    setError('');
-    setSuccess('');
-    try {
-      await updateProfile({
-        username: form.username,
-        email: form.email,
-        avatar: form.avatar,
-      });
-      setSuccess('บันทึกข้อมูลส่วนตัวสำเร็จ');
-    } catch (err) {
-      const apiError =
-        err?.response?.data?.errors?.[0] || err?.response?.data?.message;
-      setError(apiError || 'บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    if (!authUser) {
-      setError('กรุณาเข้าสู่ระบบก่อนเปลี่ยนรหัสผ่าน');
-      return;
-    }
-    setPwdMsg('');
-    setPwdError('');
-    try {
-      const res = await changePassword(pwdForm);
-      setPwdMsg(res?.data?.message || 'เปลี่ยนรหัสผ่านสำเร็จ');
-      setPwdForm({ currentPassword: '', newPassword: '' });
-    } catch (err) {
-      const apiError =
-        err?.response?.data?.errors?.[0] || err?.response?.data?.message;
-      setPwdError(apiError || 'เปลี่ยนรหัสผ่านไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
-    }
-  };
-
-  const handleAddrChange = (field) => (e) => {
-    setAddrMsg('');
-    setAddrForm((prev) => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const resetAddrForm = () => {
-    setAddrForm(emptyAddress);
-    setEditingAddrId(null);
-    setAddrMsg('');
-    setAddrError('');
-  };
-
-  const handleEditAddress = (addr) => {
-    setAddrError('');
-    setAddrMsg('');
-    setEditingAddrId(addr.id);
-    setAddrForm({
-      label: addr.label || '',
-      firstName: addr.firstName || '',
-      lastName: addr.lastName || '',
-      phone: addr.phone || '',
-      address: addr.address || '',
-      city: addr.city || '',
-      state: addr.state || '',
-      zipCode: addr.zipCode || '',
-      location: addr.location || 'Thailand',
-    });
-  };
-
-  const handleSaveAddress = (e) => {
-    e.preventDefault();
-    setAddrError('');
-    setAddrMsg('');
-    const required = ['firstName', 'lastName', 'phone', 'address', 'city', 'state', 'zipCode'];
-    const missing = required.find((key) => !addrForm[key]?.trim());
-    if (missing) {
-      setAddrError('กรุณากรอกข้อมูลให้ครบทุกช่อง (ชื่อ, นามสกุล, เบอร์โทร, ที่อยู่, เมือง, จังหวัด, รหัสไปรษณีย์)');
-      return;
-    }
-    if (editingAddrId) {
-      updateAddress(editingAddrId, addrForm);
-      setAddrMsg('อัปเดตที่อยู่เรียบร้อย');
-    } else {
-      addAddress(addrForm);
-      setAddrMsg('บันทึกที่อยู่เรียบร้อย');
-    }
-    setAddrForm(emptyAddress);
-    setEditingAddrId(null);
-  };
-
-  const handleRemoveAddress = (id) => {
-    removeAddress(id);
-    if (editingAddrId === id) {
-      resetAddrForm();
-    }
-  };
-
-  const tabs = [
-    { id: 'profile', label: 'ข้อมูลส่วนตัว', icon: User },
-    { id: 'size-profile', label: 'Size & Fit', icon: Ruler },
-    { id: 'wishlist', label: 'Wishlist', icon: Heart },
-    { id: 'lookbooks', label: 'Favorite Lookbooks', icon: BookOpen },
-    { id: 'addresses', label: 'Shipping Addresses', icon: MapPin },
-    { id: 'orders', label: 'Order History', icon: Package },
-  ];
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+        <Loader2 className="animate-spin text-accent" size={32} />
+        <p className="text-sm text-gray-500 font-medium">
+          กำลังโหลดข้อมูลโปรไฟล์...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto py-8 px-4">
       <h1 className="text-2xl font-bold mb-6 text-primary">My Profile</h1>
-
-      {/* Error Alert State */}
-      {error && (
-        <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
-          <AlertCircle size={18} className="shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* Navigation Sidebar */}
@@ -191,8 +66,8 @@ export const ProfilePage = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors text-left ${
                     activeTab === tab.id
-                      ? 'bg-accent text-white'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      ? "bg-accent text-white"
+                      : "text-gray-600 hover:bg-gray-100"
                   }`}
                 >
                   <Icon size={18} />
@@ -203,516 +78,16 @@ export const ProfilePage = () => {
           </nav>
         </Card>
 
-        {/* Tab Content Display Area */}
+        {/* Tab Content Area */}
         <Card className="p-6 md:col-span-3">
-          {activeTab === 'profile' && (
-            <div>
-              <h2 className="text-lg font-semibold mb-4">ข้อมูลส่วนตัว</h2>
-              {!authUser ? (
-                <EmptyState message="ยังไม่ได้เข้าสู่ระบบ" subtitle="เข้าสู่ระบบเพื่อดูและแก้ไขข้อมูลส่วนตัวของคุณ" />
-              ) : (
-                <>
-                  <form onSubmit={handleSaveProfile} className="space-y-4">
-                    {success && (
-                      <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
-                        <span>{success}</span>
-                      </div>
-                    )}
-                    {error && (
-                      <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-                        <AlertCircle size={18} className="shrink-0" />
-                        <span>{error}</span>
-                      </div>
-                    )}
-                    <div>
-                      <label htmlFor="profile-username" className="mb-1 block text-sm font-medium text-gray-600">
-                        Username
-                      </label>
-                      <input
-                        id="profile-username"
-                        type="text"
-                        value={form.username}
-                        onChange={handleProfileChange('username')}
-                        required
-                        minLength={3}
-                        className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="profile-email" className="mb-1 block text-sm font-medium text-gray-600">
-                        Email
-                      </label>
-                      <input
-                        id="profile-email"
-                        type="email"
-                        value={form.email}
-                        onChange={handleProfileChange('email')}
-                        required
-                        className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="profile-avatar" className="mb-1 block text-sm font-medium text-gray-600">
-                        รูปโปรไฟล์ (ลิงก์รูปภาพ)
-                      </label>
-                      <input
-                        id="profile-avatar"
-                        type="url"
-                        value={form.avatar}
-                        onChange={handleProfileChange('avatar')}
-                        placeholder="https://example.com/avatar.jpg"
-                        className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
-                      />
-                      {form.avatar && (
-                        <img
-                          src={normalizeImageUrl(form.avatar)}
-                          alt="ตัวอย่างรูปโปรไฟล์"
-                          className="mt-3 h-20 w-20 rounded-full border border-gray-200 object-cover"
-                        />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 pt-2">
-                      <button
-                        type="submit"
-                        disabled={saving}
-                        className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow hover:bg-primary-hover transition disabled:opacity-50 cursor-pointer"
-                      >
-                        <Save size={16} />
-                        {saving ? 'กำลังบันทึก…' : 'บันทึกข้อมูล'}
-                      </button>
-                    </div>
-                  </form>
-
-                  <form onSubmit={handleChangePassword} className="mt-10 space-y-4 border-t border-gray-200 pt-6">
-                    <h3 className="inline-flex items-center gap-2 text-base font-bold text-primary">
-                      <KeyRound size={18} />
-                      เปลี่ยนรหัสผ่าน
-                    </h3>
-                    {pwdMsg && (
-                      <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
-                        <span>{pwdMsg}</span>
-                      </div>
-                    )}
-                    {pwdError && (
-                      <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-                        <AlertCircle size={18} className="shrink-0" />
-                        <span>{pwdError}</span>
-                      </div>
-                    )}
-                    <div>
-                      <label htmlFor="pwd-current" className="mb-1 block text-sm font-medium text-gray-600">
-                        รหัสผ่านปัจจุบัน
-                      </label>
-                      <input
-                        id="pwd-current"
-                        type="password"
-                        value={pwdForm.currentPassword}
-                        onChange={(e) =>
-                          setPwdForm((prev) => ({
-                            ...prev,
-                            currentPassword: e.target.value,
-                          }))
-                        }
-                        required
-                        autoComplete="current-password"
-                        className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="pwd-new" className="mb-1 block text-sm font-medium text-gray-600">
-                        รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)
-                      </label>
-                      <input
-                        id="pwd-new"
-                        type="password"
-                        value={pwdForm.newPassword}
-                        onChange={(e) =>
-                          setPwdForm((prev) => ({
-                            ...prev,
-                            newPassword: e.target.value,
-                          }))
-                        }
-                        required
-                        minLength={6}
-                        autoComplete="new-password"
-                        className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                    <div className="pt-1">
-                      <button
-                        type="submit"
-                        className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90 transition cursor-pointer"
-                      >
-                        <KeyRound size={16} />
-                        เปลี่ยนรหัสผ่าน
-                      </button>
-                    </div>
-                  </form>
-                </>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'size-profile' && <SizeProfileSection />}
-
-          {activeTab === 'wishlist' && (
-            <div>
-              <h2 className="text-lg font-semibold mb-4">รายการโปรด (Wishlist)</h2>
-              {wishlist.length === 0 ? (
-                <EmptyState message="ยังไม่มีรายการสินค้าโปรด" subtitle="กดหัวใจที่สินค้าที่คุณชอบเพื่อบันทึกไว้ดูภายหลัง" />
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {wishlist.map((item) => (
-                    <div
-                      key={item._id}
-                      className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-3"
-                    >
-                      <Link to={`/products/${item._id}`} className="shrink-0">
-                        <img
-                          src={normalizeImageUrl(item.imageUrl)}
-                          alt={item.name}
-                          className="h-20 w-16 rounded-lg object-cover"
-                        />
-                      </Link>
-                      <div className="min-w-0 flex-1">
-                        <Link
-                          to={`/products/${item._id}`}
-                          className="line-clamp-2 block text-sm font-bold text-primary hover:text-accent transition"
-                        >
-                          {item.name}
-                        </Link>
-                        <p className="mt-1 text-sm font-semibold text-secondary">
-                          ฿{item.price.toLocaleString()}.00
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeFromWishlist(item._id)}
-                        className="rounded-full p-2 text-red-500 hover:bg-red-50 transition cursor-pointer"
-                        title="ลบออกจากรายการโปรด"
-                        aria-label="ลบออกจากรายการโปรด"
-                      >
-                        <Heart size={18} fill="currentColor" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'lookbooks' && (
-            <div>
-              <h2 className="text-lg font-semibold mb-4">Favorite Lookbooks</h2>
-              {favoriteLookbooks.length === 0 ? (
-                <EmptyState message="ยังไม่มี Lookbook ที่บันทึกไว้" subtitle="กดหัวใจที่ลุคที่คุณชอบเพื่อบันทึกไว้ดูภายหลัง" />
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {favoriteLookbooks.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex gap-4 rounded-xl border border-gray-200 bg-white p-3"
-                    >
-                      <Link to={`/lookbook/${item.id}`} className="shrink-0">
-                        <img
-                          src={normalizeImageUrl(item.image)}
-                          alt={item.nameTh || item.name}
-                          className="h-24 w-20 rounded-lg object-cover"
-                        />
-                      </Link>
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <Link
-                          to={`/lookbook/${item.id}`}
-                          className="line-clamp-1 block text-sm font-bold text-primary hover:text-accent transition"
-                        >
-                          {item.nameTh || item.name}
-                        </Link>
-                        <p className="text-xs text-secondary">{item.name}</p>
-                        {item.concept && (
-                          <p className="mt-1 line-clamp-2 text-xs text-gray-500">
-                            {item.concept}
-                          </p>
-                        )}
-                        <div className="mt-auto flex items-center justify-between pt-2">
-                          <span className="text-sm font-extrabold text-primary">
-                            ฿{(item.setPrice || 0).toLocaleString()}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => removeFavoriteLookbook(item.id)}
-                            className="rounded-full p-2 text-red-500 hover:bg-red-50 transition cursor-pointer"
-                            title="ลบออกจากลุคโปรด"
-                            aria-label="ลบออกจากลุคโปรด"
-                          >
-                            <Heart size={18} fill="currentColor" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'addresses' && (
-            <div>
-              <h2 className="text-lg font-semibold mb-4">ที่อยู่จัดส่ง (Shipping Addresses)</h2>
-
-              {addrMsg && (
-                <div className="mb-4 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
-                  <span>{addrMsg}</span>
-                </div>
-              )}
-              {addrError && (
-                <div className="mb-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-                  <AlertCircle size={18} className="shrink-0" />
-                  <span>{addrError}</span>
-                </div>
-              )}
-
-              {addresses.length === 0 ? (
-                <EmptyState message="ยังไม่มีข้อมูลที่อยู่จัดส่ง" subtitle="เพิ่มที่อยู่สำหรับใช้จัดส่งสินค้าได้เลยด้านล่าง" />
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {addresses.map((addr) => (
-                    <div
-                      key={addr.id}
-                      className="rounded-xl border border-gray-200 bg-white p-4"
-                    >
-                      <div className="mb-2 flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-2 text-sm font-bold text-primary">
-                          <MapPin size={16} />
-                          {addr.label || 'ที่อยู่'}
-                        </span>
-                        {addr.isDefault && (
-                          <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-[11px] font-bold text-accent">
-                            ค่าเริ่มต้น
-                          </span>
-                        )}
-                      </div>
-                      <div className="space-y-0.5 text-sm text-gray-600">
-                        <p className="font-semibold text-gray-800">
-                          {addr.firstName} {addr.lastName}
-                        </p>
-                        <p>{addr.address}</p>
-                        <p>
-                          {addr.city} {addr.state} {addr.zipCode}
-                        </p>
-                        <p>{addr.location}</p>
-                        <p className="text-secondary">{addr.phone}</p>
-                      </div>
-                      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
-                        {!addr.isDefault && (
-                          <button
-                            type="button"
-                            onClick={() => setDefaultAddress(addr.id)}
-                            className="text-xs font-semibold text-secondary hover:text-accent transition cursor-pointer"
-                          >
-                            ตั้งเป็นค่าเริ่มต้น
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleEditAddress(addr)}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-accent transition cursor-pointer"
-                        >
-                          <Pencil size={13} />
-                          แก้ไข
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveAddress(addr.id)}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-red-500 hover:text-red-600 transition cursor-pointer"
-                        >
-                          <Trash2 size={13} />
-                          ลบ
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <form
-                onSubmit={handleSaveAddress}
-                className="mt-6 space-y-4 rounded-xl border border-gray-200 bg-white p-5"
-              >
-                <h3 className="flex items-center gap-2 text-base font-bold text-primary">
-                  <Plus size={18} />
-                  {editingAddrId ? 'แก้ไขที่อยู่' : 'เพิ่มที่อยู่ใหม่'}
-                </h3>
-                <div>
-                  <label htmlFor="addr-label" className="mb-1 block text-sm font-medium text-gray-600">
-                    ชื่อที่อยู่ (เช่น บ้าน / ที่ทำงาน)
-                  </label>
-                  <input
-                    id="addr-label"
-                    type="text"
-                    value={addrForm.label}
-                    onChange={handleAddrChange('label')}
-                    placeholder="บ้าน"
-                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="addr-first" className="mb-1 block text-sm font-medium text-gray-600">
-                      ชื่อ *
-                    </label>
-                    <input
-                      id="addr-first"
-                      type="text"
-                      value={addrForm.firstName}
-                      onChange={handleAddrChange('firstName')}
-                      required
-                      placeholder="สมชาย"
-                      className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="addr-last" className="mb-1 block text-sm font-medium text-gray-600">
-                      นามสกุล *
-                    </label>
-                    <input
-                      id="addr-last"
-                      type="text"
-                      value={addrForm.lastName}
-                      onChange={handleAddrChange('lastName')}
-                      required
-                      placeholder="ใจดี"
-                      className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="addr-phone" className="mb-1 block text-sm font-medium text-gray-600">
-                    เบอร์โทรศัพท์ *
-                  </label>
-                  <input
-                    id="addr-phone"
-                    type="tel"
-                    value={addrForm.phone}
-                    onChange={handleAddrChange('phone')}
-                    required
-                    placeholder="0812345678"
-                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="addr-line" className="mb-1 block text-sm font-medium text-gray-600">
-                    ที่อยู่ (บ้านเลขที่, ถนน, ซอย) *
-                  </label>
-                  <input
-                    id="addr-line"
-                    type="text"
-                    value={addrForm.address}
-                    onChange={handleAddrChange('address')}
-                    required
-                    placeholder="123/45 ซอยสุขุมวิท 21 ถนนสุขุมวิท"
-                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label htmlFor="addr-city" className="mb-1 block text-sm font-medium text-gray-600">
-                      เมือง / อำเภอ *
-                    </label>
-                    <input
-                      id="addr-city"
-                      type="text"
-                      value={addrForm.city}
-                      onChange={handleAddrChange('city')}
-                      required
-                      placeholder="เขตวัฒนา"
-                      className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="addr-state" className="mb-1 block text-sm font-medium text-gray-600">
-                      จังหวัด *
-                    </label>
-                    <select
-                      id="addr-state"
-                      value={addrForm.state}
-                      onChange={handleAddrChange('state')}
-                      required
-                      className="w-full cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
-                    >
-                      <option value="">เลือกจังหวัด...</option>
-                      <option value="Bangkok">กรุงเทพมหานคร</option>
-                      <option value="Chiang Mai">เชียงใหม่</option>
-                      <option value="Phuket">ภูเก็ต</option>
-                      <option value="Nonthaburi">นนทบุรี</option>
-                      <option value="Samut Prakan">สมุทรปราการ</option>
-                      <option value="Other">จังหวัดอื่นๆ</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="addr-zip" className="mb-1 block text-sm font-medium text-gray-600">
-                      รหัสไปรษณีย์ *
-                    </label>
-                    <input
-                      id="addr-zip"
-                      type="text"
-                      value={addrForm.zipCode}
-                      onChange={handleAddrChange('zipCode')}
-                      required
-                      placeholder="10110"
-                      className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="addr-location" className="mb-1 block text-sm font-medium text-gray-600">
-                    ประเทศ
-                  </label>
-                  <select
-                    id="addr-location"
-                    value={addrForm.location}
-                    onChange={handleAddrChange('location')}
-                    className="w-full cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
-                  >
-                    <option value="Thailand">ประเทศไทย (Thailand)</option>
-                    <option value="United States">สหรัฐอเมริกา (United States)</option>
-                    <option value="Singapore">สิงคโปร์ (Singapore)</option>
-                    <option value="Japan">ญี่ปุ่น (Japan)</option>
-                    <option value="United Kingdom">สหราชอาณาจักร (United Kingdom)</option>
-                    <option value="Australia">ออสเตรเลีย (Australia)</option>
-                  </select>
-                </div>
-                <div className="flex items-center gap-3 pt-1">
-                  <button
-                    type="submit"
-                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow hover:bg-primary-hover transition cursor-pointer"
-                  >
-                    <Save size={16} />
-                    {editingAddrId ? 'อัปเดตที่อยู่' : 'บันทึกที่อยู่'}
-                  </button>
-                  {editingAddrId && (
-                    <button
-                      type="button"
-                      onClick={resetAddrForm}
-                      className="rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-500 hover:bg-gray-100 transition cursor-pointer"
-                    >
-                      ยกเลิก
-                    </button>
-                  )}
-                </div>
-              </form>
-            </div>
-          )}
-
-          {activeTab === 'orders' && (
-            <div>
-              <h2 className="text-lg font-semibold mb-4">ประวัติการสั่งซื้อ (Order History)</h2>
-              {orders.length === 0 ? (
-                <EmptyState message="ยังไม่มีประวัติการสั่งซื้อ" subtitle="เริ่มช้อปปิ้งเลยเพื่อดูคำสั่งซื้อของคุณที่นี่" />
-              ) : (
-                <div>{/* Map รายการ คำสั่งซื้อ */}</div>
-              )}
-            </div>
-          )}
+          {activeTab === "profile" && <UserInfoSection />}
+          {activeTab === "membership" && <MembershipSection user={user} />}
+          {activeTab === "coupons" && <CouponsSection user={user} />}
+          {activeTab === "size-profile" && <SizeProfileSection />}
+          {activeTab === "wishlist" && <WishlistSection />}
+          {activeTab === "lookbooks" && <LookbooksSection />}
+          {activeTab === "addresses" && <AddressSection />}
+          {activeTab === "orders" && <OrderHistorySection />}
         </Card>
       </div>
     </div>

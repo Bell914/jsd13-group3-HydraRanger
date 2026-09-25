@@ -20,24 +20,51 @@ const saveWishlist = (wishlist) => {
   }
 };
 
-const resolveId = (product) =>
-  product?._id || product?.productId || product?.id || product?.sku || null;
+const resolveId = (product) => {
+  if (!product) return null;
+  const rawId =
+    product._id ||
+    product.productId ||
+    product.id ||
+    product.sku ||
+    (typeof product === "string" ? product : null);
+  return rawId ? String(rawId) : null;
+};
 
 export const useWishlistStore = create((set, get) => ({
   wishlist: loadInitialWishlist(),
 
-  isWishlisted: (productId) =>
-    get().wishlist.some((item) => item._id === productId),
+  isWishlisted: (productId) => {
+    const id = resolveId(productId);
+    if (!id) return false;
+    return get().wishlist.some((item) => String(item._id) === id);
+  },
 
   addToWishlist: (product) => {
     const id = resolveId(product);
     if (!id || get().isWishlisted(id)) return get().wishlist;
+
+    let price = Number(product.price ?? product.basePrice);
+    if (isNaN(price) || price <= 0) {
+      if (Array.isArray(product.variants) && product.variants.length > 0) {
+        const variantPrice = Number(product.variants[0].price);
+        price = !isNaN(variantPrice) && variantPrice > 0 ? variantPrice : 490;
+      } else {
+        price = 490;
+      }
+    }
+
     const newItem = {
       _id: id,
-      name: product.name || "สินค้า",
-      imageUrl: product.imageUrl || product.image || "",
-      price: product.price ?? product.basePrice ?? 490,
-      category: product.category || "",
+      name: product.name || product.title || "สินค้า",
+      imageUrl:
+        product.imageUrl ||
+        product.image ||
+        product.images?.[0]?.image_url ||
+        product.variants?.[0]?.imageUrl ||
+        "",
+      price,
+      category: product.category || product.category_id?.name || "",
     };
     const updated = [...get().wishlist, newItem];
     saveWishlist(updated);
@@ -46,7 +73,9 @@ export const useWishlistStore = create((set, get) => ({
   },
 
   removeFromWishlist: (productId) => {
-    const updated = get().wishlist.filter((item) => item._id !== productId);
+    const id = resolveId(productId);
+    if (!id) return get().wishlist;
+    const updated = get().wishlist.filter((item) => String(item._id) !== id);
     saveWishlist(updated);
     set({ wishlist: updated });
     return updated;

@@ -126,12 +126,21 @@ export default function RecommendedSlider({ products = [] }) {
   return (
     <section
       aria-label="สินค้าแนะนำ"
-      className="relative mb-10 rounded-2xl sm:rounded-3xl bg-[#e6006e] p-4 sm:p-6 lg:p-8 shadow-lg select-none"
+      className="relative mb-10 rounded-2xl border border-[#ded8cf] bg-[#f1eee8] p-4 shadow-sm select-none sm:rounded-3xl sm:p-6 lg:p-8"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
+      <div className="mb-3 px-2 sm:mb-5 sm:px-3">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent">
+          CURATED FOR YOU
+        </p>
+        <h2 className="mt-1 text-xl font-black text-primary sm:text-2xl">
+          สินค้าแนะนำ
+        </h2>
+      </div>
+
       {/* Slider Viewport */}
       <div className="overflow-hidden rounded-xl sm:rounded-2xl">
         <div
@@ -158,28 +167,26 @@ export default function RecommendedSlider({ products = [] }) {
               >
                 <Link
                   to={`/products/${targetId}`}
-                  className="group relative flex h-60 sm:h-72 md:h-80 w-full items-center justify-center overflow-hidden rounded-xl sm:rounded-2xl bg-[#3b5377] text-white shadow-md transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl cursor-pointer"
+                  className="group relative flex h-60 w-full items-center justify-center overflow-hidden rounded-xl border border-[#e4ddd3] bg-[#fbf8f3] text-primary shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer sm:h-72 sm:rounded-2xl md:h-80"
                 >
-                  {/* Background Image with subtle overlay */}
                   {imgSrc && (
                     <img
                       src={imgSrc}
                       alt={item.name || "สินค้าแนะนำ"}
-                      className="absolute inset-0 h-full w-full object-cover opacity-30 transition-all duration-500 group-hover:scale-105 group-hover:opacity-40"
+                      className="absolute inset-0 h-full w-full object-contain px-8 pb-16 pt-5 transition-transform duration-500 group-hover:scale-105 sm:px-12 sm:pb-20"
                     />
                   )}
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+                  <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#263639] via-[#263639]/90 to-transparent" />
 
-                  {/* Centered Title matching the wireframe */}
-                  <div className="relative z-10 flex flex-col items-center justify-center px-4 text-center">
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-wide transition-transform duration-300 group-hover:scale-105 drop-shadow-md">
-                      แสดงสินค้าแนะนำ
-                    </h2>
+                  <div className="absolute inset-x-0 bottom-0 z-10 px-5 pb-5 text-left sm:px-6 sm:pb-6">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#efc3bc]">
+                      OCCASION PICK
+                    </p>
                     {title && (
-                      <p className="mt-2 text-xs sm:text-sm font-semibold text-white/90 bg-[#0046a7]/80 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20 shadow-sm line-clamp-1 max-w-[240px] sm:max-w-xs">
+                      <h3 className="mt-1 line-clamp-1 text-base font-extrabold text-white sm:text-lg">
                         {title}
-                      </p>
+                      </h3>
                     )}
                   </div>
                 </Link>
@@ -194,7 +201,7 @@ export default function RecommendedSlider({ products = [] }) {
         <button
           type="button"
           onClick={handlePrev}
-          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-white/90 text-[#0046a7] shadow-xl backdrop-blur transition-all duration-200 hover:bg-white hover:scale-110 active:scale-95 cursor-pointer opacity-80 hover:opacity-100"
+          className="absolute left-2 sm:left-4 top-[58%] -translate-y-1/2 z-20 flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-[#ded8cf] bg-white/95 text-primary shadow-md backdrop-blur transition-all duration-200 hover:bg-accent hover:text-white hover:scale-110 active:scale-95 cursor-pointer"
           aria-label="สไลด์ก่อนหน้า"
         >
           <ChevronLeft size={22} className="sm:h-6 sm:w-6" />
@@ -206,7 +213,7 @@ export default function RecommendedSlider({ products = [] }) {
         <button
           type="button"
           onClick={handleNext}
-          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-white/90 text-[#0046a7] shadow-xl backdrop-blur transition-all duration-200 hover:bg-white hover:scale-110 active:scale-95 cursor-pointer opacity-80 hover:opacity-100"
+          className="absolute right-2 sm:right-4 top-[58%] -translate-y-1/2 z-20 flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-[#ded8cf] bg-white/95 text-primary shadow-md backdrop-blur transition-all duration-200 hover:bg-accent hover:text-white hover:scale-110 active:scale-95 cursor-pointer"
           aria-label="สไลด์ถัดไป"
         >
           <ChevronRight size={22} className="sm:h-6 sm:w-6" />
@@ -225,8 +232,8 @@ export default function RecommendedSlider({ products = [] }) {
                 onClick={() => setCurrentIndex(idx)}
                 className={`h-2 sm:h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
                   isActive
-                    ? "w-7 sm:w-8 bg-white shadow-md"
-                    : "w-2 sm:w-2.5 bg-white/40 hover:bg-white/70"
+                    ? "w-7 sm:w-8 bg-primary shadow-sm"
+                    : "w-2 sm:w-2.5 bg-primary/25 hover:bg-accent/70"
                 }`}
                 aria-label={`ไปยังสไลด์ที่ ${idx + 1}`}
               />

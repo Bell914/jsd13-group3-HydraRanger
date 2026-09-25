@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { CreditCard, Plus, Check } from "lucide-react";
+import { CreditCard, Plus, QrCode, Wallet } from "lucide-react";
+
+const PAYMENT_OPTIONS = [
+  { id: "promptpay", name: "PromptPay", icon: QrCode },
+  { id: "paypal", name: "PayPal", icon: Wallet },
+  { id: "credit-card", name: "Credit / Debit Card", icon: CreditCard },
+];
 
 export default function PaymentSection({
   paymentData,
@@ -9,374 +15,103 @@ export default function PaymentSection({
   onContinue,
   onBack,
 }) {
-  const [expandedOption, setExpandedOption] = useState(
-    paymentData.method || "credit-card"
-  );
-  const [giftCardOpen, setGiftCardOpen] = useState(false);
-  const [giftCardCode, setGiftCardCode] = useState("");
-  const [giftCardApplied, setGiftCardApplied] = useState(false);
-  const [errors, setErrors] = useState({});
+  const selectedMethod = paymentData.method || "credit-card";
+  const SelectedPaymentIcon = PAYMENT_OPTIONS.find((option) => option.id === selectedMethod)?.icon || CreditCard;
+  const [error, setError] = useState("");
 
-  const validate = () => {
-    const errs = {};
-    if (expandedOption === "credit-card") {
-      if (!paymentData.cardNumber?.trim()) {
-        errs.cardNumber = "กรุณากรอกหมายเลขบัตร";
-      } else if (paymentData.cardNumber.replace(/\s/g, "").length < 16) {
-        errs.cardNumber = "หมายเลขบัตรต้องมี 16 หลัก";
-      }
-      if (!paymentData.cardExp?.trim()) {
-        errs.cardExp = "กรุณากรอกวันหมดอายุ (MM/YY)";
-      }
-      if (!paymentData.cardCvv?.trim()) {
-        errs.cardCvv = "กรุณากรอก CVV (3 หลัก)";
-      }
+  function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+
+    if (selectedMethod === "credit-card" && !import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
+      setError("ระบบชำระเงินยังไม่ได้ตั้งค่า Stripe");
+      return;
     }
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validate()) {
-      onChangePayment({ ...paymentData, method: expandedOption });
-      onContinue();
-    }
-  };
+    onChangePayment({ method: selectedMethod });
+    onContinue();
+  }
 
-  const handleApplyGiftCard = (e) => {
-    e.preventDefault();
-    if (giftCardCode.trim()) {
-      setGiftCardApplied(true);
-    }
-  };
-
-  // Helper to format card number with spaces
-  const handleCardNumberChange = (val) => {
-    const clean = val.replace(/\D/g, "").slice(0, 16);
-    const formatted = clean.replace(/(\d{4})(?=\d)/g, "$1 ");
-    onChangePayment({ ...paymentData, cardNumber: formatted });
-    if (errors.cardNumber) setErrors({ ...errors, cardNumber: null });
-  };
-
-  // Helper to format Exp date
-  const handleExpChange = (val) => {
-    let clean = val.replace(/\D/g, "").slice(0, 4);
-    if (clean.length >= 3) {
-      clean = `${clean.slice(0, 2)}/${clean.slice(2)}`;
-    }
-    onChangePayment({ ...paymentData, cardExp: clean });
-    if (errors.cardExp) setErrors({ ...errors, cardExp: null });
-  };
-
-  // Collapsed View for Step 4 (Review)
   if (isCollapsed) {
-    const last4 = paymentData.cardNumber
-      ? paymentData.cardNumber.replace(/\s/g, "").slice(-4)
-      : "";
-
     return (
-      <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-xs mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xl font-bold text-gray-900">Payment</h2>
-          <button
-            type="button"
-            onClick={onEdit}
-            className="text-sm font-semibold text-gray-900 underline hover:text-gray-600 transition-colors cursor-pointer"
-          >
-            Edit
-          </button>
+      <div className="mb-6 rounded-lg border border-gray-200 bg-white p-5 shadow-xs">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900">ช่องทางการชำระเงิน</h2>
+          {onEdit && (
+            <button type="button" onClick={onEdit} className="text-sm font-semibold underline">
+              แก้ไข
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center">
-            <span className="w-5 h-5 rounded-full bg-[#EB001B] inline-block -mr-2" />
-            <span className="w-5 h-5 rounded-full bg-[#F79E1B]/90 inline-block" />
-          </div>
-          <span className="text-sm font-medium text-gray-900">
-            {paymentData.method === "paypal"
-              ? "PayPal"
-              : paymentData.method === "promptpay"
-              ? "PromptPay QR"
-              : last4
-              ? `Mastercard / Visa (ลงท้ายด้วย ${last4})`
-              : "ชำระผ่านบัตรเครดิต/เดบิต"}
+          <SelectedPaymentIcon className="h-5 w-5" />
+          <span className="text-sm font-medium">
+            {PAYMENT_OPTIONS.find((option) => option.id === selectedMethod)?.name || "Credit / Debit Card"}
           </span>
         </div>
       </div>
     );
   }
 
-  // Active Payment Form for Step 3
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-xs mb-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Payment</h2>
-
-      {/* Gift Card Box */}
-      <div className="border border-gray-200 rounded-lg p-4 mb-4 bg-white">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 font-bold text-sm text-gray-900">
-            <span className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center text-xs font-serif font-extrabold">
-              Ω
-            </span>
-            <span>ใช้งาน Gift Card / โค้ดส่วนลด</span>
-          </div>
-        </div>
-
-        {!giftCardApplied ? (
-          <div className="mt-3">
-            <button
-              type="button"
-              onClick={() => setGiftCardOpen(!giftCardOpen)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-800 hover:text-black transition-colors underline cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>ใส่รหัส Gift Card</span>
-            </button>
-
-            {giftCardOpen && (
-              <div className="mt-3 flex gap-2">
-                <input
-                  type="text"
-                  placeholder="กรอกรหัส Gift Card หรือคูปองส่วนลด"
-                  value={giftCardCode}
-                  onChange={(e) => setGiftCardCode(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-black"
-                />
-                <button
-                  type="button"
-                  onClick={handleApplyGiftCard}
-                  className="px-4 py-2 bg-black text-white text-xs font-semibold rounded hover:bg-gray-800 transition-colors cursor-pointer"
-                >
-                  ใช้งาน
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="mt-2 text-xs font-medium text-green-600 flex items-center gap-1">
-            <Check className="w-4 h-4" />
-            <span>ใช้ส่วนลดรหัส: {giftCardCode} เรียบร้อยแล้ว</span>
-          </div>
-        )}
-      </div>
+    <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-xs">
+      <h2 className="mb-6 text-2xl font-bold text-gray-900">ช่องทางการชำระเงิน</h2>
 
       <form onSubmit={handleSubmit} className="space-y-3">
-        {/* Accordion List */}
+        {PAYMENT_OPTIONS.map((option) => {
+          const isSelected = selectedMethod === option.id;
 
-        {/* 1. PayPal */}
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <button
-            type="button"
-            onClick={() => {
-              setExpandedOption("paypal");
-              onChangePayment({ ...paymentData, method: "paypal" });
-            }}
-            className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-gray-50 transition-colors cursor-pointer"
-          >
-            <div className="flex items-center gap-2">
-              <span className="font-bold italic text-blue-700 font-serif">
-                PayPal
-              </span>
-              <span className="text-sm font-semibold text-gray-800">PayPal</span>
-            </div>
-            <Plus
-              className={`w-4 h-4 text-gray-500 transition-transform ${
-                expandedOption === "paypal" ? "rotate-45" : ""
-              }`}
-            />
-          </button>
-          {expandedOption === "paypal" && (
-            <div className="p-4 bg-gray-50 border-t border-gray-200 text-xs text-gray-600">
-              ระบบจะนำคุณไปยังหน้าชำระเงินของ PayPal เพื่อทำรายการอย่างปลอดภัย
-            </div>
-          )}
-        </div>
-
-        {/* 2. Afterpay */}
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <button
-            type="button"
-            onClick={() => {
-              setExpandedOption("afterpay");
-              onChangePayment({ ...paymentData, method: "afterpay" });
-            }}
-            className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-gray-50 transition-colors cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <span className="px-2 py-0.5 bg-[#B2FCE4] text-black font-extrabold text-xs rounded">
-                Afterpay
-              </span>
-              <div>
-                <span className="text-sm font-semibold text-gray-900 block">
-                  Afterpay
+          return (
+            <div key={option.id} className="overflow-hidden rounded-lg border border-gray-200">
+              <button
+                type="button"
+                aria-pressed={isSelected}
+                onClick={() => {
+                  setError("");
+                  onChangePayment({ method: option.id });
+                }}
+                className={`flex w-full items-center justify-between px-4 py-3.5 text-left hover:bg-gray-50 ${isSelected ? "bg-gray-50" : ""}`}
+              >
+                <span className="flex items-center gap-3">
+                  <option.icon size={20} aria-hidden="true" />
+                  <span className="text-sm font-semibold">{option.name}</span>
                 </span>
-                <span className="text-xs text-gray-500">
-                  แบ่งชำระ 4 งวด ทุกๆ 2 สัปดาห์
-                </span>
-              </div>
-            </div>
-            <Plus
-              className={`w-4 h-4 text-gray-500 transition-transform ${
-                expandedOption === "afterpay" ? "rotate-45" : ""
-              }`}
-            />
-          </button>
-          {expandedOption === "afterpay" && (
-            <div className="p-4 bg-gray-50 border-t border-gray-200 text-xs text-gray-600">
-              ผ่อนชำระ 4 งวดโดยไม่มีดอกเบี้ย จ่ายทุกๆ 2 สัปดาห์
-            </div>
-          )}
-        </div>
-
-        {/* 3. Klarna */}
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <button
-            type="button"
-            onClick={() => {
-              setExpandedOption("klarna");
-              onChangePayment({ ...paymentData, method: "klarna" });
-            }}
-            className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-gray-50 transition-colors cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <span className="px-2 py-0.5 bg-[#FFB3C7] text-black font-bold text-xs rounded">
-                Klarna.
-              </span>
-              <div>
-                <span className="text-sm font-semibold text-gray-900 block">
-                  Klarna
-                </span>
-                <span className="text-xs text-gray-500">
-                  แบ่งชำระ 4 งวดดอกเบี้ย 0%
-                </span>
-              </div>
-            </div>
-            <Plus
-              className={`w-4 h-4 text-gray-500 transition-transform ${
-                expandedOption === "klarna" ? "rotate-45" : ""
-              }`}
-            />
-          </button>
-          {expandedOption === "klarna" && (
-            <div className="p-4 bg-gray-50 border-t border-gray-200 text-xs text-gray-600">
-              แบ่งชำระแบบสบายๆ ดอกเบี้ย 0% ผ่านบริการของ Klarna
-            </div>
-          )}
-        </div>
-
-        {/* 4. Credit card */}
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <button
-            type="button"
-            onClick={() => {
-              setExpandedOption("credit-card");
-              onChangePayment({ ...paymentData, method: "credit-card" });
-            }}
-            className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-gray-50 transition-colors cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <CreditCard className="w-5 h-5 text-gray-700" />
-              <span className="text-sm font-semibold text-gray-900">
-                Credit / Debit Card
-              </span>
-            </div>
-            <Plus
-              className={`w-4 h-4 text-gray-500 transition-transform ${
-                expandedOption === "credit-card" ? "rotate-45" : ""
-              }`}
-            />
-          </button>
-
-          {expandedOption === "credit-card" && (
-            <div className="p-4 bg-gray-50 border-t border-gray-200 space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Card Number
-                </label>
-                <input
-                  type="text"
-                  placeholder="4541 1234 5678 9012"
-                  value={paymentData.cardNumber || ""}
-                  onChange={(e) => handleCardNumberChange(e.target.value)}
-                  className={`w-full px-3 py-2 bg-white border rounded text-sm focus:outline-none focus:ring-1 ${
-                    errors.cardNumber
-                      ? "border-red-500 focus:ring-red-200"
-                      : "border-gray-300 focus:ring-black"
-                  }`}
-                />
-                {errors.cardNumber && (
-                  <p className="text-xs text-red-500 mt-1">{errors.cardNumber}</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Expiration Date
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="ดด/ปป (เช่น 12/28)"
-                    maxLength={5}
-                    value={paymentData.cardExp || ""}
-                    onChange={(e) => handleExpChange(e.target.value)}
-                    className={`w-full px-3 py-2 bg-white border rounded text-sm focus:outline-none focus:ring-1 ${
-                      errors.cardExp
-                        ? "border-red-500 focus:ring-red-200"
-                        : "border-gray-300 focus:ring-black"
-                    }`}
-                  />
-                  {errors.cardExp && (
-                    <p className="text-xs text-red-500 mt-1">{errors.cardExp}</p>
-                  )}
+                <Plus className={`h-4 w-4 transition-transform ${isSelected ? "rotate-45" : ""}`} />
+              </button>
+              {isSelected && option.id === "credit-card" && (
+                <p className="border-t bg-gray-50 p-4 text-sm text-gray-600">
+                  กรอกข้อมูลบัตรอย่างปลอดภัยผ่าน Stripe ในขั้นตอนถัดไป
+                </p>
+              )}
+              {isSelected && option.id === "promptpay" && (
+                <div className="flex items-center gap-4 border-t bg-gray-50 p-4">
+                  <div aria-label="QR Code จำลองสำหรับเดโม" className="grid h-20 w-20 grid-cols-5 gap-0.5 rounded bg-white p-1 ring-1 ring-gray-200">
+                    {[1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1].map((pixel, index) => (
+                      <span key={index} className={pixel ? "bg-gray-900" : "bg-white"} />
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    QR Code จำลองสำหรับเดโมเท่านั้น<br />ไม่มีการรับชำระเงินจริง
+                  </p>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    CVV
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="รหัส 3 หลักหลังบัตร"
-                    maxLength={4}
-                    value={paymentData.cardCvv || ""}
-                    onChange={(e) => {
-                      onChangePayment({
-                        ...paymentData,
-                        cardCvv: e.target.value.replace(/\D/g, "").slice(0, 4),
-                      });
-                      if (errors.cardCvv)
-                        setErrors({ ...errors, cardCvv: null });
-                    }}
-                    className={`w-full px-3 py-2 bg-white border rounded text-sm focus:outline-none focus:ring-1 ${
-                      errors.cardCvv
-                        ? "border-red-500 focus:ring-red-200"
-                        : "border-gray-300 focus:ring-black"
-                    }`}
-                  />
-                  {errors.cardCvv && (
-                    <p className="text-xs text-red-500 mt-1">{errors.cardCvv}</p>
-                  )}
-                </div>
-              </div>
+              )}
+              {isSelected && option.id === "paypal" && (
+                <p className="border-t bg-gray-50 p-4 text-sm text-gray-600">
+                  PayPal (โหมดทดสอบระบบ - ไม่มีการตัดเงินจริง)
+                </p>
+              )}
             </div>
-          )}
-        </div>
+          );
+        })}
 
-        {/* Bottom Buttons: ย้อนกลับ (Back) and CONTINUE */}
-        <div className="flex flex-col-reverse sm:flex-row items-center gap-3 sm:gap-4 pt-6">
-          <button
-            type="button"
-            onClick={onBack}
-            className="w-full sm:w-36 py-3.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold text-sm rounded-lg transition-colors text-center cursor-pointer"
-          >
+        {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
+
+        <div className="flex flex-col-reverse items-center gap-3 pt-6 sm:flex-row sm:gap-4">
+          <button type="button" onClick={onBack} className="w-full rounded-lg bg-gray-200 py-3.5 text-sm font-semibold text-gray-800 sm:w-36">
             ย้อนกลับ
           </button>
-          <button
-            type="submit"
-            className="w-full sm:flex-1 py-3.5 bg-[#D0021B] hover:bg-[#b00217] text-white font-bold text-sm tracking-wider uppercase rounded-lg transition-colors shadow-xs text-center cursor-pointer"
-          >
-            CONTINUE
+          <button type="submit" className="w-full rounded-lg bg-[#D0021B] py-3.5 text-sm font-bold tracking-wider text-white sm:flex-1">
+            ดำเนินการต่อ
           </button>
         </div>
       </form>

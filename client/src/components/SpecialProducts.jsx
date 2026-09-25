@@ -13,23 +13,31 @@ export const SpecialProducts = ({ product, index }) => {
     "";
   const imgUrl = normalizeImageUrl(rawImg) || rawImg;
 
+  const fullName = product.nameTh || product.name || product.title || "";
+  const englishName =
+    String(fullName).replace(/^[^a-zA-Z0-9]+/, "").trim() || fullName;
+
   const targetUrl =
     product.link ||
     (product.id
       ? String(product.id).toUpperCase().startsWith("LOOK")
         ? `/lookbook/${product.id}`
         : `/products/${product.id}`
-      : "/products");
+      : product._id
+        ? `/products/${product._id}`
+        : "/products");
 
   return (
     <div
       key={index}
-      className="group relative shrink-0 overflow-hidden rounded-xl cursor-pointer w-full max-w-sm mx-auto"
+      className="group relative aspect-[3/4] w-full max-w-sm shrink-0 overflow-hidden rounded-xl bg-[#f1eee8] shadow-md transition-shadow duration-300 group-hover:shadow-xl"
     >
       <img
         src={imgUrl}
         alt={product.nameTh || product.name || product.title}
-        className="h-[400px] w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        loading="lazy"
+        decoding="async"
+        className="h-full w-full cursor-pointer object-contain transition-transform duration-300 group-hover:scale-105"
       />
       <Link
         to={targetUrl}
@@ -39,14 +47,11 @@ export const SpecialProducts = ({ product, index }) => {
           ดูสินค้า
         </span>
       </Link>
-      <span className="absolute top-0 left-1">
+      <span className="absolute top-0 left-1 z-10">
         <img src={assets.newtag} alt="new-icon" className="h-12 w-12 object-contain" />
       </span>
-      <div className="absolute bottom-4 left-4 font-bold text-white drop-shadow-lg pr-4">
-        <h4 className="text-2xl sm:text-3xl line-clamp-1">
-          {product.nameTh || product.name}
-        </h4>
-        <h6 className="text-sm font-normal opacity-90">สำรวจหมวดหมู่</h6>
+      <div className="absolute bottom-4 left-4 z-10 pr-4 font-bold text-[#263639] drop-shadow-sm">
+        <h4 className="text-2xl sm:text-3xl line-clamp-2">{englishName}</h4>
       </div>
     </div>
   );

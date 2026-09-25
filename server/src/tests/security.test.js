@@ -5,6 +5,8 @@ import { authorize, protect } from '../middleware/authMiddleware.js';
 import { rateLimit } from '../middleware/rateLimiterMiddleware.js';
 import { validate } from '../middleware/validatorMiddleware.js';
 import { validateLoginInput } from '../validators/authValidator.js';
+import { generateToken } from '../services/authService.js';
+import { errorHandler } from '../middleware/errorMiddleware.js';
 
 function createResponse() {
   return {
@@ -43,6 +45,40 @@ test('protected API rejects a request without a JWT token', async () => {
 
   assert.equal(response.statusCode, 401);
   assert.equal(response.body.success, false);
+  assert.equal(nextCalled, false);
+});
+
+test('protected API also reads a JWT from the HttpOnly session cookie', async () => {
+  const response = createResponse();
+  const token = generateToken({
+    id: 'mock-user-security-test', email: 'test@example.com', role: 'user', tokenVersion: 0
+  });
+  await protect(
+    { headers: { cookie: `occasion_session=${token}` }, originalUrl: '/api/auth/me' },
+    response,
+    () => {}
+  );
+  assert.equal(response.statusCode, 401);
+  assert.equal(response.body.message, 'Development sessions are not allowed');
+});
+
+test('production rejects development-only synthetic sessions', async () => {
+  const response = createResponse();
+  let nextCalled = false;
+  const token = generateToken({
+    id: 'mock-user-security-test',
+    email: 'test@example.com',
+    role: 'user',
+    tokenVersion: 0
+  });
+
+  await protect(
+    { headers: { authorization: `Bearer ${token}` } },
+    response,
+    () => { nextCalled = true; }
+  );
+
+  assert.equal(response.statusCode, 401);
   assert.equal(nextCalled, false);
 });
 
@@ -89,4 +125,18 @@ test('rate limiter blocks requests after the configured limit', () => {
   assert.equal(firstNextCalled, true);
   assert.equal(secondResponse.statusCode, 429);
   assert.equal(secondResponse.body.success, false);
+});
+
+test('production error responses do not expose internal server details', () => {
+  const response = createResponse();
+  errorHandler(
+    new Error('MongoServerError: private database detail'),
+    { method: 'GET', url: '/api/private' },
+    response,
+    () => {}
+  );
+
+  assert.equal(response.statusCode, 500);
+  assert.equal(response.body.message, 'Internal Server Error');
+  assert.equal(response.body.errors, null);
 });

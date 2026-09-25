@@ -2,16 +2,23 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import { LoadingSpinner } from "../components/LoadingSpinner.jsx";
 import LookbookCard from "../components/lookbook/LookbookCard.jsx";
+import PaginationPrevNext from "../components/PaginationPrevNext.jsx";
 import { getLookbookData } from "../services/lookbookService.js";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
-import { SlidersHorizontal, ChevronDown, Check, X, Sparkles } from "lucide-react";
+import {
+  SlidersHorizontal,
+  ChevronDown,
+  Check,
+  X,
+  Sparkles,
+} from "lucide-react";
 
 export default function LookbookListPage() {
   const [collectionInfo, setCollectionInfo] = useState(null);
   const [looks, setLooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  
+
   // Filter state (matching FILTER dropdown in wireframe)
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -85,10 +92,10 @@ export default function LookbookListPage() {
     if (selectedFilter === "all") return looks;
     return looks.filter((l) => {
       const hasTag = l.styleTags?.some(
-        (t) => t.toLowerCase() === selectedFilter.toLowerCase()
+        (t) => t.toLowerCase() === selectedFilter.toLowerCase(),
       );
       const hasOccasion = l.occasion?.some(
-        (o) => o.toLowerCase() === selectedFilter.toLowerCase()
+        (o) => o.toLowerCase() === selectedFilter.toLowerCase(),
       );
       return hasTag || hasOccasion;
     });
@@ -100,7 +107,10 @@ export default function LookbookListPage() {
   }, [selectedFilter]);
 
   // Pagination calculations (5 looks per page)
-  const totalPages = Math.max(1, Math.ceil(filteredLooks.length / ITEMS_PER_PAGE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredLooks.length / ITEMS_PER_PAGE),
+  );
   const paginatedLooks = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredLooks.slice(start, start + ITEMS_PER_PAGE);
@@ -144,7 +154,8 @@ export default function LookbookListPage() {
             LOOKBOOK
           </h1>
           <p className="text-xs sm:text-sm text-secondary mt-1.5">
-            {collectionInfo?.description || "คอลเลกชัน Unisex สไตล์มินิมอลที่หยิบมาจัดลุคได้สนุก"}
+            {collectionInfo?.description ||
+              "คอลเลกชัน Unisex สไตล์มินิมอลที่หยิบมาจัดลุคได้สนุก"}
           </p>
         </header>
 
@@ -240,7 +251,8 @@ export default function LookbookListPage() {
                 {filterOptions
                   .filter((opt) => opt !== "all")
                   .map((opt) => {
-                    const isSelected = selectedFilter.toLowerCase() === opt.toLowerCase();
+                    const isSelected =
+                      selectedFilter.toLowerCase() === opt.toLowerCase();
                     const count = tagCounts[opt] || 0;
                     return (
                       <button
@@ -257,7 +269,9 @@ export default function LookbookListPage() {
                         }`}
                       >
                         <span className="flex items-center gap-2">
-                          {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                          {isSelected && (
+                            <Check className="w-3.5 h-3.5 shrink-0" />
+                          )}
                           <span>{opt.toUpperCase()}</span>
                         </span>
                         <span
@@ -286,9 +300,14 @@ export default function LookbookListPage() {
 
         {/* Error State */}
         {!loading && error && (
-          <div className="p-6 rounded-2xl bg-red-50 border border-red-200 text-center my-6" role="alert">
+          <div
+            className="p-6 rounded-2xl bg-red-50 border border-red-200 text-center my-6"
+            role="alert"
+          >
             <div className="text-3xl mb-2">⚠️</div>
-            <h2 className="text-base font-bold text-red-800 mb-1">ไม่สามารถโหลดข้อมูลได้</h2>
+            <h2 className="text-base font-bold text-red-800 mb-1">
+              ไม่สามารถโหลดข้อมูลได้
+            </h2>
             <p className="text-xs text-red-600 mb-4">{error}</p>
             <button
               type="button"
@@ -304,8 +323,12 @@ export default function LookbookListPage() {
         {!loading && !error && paginatedLooks.length === 0 && (
           <div className="p-8 rounded-2xl bg-white border border-stone-200 text-center my-8">
             <div className="text-3xl mb-2">🔍</div>
-            <h2 className="text-base font-bold text-primary mb-1">ไม่พบลุคที่ตรงกับตัวกรอง</h2>
-            <p className="text-xs text-secondary mb-4">ลองเลือกตัวกรองอื่นเพื่อค้นหาลุคใหม่</p>
+            <h2 className="text-base font-bold text-primary mb-1">
+              ไม่พบลุคที่ตรงกับตัวกรอง
+            </h2>
+            <p className="text-xs text-secondary mb-4">
+              ลองเลือกตัวกรองอื่นเพื่อค้นหาลุคใหม่
+            </p>
             <button
               type="button"
               onClick={() => setSelectedFilter("all")}
@@ -325,42 +348,13 @@ export default function LookbookListPage() {
           </div>
         )}
 
-        {/* Wireframe Pagination: [ PREV ]   1/2   [ NEXT ] */}
-        {!loading && !error && totalPages > 1 && (
-          <nav
-            aria-label="Lookbook pagination"
-            className="flex items-center justify-between pt-4 pb-12 border-t border-stone-200 mt-2"
-          >
-            <button
-              type="button"
-              disabled={currentPage <= 1}
-              onClick={() => handlePageChange(currentPage - 1)}
-              className={`px-5 py-2.5 rounded-xl border border-stone-300 font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-                currentPage <= 1
-                  ? "opacity-40 cursor-not-allowed bg-stone-100 text-stone-400"
-                  : "bg-white text-primary hover:bg-stone-50 hover:border-primary active:scale-98"
-              }`}
-            >
-              &larr; PREV
-            </button>
-
-            <span className="text-sm font-extrabold text-primary tracking-widest">
-              {currentPage} / {totalPages}
-            </span>
-
-            <button
-              type="button"
-              disabled={currentPage >= totalPages}
-              onClick={() => handlePageChange(currentPage + 1)}
-              className={`px-5 py-2.5 rounded-xl border border-stone-300 font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-                currentPage >= totalPages
-                  ? "opacity-40 cursor-not-allowed bg-stone-100 text-stone-400"
-                  : "bg-white text-primary hover:bg-stone-50 hover:border-primary active:scale-98"
-              }`}
-            >
-              NEXT &rarr;
-            </button>
-          </nav>
+        {!loading && !error && (
+          <PaginationPrevNext
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            ariaLabel="Lookbook pagination"
+          />
         )}
       </div>
     </main>

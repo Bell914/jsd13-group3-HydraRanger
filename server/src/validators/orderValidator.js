@@ -1,7 +1,8 @@
 const ORDER_STATUSES = [
-  'pending', 'paid', 'processing', 'shipped', 'completed', 'cancelled'
+  'pending', 'paid', 'processing', 'shipped', 'completed', 'cancelled', 'refunded'
 ];
 
+const SHIPPING_METHODS = ['standard', 'express', 'priority'];
 export function validateCreateOrder(data) {
   const errors = [];
   const address = data.shippingAddress;
@@ -33,6 +34,10 @@ export function validateCreateOrder(data) {
     if (!Number.isFinite(shippingCost) || shippingCost < 0) {
       errors.push('Shipping cost must be 0 or more');
     }
+  }
+
+  if (data.shippingMethod && !SHIPPING_METHODS.includes(data.shippingMethod)) {
+    errors.push(`Shipping method must be one of: ${SHIPPING_METHODS.join(', ')}`);
   }
 
   return { isValid: errors.length === 0, errors };

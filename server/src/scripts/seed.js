@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
 import { connectDB } from '../config/db.js';
 import { ENV } from '../config/env.js';
-import { User, Item, Product, Lookbook } from '../models/index.js';
+import { User, Item, Product, Lookbook, Category, Article } from '../models/index.js';
 import { productSeedData } from '../data/productSeedData.js';
+import { articleSeedData } from '../data/articleSeedData.js';
 import seedData from '../data/seedData.json' with { type: 'json' };
 import lookData from '../../../client/public/collection-2026/look-data.json' with { type: 'json' };
 
@@ -65,10 +66,61 @@ async function seedItems(users) {
 async function seedProducts() {
   const products = [];
 
-  for (const productData of productSeedData) {
+  // Ensure categories exist
+  const categories = [
+    { name: 'Tops', slug: 'tops' },
+    { name: 'Bottoms', slug: 'bottoms' }
+  ];
+  const categoryMap = new Map();
+  for (const cat of categories) {
+    const categoryDoc = await Category.findOneAndUpdate(
+      { slug: cat.slug },
+      { $setOnInsert: cat },
+      { upsert: true, new: true }
+    );
+    categoryMap.set(cat.slug, categoryDoc._id);
+  }
+
+  for (const raw of productSeedData) {
+    const categoryId = categoryMap.get(raw.category);
+    const variants = raw.variants.map((v) => ({
+      sku: v.sku,
+      size_or_color: v.size || v.color || 'Standard',
+      color: v.color || 'Standard',
+      colorCode: v.colorCode || '',
+      size: v.size || 'S',
+      price: v.price,
+      stock_quantity: v.stockQuantity ?? v.stock_quantity ?? 0,
+      imageUrl: v.imageUrl || '',
+      detailImages: v.detailImages || []
+    }));
+
+    const imageUrls = [raw.imageUrl];
+    for (const v of raw.variants || []) {
+      if (v.imageUrl) imageUrls.push(v.imageUrl);
+      if (Array.isArray(v.detailImages)) imageUrls.push(...v.detailImages);
+    }
+    const images = [...new Set(imageUrls.filter(Boolean))].map((url, idx) => ({
+      image_url: url,
+      display_order: idx
+    }));
+
+    const productPayload = {
+      productId: raw.productId,
+      category_id: categoryId,
+      title: raw.name,
+      description: raw.description,
+      gender: raw.gender || 'unisex',
+      tags: raw.tags || [],
+      availableDate: raw.availableDate,
+      is_active: raw.isActive ?? true,
+      images,
+      variants
+    };
+
     const product = await Product.findOneAndUpdate(
-      { productId: productData.productId },
-      { $set: productData },
+      { productId: raw.productId },
+      { $set: productPayload },
       { upsert: true, new: true, runValidators: true }
     );
     products.push(product);
@@ -124,6 +176,18 @@ async function seedLookbooks(products) {
   console.log(`✅ Lookbooks ready: ${lookData.looks.length}`);
 }
 
+async function seedArticles() {
+  for (const articleData of articleSeedData) {
+    await Article.updateOne(
+      { articleId: articleData.articleId },
+      { $set: articleData },
+      { upsert: true, runValidators: true }
+    );
+  }
+
+  console.log(`✅ Articles ready: ${articleSeedData.length}`);
+}
+
 async function runSeed() {
   console.log('🌱 Starting safe database seed...');
   await connectDB();
@@ -137,6 +201,7 @@ async function runSeed() {
     await seedItems(users);
     const products = await seedProducts();
     await seedLookbooks(products);
+    await seedArticles();
     console.log('🎉 Database seed completed without deleting existing data');
   } catch (error) {
     console.error('❌ Seed error:', error.message);

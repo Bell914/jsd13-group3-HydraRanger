@@ -45,14 +45,21 @@ npm ci --prefix admin-client
 สร้าง `server/.env` ค่าด้านล่างเป็น placeholder ต้องเปลี่ยนคีย์และรหัสผ่านก่อนใช้ และห้าม commit `.env`
 
 ```dotenv
-PORT=5001
+PORT=5002
 NODE_ENV=development
 MONGODB_URI=mongodb://127.0.0.1:27017/occasion_db
 JWT_SECRET=replace_with_your_own_long_random_secret
 JWT_EXPIRES_IN=7d
 CLIENT_URL=http://localhost:5173
+ADMIN_CLIENT_URL=http://localhost:5174
+TRUST_PROXY=1
 ADMIN_EMAIL=admin@occasion.dev
 ADMIN_PASSWORD=replace_with_your_own_admin_password
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASS=
 ```
 
 ### 3. ตั้งค่า Frontend ทั้งสองแอป
@@ -60,7 +67,7 @@ ADMIN_PASSWORD=replace_with_your_own_admin_password
 สร้าง `client/.env` และ `admin-client/.env` ใส่ค่าเดียวกันทั้งสองไฟล์:
 
 ```dotenv
-VITE_API_BASE_URL=http://localhost:5001/api
+VITE_API_BASE_URL=http://localhost:5002/api
 ```
 
 - ถ้าไม่ตั้งค่า หน้าร้านจะไปเรียก API บน Render แทน localhost
@@ -85,7 +92,7 @@ npm run dev --prefix admin-client
 | --- | --- |
 | หน้าร้าน | http://localhost:5173 |
 | Admin | http://localhost:5174 |
-| API Health | http://localhost:5001/api/health |
+| API Health | http://localhost:5002/api/health |
 
 ตรวจ port ที่แสดงใน Terminal อีกครั้ง และดูค่า `database` ในผล Health check เพื่อยืนยันสถานะฐานข้อมูล
 

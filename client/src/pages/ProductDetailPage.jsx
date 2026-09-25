@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { getProductById, getProducts } from "../services/productService.js";
 import { useCartStore } from "../store/cartStore.js";
 import { useWishlistStore } from "../store/wishlistStore.js";
+import { useAuth } from "../context/Auth/useAuth.jsx";
 import lookData from "../data/look-data.json";
 import {
   ProductGallery,
@@ -17,14 +18,23 @@ import {
 import { normalizeImageUrl, getDetailImageSet } from "../utils/imageUtils.js";
 import { getSizeRecommendation } from '../utils/sizeRecommendation.js';
 import { userService } from '../services/userService.js';
-import { useAuth } from '../context/Auth/useAuth.jsx';
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, isAuthenticated } = useAuth();
   const addToCart = useCartStore((state) => state.addToCart);
   const wishlist = useWishlistStore((state) => state.wishlist);
   const toggleWishlist = useWishlistStore((state) => state.toggleWishlist);
+
+  const handleToggleWishlist = () => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    toggleWishlist(product);
+  };
 
   const [product, setProduct] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
@@ -46,9 +56,9 @@ export default function ProductDetailPage() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(true);
   const [isMaterialsOpen, setIsMaterialsOpen] = useState(true);
 
-  // Standard sizes matching backend (S, M, L)
+  // Show only sizes that exist in the product variants.
   const sizeOptions = useMemo(() => {
-    if (!product?.variants || product.variants.length === 0) return ["S", "M", "L"];
+    if (!product?.variants || product.variants.length === 0) return [];
     const variantSizes = [
       ...new Set(
         product.variants
@@ -56,9 +66,9 @@ export default function ProductDetailPage() {
           .filter(Boolean)
       ),
     ];
-    const allowed = ["S", "M", "L"];
+    const allowed = ["XS", "S", "M", "L", "XL", "XXL"];
     const filtered = allowed.filter((s) => variantSizes.includes(s));
-    return filtered.length > 0 ? filtered : allowed;
+    return filtered;
   }, [product]);
 
   // Ensure selectedSize is valid
@@ -101,7 +111,9 @@ export default function ProductDetailPage() {
           setAllProducts(prodList || []);
 
           if (normProd.variants && normProd.variants.length > 0) {
-            const firstVariant = normProd.variants[0];
+            const firstVariant = normProd.variants.find((variant) => (
+              Number(variant.stock_quantity ?? variant.stockQuantity) > 0
+            )) || normProd.variants[0];
             setSelectedColor(firstVariant.color || "");
             setSelectedSize(firstVariant.size || "S");
             const variantImg =
@@ -177,17 +189,18 @@ export default function ProductDetailPage() {
   // Selected variant
   const selectedVariant = useMemo(() => {
     if (!product?.variants) return null;
-    const match =
-      product.variants.find((v) => v.color === selectedColor) ||
-      product.variants[0] ||
-      null;
+    const match = product.variants.find((variant) => {
+      const matchesSize = (variant.size || variant.size_or_color) === selectedSize;
+      const matchesColor = !selectedColor || variant.color === selectedColor;
+      return matchesSize && matchesColor;
+    });
     if (!match) return null;
     return {
       ...match,
       imageUrl: normalizeImageUrl(match.imageUrl),
       detailImages: (match.detailImages || []).map(normalizeImageUrl),
     };
-  }, [product, selectedColor]);
+  }, [product, selectedColor, selectedSize]);
 
   // Generate 7 thumbnails from collection-2026/all-images matching the wireframe
   const thumbnails = useMemo(() => {
@@ -231,22 +244,19 @@ export default function ProductDetailPage() {
       product.images.forEach((img) => addUnique(img?.image_url || img));
     }
 
-    // 4) Pad with existing images if less than 7 so all 7 slots are filled
-    if (list.length > 0 && list.length < 7) {
-      const originalCount = list.length;
-      let i = 0;
-      while (list.length < 7) {
-        list.push(list[i % originalCount]);
-        i++;
-      }
-    }
-
     return list.slice(0, 7);
   }, [product, selectedVariant, selectedColor]);
 
   // Handle color change
   const handleColorChange = (color) => {
     setSelectedColor(color);
+    const availableVariant = product?.variants?.find((variant) => (
+      variant.color === color && Number(variant.stock_quantity ?? variant.stockQuantity) > 0
+    ));
+    if (availableVariant) {
+      setSelectedSize(availableVariant.size || availableVariant.size_or_color);
+      setQuantity(1);
+    }
     const variantWithImage = product?.variants?.find(
       (v) => v.color === color && v.imageUrl
     );
@@ -265,7 +275,18 @@ export default function ProductDetailPage() {
       return;
     }
 
-    const currentPrice = selectedVariant?.price ?? 490;
+    if (!selectedVariant) {
+      setValidationError("ไม่มีสินค้าในไซส์และสีที่เลือก กรุณาเลือกใหม่");
+      return;
+    }
+
+    const stock = Number(selectedVariant.stock_quantity ?? selectedVariant.stockQuantity);
+    if (!Number.isFinite(stock) || !Number.isInteger(quantity) || quantity < 1 || quantity > stock) {
+      setValidationError("สินค้าในไซส์และสีนี้มีไม่พอสำหรับจำนวนที่เลือก");
+      return;
+    }
+
+    const currentPrice = selectedVariant.price;
 
     const variantPayload = {
       ...selectedVariant,
@@ -351,7 +372,7 @@ export default function ProductDetailPage() {
   }
 
   const currentPrice = selectedVariant?.price ?? 490;
-  const sizeRecommendation = getSizeRecommendation(sizeProfile, product, sizeOptions);
+  const sizeRecommendation = getSizeRecommendation(sizeProfile, product, sizeOptions, selectedColor);
 
   return (
     <main className="flex-1 bg-background py-6 md:py-10">
@@ -385,8 +406,8 @@ export default function ProductDetailPage() {
             onAddToCart={handleAddToCart}
             isWishlisted={wishlist.some(
               (item) =>
-                item._id ===
-                (product._id || product.productId || product.id || product.sku)
+                String(item._id) ===
+                String(product?._id || product?.productId || productId)
             )}
             onToggleWishlist={() => toggleWishlist(product)}
             isLoggedIn={Boolean(user)}
@@ -397,6 +418,8 @@ export default function ProductDetailPage() {
 
         {/* DETAILS ACCORDION: รายละเอียด & วัสดุ/การดูแล */}
         <ProductAccordionDetails
+          product={product}
+          selectedVariant={selectedVariant}
           isDetailsOpen={isDetailsOpen}
           setIsDetailsOpen={setIsDetailsOpen}
           isMaterialsOpen={isMaterialsOpen}

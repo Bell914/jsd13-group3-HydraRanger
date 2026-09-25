@@ -6,7 +6,8 @@ export const ORDER_STATUSES = [
   'processing',
   'shipped',
   'completed',
-  'cancelled'
+  'cancelled',
+  'refunded'
 ];
 
 const orderItemSchema = new mongoose.Schema(
@@ -16,6 +17,8 @@ const orderItemSchema = new mongoose.Schema(
     sku: { type: String, required: true, trim: true },
     title: { type: String, required: true, trim: true },
     variant: { type: String, required: true, trim: true },
+    color: { type: String, default: '', trim: true },
+    size: { type: String, default: '', trim: true },
     imageUrl: { type: String, default: '' },
     unitPrice: { type: Number, required: true, min: 0 },
     quantity: { type: Number, required: true, min: 1 },
@@ -54,11 +57,20 @@ const orderSchema = new mongoose.Schema(
     shippingAddress: { type: shippingAddressSchema, required: true },
     shippingMethod: { type: String, default: 'standard', trim: true },
     paymentMethod: { type: String, default: 'credit-card', trim: true },
+    paymentIntentId: { type: String, default: '', index: true },
+    paymentExpiresAt: { type: Date, default: null, index: true },
+    paymentSetupStartedAt: { type: Date, default: null },
+    paymentCancellationRequested: { type: Boolean, default: false },
     subtotal: { type: Number, required: true, min: 0 },
+    discountAmount: { type: Number, default: 0, min: 0 },
+    couponCode: { type: String, default: '', trim: true },
+    membershipTierAtPurchase: { type: String, default: 'MEMBER', trim: true },
     shippingCost: { type: Number, required: true, min: 0 },
-    taxAmount: { type: Number, required: true, min: 0 },
     totalAmount: { type: Number, required: true, min: 0 },
-    status: { type: String, enum: ORDER_STATUSES, default: 'pending', index: true }
+    status: { type: String, enum: ORDER_STATUSES, default: 'pending', index: true },
+    loyaltyProcessed: { type: Boolean, default: false, index: true },
+    stockReserved: { type: Boolean, default: false },
+    stockRestored: { type: Boolean, default: false }
   },
   { timestamps: true }
 );

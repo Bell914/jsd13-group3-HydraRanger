@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { ENV } from "./config/env.js";
 import { buildAllowedOrigins, isOriginAllowed } from "./config/security.js";
 import apiRouter from "./routes/index.js";
+import { stripeWebhook } from "./controllers/paymentController.js";
 import {
   requestLogger,
   notFoundHandler,
@@ -14,6 +15,7 @@ import {
 } from "./middleware/index.js";
 
 const app = express();
+app.set("trust proxy", ENV.TRUST_PROXY);
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentFolderPath = path.dirname(currentFilePath);
 const productImageFolder = path.resolve(
@@ -45,6 +47,8 @@ app.use(
   }),
 );
 
+// Stripe signs the exact raw request bytes; this route must run before JSON parsing.
+app.post("/api/payment/webhook", express.raw({ type: "application/json" }), stripeWebhook);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

@@ -23,11 +23,22 @@ const detectSameOriginApi = () => {
 };
 
 export const resolveApiUrl = () => {
+  const isLocalhost =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1");
+
   // 1. Runtime override (switchable without rebuilding)
   if (typeof window !== "undefined") {
     try {
       const override = localStorage.getItem(OVERRIDE_KEY);
-      if (override) return normalizeApiUrl(override);
+      if (override) {
+        const normalized = normalizeApiUrl(override);
+        // Only accept localhost override if actually on localhost
+        if (isLocalhost || (!normalized.includes("localhost") && !normalized.includes("127.0.0.1"))) {
+          return normalized;
+        }
+      }
     } catch {
       /* ignore storage access errors */
     }
@@ -35,15 +46,26 @@ export const resolveApiUrl = () => {
 
   // 2. Build-time env: VITE_API_BASE_URL / VITE_API_URL
   const envUrl = normalizeApiUrl(ENV_BASE_URL);
-  if (envUrl) return envUrl;
+  if (envUrl) {
+    // If running in production (Vercel/Render), never use localhost
+    if (isLocalhost || (!envUrl.includes("localhost") && !envUrl.includes("127.0.0.1"))) {
+      return envUrl;
+    }
+  }
 
   // 3. Same-origin detection when deployed on the Render backend host
   const sameOrigin = detectSameOriginApi();
   if (sameOrigin) return sameOrigin;
 
-  // 4. Fallback: the deployed (real) backend
+  // 4. If on localhost and no envUrl specified, use local server
+  if (isLocalhost) {
+    return "http://localhost:5002/api";
+  }
+
+  // 5. Fallback: the deployed (real) backend on Render
   return REMOTE_API_URL;
 };
+
 
 export const API_URL = resolveApiUrl();
 
@@ -70,30 +92,11 @@ export const resetApiBaseUrl = () => {
 };
 
 class ApiClient {
-  getToken() {
-    return localStorage.getItem("occasion_token");
-  }
-
-  setToken(token) {
-    if (token) {
-      localStorage.setItem("occasion_token", token);
-    } else {
-      localStorage.removeItem("occasion_token");
-    }
-  }
-
   getHeaders(customHeaders = {}) {
-    const headers = {
+    return {
       "Content-Type": "application/json",
       ...customHeaders,
     };
-
-    const token = this.getToken();
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    return headers;
   }
 
   async request(endpoint, options = {}, _retried = false) {
@@ -103,6 +106,7 @@ class ApiClient {
     const config = {
       ...options,
       headers,
+      credentials: "include",
     };
 
     try {
@@ -150,28 +154,19 @@ class ApiClient {
   }
 
   async tryRefresh() {
-    const token = this.getToken();
-    if (!token) return false;
-
     try {
       const response = await fetch(`${resolveApiUrl()}/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
+        credentials: "include",
+        body: JSON.stringify({}),
       });
 
       if (!response.ok) {
-        this.setToken(null);
         localStorage.removeItem("occasion_user");
         return false;
       }
-
-      const data = await response.json().catch(() => ({}));
-      if (data?.data?.token) {
-        this.setToken(data.data.token);
-        return true;
-      }
-      return false;
+      return true;
     } catch {
       return false;
     }
@@ -197,9 +192,18 @@ class ApiClient {
     });
   }
 
+  patch(endpoint, body, options = {}) {
+    return this.request(endpoint, {
+      ...options,
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+  }
+
   delete(endpoint, options = {}) {
     return this.request(endpoint, { ...options, method: "DELETE" });
   }
 }
 
 export const api = new ApiClient();
+export default api;

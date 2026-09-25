@@ -22,6 +22,43 @@ export const Navbar = () => {
   const [isProductsHovered, setIsProductsHovered] = useState(false);
   const navRef = useRef(null);
   const searchButtonRef = useRef(null);
+  const productsTimeoutRef = useRef(null);
+
+  const handleMouseEnterProducts = () => {
+    if (productsTimeoutRef.current) {
+      clearTimeout(productsTimeoutRef.current);
+    }
+    setIsProductsHovered(true);
+  };
+
+  const handleMouseLeaveProducts = () => {
+    productsTimeoutRef.current = setTimeout(() => {
+      setIsProductsHovered(false);
+    }, 150);
+  };
+
+  const handleCategorySelect = (category) => {
+    if (productsTimeoutRef.current) {
+      clearTimeout(productsTimeoutRef.current);
+    }
+    setIsProductsHovered(false);
+    setIsMobileMenuOpen(false);
+    navigate(`/products?category=${category}`, {
+      state: { scrollTo: "products", timestamp: Date.now() },
+    });
+    const section = document.getElementById("products-section");
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (productsTimeoutRef.current) {
+        clearTimeout(productsTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const closeSearch = useCallback(() => {
     setIsSearchOpen(false);
@@ -79,18 +116,18 @@ export const Navbar = () => {
       <nav
         ref={navRef}
         aria-label="เมนูหลัก"
-        className="relative z-50 w-full border-b border-occasion-border/40 bg-surface py-3 shadow-sm"
+        className="relative z-50 w-full border-b border-occasion-border/40 bg-surface py-2 sm:py-3 shadow-sm"
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link
             to="/"
             aria-label="OCCASION หน้าแรก"
-            className="flex shrink-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
+            className="flex h-12 w-36 shrink-0 items-center justify-center overflow-hidden rounded-lg focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 sm:h-16 sm:w-48"
           >
             <img
               src={assets.newlogo}
               alt="OCCASION"
-              className="h-auto w-20 md:w-24"
+              className="h-auto w-36 max-w-none sm:w-48"
             />
           </Link>
 
@@ -143,7 +180,7 @@ export const Navbar = () => {
             className={`${isMobileMenuOpen ? "flex" : "hidden"} absolute left-0 top-full w-full border-t border-occasion-border/40 bg-surface p-5 shadow-xl md:static md:flex md:w-auto md:items-center md:justify-end md:border-0 md:bg-transparent md:p-0 md:shadow-none`}
           >
             <ul className="flex w-full flex-col items-center justify-center gap-2 text-base font-medium md:w-auto md:flex-row md:justify-end md:gap-0 md:divide-x md:divide-occasion-border/45">
-              <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-3 md:w-auto md:border-b-0 md:px-4 md:pb-0">
+              <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-4 md:pb-0">
                 <button
                   ref={searchButtonRef}
                   type="button"
@@ -168,50 +205,64 @@ export const Navbar = () => {
               </li>
 
               <li
-                className="relative group flex flex-col items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0"
-                onMouseEnter={() => setIsProductsHovered(true)}
-                onMouseLeave={() => setIsProductsHovered(false)}
+                className="relative group flex w-full flex-col items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:flex-row md:border-b-0 md:px-2 md:pb-0"
+                onMouseEnter={handleMouseEnterProducts}
+                onMouseLeave={handleMouseLeaveProducts}
               >
                 <Link
                   to="/products"
                   aria-current={isActive("/products") ? "page" : undefined}
-                  className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${
+                  className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${
                     isActive("/products")
-                      ? "font-bold text-primary underline decoration-accent decoration-2 underline-offset-4"
+                      ? "font-bold text-primary md:underline md:decoration-accent md:decoration-2 md:underline-offset-4"
                       : ""
                   }`}
                 >
-                  PRODUCTS
+                  สินค้า
                 </Link>
 
-                {/* Dropdown on hover: Tops & Bottoms matching user screenshot */}
-                <div
-                  className={`flex flex-col gap-2 pt-2 md:absolute md:top-full md:left-1/2 md:-translate-x-1/2 z-50 w-28 transition-all duration-200 ${
-                    isProductsHovered
-                      ? "opacity-100 visible translate-y-0"
-                      : "hidden md:flex opacity-0 invisible md:-translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:pointer-events-auto"
-                  }`}
-                >
-                  <Link
-                    to="/products?category=tops"
-                    onClick={() => {
-                      setIsProductsHovered(false);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="w-full text-center rounded-lg bg-[#2d568c] px-4 py-1.5 text-xs sm:text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                {/* Mobile categories sub-links */}
+                <div className="flex w-full items-center justify-center gap-2 pt-1 md:hidden">
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect("tops")}
+                    className="flex-1 rounded-lg bg-primary/10 py-1.5 text-center text-xs font-bold text-primary transition hover:bg-primary hover:text-white cursor-pointer"
                   >
                     TOPS
-                  </Link>
-                  <Link
-                    to="/products?category=bottoms"
-                    onClick={() => {
-                      setIsProductsHovered(false);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="w-full text-center rounded-lg bg-accent px-4 py-1.5 text-xs sm:text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect("bottoms")}
+                    className="flex-1 rounded-lg bg-accent/10 py-1.5 text-center text-xs font-bold text-accent transition hover:bg-accent hover:text-white cursor-pointer"
                   >
                     BOTTOMS
-                  </Link>
+                  </button>
+                </div>
+
+                {/* Product categories (desktop only) */}
+                <div
+                  className={`hidden flex-col gap-1.5 rounded-xl border border-occasion-border/40 bg-surface p-2 shadow-lg md:flex md:absolute md:top-[calc(100%+0.35rem)] md:left-1/2 md:-translate-x-1/2 z-50 w-32 transition-all duration-200 before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 before:content-[''] ${
+                    isProductsHovered
+                      ? "opacity-100 visible translate-y-0 pointer-events-auto"
+                      : "opacity-0 invisible md:-translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:pointer-events-auto"
+                  }`}
+                  onMouseEnter={handleMouseEnterProducts}
+                  onMouseLeave={handleMouseLeaveProducts}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect("tops")}
+                    className="w-full rounded-lg bg-primary px-4 py-2 text-center text-xs font-bold tracking-wide text-white transition-all hover:bg-primary-hover active:scale-[0.98] cursor-pointer sm:text-sm"
+                  >
+                    TOPS
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect("bottoms")}
+                    className="w-full rounded-lg bg-accent px-4 py-2 text-center text-xs font-bold tracking-wide text-white transition-all hover:bg-accent-hover active:scale-[0.98] cursor-pointer sm:text-sm"
+                  >
+                    BOTTOMS
+                  </button>
                 </div>
               </li>
 
@@ -219,9 +270,19 @@ export const Navbar = () => {
                 <Link
                   to="/lookbook"
                   aria-current={isActive("/lookbook") ? "page" : undefined}
-                  className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/lookbook") ? "bg-accent/10 font-bold text-accent" : ""}`}
+                  className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/lookbook") ? "font-bold text-accent md:bg-accent/10" : ""}`}
                 >
-                  LOOKBOOKS
+                  เซ็ตเสื้อผ้า
+                </Link>
+              </li>
+
+              <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0">
+                <Link
+                  to="/mix-and-match"
+                  aria-current={isActive("/mix-and-match") ? "page" : undefined}
+                  className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/mix-and-match") ? "font-bold text-accent md:bg-accent/10" : ""}`}
+                >
+                  จับคู่เสื้อผ้า
                 </Link>
               </li>
 
@@ -229,9 +290,9 @@ export const Navbar = () => {
                 <Link
                   to="/article"
                   aria-current={isActive("/article") ? "page" : undefined}
-                  className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/article") ? "bg-accent/10 font-bold text-accent" : ""}`}
+                  className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/article") ? "font-bold text-accent md:bg-accent/10" : ""}`}
                 >
-                  ARTICLE
+                  บทความ
                 </Link>
               </li>
 
@@ -240,14 +301,15 @@ export const Navbar = () => {
                   <Link
                     to="/login"
                     aria-current={isActive("/login") ? "page" : undefined}
-                    className={`w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/login") ? "bg-accent/10 font-bold text-accent" : ""}`}
+                    className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/login") ? "font-bold text-accent md:bg-accent/10" : ""}`}
                   >
-                    {"SIGN IN"}
+                    {"เข้าสู่ระบบ"}
                   </Link>
                 </li>
               ) : (
                 <ProfileDropdown
                   username={user?.username}
+                  membership={user?.membership}
                   isOpen={isProfileOpen}
                   onToggle={() => setIsProfileOpen((isOpen) => !isOpen)}
                   onClose={() => setIsProfileOpen(false)}

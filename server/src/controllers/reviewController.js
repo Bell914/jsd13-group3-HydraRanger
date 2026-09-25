@@ -7,6 +7,7 @@ function sendReviewError(error, res, next) {
     'Review comment',
     'Invalid order',
     'Only customers',
+    'สามารถรีวิวได้เฉพาะสินค้าที่จัดส่งเสร็จสิ้น (completed) แล้วเท่านั้น',
     'isVisible must'
   ];
 
@@ -42,6 +43,15 @@ export async function getProductReviews(req, res, next) {
   try {
     const result = await reviewService.getVisibleProductReviews(req.params.productId);
     res.status(HTTP_STATUS.OK).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getMyReviews(req, res, next) {
+  try {
+    const reviews = await reviewService.getMyReviews(req.user._id || req.user.id);
+    res.status(HTTP_STATUS.OK).json({ success: true, data: reviews });
   } catch (error) {
     next(error);
   }

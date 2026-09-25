@@ -1,9 +1,37 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Heart, Sparkles } from "lucide-react";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
+import { useWishlistStore } from "../store/wishlistStore.js";
+import { useAuth } from "../context/Auth/useAuth.jsx";
 
 export default function ProductCard({ product }) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const targetId = product._id || product.productId;
+  const isSaved = useWishlistStore((state) =>
+    state.wishlist.some((item) => String(item._id) === String(targetId))
+  );
+  const toggleWishlist = useWishlistStore((state) => state.toggleWishlist);
+
+  let isAuthenticated = false;
+  try {
+    const auth = useAuth();
+    isAuthenticated = Boolean(auth?.isAuthenticated);
+  } catch {
+    isAuthenticated = false;
+  }
+
+  const handleWishlistClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    toggleWishlist(product);
+  };
+
   const variants = product.variants || [];
   const validPrices = variants
     .map((v) => Number(v.price))
@@ -28,41 +56,68 @@ export default function ProductCard({ product }) {
     product.image ||
     product.variants?.[0]?.imageUrl ||
     "";
-  const imgUrl = normalizeImageUrl(rawImg);
+  const imgUrl = normalizeImageUrl(rawImg) || undefined;
 
   return (
-    <Link
-      to={`/products/${targetId}`}
-      className="group flex flex-col justify-between overflow-hidden rounded-2xl bg-[#0046a7] text-white shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 aspect-[3/4] p-3"
-    >
+    <article className="relative group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#e4ddd3] bg-[#f1eee8] text-[#263639] shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg focus-within:ring-3 focus-within:ring-accent/45 p-2.5 sm:p-3">
       {/* Product Image Box */}
-      <div className="relative w-full flex-1 overflow-hidden rounded-xl bg-white/95 p-3 flex items-center justify-center">
-        <img
-          src={imgUrl}
-          alt={title}
-          className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-        />
-        {categoryName && (
-          <span className="absolute top-2 left-2 rounded-md bg-[#0046a7] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
+      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-[#fbf8f3] p-3 flex items-center justify-center">
+        <Link
+          to={`/products/${targetId}`}
+          className="absolute inset-0 flex items-center justify-center p-3"
+          aria-label={title}
+        >
+          <img
+            src={imgUrl}
+            alt={title}
+            className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        </Link>
+
+        {product.isEarlyAccess ? (
+          <span className="pointer-events-none absolute top-2 left-2 z-10 inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-400 to-yellow-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-gray-950 shadow-sm">
+            <Sparkles size={11} className="text-gray-950" />
+            <span>EARLY ACCESS</span>
+          </span>
+        ) : categoryName ? (
+          <span className="pointer-events-none absolute top-2 left-2 z-10 rounded-md bg-[#263639] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
             {categoryName}
           </span>
-        )}
+        ) : null}
+
+        {/* Wishlist Button - outside the Link */}
+        <button
+          type="button"
+          onClick={handleWishlistClick}
+          className={`absolute top-2 right-2 z-20 flex h-8 w-8 items-center justify-center rounded-full transition-all shadow-sm cursor-pointer ${
+            isSaved
+              ? "bg-white text-red-500 hover:bg-red-50 shadow-md scale-105"
+              : "bg-white/80 text-gray-400 hover:bg-white hover:text-red-500"
+          }`}
+          title={isSaved ? "ลบออกจากรายการโปรด" : "บันทึกในรายการโปรด"}
+          aria-label={isSaved ? "ลบออกจากรายการโปรด" : "บันทึกในรายการโปรด"}
+        >
+          <Heart size={16} fill={isSaved ? "currentColor" : "none"} />
+        </button>
       </div>
 
       {/* Bottom Info Bar matching wireframe */}
-      <div className="pt-3 pb-1 flex items-center justify-between text-white">
+      <Link
+        to={`/products/${targetId}`}
+        className="flex min-h-[92px] items-end justify-between gap-3 px-1 pb-1 pt-3 text-[#263639] hover:opacity-75"
+      >
         <div className="flex flex-col">
-          <span className="text-sm sm:text-base font-extrabold tracking-wide text-white drop-shadow-sm">
+          <span className="text-sm sm:text-base font-extrabold tracking-wide text-[#263639]">
             {categoryLabel}
           </span>
-          <span className="text-[11px] text-white/80 line-clamp-1 max-w-[130px]">
+          <span className="line-clamp-2 text-[11px] leading-4 text-[#526164]">
             {title}
           </span>
           {product.tags && product.tags.length > 0 && (
             <div className="mt-0.5 flex flex-wrap gap-1">
               {product.tags.slice(0, 2).map((t) => (
-                <span key={t} className="text-[9px] text-white/70">
+                <span key={t} className="text-[9px] text-[#697577]">
                   #{t}
                 </span>
               ))}
@@ -70,13 +125,13 @@ export default function ProductCard({ product }) {
           )}
         </div>
 
-        <div className="text-right">
-          <span className="text-sm sm:text-base font-black text-amber-200">
+        <div className="shrink-0 self-end text-right">
+          <span className="text-sm sm:text-base font-black text-[#c46731]">
             ฿{minPrice.toLocaleString()}
           </span>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </article>
   );
 }
 

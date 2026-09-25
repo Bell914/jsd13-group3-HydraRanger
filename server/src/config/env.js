@@ -12,7 +12,7 @@ function getRequiredEnv(name) {
 }
 
 export const ENV = {
-  PORT: process.env.PORT || 5001,
+  PORT: process.env.PORT || 5002,
   NODE_ENV: process.env.NODE_ENV || "development",
   MONGODB_URI:
     process.env.MONGODB_URI || "mongodb://localhost:27017/occasion_db",
@@ -22,4 +22,9 @@ export const ENV = {
   ADMIN_CLIENT_URL: process.env.ADMIN_CLIENT_URL || "http://localhost:5174",
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || "",
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || "",
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
+  GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+  TRUST_PROXY: process.env.TRUST_PROXY
+    ? Number.parseInt(process.env.TRUST_PROXY, 10)
+    : process.env.NODE_ENV === "production" ? 1 : false,
 };
