@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Gift, ChevronDown, Plus, Minus } from "lucide-react";
+import { THAI_PROVINCES } from "../../constants/provinces.js";
 
 export const SHIPPING_METHODS = [
   {
@@ -342,12 +343,9 @@ export default function ShippingSection({
                 }`}
               >
                 <option value="">เลือกจังหวัด...</option>
-                <option value="Bangkok">กรุงเทพมหานคร</option>
-                <option value="Chiang Mai">เชียงใหม่</option>
-                <option value="Phuket">ภูเก็ต</option>
-                <option value="Nonthaburi">นนทบุรี</option>
-                <option value="Samut Prakan">สมุทรปราการ</option>
-                <option value="Other">จังหวัดอื่นๆ</option>
+                {THAI_PROVINCES.map((province) => (
+                  <option key={province} value={province}>{province}</option>
+                ))}
               </select>
               <ChevronDown className="w-4 h-4 text-gray-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>

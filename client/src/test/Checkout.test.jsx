@@ -35,7 +35,7 @@ const fillShippingForm = () => {
   fireEvent.change(screen.getByLabelText("เบอร์โทรศัพท์"), { target: { value: "0812345678" } });
   fireEvent.change(screen.getByLabelText("บ้านเลขที่ / ถนน / อาคาร"), { target: { value: "123 Street" } });
   fireEvent.change(screen.getByLabelText("อำเภอ / เขต"), { target: { value: "Bangkok" } });
-  fireEvent.change(screen.getByLabelText("จังหวัด"), { target: { value: "Bangkok" } });
+  fireEvent.change(screen.getByLabelText("จังหวัด"), { target: { value: "กรุงเทพมหานคร" } });
   fireEvent.change(screen.getByLabelText("รหัสไปรษณีย์"), { target: { value: "10110" } });
 };
 
@@ -160,11 +160,32 @@ describe("Checkout order integration", () => {
 
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     await waitFor(() => expect(screen.getByLabelText("นามสกุล")).toHaveValue(""));
+    expect(screen.getByLabelText("ชื่อ")).toHaveValue("สมชาย");
     fireEvent.click(screen.getByRole("button", { name: "ดำเนินการต่อ" }));
 
     expect(await screen.findByText("กรุณากรอกนามสกุล")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "ช่องทางการชำระเงิน" })).not.toBeInTheDocument();
     expect(createOrder).not.toHaveBeenCalled();
+  });
+
+  it("splits a saved address recipientName into first and last name", async () => {
+    getAddresses.mockResolvedValueOnce({
+      data: [{
+        _id: "saved-address-full-name",
+        recipientName: "สมชาย ใจดี",
+        phone: "0812345678",
+        addressDetail: "123 ถนนตัวอย่าง",
+        district: "บางรัก",
+        province: "กรุงเทพมหานคร",
+        zipCode: "10500",
+        isDefault: true,
+      }],
+    });
+
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByLabelText("นามสกุล")).toHaveValue("ใจดี"));
+
+    expect(screen.getByLabelText("ชื่อ")).toHaveValue("สมชาย");
   });
 
   it("only offers Stripe card payments in checkout", async () => {

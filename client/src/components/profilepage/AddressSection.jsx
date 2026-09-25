@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AlertCircle, MapPin, Pencil, Plus, Save, Star, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAddressStore } from "../../store/addressStore.js";
+import { THAI_PROVINCES } from "../../constants/provinces.js";
 import {
   addAddress,
   deleteAddress,
@@ -11,7 +12,8 @@ import {
 } from "../../services/userService.js";
 
 const emptyForm = {
-  recipientName: "",
+  firstName: "",
+  lastName: "",
   phone: "",
   addressDetail: "",
   subdistrict: "",
@@ -22,7 +24,6 @@ const emptyForm = {
 };
 
 const addressFields = [
-  ["recipientName", "ชื่อผู้รับ", "สมชาย ใจดี"],
   ["phone", "เบอร์โทรศัพท์", "0812345678"],
   ["addressDetail", "บ้านเลขที่ / ถนน / อาคาร", "123/45 ถนนสุขุมวิท"],
   ["subdistrict", "ตำบล / แขวง", "คลองเตย"],
@@ -32,8 +33,10 @@ const addressFields = [
 ];
 
 function getAddressForm(address) {
+  const fullName = (address.recipientName || "").trim().split(/\s+/);
   return {
-    recipientName: address.recipientName || "",
+    firstName: address.firstName || fullName[0] || "",
+    lastName: address.lastName || fullName.slice(1).join(" "),
     phone: address.phone || "",
     addressDetail: address.addressDetail || address.addressLine || "",
     subdistrict: address.subdistrict || "",
@@ -89,7 +92,8 @@ export const AddressSection = () => {
   }
 
   function validateForm() {
-    if (!form.recipientName.trim()) return "กรุณากรอกชื่อผู้รับ";
+    if (!form.firstName.trim()) return "กรุณากรอกชื่อผู้รับ";
+    if (!form.lastName.trim()) return "กรุณากรอกนามสกุล";
     if (!/^[0-9]{9,10}$/.test(form.phone.trim())) {
       return "เบอร์โทรศัพท์ต้องเป็นตัวเลข 9-10 หลัก";
     }
@@ -115,7 +119,7 @@ export const AddressSection = () => {
 
     const payload = {
       ...form,
-      recipientName: form.recipientName.trim(),
+      recipientName: `${form.firstName.trim()} ${form.lastName.trim()}`,
       phone: form.phone.trim(),
       addressDetail: form.addressDetail.trim(),
       addressLine: form.addressDetail.trim(),
@@ -251,19 +255,31 @@ export const AddressSection = () => {
         </h3>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          {addressFields.map(([field, label, placeholder]) => (
+          {[["firstName", "ชื่อผู้รับ", "สมชาย"], ["lastName", "นามสกุล", "ใจดี"], ...addressFields].map(([field, label, placeholder]) => (
             <label key={field} className="block text-sm font-medium text-gray-700">
               {label} *
-              <input
-                required
-                type="text"
-                inputMode={field === "phone" || field === "zipCode" ? "numeric" : undefined}
-                pattern={field === "phone" ? "[0-9]{9,10}" : field === "zipCode" ? "[0-9]{5}" : undefined}
-                value={form[field]}
-                placeholder={placeholder}
-                onChange={(event) => setForm({ ...form, [field]: event.target.value })}
-                className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
-              />
+              {field === "province" ? (
+                <select
+                  required
+                  value={form.province}
+                  onChange={(event) => setForm({ ...form, province: event.target.value })}
+                  className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
+                >
+                  <option value="">เลือกจังหวัด...</option>
+                  {THAI_PROVINCES.map((province) => <option key={province} value={province}>{province}</option>)}
+                </select>
+              ) : (
+                <input
+                  required
+                  type="text"
+                  inputMode={field === "phone" || field === "zipCode" ? "numeric" : undefined}
+                  pattern={field === "phone" ? "[0-9]{9,10}" : field === "zipCode" ? "[0-9]{5}" : undefined}
+                  value={form[field]}
+                  placeholder={placeholder}
+                  onChange={(event) => setForm({ ...form, [field]: event.target.value })}
+                  className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
+                />
+              )}
             </label>
           ))}
         </div>

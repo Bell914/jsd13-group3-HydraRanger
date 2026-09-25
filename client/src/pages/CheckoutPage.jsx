@@ -126,12 +126,12 @@ function StripeIntentSetup({ orderPayload, onReady, onError }) {
 }
 
 function getAddressFormData(address) {
-  const nameParts = (address.recipientName || "").trim().split(/\s+/);
+  const nameParts = (address.recipientName || "").trim().split(/\s+/).filter(Boolean);
 
   return {
     selectedAddressId: String(address._id || address.id),
-    firstName: nameParts[0] || "",
-    lastName: nameParts.slice(1).join(" "),
+    firstName: address.firstName?.trim() || nameParts[0] || "",
+    lastName: address.lastName?.trim() || nameParts.slice(1).join(" "),
     phone: address.phone || "",
     address: address.addressDetail || address.addressLine || "",
     city: address.district || "",
