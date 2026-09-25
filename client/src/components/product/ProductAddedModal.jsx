@@ -51,14 +51,14 @@ export const ProductAddedModal = ({ addedItem, onClose }) => {
             onClick={onClose}
             className="flex-1 rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-white shadow-md hover:bg-accent-hover transition text-center cursor-pointer"
           >
-            ไปที่ตะกร้าสินค้า →
+            ไปที่ตะกร้าสินค้า
           </Link>
           <Link
             to="/products"
             onClick={onClose}
             className="flex-1 rounded-xl border border-occasion-border/50 bg-surface px-4 py-2.5 text-sm font-semibold text-secondary hover:border-primary hover:text-primary transition text-center"
           >
-            ← ดูสินค้าอื่นเพิ่มเติม
+            ดูสินค้าอื่นเพิ่มเติม
           </Link>
         </div>
         <button

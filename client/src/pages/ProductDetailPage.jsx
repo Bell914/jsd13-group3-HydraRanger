@@ -23,18 +23,10 @@ export default function ProductDetailPage() {
   const { productId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const addToCart = useCartStore((state) => state.addToCart);
   const wishlist = useWishlistStore((state) => state.wishlist);
   const toggleWishlist = useWishlistStore((state) => state.toggleWishlist);
-
-  let isAuthenticated = false;
-  try {
-    const auth = useAuth();
-    isAuthenticated = Boolean(auth?.isAuthenticated);
-  } catch {
-    isAuthenticated = false;
-  }
 
   const handleToggleWishlist = () => {
     if (!isAuthenticated) {
@@ -426,6 +418,8 @@ export default function ProductDetailPage() {
 
         {/* DETAILS ACCORDION: รายละเอียด & วัสดุ/การดูแล */}
         <ProductAccordionDetails
+          product={product}
+          selectedVariant={selectedVariant}
           isDetailsOpen={isDetailsOpen}
           setIsDetailsOpen={setIsDetailsOpen}
           isMaterialsOpen={isMaterialsOpen}
