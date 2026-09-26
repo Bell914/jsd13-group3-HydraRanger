@@ -10,6 +10,7 @@ const PAYMENT_OPTIONS = [
 export default function PaymentSection({
   paymentData,
   onChangePayment,
+  isSubmitting = false,
   isCollapsed,
   onEdit,
   onContinue,
@@ -22,6 +23,7 @@ export default function PaymentSection({
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (isSubmitting) return;
     setError("");
 
     if (selectedMethod === "credit-card" && !isStripeConfigured) {
@@ -69,6 +71,7 @@ export default function PaymentSection({
             <div key={option.id} className="overflow-hidden rounded-lg border border-gray-200">
               <button
                 type="button"
+                disabled={isSubmitting}
                 aria-pressed={isSelected}
                 onClick={() => {
                   setError("");
@@ -115,12 +118,12 @@ export default function PaymentSection({
         )}
 
         <div className="flex flex-col-reverse items-center gap-3 pt-6 sm:flex-row sm:gap-4">
-          <button type="button" onClick={onBack} className="w-full rounded-lg bg-gray-200 py-3.5 text-sm font-semibold text-gray-800 sm:w-36">
+          <button type="button" disabled={isSubmitting} onClick={onBack} className="w-full rounded-lg bg-gray-200 py-3.5 text-sm font-semibold text-gray-800 disabled:opacity-50 sm:w-36">
             ย้อนกลับ
           </button>
           {selectedMethod !== "credit-card" && (
-            <button type="submit" className="w-full rounded-lg bg-[#D0021B] py-3.5 text-sm font-bold tracking-wider text-white sm:flex-1">
-              จำลองการชำระเงินและยืนยันคำสั่งซื้อ
+            <button type="submit" disabled={isSubmitting} className="w-full rounded-lg bg-[#D0021B] py-3.5 text-sm font-bold tracking-wider text-white disabled:cursor-not-allowed disabled:opacity-50 sm:flex-1">
+              {isSubmitting ? "กำลังสร้างคำสั่งซื้อ..." : "จำลองการชำระเงินและยืนยันคำสั่งซื้อ"}
             </button>
           )}
         </div>

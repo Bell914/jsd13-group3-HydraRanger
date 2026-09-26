@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
@@ -172,7 +172,6 @@ export default function CheckoutPage() {
   });
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [paymentData, setPaymentData] = useState({ method: "credit-card" });
-  const [paymentMethodTouched, setPaymentMethodTouched] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
   const [submitError, setSubmitError] = useState("");
@@ -182,6 +181,7 @@ export default function CheckoutPage() {
   const [preparedFingerprint, setPreparedFingerprint] = useState("");
   const [paymentSetupPaused, setPaymentSetupPaused] = useState(false);
   const cancellationRequests = useRef(new Set());
+  const orderSubmissionInProgress = useRef(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -426,6 +426,8 @@ export default function CheckoutPage() {
   }
 
   async function handlePlaceOrder(stripe, elements, showFormError = () => {}) {
+    if (orderSubmissionInProgress.current) return;
+    orderSubmissionInProgress.current = true;
     setIsSubmitting(true);
     setSubmitError("");
 
@@ -504,6 +506,7 @@ export default function CheckoutPage() {
       showFormError(message);
       throw error;
     } finally {
+      orderSubmissionInProgress.current = false;
       setIsSubmitting(false);
     }
   }
@@ -596,10 +599,8 @@ export default function CheckoutPage() {
                 <ShippingSection shippingData={shippingData} isCollapsed onEdit={() => goToStep(2)} />
                 <PaymentSection
                   paymentData={paymentData}
-                  onChangePayment={(nextPaymentData) => {
-                    setPaymentMethodTouched(true);
-                    setPaymentData(nextPaymentData);
-                  }}
+                  onChangePayment={setPaymentData}
+                  isSubmitting={isSubmitting}
                   onContinue={() => {
                     setSubmitError("");
                     if (paymentData.method === "credit-card" && (!preparedOrder || !clientSecret)) {
@@ -614,7 +615,7 @@ export default function CheckoutPage() {
                   }}
                   onBack={() => goToStep(2)}
                 />
-                {paymentMethodTouched && paymentData.method === "credit-card" && stripePromise && !clientSecret && (
+                {paymentData.method === "credit-card" && stripePromise && !clientSecret && (
                   <div className="rounded-lg border border-gray-200 bg-white p-6">
                     <h2 className="mb-4 text-xl font-bold">ชำระเงินด้วย Credit / Debit Card</h2>
                     {paymentSetupPaused ? (
@@ -652,7 +653,7 @@ export default function CheckoutPage() {
                     )}
                   </div>
                 )}
-                {paymentMethodTouched && paymentData.method === "credit-card" && stripePromise && clientSecret && (
+                {paymentData.method === "credit-card" && stripePromise && clientSecret && (
                   <div className="rounded-lg border border-gray-200 bg-white p-6">
                     <h2 className="mb-4 text-xl font-bold">กรอกข้อมูล Credit / Debit Card</h2>
                     <Elements stripe={stripePromise} options={{ clientSecret, locale: "th" }}>
