@@ -158,14 +158,14 @@ export default function OrderSummary({
 
         {rankDiscountAmount > 0 && (
           <div className="flex justify-between text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-lg text-xs sm:text-sm">
-            <span>ส่วนลดสมาชิก ({userRank})</span>
+            <span>ส่วนลดสมาชิก {userRank}</span>
             <span>-฿{rankDiscountAmount.toLocaleString()}</span>
           </div>
         )}
 
         {couponDiscountAmount > 0 && (
           <div className="flex justify-between text-rose-600 font-semibold bg-rose-50 px-2.5 py-1 rounded-lg text-xs sm:text-sm">
-            <span>ส่วนลดคูปอง ({appliedCoupon?.code})</span>
+            <span>ส่วนลดคูปอง {appliedCoupon?.code}</span>
             <span>-฿{couponDiscountAmount.toLocaleString()}</span>
           </div>
         )}

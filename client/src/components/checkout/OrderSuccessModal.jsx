@@ -25,7 +25,7 @@ export default function OrderSuccessModal({
 
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-left text-sm mb-6 space-y-2">
           <div className="flex justify-between border-b border-gray-200 pb-2">
-            <span className="text-gray-500">หมายเลขคำสั่งซื้อ:</span>
+            <span className="text-gray-500">หมายเลขคำสั่งซื้อ</span>
             <span className="font-bold text-gray-900">{orderId}</span>
           </div>
           <div className="flex justify-between border-b border-gray-200 pb-2">

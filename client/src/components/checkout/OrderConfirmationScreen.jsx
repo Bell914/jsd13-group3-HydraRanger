@@ -92,7 +92,7 @@ export default function OrderConfirmationScreen({ orderData }) {
         </p>
         {paymentMode === "mock" && (
           <p role="status" className="mx-auto mb-6 max-w-xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            โหมดจำลองสำหรับเดโม: สร้างคำสั่งซื้อสถานะรอชำระเงินเพื่อทดสอบแล้ว แต่ไม่ได้เชื่อมต่อเพื่อรับชำระเงินจริง คำสั่งซื้อจะหมดอายุภายใน 30 นาทีหากไม่มีการยืนยันการชำระเงิน
+            โหมดจำลองสำหรับเดโม สร้างคำสั่งซื้อสถานะรอชำระเงินเพื่อทดสอบแล้ว แต่ไม่ได้เชื่อมต่อเพื่อรับชำระเงินจริง คำสั่งซื้อจะหมดอายุภายใน 30 นาทีหากไม่มีการยืนยันการชำระเงิน
           </p>
         )}
 
@@ -109,7 +109,7 @@ export default function OrderConfirmationScreen({ orderData }) {
               ไม่ต้องนั่งเฝ้าหน้าตู้โพสต์แมน!
             </p>
             <p className="mb-2 text-sm text-gray-600">
-              ใช้หมายเลขนี้เพื่อติดตามพัสดุของคุณ:
+              ใช้หมายเลขนี้เพื่อติดตามพัสดุของคุณ
             </p>
             <div className="mb-8 inline-flex items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2 text-gray-900 transition-colors hover:bg-orange-100">
               <span className="font-mono text-base font-bold tracking-wider underline decoration-orange-600 underline-offset-4 sm:text-lg">
@@ -135,15 +135,15 @@ export default function OrderConfirmationScreen({ orderData }) {
         {/* 3. The Inner White Receipt Sheet */}
         <div className="mx-auto max-w-2xl rounded-2xl border border-gray-100 bg-white p-5 text-left text-gray-900 shadow-sm sm:p-8">
           <h3 className="mb-6 text-center text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
-            รายการสินค้าที่เรากำลังเตรียมจัดส่งให้คุณ:
+            รายการสินค้าที่เรากำลังเตรียมจัดส่งให้คุณ
           </h3>
 
           <div className="flex flex-wrap items-center justify-between text-xs sm:text-sm text-gray-500 pb-4 border-b border-gray-200 gap-2">
             <span>
-              หมายเลขคำสั่งซื้อ: <strong className="text-gray-900">{orderId}</strong>
+              หมายเลขคำสั่งซื้อ <strong className="text-gray-900">{orderId}</strong>
             </span>
             <span>
-              วันที่สั่งซื้อ: <strong className="text-gray-900">{orderDate}</strong>
+              วันที่สั่งซื้อ <strong className="text-gray-900">{orderDate}</strong>
             </span>
           </div>
 
@@ -207,7 +207,7 @@ export default function OrderConfirmationScreen({ orderData }) {
           <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-600">
             <p>
               <strong className="text-gray-900 uppercase">
-                วิธีการจัดส่ง:
+                วิธีการจัดส่ง
               </strong>{" "}
               {shippingData?.shippingMethod === "express"
                 ? "จัดส่งด่วน (2-4 วันทำการ)"
@@ -225,7 +225,7 @@ export default function OrderConfirmationScreen({ orderData }) {
 
           {/* Sent To Section */}
           <div className="text-xs sm:text-sm">
-            <h4 className="mb-2 text-sm font-bold text-gray-900">จัดส่งไปยัง:</h4>
+            <h4 className="mb-2 text-sm font-bold text-gray-900">จัดส่งไปยัง</h4>
             <div className="text-gray-700 space-y-0.5">
               <p className="font-bold text-gray-900">
                 {[shippingData?.firstName, shippingData?.lastName].filter(Boolean).join(" ") || "ลูกค้า"}
@@ -238,9 +238,9 @@ export default function OrderConfirmationScreen({ orderData }) {
                 {shippingData?.location || "ประเทศไทย"}
               </p>
               {shippingData?.phone && (
-                <p className="text-gray-500">เบอร์โทรศัพท์: {shippingData.phone}</p>
+                <p className="text-gray-500">เบอร์โทรศัพท์ {shippingData.phone}</p>
               )}
-              <p className="text-gray-500">อีเมล: {email}</p>
+              <p className="text-gray-500">อีเมล {email}</p>
             </div>
           </div>
 
