@@ -9,6 +9,7 @@ import {
   Truck,
   Plus,
   Minus,
+  Tag,
 } from "lucide-react";
 import useCartStore from "../store/cartStore.js";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
@@ -107,6 +108,16 @@ export default function CartPage() {
                           {item.name || "Apparel Item"}
                         </Link>
 
+                        {/* Lookbook Badge if item is part of a Lookbook set */}
+                        {item.lookbookName && (
+                          <div className="pt-0.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                              <Tag size={11} />
+                              เซ็ต {item.lookbookName}
+                            </span>
+                          </div>
+                        )}
+
                         {(item.color || item.size) && (
                           <div className="flex flex-wrap items-center gap-1.5 pt-1">
                             {item.color && (
@@ -122,14 +133,21 @@ export default function CartPage() {
                           </div>
                         )}
 
-                        <p className="text-base sm:text-lg font-extrabold text-gray-950 pt-2">
-                          <span>฿{item.price * (item.quantity || 1)}</span>
+                        <div className="flex items-baseline gap-2 pt-2">
+                          <span className="text-base sm:text-lg font-extrabold text-gray-950">
+                            ฿{(item.price * (item.quantity || 1)).toLocaleString()}
+                          </span>
+                          {item.originalPrice && item.originalPrice > item.price && (
+                            <span className="text-xs text-gray-400 line-through">
+                              ฿{(item.originalPrice * (item.quantity || 1)).toLocaleString()}
+                            </span>
+                          )}
                           {item.quantity > 1 && (
-                            <span className="text-xs font-normal text-gray-500 ml-1.5">
+                            <span className="text-xs font-normal text-gray-500 ml-1">
                               ฿{(item.price || 0).toLocaleString()} / ชิ้น
                             </span>
                           )}
-                        </p>
+                        </div>
                       </div>
                     </div>
 
