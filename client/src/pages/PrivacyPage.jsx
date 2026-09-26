@@ -13,7 +13,7 @@ export default function PrivacyPolicy() {
               นโยบายความเป็นส่วนตัว
             </h1>
             <p className="text-xs sm:text-sm text-gray-500">
-              บริษัท ออคเคชัน (ประเทศไทย) จำกัด &bull; อัปเดตล่าสุด:{" "}
+              บริษัท ออคเคชัน (ประเทศไทย) จำกัด &bull; อัปเดตล่าสุด{" "}
               <span className="font-medium text-gray-700">9 กรกฎาคม 2567</span>
             </p>
           </header>
@@ -252,7 +252,7 @@ export default function PrivacyPolicy() {
                 </div>
               </div>
               <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 p-2.5 rounded-lg mt-3">
-                <strong>* ข้อสังเกต:</strong> หากไม่ให้ข้อมูลที่จำเป็น
+                <strong>ข้อสังเกต</strong> หากไม่ให้ข้อมูลที่จำเป็น
                 บริษัทอาจไม่สามารถให้บริการหรือดำเนินงานตามสัญญาแก่ท่านได้
               </p>
             </section>
