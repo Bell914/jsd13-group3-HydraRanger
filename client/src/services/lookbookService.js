@@ -37,9 +37,13 @@ function normalizeItem(item) {
       variants
         .map((variant) => variant.size || variant.size_or_color)
         .filter(Boolean).length > 0
-        ? variants
-            .map((variant) => variant.size || variant.size_or_color)
-            .filter(Boolean)
+        ? Array.from(
+            new Set(
+              variants
+                .map((variant) => variant.size || variant.size_or_color)
+                .filter(Boolean)
+            )
+          )
         : item.sizes || ["S", "M", "L"],
     price: selectedVariant.price || item.price || 0,
     image:

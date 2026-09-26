@@ -65,7 +65,7 @@ app.use(requestLogger);
 // Root Welcome Endpoint
 app.get("/", (req, res) => {
   res.json({
-    message: "Welcome to OCCASION API (HydraRanger Team - Sprint 2)",
+    message: "Welcome to OCCASION API (HydraRanger Team - Sprint 3)",
     docs: "/api/health",
     version: "1.0.0",
   });

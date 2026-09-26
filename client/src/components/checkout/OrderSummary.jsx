@@ -38,51 +38,68 @@ export default function OrderSummary({
     0
   );
 
+  const lookbookSaving = cartItems.reduce(
+    (acc, item) =>
+      acc +
+      Math.max(0, (item.originalPrice || item.price) - item.price) *
+        (item.quantity || 1),
+    0
+  );
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-xs sticky top-24">
+    <div className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col">
       <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
-        <h2 className="text-xl font-bold text-gray-900">สรุปคำสั่งซื้อ</h2>
-        <span className="text-sm font-medium text-gray-600">
+        <h2 className="text-lg font-bold text-gray-900">สรุปคำสั่งซื้อ</h2>
+        <span className="text-xs font-semibold text-gray-500">
           {totalItemsCount} ชิ้น
         </span>
       </div>
 
       {/* Item List */}
-      <div className="space-y-4 max-h-96 overflow-y-auto pr-1 mb-6">
+      <div className="space-y-3 divide-y divide-gray-100 mb-4">
         {cartItems.map((item) => (
           <div
             key={item.variantId || item._id}
-            className="flex gap-4 items-start pb-4 border-b border-gray-100 last:border-0"
+            className="flex gap-3 items-start pt-2.5 first:pt-0"
           >
             {item.imageUrl ? (
               <img
                 src={item.imageUrl}
                 alt={item.name}
-                className="w-16 h-20 object-cover rounded bg-gray-100 flex-shrink-0"
+                className="w-12 h-14 sm:w-14 sm:h-16 object-cover rounded-lg bg-gray-100 flex-shrink-0"
               />
             ) : (
-              <div className="w-16 h-20 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-400 flex-shrink-0">
+              <div className="w-12 h-14 sm:w-14 sm:h-16 bg-gray-100 rounded-lg flex items-center justify-center text-[10px] text-gray-400 flex-shrink-0">
                 ไม่มีรูปภาพ
               </div>
             )}
 
-            <div className="flex-1 text-xs space-y-1">
-              <h3 className="font-bold text-sm text-gray-900 line-clamp-2">
+            <div className="flex-1 text-xs space-y-0.5 min-w-0">
+              <h3 className="font-bold text-xs sm:text-sm text-gray-900 truncate">
                 {item.name}
               </h3>
-              {item.color && (
-                <p className="text-gray-600">
-                  สี <span className="text-gray-900">{item.color}</span>
-                </p>
+              {item.lookbookName && (
+                <div className="pt-0.5">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                    <Tag size={10} />
+                    เซ็ต {item.lookbookName}
+                  </span>
+                </div>
               )}
-              {item.size && (
-                <p className="text-gray-600">
-                  ไซซ์ <span className="text-gray-900">{item.size}</span>
-                </p>
-              )}
+              <div className="text-[11px] text-gray-500 flex flex-wrap gap-x-2">
+                {item.color && <span>สี {item.color}</span>}
+                {item.size && <span>ไซซ์ {item.size}</span>}
+              </div>
               <div className="flex items-center justify-between pt-1 font-semibold text-gray-900">
-                <span>จำนวน {item.quantity} ชิ้น</span>
-                <span className="text-sm">฿{item.price * item.quantity}</span>
+                <span className="text-[11px] text-gray-500">จำนวน {item.quantity} ชิ้น</span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-xs sm:text-sm font-bold text-gray-950">฿{(item.price * item.quantity).toLocaleString()}</span>
+                  {item.originalPrice && item.originalPrice > item.price && (
+                    <span className="text-[10px] text-gray-400 line-through">
+                      ฿{(item.originalPrice * item.quantity).toLocaleString()}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -170,6 +187,13 @@ export default function OrderSummary({
           </div>
         )}
 
+        {lookbookSaving > 0 && (
+          <div className="flex justify-between text-amber-800 font-semibold bg-amber-50 px-2.5 py-1 rounded-lg text-xs sm:text-sm border border-amber-200/60">
+            <span>ประหยัดจากราคาเซ็ต Lookbook</span>
+            <span>฿{lookbookSaving.toLocaleString()}</span>
+          </div>
+        )}
+
         <div className="flex justify-between text-gray-700">
           <span>ค่าจัดส่ง</span>
           <span className="font-semibold text-gray-900">
@@ -179,7 +203,7 @@ export default function OrderSummary({
 
         <div className="flex justify-between text-base font-bold text-gray-900 pt-3 border-t border-gray-200">
           <span>ยอดชำระสุทธิ</span>
-          <span>฿{orderTotal}</span>
+          <span>฿{orderTotal.toLocaleString()}</span>
         </div>
       </div>
     </div>

@@ -10,7 +10,7 @@ export default function CheckoutStepper({ currentStep, onStepClick }) {
 
   return (
     <div className="w-full flex flex-col items-center mb-8">
-      <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-8 tracking-tight">
+      <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-6 tracking-tight">
         ชำระเงิน
       </h1>
 

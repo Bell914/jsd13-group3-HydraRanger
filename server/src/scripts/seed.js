@@ -1,14 +1,14 @@
 import mongoose from 'mongoose';
 import { connectDB } from '../config/db.js';
 import { ENV } from '../config/env.js';
-import { User, Item, Product, Lookbook, Category, Article } from '../models/index.js';
+import { User, Product, Lookbook, Category, Article } from '../models/index.js';
 import { productSeedData } from '../data/productSeedData.js';
 import { articleSeedData } from '../data/articleSeedData.js';
 import seedData from '../data/seedData.json' with { type: 'json' };
 import lookData from '../../../client/public/collection-2026/look-data.json' with { type: 'json' };
 import { buildDefaultSizeChart } from '../utils/defaultSizeCharts.js';
 
-const { initialUsers, initialItems } = seedData;
+const { initialUsers } = seedData;
 
 async function seedUsers() {
   const users = [];
@@ -40,28 +40,6 @@ async function seedUsers() {
 
   console.log(`✅ Users ready: ${users.length}`);
   return users;
-}
-
-async function seedItems(users) {
-  for (let index = 0; index < initialItems.length; index += 1) {
-    const item = initialItems[index];
-    const itemData = {
-      title: item.title,
-      description: item.description,
-      category: item.category,
-      status: item.status,
-      priority: item.priority,
-      creatorName: item.creatorName,
-      createdBy: users[index % users.length]._id
-    };
-    await Item.updateOne(
-      { title: item.title },
-      { $set: itemData },
-      { upsert: true, runValidators: true }
-    );
-  }
-
-  console.log(`✅ Items ready: ${initialItems.length}`);
 }
 
 async function seedProducts() {
@@ -199,8 +177,7 @@ async function runSeed() {
       throw new Error('MongoDB is not connected');
     }
 
-    const users = await seedUsers();
-    await seedItems(users);
+    await seedUsers();
     const products = await seedProducts();
     await seedLookbooks(products);
     await seedArticles();
