@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Heart } from "lucide-react";
+import { Heart, ShoppingBag } from "lucide-react";
 import { getLookbookById, getProductDetailUrl } from "../services/lookbookService.js";
 import { LoadingSpinner } from "../components/LoadingSpinner.jsx";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
 import { useLookbookStore } from "../store/lookbookStore.js";
 import { useAuth } from "../context/Auth/useAuth.jsx";
+import { LookbookBuySetModal } from "../components/lookbook/LookbookBuySetModal.jsx";
 
 export default function LookbookDetailPage() {
   const { lookId } = useParams();
@@ -13,6 +14,7 @@ export default function LookbookDetailPage() {
   const [look, setLook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isBuySetModalOpen, setIsBuySetModalOpen] = useState(false);
   const isFavorite = useLookbookStore((state) => state.isFavorite(lookId));
   const toggleFavorite = useLookbookStore((state) => state.toggleFavorite);
 
@@ -168,9 +170,20 @@ export default function LookbookDetailPage() {
 
             {/* Wireframe Item Cards Stack (Tops and Bottoms) */}
             <div className="flex flex-col gap-4">
-              <h2 className="text-sm font-extrabold text-primary uppercase tracking-wider">
-                สินค้าในลุคนี้
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-extrabold text-primary uppercase tracking-wider">
+                  สินค้าในลุคนี้
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setIsBuySetModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent text-white text-xs font-bold hover:bg-accent/90 transition shadow-xs cursor-pointer active:scale-98"
+                  id="buy-set-header-btn"
+                >
+                  <ShoppingBag size={14} />
+                  <span>ซื้อทั้งเซ็ต ฿{(look.setPrice || 0).toLocaleString()}</span>
+                </button>
+              </div>
 
               {items.map((item, idx) => {
                 const isTop =
@@ -268,20 +281,29 @@ export default function LookbookDetailPage() {
               </div>
             </div>
 
-            {/* Wireframe Action Button */}
+            {/* Action Buttons */}
             <div className="flex items-center gap-2">
-              {items[0] && (
-                <Link
-                  to={getProductDetailUrl(items[0].productId)}
-                  className="px-4 py-2.5 rounded-xl bg-primary text-white font-bold text-xs sm:text-sm hover:bg-primary/90 active:scale-98 transition-all shadow-sm"
-                  id="bottom-bar-action-button"
-                >
-                  เลือกสินค้าในเซ็ต
-                </Link>
-              )}
+              <button
+                type="button"
+                onClick={() => setIsBuySetModalOpen(true)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs sm:text-sm hover:bg-primary/90 active:scale-98 transition-all shadow-sm cursor-pointer"
+                id="bottom-bar-buy-set-btn"
+              >
+                <ShoppingBag size={16} />
+                <span>ซื้อทั้งเซ็ต</span>
+              </button>
             </div>
           </div>
         </aside>
+      )}
+
+      {/* Buy Set Size Selection Modal */}
+      {look && (
+        <LookbookBuySetModal
+          isOpen={isBuySetModalOpen}
+          onClose={() => setIsBuySetModalOpen(false)}
+          look={look}
+        />
       )}
     </main>
   );
