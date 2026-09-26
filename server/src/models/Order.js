@@ -22,7 +22,8 @@ const orderItemSchema = new mongoose.Schema(
     imageUrl: { type: String, default: '' },
     unitPrice: { type: Number, required: true, min: 0 },
     quantity: { type: Number, required: true, min: 1 },
-    lineTotal: { type: Number, required: true, min: 0 }
+    lineTotal: { type: Number, required: true, min: 0 },
+    lookbookId: { type: String, default: '', trim: true }
   },
   { _id: false }
 );
