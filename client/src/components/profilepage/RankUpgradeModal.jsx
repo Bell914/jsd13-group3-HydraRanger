@@ -1,5 +1,5 @@
 import React from 'react';
-import { Crown, Sparkles, Award, Shield, Medal, CheckCircle, ArrowRight, X } from 'lucide-react';
+import { Crown, Gem, Award, Shield, Medal, CheckCircle, ArrowRight, X } from 'lucide-react';
 import { getRankTheme, RANK_BENEFITS } from '../../utils/loyaltyUtils.js';
 
 export const RankUpgradeModal = ({ isOpen, onClose, newRank = 'SILVER', previousRank = 'MEMBER' }) => {
@@ -14,7 +14,7 @@ export const RankUpgradeModal = ({ isOpen, onClose, newRank = 'SILVER', previous
       case 'GOLD':
         return <Crown size={36} className="text-amber-300" />;
       case 'SILVER':
-        return <Sparkles size={36} className="text-slate-200" />;
+        return <Gem size={36} className="text-slate-200" />;
       case 'BRONZE':
         return <Medal size={36} className="text-amber-500" />;
       default:
@@ -62,7 +62,7 @@ export const RankUpgradeModal = ({ isOpen, onClose, newRank = 'SILVER', previous
         {/* Unlocked Benefits Card */}
         <div className="mt-5 text-left rounded-2xl bg-white/5 border border-white/10 p-4 backdrop-blur-xs">
           <span className="text-[11px] font-bold text-amber-200 uppercase tracking-wide block mb-2">
-            สิทธิพิเศษใหม่ที่คุณปลดล็อก:
+            สิทธิพิเศษใหม่ที่คุณปลดล็อก
           </span>
           <ul className="space-y-2 text-xs text-white/90">
             {unlockedPerks.map((perk, idx) => (

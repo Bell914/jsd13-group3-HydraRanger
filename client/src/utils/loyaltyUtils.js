@@ -32,31 +32,31 @@ export const FREE_SHIPPING_MINIMUM = {
 
 export const RANK_BENEFITS = {
   [MEMBERSHIP_RANKS.MEMBER]: [
-    'คูปองต้อนรับ (Welcome Coupon) ลด 10%',
+    'คูปองต้อนรับ ลด 10%',
     'สะสมยอดซื้ออัตโนมัติเพื่อปลดล็อกระดับถัดไป',
-    'บันทึกรายการสินค้าโปรด (Wishlist) & Favorite Lookbooks'
+    'บันทึกรายการสินค้าโปรด & Favorite Lookbooks'
   ],
   [MEMBERSHIP_RANKS.BRONZE]: [
     'ส่วนลด On-top 3% ทุกคำสั่งซื้อ',
-    'คูปองวันเกิด ลด 10% (1 สิทธิ์ในเดือนเกิด)',
-    'ส่งฟรีเมื่อซื้อครบ 850 บาท (ปกติ 1,000 บาท)'
+    'คูปองวันเกิด ลด 10% 1 สิทธิ์ในเดือนเกิด',
+    'ส่งฟรีเมื่อซื้อครบ 850 บาท ปกติ 1,000 บาท'
   ],
   [MEMBERSHIP_RANKS.SILVER]: [
     'ส่วนลด On-top 5% ทุกคำสั่งซื้อ',
-    'คูปองวันเกิด ลด 15% (1 สิทธิ์ในเดือนเกิด)',
-    'ส่งฟรีเมื่อซื้อครบ 700 บาท (ปกติ 1,000 บาท)',
+    'คูปองวันเกิด ลด 15% 1 สิทธิ์ในเดือนเกิด',
+    'ส่งฟรีเมื่อซื้อครบ 700 บาท ปกติ 1,000 บาท',
     'Early Access สิทธิ์ซื้อสินค้าคอลเลกชันใหม่ก่อนใคร 12 ชม.'
   ],
   [MEMBERSHIP_RANKS.GOLD]: [
     'ส่วนลด On-top 10% ทุกคำสั่งซื้อ',
     'คูปองวันเกิด ลด 20%',
-    'ส่งฟรีทุกคำสั่งซื้อ ไม่มีขั้นต่ำ (Free Shipping No Minimum)',
+    'ส่งฟรีทุกคำสั่งซื้อ ไม่มีขั้นต่ำ',
     'Early Access สิทธิ์ซื้อสินค้าคอลเลกชันใหม่ก่อนใคร 24 ชม.'
   ],
   [MEMBERSHIP_RANKS.PLATINUM]: [
     'ส่วนลด On-top 15% ทุกคำสั่งซื้อ',
     'คูปองวันเกิด ลด 25% + Exclusive Gift Set',
-    'ส่งฟรีทุกคำสั่งซื้อ + บริการจัดส่งด่วนพิเศษ (Priority Shipping)',
+    'ส่งฟรีทุกคำสั่งซื้อ + บริการจัดส่งด่วนพิเศษ Priority Shipping',
     'Early Access สิทธิ์ซื้อสินค้าคอลเลกชันใหม่ก่อนใคร 48 ชม.',
     'VIP Customer Care บริการดูแลช่วยเหลือพิเศษแบบส่วนตัว'
   ]
@@ -182,7 +182,7 @@ export const NEXT_RANK_PERKS = {
     targetRank: MEMBERSHIP_RANKS.BRONZE,
     highlights: [
       'ปลดล็อกส่วนลด On-top 3% ทุกคำสั่งซื้อ',
-      'ลดเกณฑ์ส่งฟรีเหลือเพียง ฿850 (จากเดิม ฿1,000)',
+      'ลดเกณฑ์ส่งฟรีเหลือเพียง ฿850 จากเดิม ฿1,000',
       'สิทธิ์ส่วนลดวันเกิด 10%'
     ]
   },
@@ -206,7 +206,7 @@ export const NEXT_RANK_PERKS = {
     targetRank: MEMBERSHIP_RANKS.PLATINUM,
     highlights: [
       'ส่วนลด On-top สูงสุด 15% ทุกคำสั่งซื้อ',
-      'จัดส่งด่วนพิเศษฟรี (Priority Free Shipping)',
+      'จัดส่งด่วนพิเศษฟรี Priority Free Shipping',
       'Early Access 48 ชม. + VIP Care & Gift Set วันเกิด'
     ]
   }
@@ -250,7 +250,7 @@ export const getCouponsForUser = (rank = MEMBERSHIP_RANKS.MEMBER, birthMonth = 8
     {
       id: 'c-welcome-5',
       code: 'WELCOME5',
-      title: 'คูปองต้อนรับสมาชิกใหม่ (Welcome Discount)',
+      title: 'คูปองต้อนรับสมาชิกใหม่',
       discountType: 'percent',
       discountValue: 5,
       minSpend: 0,
@@ -262,7 +262,7 @@ export const getCouponsForUser = (rank = MEMBERSHIP_RANKS.MEMBER, birthMonth = 8
     {
       id: 'c-welcome',
       code: 'OCCWELCOME10',
-      title: 'คูปองต้อนรับสมาชิกใหม่ (Welcome Tier)',
+      title: 'คูปองต้อนรับสมาชิกใหม่',
       discountType: 'percent',
       discountValue: 10,
       minSpend: 500,
@@ -283,13 +283,13 @@ export const getCouponsForUser = (rank = MEMBERSHIP_RANKS.MEMBER, birthMonth = 8
               : rank === MEMBERSHIP_RANKS.BRONZE
                 ? 'BRONZEVIP3'
                 : 'MEMBERPERK',
-      title: `ส่วนลดพิเศษประจำเดือน (${rank})`,
+      title: 'ส่วนลดพิเศษประจำเดือน',
       discountType: 'percent',
       discountValue: RANK_DISCOUNT_PERCENT[rank] || 3,
       minSpend: 0,
       expiresAt: 'สิ้นเดือนนี้',
       category: 'monthly',
-      badge: `Tier Perk: ${rank}`,
+      badge: `Tier Perk ${rank}`,
       usable: true
     },
     {
