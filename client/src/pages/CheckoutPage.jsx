@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
@@ -21,7 +21,6 @@ import {
   ContactSection,
   ShippingSection,
   PaymentSection,
-  ReviewSection,
   OrderSummary,
   OrderConfirmationScreen,
   SHIPPING_METHODS,
@@ -40,7 +39,7 @@ function StripePaymentForm({ onSubmit, isSubmitting }) {
     event.preventDefault();
     setError("");
 
-    if (!stripe || !elements) return;
+    if (!stripe || !elements || isSubmitting) return;
 
     try {
       await onSubmit(stripe, elements, setError);
@@ -50,7 +49,7 @@ function StripePaymentForm({ onSubmit, isSubmitting }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} aria-busy={isSubmitting} className="space-y-4">
       <PaymentElement />
       {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       <button
@@ -173,6 +172,7 @@ export default function CheckoutPage() {
   });
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [paymentData, setPaymentData] = useState({ method: "credit-card" });
+  const [paymentMethodTouched, setPaymentMethodTouched] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
   const [submitError, setSubmitError] = useState("");
@@ -414,6 +414,7 @@ export default function CheckoutPage() {
         ? "mock"
         : "stripe",
     });
+    setCurrentStep(4);
 
     if (existingOrder) {
       setPreparedOrder(null);
@@ -444,6 +445,9 @@ export default function CheckoutPage() {
           throw new Error("แบบฟอร์มบัตรยังโหลดไม่เสร็จ กรุณาลองใหม่");
         }
         if (!clientSecret) throw new Error("ไม่สามารถเริ่มรายการชำระเงินได้");
+
+        const { error: elementError } = await elements.submit();
+        if (elementError) throw new Error(elementError.message);
 
         let result;
         try {
@@ -490,6 +494,7 @@ export default function CheckoutPage() {
       );
     } catch (error) {
       console.error("Order payment failed:", error);
+      if (paymentData.method === "credit-card") setCurrentStep(3);
       const message =
         error.data?.message ||
         error.response?.data?.message ||
@@ -591,91 +596,69 @@ export default function CheckoutPage() {
                 <ShippingSection shippingData={shippingData} isCollapsed onEdit={() => goToStep(2)} />
                 <PaymentSection
                   paymentData={paymentData}
-                  onChangePayment={setPaymentData}
+                  onChangePayment={(nextPaymentData) => {
+                    setPaymentMethodTouched(true);
+                    setPaymentData(nextPaymentData);
+                  }}
                   onContinue={() => {
                     setSubmitError("");
-                    setCurrentStep(4);
+                    if (paymentData.method === "credit-card" && (!preparedOrder || !clientSecret)) {
+                      setSubmitError(intentError || "กำลังเตรียมระบบชำระเงิน กรุณารอสักครู่แล้วลองอีกครั้ง");
+                      return;
+                    }
+                    if (paymentData.method === "credit-card") {
+                      setSubmitError("กรุณากรอกข้อมูลบัตรและกดปุ่มชำระเงินด้านล่าง");
+                      return;
+                    }
+                    return handlePlaceOrder(null, null);
                   }}
                   onBack={() => goToStep(2)}
                 />
-              </>
-            )}
-
-            {currentStep === 4 && (
-              <>
-                <ContactSection email={email} isCollapsed onEdit={() => goToStep(1)} />
-                <ShippingSection shippingData={shippingData} isCollapsed onEdit={() => goToStep(2)} />
-                <PaymentSection paymentData={paymentData} isCollapsed onEdit={() => goToStep(3)} />
-
-                {paymentData.method === "credit-card" ? (
+                {paymentMethodTouched && paymentData.method === "credit-card" && stripePromise && !clientSecret && (
                   <div className="rounded-lg border border-gray-200 bg-white p-6">
                     <h2 className="mb-4 text-xl font-bold">ชำระเงินด้วย Credit / Debit Card</h2>
-                    {!clientSecret ? (
-                      <>
-                        {paymentSetupPaused ? (
-                          <button
-                            type="button"
-                            onClick={() => setPaymentSetupPaused(false)}
-                            className="rounded-lg bg-[#D0021B] px-5 py-3 font-bold text-white"
-                          >
-                            ลองชำระเงินอีกครั้ง
-                          </button>
-                        ) : (
-                          <>
-                            <Elements stripe={stripePromise}>
-                              <StripeIntentSetup
-                                orderPayload={stripeOrderPayload}
-                                onReady={(order, secret) => {
-                                  setPreparedOrder(order);
-                                  setPreparedFingerprint(checkoutFingerprint);
-                                  setClientSecret(secret || "");
-                                  setIntentError("");
-                                  setSubmitError("");
-                                }}
-                                onError={(message) => {
-                                  setIntentError(message);
-                                  setSubmitError(message);
-                                }}
-                              />
-                            </Elements>
-                            <p className="text-sm text-gray-600">
-                              {intentError || "กำลังเตรียมแบบฟอร์มชำระเงิน..."}
-                            </p>
-                          </>
-                        )}
-                      </>
+                    {paymentSetupPaused ? (
+                      <button
+                        type="button"
+                        onClick={() => setPaymentSetupPaused(false)}
+                        className="rounded-lg bg-[#D0021B] px-5 py-3 font-bold text-white"
+                      >
+                        ลองเตรียมการชำระเงินอีกครั้ง
+                      </button>
                     ) : (
-                        <Elements stripe={stripePromise} options={{ clientSecret, locale: "th" }}>
-                        <StripePaymentForm onSubmit={handlePlaceOrder} isSubmitting={isSubmitting} />
-                      </Elements>
+                      <>
+                        <Elements stripe={stripePromise}>
+                          <StripeIntentSetup
+                            orderPayload={stripeOrderPayload}
+                            onReady={(order, secret) => {
+                              setPreparedOrder(order);
+                              setPreparedFingerprint(checkoutFingerprint);
+                              setClientSecret(secret || "");
+                              setIntentError("");
+                              setSubmitError("");
+                              setPaymentSetupPaused(false);
+                            }}
+                            onError={(message) => {
+                              setIntentError(message);
+                              setSubmitError(message);
+                              setPaymentSetupPaused(true);
+                            }}
+                          />
+                        </Elements>
+                        <p className="text-sm text-gray-600">
+                          {intentError || "กำลังเตรียมแบบฟอร์มชำระเงิน..."}
+                        </p>
+                      </>
                     )}
                   </div>
-                ) : (
-                  <>
-                    <div role="status" className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                      {paymentData.method === "promptpay" ? (
-                        <div className="flex items-center gap-4">
-                          <div aria-label="QR Code จำลองสำหรับเดโม" className="grid h-24 w-24 shrink-0 grid-cols-5 gap-0.5 rounded bg-white p-1 ring-1 ring-amber-300">
-                            {[1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1].map((pixel, index) => (
-                              <span key={index} className={pixel ? "bg-gray-900" : "bg-white"} />
-                            ))}
-                          </div>
-                          <p>QR Code นี้เป็นภาพจำลองสำหรับเดโมเท่านั้น ไม่มีการรับชำระเงินจริง</p>
-                        </div>
-                      ) : (
-                        <p>PayPal (โหมดทดสอบระบบ - ไม่มีการตัดเงินจริง)</p>
-                      )}
-                    </div>
-                    <ReviewSection
-                      email={email}
-                      shippingData={shippingData}
-                      paymentData={paymentData}
-                      onEditStep={setCurrentStep}
-                      onBack={() => goToStep(3)}
-                      onPlaceOrder={() => handlePlaceOrder(null, null)}
-                      isSubmitting={isSubmitting}
-                    />
-                  </>
+                )}
+                {paymentMethodTouched && paymentData.method === "credit-card" && stripePromise && clientSecret && (
+                  <div className="rounded-lg border border-gray-200 bg-white p-6">
+                    <h2 className="mb-4 text-xl font-bold">กรอกข้อมูล Credit / Debit Card</h2>
+                    <Elements stripe={stripePromise} options={{ clientSecret, locale: "th" }}>
+                      <StripePaymentForm onSubmit={handlePlaceOrder} isSubmitting={isSubmitting} />
+                    </Elements>
+                  </div>
                 )}
               </>
             )}

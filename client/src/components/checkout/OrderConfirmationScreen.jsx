@@ -85,10 +85,14 @@ export default function OrderConfirmationScreen({ orderData }) {
 
         {/* Main Heading */}
         <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight mb-3">
-          คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!
+          {paymentMode === "mock"
+            ? "สร้างคำสั่งซื้อเดโม OCCASION แล้ว"
+            : "คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!"}
         </h2>
         <p className="mx-auto mb-6 max-w-md text-sm font-light leading-relaxed text-gray-600 sm:text-base">
-          เตรียมพร้อมยกระดับสไตล์การแต่งกายของคุณได้เลย!
+          {paymentMode === "mock"
+            ? "รายการนี้ยังรอการชำระเงินจริง จึงยังไม่ถือว่าการชำระเงินเสร็จสมบูรณ์"
+            : "เตรียมพร้อมยกระดับสไตล์การแต่งกายของคุณได้เลย!"}
         </p>
         {paymentMode === "mock" && (
           <p role="status" className="mx-auto mb-6 max-w-xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">

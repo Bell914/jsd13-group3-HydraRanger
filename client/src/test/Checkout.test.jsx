@@ -11,7 +11,7 @@ vi.stubEnv("VITE_STRIPE_PUBLISHABLE_KEY", "pk_test_checkout");
 
 const stripeMocks = vi.hoisted(() => ({
   confirmPayment: vi.fn().mockResolvedValue({ paymentIntent: { id: "pi_test", status: "succeeded" } }),
-  elements: {},
+  elements: { submit: vi.fn().mockResolvedValue({}) },
 }));
 const apiMocks = vi.hoisted(() => ({
   post: vi.fn().mockResolvedValue({ clientSecret: "pi_secret_test" }),
@@ -42,14 +42,7 @@ const fillShippingForm = () => {
 const goToCheckoutPaymentStep = () => {
   fillShippingForm();
   fireEvent.click(screen.getAllByRole("button", { name: "ดำเนินการต่อ" })[0]);
-  fireEvent.click(screen.getByRole("button", { name: "ดำเนินการต่อ" }));
-};
-
-const goToCheckoutReviewStep = (paymentMethod) => {
-  fillShippingForm();
-  fireEvent.click(screen.getAllByRole("button", { name: "ดำเนินการต่อ" })[0]);
-  fireEvent.click(screen.getByRole("button", { name: paymentMethod }));
-  fireEvent.click(screen.getByRole("button", { name: "ดำเนินการต่อ" }));
+  fireEvent.click(screen.getByRole("button", { name: "Credit / Debit Card" }));
 };
 
 describe("Checkout order integration", () => {
@@ -76,7 +69,7 @@ describe("Checkout order integration", () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToCheckoutPaymentStep();
     await screen.findByTestId("payment-element");
-    fireEvent.click(screen.getByRole("button", { name: /ชำระเงินและยืนยันคำสั่งซื้อ/i }));
+    fireEvent.click(screen.getByRole("button", { name: "ชำระเงินและยืนยันคำสั่งซื้อ" }));
 
     expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
     expect(stripeMocks.confirmPayment).toHaveBeenCalled();
@@ -88,6 +81,9 @@ describe("Checkout order integration", () => {
       apiMocks.post.mock.invocationCallOrder[0],
     );
     expect(apiMocks.post.mock.invocationCallOrder[0]).toBeLessThan(
+      stripeMocks.elements.submit.mock.invocationCallOrder[0],
+    );
+    expect(stripeMocks.elements.submit.mock.invocationCallOrder[0]).toBeLessThan(
       stripeMocks.confirmPayment.mock.invocationCallOrder[0],
     );
     expect(useCartStore.getState().cartItems).toEqual([]);
@@ -104,19 +100,19 @@ describe("Checkout order integration", () => {
     expect(useCartStore.getState().cartItems).toHaveLength(1);
   });
 
-  it("cancels the prepared order when leaving checkout step 4", async () => {
+  it("cancels the prepared order when leaving the payment step", async () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToCheckoutPaymentStep();
     await screen.findByTestId("payment-element");
 
-    fireEvent.click(screen.getAllByRole("button", { name: "แก้ไข" })[2]);
+    fireEvent.click(screen.getAllByRole("button", { name: "แก้ไข" })[1]);
 
     await waitFor(() => {
       expect(apiMocks.post).toHaveBeenCalledWith("/payment/cancel-payment-intent", {
         orderId: "order-mongo-id",
       });
     });
-    expect(screen.getByRole("heading", { name: "ช่องทางการชำระเงิน" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "ที่อยู่จัดส่ง" })).toBeInTheDocument();
   });
 
   it("cancels an order after payment fails so reserved stock can be released", async () => {
@@ -126,9 +122,9 @@ describe("Checkout order integration", () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToCheckoutPaymentStep();
     await screen.findByTestId("payment-element");
-    fireEvent.click(screen.getByRole("button", { name: /ชำระเงินและยืนยันคำสั่งซื้อ/i }));
+    fireEvent.click(screen.getByRole("button", { name: "ชำระเงินและยืนยันคำสั่งซื้อ" }));
 
-    expect(await screen.findByText("ลองชำระเงินอีกครั้ง")).toBeInTheDocument();
+    expect(await screen.findByText("ลองเตรียมการชำระเงินอีกครั้ง")).toBeInTheDocument();
     expect(apiMocks.post).toHaveBeenCalledWith("/payment/cancel-payment-intent", {
       orderId: "order-mongo-id",
     });
@@ -253,25 +249,25 @@ describe("Checkout order integration", () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     fillShippingForm();
     fireEvent.click(screen.getAllByRole("button", { name: "ดำเนินการต่อ" })[0]);
-    fireEvent.click(screen.getByRole("button", { name: "ดำเนินการต่อ" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("ระบบชำระเงินยังไม่ได้ตั้งค่า Stripe");
     fireEvent.click(screen.getByRole("button", { name: "PromptPay" }));
-    fireEvent.click(screen.getByRole("button", { name: "ดำเนินการต่อ" }));
-
-    expect(await screen.findByText("QR Code นี้เป็นภาพจำลองสำหรับเดโมเท่านั้น ไม่มีการรับชำระเงินจริง")).toBeInTheDocument();
-    expect(createOrder).not.toHaveBeenCalled();
+    expect(await screen.findByText(/QR Code จำลองสำหรับเดโมเท่านั้น/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงินและยืนยันคำสั่งซื้อ" }));
+    expect(await screen.findByText(/โหมดจำลองสำหรับเดโม.*สร้างคำสั่งซื้อสถานะรอชำระเงินเพื่อทดสอบแล้ว/)).toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledTimes(1);
   });
 
   it.each(["promptpay", "paypal"])("creates a pending demo order for %s without charging and clears the cart", async (method) => {
     const methodLabel = method === "promptpay" ? "PromptPay" : "PayPal";
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
-    goToCheckoutReviewStep(methodLabel);
-
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      method === "promptpay" ? "QR Code นี้เป็นภาพจำลอง" : "โหมดทดสอบระบบ - ไม่มีการตัดเงินจริง",
-    );
-    fireEvent.click(screen.getByRole("button", { name: "ยืนยันการสั่งซื้อ" }));
+    fillShippingForm();
+    fireEvent.click(screen.getAllByRole("button", { name: "ดำเนินการต่อ" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: methodLabel }));
+    expect(await screen.findByText(
+      method === "promptpay" ? /QR Code จำลองสำหรับเดโมเท่านั้น/ : /โหมดทดสอบระบบ - ไม่มีการตัดเงินจริง/,
+    )).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงินและยืนยันคำสั่งซื้อ" }));
 
     expect(await screen.findByText(/โหมดจำลองสำหรับเดโม.*สร้างคำสั่งซื้อสถานะรอชำระเงินเพื่อทดสอบแล้ว/)).toBeInTheDocument();
     expect(createOrder).toHaveBeenCalledTimes(1);

@@ -16,20 +16,24 @@ export default function PaymentSection({
   onBack,
 }) {
   const selectedMethod = paymentData.method || "credit-card";
+  const isStripeConfigured = Boolean(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
   const SelectedPaymentIcon = PAYMENT_OPTIONS.find((option) => option.id === selectedMethod)?.icon || CreditCard;
   const [error, setError] = useState("");
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     setError("");
 
-    if (selectedMethod === "credit-card" && !import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
-      setError("ระบบชำระเงินยังไม่ได้ตั้งค่า Stripe");
+    if (selectedMethod === "credit-card" && !isStripeConfigured) {
       return;
     }
 
     onChangePayment({ method: selectedMethod });
-    onContinue();
+    try {
+      await onContinue();
+    } catch (submitError) {
+      setError(submitError.message || "ไม่สามารถดำเนินการชำระเงินได้ กรุณาลองอีกครั้ง");
+    }
   }
 
   if (isCollapsed) {
@@ -80,7 +84,7 @@ export default function PaymentSection({
               </button>
               {isSelected && option.id === "credit-card" && (
                 <p className="border-t bg-gray-50 p-4 text-sm text-gray-600">
-                  กรอกข้อมูลบัตรอย่างปลอดภัยผ่าน Stripe ในขั้นตอนถัดไป
+                  กรอกข้อมูลบัตรด้านล่าง แล้วกดปุ่มชำระเงินเพื่อยืนยันคำสั่งซื้อ
                 </p>
               )}
               {isSelected && option.id === "promptpay" && (
@@ -104,15 +108,21 @@ export default function PaymentSection({
           );
         })}
 
-        {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
+        {(error || (selectedMethod === "credit-card" && !isStripeConfigured)) && (
+          <p role="alert" className="text-xs text-red-600">
+            {error || "ระบบชำระเงินยังไม่ได้ตั้งค่า Stripe"}
+          </p>
+        )}
 
         <div className="flex flex-col-reverse items-center gap-3 pt-6 sm:flex-row sm:gap-4">
           <button type="button" onClick={onBack} className="w-full rounded-lg bg-gray-200 py-3.5 text-sm font-semibold text-gray-800 sm:w-36">
             ย้อนกลับ
           </button>
-          <button type="submit" className="w-full rounded-lg bg-[#D0021B] py-3.5 text-sm font-bold tracking-wider text-white sm:flex-1">
-            ดำเนินการต่อ
-          </button>
+          {selectedMethod !== "credit-card" && (
+            <button type="submit" className="w-full rounded-lg bg-[#D0021B] py-3.5 text-sm font-bold tracking-wider text-white sm:flex-1">
+              จำลองการชำระเงินและยืนยันคำสั่งซื้อ
+            </button>
+          )}
         </div>
       </form>
     </div>
