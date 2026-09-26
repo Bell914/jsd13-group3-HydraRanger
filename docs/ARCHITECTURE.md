@@ -130,6 +130,6 @@ Environment สำคัญอยู่ใน `server/.env.example`, `client/.en
 ## ขอบเขตและ Legacy
 
 - Cart ยังเป็น client state และไม่มี Cart route/model ฝั่ง Server
-- `/items` และ `Item` เป็น compatibility layer; Product flow หลักใช้ `/products` และ `Product`
+- Product flow ใช้ `/products` และ `Product`; scaffold Item CRUD ถูกนำออกแล้ว
 - Review feature ถูกถอดแล้ว
 - Production readiness ต้องยืนยัน environment, database indexes, email, Stripe webhook, Gemini และ staging data ก่อน deploy

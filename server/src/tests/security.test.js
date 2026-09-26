@@ -7,6 +7,7 @@ import { validate } from '../middleware/validatorMiddleware.js';
 import { validateLoginInput } from '../validators/authValidator.js';
 import { generateToken } from '../services/authService.js';
 import { errorHandler } from '../middleware/errorMiddleware.js';
+import { getDBStatus } from '../config/db.js';
 
 function createResponse() {
   return {
@@ -22,6 +23,14 @@ function createResponse() {
     }
   };
 }
+
+test('health database status does not expose the connection URI', () => {
+  const status = getDBStatus();
+
+  assert.equal(Object.hasOwn(status, 'uri'), false);
+  assert.equal(typeof status.isConnected, 'boolean');
+  assert.equal(typeof status.readyState, 'number');
+});
 
 test('CORS accepts configured websites and rejects lookalike domains', () => {
   const allowedOrigins = buildAllowedOrigins({

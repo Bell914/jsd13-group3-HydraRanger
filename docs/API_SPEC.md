@@ -18,7 +18,6 @@ API ที่ต้อง Login อ่าน HttpOnly cookie แยกระห�
 | GET | `/uploads/:id` | อ่านรูปจาก GridFS |
 | POST | `/recommend` | วิเคราะห์รูป Mix & Match สูงสุด 2 รูป |
 | POST | `/contact` | ส่งแบบฟอร์มติดต่อหลังผ่าน validation |
-| GET | `/items`, `/items/:id` | Legacy Item API สำหรับ compatibility |
 
 `POST /recommend` รับ multipart fields ชื่อ `top` และ `bottom` อย่างน้อยหนึ่งรูป รองรับ JPG, PNG, WebP และ GIF ไม่เกิน 5 MB ต่อไฟล์ ระบบตรวจ MIME และ file signature ก่อนส่งให้ Gemini หากรูปไม่ใช่เสื้อผ้าจะคืน `422` พร้อม `data.invalidSlots`
 
@@ -57,8 +56,6 @@ SMTP ต้องตั้ง `SMTP_USER` และ `SMTP_PASS` ก่อน For
 | POST | `/payment/create-payment-intent` | สร้างหรือใช้ Stripe PaymentIntent เดิมของ Order |
 | POST | `/payment/cancel-payment-intent` | ยกเลิก PaymentIntent ที่ยังชำระไม่สำเร็จ |
 | POST | `/coupons/validate` | ตรวจ Coupon กับผู้ใช้และยอดสั่งซื้อ |
-| POST | `/items` | เพิ่ม Legacy Item; ต้อง Login |
-| PUT, DELETE | `/items/:id` | แก้/ลบ Legacy Item; ต้อง Login |
 
 Stripe ส่ง webhook เข้า `POST /api/payment/webhook` โดย Server ตรวจ `STRIPE_WEBHOOK_SECRET` ก่อนเปลี่ยนสถานะ Order
 
@@ -166,5 +163,5 @@ Review endpoints ไม่มีอยู่ในระบบปัจจุบ
 ## ขอบเขตที่ยังไม่มี
 
 - Cart อยู่ใน Customer Client; ยังไม่มี Cart model หรือ `/cart` route
-- `/items` เป็น legacy compatibility API ส่วน Product flow หลักใช้ `/products`
+- Product flow ใช้ `/products`; scaffold `/items` ถูกนำออกแล้ว
 - Review feature ถูกถอดออกแล้ว

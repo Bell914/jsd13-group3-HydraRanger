@@ -14,7 +14,6 @@
 | Order | orderNumber, user, customerEmail, items, shippingAddress, payment fields, totals, couponCode, status, stock flags | Checkout, Payment และ Order History |
 | Coupon | code, userId, discountValue, type, minPurchase, eventName, isActive, isUsed, orderId, expiresAt | Welcome และ General Coupon |
 | RateLimitEntry | `_id` bucket key, count, expiresAt | ตัวนับ rate limit ร่วมหลาย instance |
-| Item | legacy item fields | Compatibility API `/items` |
 | StockAdjustment | product/variant reference, quantity/reason fields | Model สำหรับประวัติการปรับ stock; ยังไม่มี route หลักใน API |
 
 Review model ไม่มีอยู่ในระบบปัจจุบัน
@@ -87,9 +86,79 @@ erDiagram
     USER ||--o{ COUPON : owns
     USER }o--o{ LOOKBOOK : favorites
     CATEGORY ||--o{ PRODUCT : groups
+    PRODUCT ||--o{ STOCK_ADJUSTMENT : records
     PRODUCT ||--o{ ORDER : snapshotted_in
     PRODUCT }o--o{ LOOKBOOK : included_in
     ORDER ||--o| COUPON : consumes
+
+    USER {
+      ObjectId _id
+      string email
+      string role
+      boolean isActive
+      object membership
+      object sizeProfile
+      array addresses
+    }
+    CATEGORY {
+      ObjectId _id
+      string name
+      string slug
+    }
+    PRODUCT {
+      ObjectId _id
+      string productId
+      ObjectId category_id
+      string title
+      boolean is_active
+      array images
+      array variants
+      array size_chart
+    }
+    ORDER {
+      ObjectId _id
+      ObjectId user
+      string orderNumber
+      array items
+      object shippingAddress
+      string status
+      number totalAmount
+    }
+    COUPON {
+      ObjectId _id
+      ObjectId userId
+      ObjectId orderId
+      string code
+      string type
+      boolean isActive
+      date expiresAt
+    }
+    LOOKBOOK {
+      ObjectId _id
+      string lookbookId
+      array items
+      boolean isActive
+    }
+    ARTICLE {
+      ObjectId _id
+      string title
+      string category
+      boolean isPublished
+    }
+    STOCK_ADJUSTMENT {
+      ObjectId _id
+      ObjectId product
+      ObjectId variant
+      number quantity
+      string reason
+    }
+    RATE_LIMIT_ENTRY {
+      string _id
+      number count
+      date expiresAt
+    }
 ```
 
-Cart ยังอยู่ใน Customer Client และไม่มี Cart model ใน Server
+`Article` และ `RateLimitEntry` เป็น collection อิสระที่ไม่มี foreign key บังคับ ส่วนรูปที่อัปโหลดเก็บใน GridFS ด้วย `fs.files` และ `fs.chunks`
+
+Cart ยังอยู่ใน Customer Client และไม่มี Cart model ใน Server Review model และ scaffold Item model ไม่มีอยู่ในระบบปัจจุบัน

@@ -2,7 +2,6 @@ import { Router } from "express";
 import authRoutes from "./authRoutes.js";
 import userRoutes from "./userRoutes.js";
 import { getDBStatus } from "../config/db.js";
-import itemRoutes from "./itemRoutes.js";
 import productRoutes from "./productRoutes.js";
 import adminProductRoutes from "./adminProductRoutes.js";
 import adminDashboardRoutes from "./adminDashboardRoutes.js";
@@ -27,7 +26,7 @@ const router = Router();
 router.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "OCCASION API Server (Sprint 2)",
+    message: "OCCASION API Server (Sprint 3)",
     health: "/api/health",
     endpoints: {
       health: "/api/health",
@@ -49,8 +48,18 @@ router.get("/health", (req, res) => {
     message: "Server is running",
     status: "online",
     timestamp: new Date().toISOString(),
-    service: "OCCASION API Server (Sprint 2)",
+    service: "OCCASION API Server (Sprint 3)",
     database: getDBStatus(),
+    services: {
+      passwordEmailConfigured: Boolean(
+        (process.env.SMTP_USER || process.env.EMAIL_USER) &&
+        (process.env.SMTP_PASS || process.env.EMAIL_PASS),
+      ),
+      paymentConfigured: Boolean(
+        process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET,
+      ),
+      recommendationConfigured: Boolean(process.env.GEMINI_API_KEY),
+    },
   });
 });
 
@@ -58,7 +67,6 @@ router.get("/health", (req, res) => {
 router.use("/auth", authRoutes);
 router.use("/admin/auth", adminAuthRoutes);
 router.use("/users", userRoutes);
-router.use("/items", itemRoutes);
 router.use("/products", productRoutes);
 router.use("/admin/products", adminProductRoutes);
 router.use("/admin/dashboard", adminDashboardRoutes);

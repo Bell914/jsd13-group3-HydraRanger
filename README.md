@@ -145,6 +145,7 @@ npm run backfill:size-charts --prefix server
 - [Documentation Index](docs/README.md)
 - [API Specification](docs/API_SPEC.md)
 - [Database Schema](docs/DATABASE_SCHEMA.md)
+- [Use Case Diagram](docs/USE_CASE_DIAGRAM.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Loyalty Business Rules](docs/LOYALTY_BUSINESS_RULES.md)
 - [Review Slides Outline](docs/REVIEW_SLIDES.md)
