@@ -23,7 +23,7 @@ export const ENV = {
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || "",
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || "",
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
-  GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+  GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite",
   TRUST_PROXY: process.env.TRUST_PROXY
     ? Number.parseInt(process.env.TRUST_PROXY, 10)
     : process.env.NODE_ENV === "production" ? 1 : false,

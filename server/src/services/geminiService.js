@@ -43,6 +43,61 @@ Rules:
 Lookbooks:
 `;
 
+const REQUEST_TIMEOUT_MS = 45000;
+const RETRY_DELAY_MS = 1500;
+const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
+
+async function fetchWithRetry(url, body, attempt = 0) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      if (attempt === 0 && RETRYABLE_STATUSES.has(response.status)) {
+        console.warn(
+          `♻️  [Gemini] HTTP ${response.status} transient error → retry 1: ${text.slice(0, 200)}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+        return fetchWithRetry(url, body, attempt + 1);
+      }
+      const error = new Error(
+        `Gemini request failed (${response.status}): ${text.slice(0, 300)}`,
+      );
+      error.code = "GEMINI_HTTP";
+      error.status = response.status;
+      throw error;
+    }
+
+    return response;
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      const timeoutError = new Error(
+        `Gemini request timed out after ${REQUEST_TIMEOUT_MS}ms`,
+      );
+      timeoutError.code = "GEMINI_HTTP";
+      timeoutError.status = 504;
+      throw timeoutError;
+    }
+    if (attempt === 0 && error?.name === "TypeError") {
+      console.warn(
+        `♻️  [Gemini] network error → retry 1: ${error.message}`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      return fetchWithRetry(url, body, attempt + 1);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 /**
  * Call Gemini with one or two images and ask for a structured description.
  * @param {Array<{mimeType: string, data: string, frame: 'top'|'bottom'}>} images
@@ -80,20 +135,7 @@ export async function analyzeClothingImage(images) {
     ENV.GEMINI_MODEL,
   )}:generateContent?key=${encodeURIComponent(ENV.GEMINI_API_KEY)}`;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    const error = new Error(
-      `Gemini request failed (${response.status}): ${text.slice(0, 300)}`,
-    );
-    error.code = "GEMINI_HTTP";
-    throw error;
-  }
+  const response = await fetchWithRetry(url, body);
 
   const result = await response.json();
   const text = result?.candidates?.[0]?.content?.parts
@@ -208,20 +250,7 @@ export async function rankLookbooks(images, lookbooks) {
     ENV.GEMINI_MODEL,
   )}:generateContent?key=${encodeURIComponent(ENV.GEMINI_API_KEY)}`;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(buildGeminiBody(RANK_PROMPT, parts)),
-  });
-
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    const error = new Error(
-      `Gemini rank request failed (${response.status}): ${text.slice(0, 300)}`,
-    );
-    error.code = "GEMINI_HTTP";
-    throw error;
-  }
+  const response = await fetchWithRetry(url, buildGeminiBody(RANK_PROMPT, parts));
 
   const result = await response.json();
   const text = result?.candidates?.[0]?.content?.parts
