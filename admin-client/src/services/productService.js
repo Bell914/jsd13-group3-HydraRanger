@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5002/api';
+import { adminRequest } from './adminApi.js';
 export function normalizeProduct(product) {
   const category = product.category_id?.slug || product.category || '';
   const imageUrl = product.imageUrl || product.images?.[0]?.image_url || '';
@@ -30,27 +30,11 @@ export function normalizeProduct(product) {
 }
 
 async function request(path, options = {}) {
-  try {
-    const response = await fetch(API_BASE_URL + path, {
-      ...options,
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-      }
-    });
-
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(result.message || 'ทำรายการสินค้าไม่สำเร็จ');
-    }
-    return result;
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new Error('เชื่อมต่อ Product API ไม่ได้ กรุณาตรวจสอบว่า Server เปิดอยู่');
-    }
-    throw error;
-  }
+  return adminRequest(path, {
+    ...options,
+    errorMessage: 'ทำรายการสินค้าไม่สำเร็จ',
+    networkMessage: 'เชื่อมต่อ Product API ไม่ได้ กรุณาตรวจสอบว่า Server เปิดอยู่'
+  });
 }
 
 export function prepareProduct(product) {

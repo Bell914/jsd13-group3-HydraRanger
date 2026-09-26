@@ -2,7 +2,7 @@
 
 เว็บไซต์ E-commerce เสื้อผ้า Unisex พร้อม Lookbook ของทีม **HydraRanger** ในหลักสูตร Generation Thailand Junior Software Developer รุ่น JSD13 ใช้ MongoDB, Express, React และ Node.js โดยแยกหน้าร้าน ระบบ Admin และ API
 
-> **สถานะ:** เวอร์ชันระหว่างพัฒนา ยังไม่ใช่ Final version
+> **สถานะ:** ฟีเจอร์หลักพัฒนาเสร็จสมบูรณ์แล้ว อยู่ระหว่างขั้นตอน integration testing, deployment verification และเตรียมความพร้อมสำหรับการนำเสนอ Final Project
 
 ## ลิงก์
 
@@ -60,6 +60,10 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=
 SMTP_PASS=
+# Stripe: keep both values private and never commit this file.
+STRIPE_SECRET_KEY=sk_test_replace_with_your_secret_key
+# Obtained from `stripe listen` locally, or from the Webhooks page in Stripe Dashboard.
+STRIPE_WEBHOOK_SECRET=whsec_replace_with_your_webhook_secret
 ```
 
 ### 3. ตั้งค่า Frontend ทั้งสองแอป
@@ -68,12 +72,28 @@ SMTP_PASS=
 
 ```dotenv
 VITE_API_BASE_URL=http://localhost:5002/api
+# This key is intentionally usable by the browser; do not put STRIPE_SECRET_KEY here.
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_replace_with_your_publishable_key
 ```
 
 - ถ้าไม่ตั้งค่า หน้าร้านจะไปเรียก API บน Render แทน localhost
 - เปลี่ยนค่าแล้วต้องเปิด development server ใหม่ หรือ build และ deploy ใหม่
 
-### 4. เปิดระบบ
+### 4. ตั้งค่า Stripe (เฉพาะการจ่ายบัตร)
+
+ระบบมี Stripe Payment Element, PaymentIntent และ webhook อยู่แล้ว จึงไม่ต้องเพิ่ม package หรือ route อีก. ใส่ `STRIPE_SECRET_KEY` ใน `server/.env` และ `VITE_STRIPE_PUBLISHABLE_KEY` ใน `client/.env` ตามตัวอย่างด้านบน แล้วเปิด server ใหม่
+
+การชำระเงินที่สำเร็จจะเปลี่ยนสถานะ order ผ่าน webhook เท่านั้น. สำหรับ local development ให้ติดตั้งและ login [Stripe CLI](https://docs.stripe.com/stripe-cli), แล้วรันคำสั่งนี้ใน terminal แยก:
+
+```bash
+stripe listen --forward-to localhost:5002/api/payment/webhook
+```
+
+นำค่า `whsec_...` ที่ Stripe CLI แสดงมาใส่เป็น `STRIPE_WEBHOOK_SECRET` ใน `server/.env` แล้ว restart server. สำหรับ production ให้สร้าง webhook endpoint เป็น `https://<your-api-host>/api/payment/webhook`, เลือก event `payment_intent.succeeded` และใช้ signing secret ของ endpoint production (ไม่ใช่ secret จาก Stripe CLI).
+
+ใช้บัตรทดสอบ `4242 4242 4242 4242`, วันหมดอายุใดก็ได้ในอนาคต และ CVC 3 หลัก. อย่าใช้หรือ commit Secret Key ที่เคยแชร์ในแชต; ให้ rotate คีย์นั้นใน Stripe Dashboard ก่อนใช้งานต่อ.
+
+### 5. เปิดระบบ
 
 เปิด 3 Terminal ที่โฟลเดอร์หลัก แล้วรันแยกกัน:
 
@@ -106,6 +126,13 @@ npm run test:conn --prefix server
 ```
 
 คำสั่งเหล่านี้เป็นคำสั่งที่มีใน `package.json` ไม่ได้หมายความว่าผลทดสอบผ่านแล้ว และ `test:conn` ต้องตั้ง environment กับเปิดฐานข้อมูลให้พร้อมก่อน
+
+ถ้าฐานข้อมูลทดสอบมีสินค้าเก่าที่ยังไม่มี `size_chart` ให้ตรวจรายการก่อน แล้วจึงเติมเฉพาะสินค้าหมวด Tops/Bottoms ที่มีไซส์มาตรฐาน:
+
+```bash
+npm run backfill:size-charts --prefix server -- --dry-run
+npm run backfill:size-charts --prefix server
+```
 
 ## เอกสารและการทำงานร่วมกัน
 

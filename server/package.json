@@ -8,10 +8,13 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "seed": "node src/scripts/seed.js",
+    "backfill:size-charts": "node src/scripts/backfillSizeCharts.js",
     "test": "node --test src/tests/*.test.js",
     "test:conn": "node src/scripts/testConnection.js",
     "test:loyalty": "node src/scripts/testLoyaltyBackend.js",
     "test:coupon": "node src/scripts/testCouponBackend.js",
+    "test:stripe": "node src/scripts/testStripe.js",
+    "test:payment": "node src/scripts/testPaymentFlow.js",
     "test:security": "NODE_ENV=production JWT_SECRET=test-only-secret node --test src/tests/*.test.js"
   },
   "keywords": [

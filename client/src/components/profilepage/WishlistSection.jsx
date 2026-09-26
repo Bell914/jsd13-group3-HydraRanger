@@ -16,7 +16,7 @@ export const WishlistSection = ({ items, onRemove }) => {
   return (
     <div>
       <h3 className="text-lg font-bold text-primary border-b border-occasion-border/40 pb-4 mb-4">
-        รายการโปรด (Wishlist)
+        รายการโปรด
       </h3>
       {wishlistItems.length === 0 ? (
         <EmptyState

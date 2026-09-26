@@ -13,7 +13,7 @@ export const TermAndCondition = () => {
               ข้อกำหนดและเงื่อนไขการใช้บริการ
             </h1>
             <p className="text-xs sm:text-sm text-gray-500">
-              บริษัท ออกเคชั่น (ประเทศไทย) จำกัด &bull; อัปเดตล่าสุด:{" "}
+              บริษัท ออกเคชั่น (ประเทศไทย) จำกัด &bull; อัปเดตล่าสุด{" "}
               <span className="font-medium text-gray-700">30 กรกฎาคม 2569</span>
             </p>
           </header>
@@ -249,7 +249,7 @@ export const TermAndCondition = () => {
                 และมีหลักฐานวิดีโอขณะเปิดกล่องพัสดุอย่างชัดเจน
               </p>
               <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 p-4 rounded-lg mt-2 ">
-                <strong>* ข้อกำหนดเพิ่มเติม:</strong> สินค้าประเภทดิจิทัล
+                <strong>ข้อกำหนดเพิ่มเติม</strong> สินค้าประเภทดิจิทัล
                 สินค้าสั่งทำพิเศษ (Made-to-order)
                 หรือสินค้าจัดรายการลดราคาล้างสต็อก
                 จะไม่สามารถขอคืนเงินหรือเปลี่ยนคืนได้ทุกกรณี

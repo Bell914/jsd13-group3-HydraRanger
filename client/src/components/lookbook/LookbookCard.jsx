@@ -118,7 +118,7 @@ export default function LookbookCard({ look, isInitialFavorited = false }) {
             </span>
           )}
           <span className="text-[11px] text-secondary ml-auto">
-            (Tops & Bottoms {itemsCount} ชิ้น)
+            Tops & Bottoms {itemsCount} ชิ้น
           </span>
         </div>
       </div>
@@ -129,7 +129,7 @@ export default function LookbookCard({ look, isInitialFavorited = false }) {
         className="block w-full text-center py-3 px-4 rounded-xl border-2 border-primary bg-white text-primary font-bold text-sm sm:text-base hover:bg-primary hover:text-white transition-all shadow-xs"
         id={`button-view-look-${look.id}`}
       >
-        ดูรายละเอียดลุค (VIEW LOOK)
+        ดูรายละเอียดลุค
       </Link>
     </article>
   );

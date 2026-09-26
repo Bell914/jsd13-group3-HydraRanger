@@ -9,6 +9,7 @@ const menuItems = [
   { path: '/customers', label: 'Customers' },
   { path: '/lookbooks', label: 'Lookbooks' },
   { path: '/articles', label: 'Articles' },
+  { path: '/coupons', label: 'Coupons' },
 ];
 
 export function AdminSidebar({ isOpen, onClose }) {
@@ -28,7 +29,7 @@ export function AdminSidebar({ isOpen, onClose }) {
       </header>
 
       <nav className="sidebar-nav" aria-label="เมนูหลัก">
-        <p className="nav-group-label">ภาพรวม (Overview)</p>
+        <p className="nav-group-label">Overview</p>
         {menuItems.map(({ path, label }) => (
           <NavLink
             key={path}
@@ -42,7 +43,7 @@ export function AdminSidebar({ isOpen, onClose }) {
       </nav>
 
       <button type="button" className="sidebar-logout" onClick={logout}>
-        ออกจากระบบ
+        Log out
       </button>
     </aside>
   );

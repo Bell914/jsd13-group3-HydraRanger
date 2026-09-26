@@ -28,13 +28,12 @@ export function AdminNotifications({ items = [] }) {
     <div className="notification-area">
       <button
         type="button"
-        className="notification"
+        className={`notification ${items.length > 0 ? 'has-notifications' : ''}`}
         onClick={toggleNotifications}
         aria-label="ดูการแจ้งเตือน"
         aria-expanded={isOpen}
       >
         <Bell size={18} />
-        {items.length > 0 && <span />}
       </button>
 
       {isOpen && (

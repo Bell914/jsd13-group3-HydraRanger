@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-:root { font-family: "Prompt", ui-sans-serif, system-ui, sans-serif; color: #0046a7; background: #fcf4ee; }
+:root { font-family: "Prompt", "Kanit", system-ui, sans-serif; color: #0046a7; background: #fcf4ee; }
 
 @theme {
   --color-background: #fcf4ee;
@@ -11,7 +11,7 @@
   --color-primary-hover: #003985;
   --color-accent-hover: #b81159;
   --color-occasion-border: #a6afc4;
-  --font-sans: "Prompt", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Prompt", "Kanit", system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
 html { min-width: 320px; }
@@ -31,16 +31,14 @@ h1 { margin: 0; }
 .error { padding: 10px 12px; border-radius: 10px; background: #fef2f2; color: #b91c1c; font-size: 13px; }
 .error-panel { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; padding: 12px 14px; border: 1px solid #fecaca; border-radius: 10px; background: #fef2f2; color: #b91c1c; font-size: 13px; font-weight: 700; }
 .error-panel button { flex: 0 0 auto; padding: 7px 11px; border: 1px solid #fca5a5; border-radius: 7px; background: #fff; color: #b91c1c; font-weight: 700; }
-form { display: grid; gap: 9px; margin-top: 26px; }
-form label { margin-top: 8px; color: #374151; font-size: 13px; font-weight: 700; }
-form input { width: 100%; padding: 13px 14px; border: 1px solid #d1d5db; border-radius: 10px; outline: none; }
-form input:focus { border-color: #e2156d; box-shadow: 0 0 0 3px #ffd6e7; }
-form button { margin-top: 14px; padding: 14px; border: 0; border-radius: 10px; background: #e2156d; color: #fff; font-weight: 800; }
-.password-field { position: relative; }
-.password-field input { padding-right: 92px; }
-form .password-toggle { position: absolute; top: 50%; right: 8px; display: inline-flex; align-items: center; gap: 5px; min-height: 34px; margin: 0; padding: 6px 8px; transform: translateY(-50%); border: 0; border-radius: 7px; background: transparent; color: #6b7280; font-size: 12px; font-weight: 700; }
-form .password-toggle:hover { background: #fff0f6; color: #e2156d; }
-form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset: 1px; }
+.login-card form { display: grid; gap: 9px; margin-top: 26px; }
+.login-card form label { margin-top: 8px; color: #374151; font-size: 13px; font-weight: 700; }
+.login-card form input { width: 100%; padding: 13px 14px; border: 1px solid #d1d5db; border-radius: 10px; outline: none; }
+.login-card form input:focus { border-color: #e2156d; box-shadow: 0 0 0 3px #ffd6e7; }
+.login-card form button { margin-top: 14px; padding: 14px; border: 0; border-radius: 10px; background: #e2156d; color: #fff; font-weight: 800; }
+.login-card form .password-toggle { position: absolute; top: 50%; right: 8px; display: inline-flex; align-items: center; gap: 5px; min-height: 34px; margin: 0; padding: 6px 8px; transform: translateY(-50%); border: 0; border-radius: 7px; background: transparent; color: #6b7280; font-size: 12px; font-weight: 700; }
+.login-card form .password-toggle:hover { background: #fff0f6; color: #e2156d; }
+.login-card form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset: 1px; }
 
 .admin-shell { min-height: 100vh; display: grid; grid-template-columns: 256px minmax(0, 1fr); }
 .admin-sidebar { position: sticky; top: 0; z-index: 30; height: 100vh; display: flex; flex-direction: column; background: #fff; border-right: 1px solid #e5e7eb; }
@@ -70,8 +68,9 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
 .admin-profile { display: flex; align-items: center; gap: 16px; color: #374151; font-size: 13px; }
 .notification-area { position: relative; }
 .notification { position: relative; padding: 8px; border: 0; background: transparent; color: #9ca3af; }
+.notification.has-notifications { color: #dc2626; }
+.notification.has-notifications:hover, .notification.has-notifications[aria-expanded="true"] { border-radius: 8px; background: #fff0f6; color: #b91c1c; }
 .notification:hover, .notification[aria-expanded="true"] { border-radius: 8px; background: #fff0f6; color: #e2156d; }
-.notification span { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: #ef4444; }
 .notification-panel { position: absolute; top: calc(100% + 8px); right: 0; z-index: 40; width: min(300px, calc(100vw - 24px)); padding: 14px; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; box-shadow: 0 12px 30px rgba(15, 23, 42, .14); }
 .notification-panel strong { color: #1f2937; font-size: 13px; }
 .notification-panel p { margin: 10px 0 0; color: #6b7280; font-size: 12px; }
@@ -139,7 +138,6 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
 .page-button { padding: 6px 11px; border: 0; border-radius: 6px; background: #0046a7; color: #fff; }
 .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
 .summary-card { padding: 18px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .04); }
-.summary-icon { width: 38px; height: 38px; display: grid; place-items: center; margin-bottom: 14px; border-radius: 10px; background: #fdf2f8; color: #e2156d; }
 .summary-card p { margin: 0; color: #6b7280; font-size: 13px; }
 .summary-card > strong { display: block; margin: 5px 0; color: #1f2937; font-size: 22px; }
 .summary-card small { color: #059669; font-size: 12px; }
@@ -170,6 +168,8 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
 .dashboard-error { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; padding: 14px 16px; border: 1px solid #fecaca; border-radius: 10px; background: #fef2f2; color: #b91c1c; }
 .dashboard-error p { margin: 0; }
 .dashboard-message { padding: 30px; color: #6b7280; text-align: center; }
+.coupon-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.coupon-alert { display: block; width: fit-content; margin-top: 4px; padding: 2px 6px; background: #fff7ed; color: #c2410c; font-weight: 800; }
 .live-data-note { margin: 18px 0 0; color: #6b7280; font-size: 11px; text-align: right; }
 .checking { min-height: 100vh; display: grid; place-items: center; color: #6b7280; }
 .modal-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 22px; overflow-y: auto; background: rgba(17, 24, 39, .55); }
@@ -350,9 +350,8 @@ form .password-toggle:focus-visible { outline: 2px solid #e2156d; outline-offset
   .table-footer { align-items: flex-start; gap: 8px; }
 }
 
-/* Shared admin presentation: square controls and readable labels. */
-.admin-shell *, .login-shell * { border-radius: 0 !important; }
-.admin-shell, .login-shell { font-family: "Prompt", ui-sans-serif, system-ui, sans-serif; font-size: 16px; }
+/* Shared admin presentation with readable labels. */
+.admin-shell, .login-shell { font-family: "Prompt", "Kanit", system-ui, sans-serif; font-size: 16px; }
 .admin-topbar { min-height: 68px; }
 .topbar-title, .admin-profile { font-size: 16px; }
 .primary-action { min-width: 150px; min-height: 46px; padding: 10px 16px; font-size: 16px; }

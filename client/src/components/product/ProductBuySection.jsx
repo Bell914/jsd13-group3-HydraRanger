@@ -112,7 +112,7 @@ export const ProductBuySection = ({
         {/* Color Selection */}
         <div className="mt-5">
           <p className="text-sm font-bold text-primary mb-2">
-            สี : <span className="font-semibold text-secondary">{selectedColor || "เลือกสี"}</span>
+            สี <span className="font-semibold text-secondary">{selectedColor || "เลือกสี"}</span>
           </p>
           <div className="flex items-center gap-2.5">
             {colors.map((colorObj) => {
@@ -155,7 +155,7 @@ export const ProductBuySection = ({
           />
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-bold text-primary">
-              ขนาด : <span className="text-secondary font-semibold">{selectedSize}</span>
+              ขนาด <span className="text-secondary font-semibold">{selectedSize}</span>
             </span>
             <button
               type="button"
@@ -194,7 +194,7 @@ export const ProductBuySection = ({
             })}
           </div>
           <p className="mt-2 text-[11px] text-secondary">
-            ขนาด: ผู้หญิง {selectedSize} (ทรง Relaxed พอดีตัว)
+            ขนาด ผู้หญิง {selectedSize} (ทรง Relaxed พอดีตัว)
           </p>
         </div>
 
