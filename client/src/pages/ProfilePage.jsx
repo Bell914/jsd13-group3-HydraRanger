@@ -25,7 +25,7 @@ import { CouponsSection } from "../components/profilepage/CouponsSection.jsx";
 const tabs = [
   { id: "profile", label: "ข้อมูลส่วนตัว", icon: User },
   { id: "membership", label: "Membership & Loyalty", icon: Crown },
-  { id: "coupons", label: "คูปองและรางวัล (Vouchers)", icon: Ticket },
+  { id: "coupons", label: "คูปองและรางวัล", icon: Ticket },
   { id: "size-profile", label: "Size & Fit", icon: Ruler },
   { id: "wishlist", label: "Wishlist", icon: Heart },
   { id: "lookbooks", label: "Favorite Lookbooks", icon: BookOpen },

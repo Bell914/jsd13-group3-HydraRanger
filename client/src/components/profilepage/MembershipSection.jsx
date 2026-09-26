@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles } from "lucide-react";
+import { Gift } from "lucide-react";
 import { EmptyState } from "./EmptyState.jsx";
 import { MembershipCard } from "./MembershipCard.jsx";
 import { MEMBER_PROMOTIONS } from "../../utils/loyaltyUtils.js";
@@ -65,13 +65,13 @@ export const MembershipSection = ({ user }) => {
   return (
     <div>
       <h2 className="text-lg font-semibold text-primary mb-4">
-        ระดับสมาชิกและสิทธิพิเศษ (Membership &amp; Loyalty)
+        ระดับสมาชิกและสิทธิพิเศษ
       </h2>
       <MembershipCard user={user} />
 
       <div className="mt-8">
         <h3 className="text-base font-bold text-primary mb-3">
-          เปรียบเทียบสิทธิประโยชน์แต่ละระดับ (Membership Tiers)
+          เปรียบเทียบสิทธิประโยชน์แต่ละระดับ
         </h3>
         <div className="overflow-x-auto rounded-xl border border-occasion-border">
           <table className="w-full text-left text-xs sm:text-sm">
@@ -108,8 +108,8 @@ export const MembershipSection = ({ user }) => {
 
       <div className="mt-8 pt-6 border-t border-occasion-border">
         <h3 className="text-base font-bold text-primary flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-accent" />
-          <span>โปรโมชั่นพิเศษสำหรับสมาชิก (Member Exclusive Campaigns)</span>
+          <Gift className="w-4 h-4 text-accent" />
+          <span>โปรโมชั่นพิเศษสำหรับสมาชิก</span>
         </h3>
         <p className="text-xs text-muted mt-0.5">
           สิทธิประโยชน์และแคมเปญพิเศษที่จัดขึ้นสำหรับสมาชิก OCCASION LOYALTY

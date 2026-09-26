@@ -37,10 +37,10 @@ export const ProductAddedModal = ({ addedItem, onClose }) => {
               {addedItem.productName}
             </h4>
             <p className="text-xs text-secondary mt-0.5">
-              สี: <span className="font-semibold text-primary">{addedItem.color}</span> | ไซส์: <span className="font-semibold text-primary">{addedItem.size}</span>
+              สี <span className="font-semibold text-primary">{addedItem.color}</span> | ไซส์ <span className="font-semibold text-primary">{addedItem.size}</span>
             </p>
             <p className="text-xs text-accent font-bold mt-1">
-              จำนวน: {addedItem.quantity} ชิ้น | รวม ฿{addedItem.total?.toLocaleString()}
+              จำนวน {addedItem.quantity} ชิ้น | รวม ฿{addedItem.total?.toLocaleString()}
             </p>
           </div>
         </div>

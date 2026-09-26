@@ -18,7 +18,6 @@ vi.mock('../components/product/index.js', () => ({
     </div>
   ),
   ProductAccordionDetails: () => null,
-  ProductReviews: () => null,
   MatchingProducts: () => null,
   OccasionLookSection: () => null,
   ProductSizeGuideModal: () => null,

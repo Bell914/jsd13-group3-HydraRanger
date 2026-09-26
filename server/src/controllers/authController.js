@@ -48,8 +48,15 @@ export const adminLogin = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const result = await authService.loginAdmin({ email, password });
-
-    return sendSession(res, HTTP_STATUS.OK, 'Admin login successful', result);
+    setAuthCookie(res, result.token, 'admin');
+    return res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Admin login successful',
+      // The cookie remains the primary session mechanism. The token lets the
+      // separate Vercel admin site authenticate when a browser blocks or
+      // mishandles a cross-site cookie.
+      data: { user: result.user, token: result.token }
+    });
   } catch (error) {
     if (error.message === 'Invalid admin credentials') {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({

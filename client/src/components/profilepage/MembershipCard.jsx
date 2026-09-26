@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Crown, Sparkles, Award, Shield, Medal, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
+import { Crown, Gem, Gift, Award, Shield, Medal, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
 import {
   calculateProgress,
   getRankTheme,
@@ -24,7 +24,7 @@ export const MembershipCard = ({ user }) => {
       case 'GOLD':
         return <Crown size={20} className="text-accent" />;
       case 'SILVER':
-        return <Sparkles size={20} className="text-accent" />;
+        return <Gem size={20} className="text-accent" />;
       case 'BRONZE':
         return <Medal size={20} className="text-accent" />;
       default:
@@ -50,7 +50,7 @@ export const MembershipCard = ({ user }) => {
             <span>{theme.labelTh}</span>
             <span>•</span>
             <span className="font-mono font-medium text-accent">
-              Member ID: {user?._id ? `OCC-${String(user._id).slice(-6).toUpperCase()}` : (user?.memberId || 'OCC-M88219')}
+              Member ID {user?._id ? `OCC-${String(user._id).slice(-6).toUpperCase()}` : (user?.memberId || 'OCC-M88219')}
             </span>
           </div>
         </div>
@@ -64,7 +64,7 @@ export const MembershipCard = ({ user }) => {
       {/* Spending & Progress */}
       <div className="mt-6 pt-5 border-t border-occasion-border/60">
         <div className="flex items-baseline justify-between text-sm mb-2">
-          <span className="text-xs font-semibold text-muted">ยอดซื้อสะสม:</span>
+          <span className="text-xs font-semibold text-muted">ยอดซื้อสะสม</span>
           <div className="flex items-baseline gap-1">
             <span className="text-xl sm:text-2xl font-black text-primary">
               ฿{spending.toLocaleString()}
@@ -85,7 +85,7 @@ export const MembershipCard = ({ user }) => {
         <div className="mt-2 flex items-center justify-between text-[11px]">
           {progress.isMaxRank ? (
             <span className="font-semibold text-accent">
-              ✦ คุณอยู่ในระดับสูงสุด (PLATINUM) เรียบร้อยแล้ว
+              ✦ คุณอยู่ในระดับสูงสุด PLATINUM เรียบร้อยแล้ว
             </span>
           ) : (
             <span className="text-muted">
@@ -99,8 +99,8 @@ export const MembershipCard = ({ user }) => {
         {!progress.isMaxRank && NEXT_RANK_PERKS[currentRank] && (
           <div className="mt-3.5 rounded-xl border border-occasion-border bg-primary/5 p-3.5">
             <div className="flex items-center gap-1.5 text-xs font-bold text-accent mb-1.5">
-              <Sparkles size={14} className="text-accent" />
-              <span>สิทธิประโยชน์ที่จะได้รับเมื่อเลื่อนเป็น {progress.nextRank}:</span>
+              <Gift size={14} className="text-accent" />
+              <span>สิทธิประโยชน์ที่จะได้รับเมื่อเลื่อนเป็น {progress.nextRank}</span>
             </div>
             <ul className="space-y-1 text-xs text-muted">
               {NEXT_RANK_PERKS[currentRank].highlights.map((highlight, idx) => (

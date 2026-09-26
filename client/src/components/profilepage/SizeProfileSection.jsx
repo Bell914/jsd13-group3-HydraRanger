@@ -31,7 +31,7 @@ export function SizeProfileSection() {
       try {
         const profile = await userService.getSizeProfile();
         if (profile) {
-          setForm({ ...EMPTY_FORM, ...profile, consentGiven: true });
+          setForm({ ...EMPTY_FORM, ...profile });
           setHasSavedProfile(true);
         }
       } catch (loadError) {
@@ -77,7 +77,7 @@ export function SizeProfileSection() {
     setError('');
     try {
       const saved = await userService.saveSizeProfile(form);
-      setForm({ ...EMPTY_FORM, ...saved, consentGiven: true });
+      setForm({ ...EMPTY_FORM, ...saved });
       setHasSavedProfile(true);
       setMessage('บันทึกข้อมูลสำหรับแนะนำไซส์เรียบร้อยแล้ว');
     } catch (saveError) {

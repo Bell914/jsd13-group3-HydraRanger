@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { Order, ORDER_STATUSES } from '../models/Order.js';
 import { Product } from '../models/Product.js';
+import { Lookbook } from '../models/Lookbook.js';
 import * as loyaltyService from './loyaltyService.js';
 import {
   RANK_DISCOUNT_PERCENT,
@@ -8,7 +9,7 @@ import {
   VALID_COUPONS,
   SHIPPING_METHODS_CONFIG
 } from '../config/membershipConfig.js';
-import { refundCouponUsage, claimCouponAtomically } from './couponService.js';
+import { refundCouponUsage, claimCouponAtomically, getActiveGeneralCoupon } from './couponService.js';
 
 const SHIPPING_COSTS = {
   standard: 0,
@@ -88,11 +89,70 @@ async function prepareOrderItems(items) {
       imageUrl: getImageUrl(product),
       unitPrice: variant.price,
       quantity,
-      lineTotal: variant.price * quantity
+      lineTotal: variant.price * quantity,
+      lookbookId: item.lookbookId ? String(item.lookbookId).trim() : ''
     });
   }
 
   return preparedItems;
+}
+
+export async function calculateLookbookDiscount(items) {
+  const lookbookGroups = {};
+  for (const item of items) {
+    if (item.lookbookId) {
+      const key = String(item.lookbookId).trim();
+      if (!lookbookGroups[key]) {
+        lookbookGroups[key] = [];
+      }
+      lookbookGroups[key].push(item);
+    }
+  }
+
+  let totalLookbookDiscount = 0;
+
+  for (const [lbId, groupItems] of Object.entries(lookbookGroups)) {
+    try {
+      const lookbook = mongoose.Types.ObjectId.isValid(lbId)
+        ? await Lookbook.findById(lbId)
+        : await Lookbook.findOne({
+            $or: [
+              { lookbookId: lbId },
+              { lookbookId: lbId.toUpperCase() },
+              { lookbookId: lbId.toLowerCase() },
+            ],
+          });
+
+      if (lookbook && lookbook.isActive !== false) {
+        const saving = Number(lookbook.saving) > 0
+          ? Number(lookbook.saving)
+          : Math.max(0, Number(lookbook.regularPrice || 0) - Number(lookbook.setPrice || 0));
+
+        if (saving > 0) {
+          if (Array.isArray(lookbook.items) && lookbook.items.length > 0) {
+            const productIds = lookbook.items.map((it) => String(it.product?._id || it.product));
+            const productCounts = productIds.map((pId) => {
+              const matched = groupItems.filter((gi) => String(gi.product) === pId);
+              return matched.reduce((sum, gi) => sum + gi.quantity, 0);
+            });
+            const completeSets = Math.min(...productCounts);
+            if (completeSets > 0) {
+              totalLookbookDiscount += saving * completeSets;
+            }
+          } else {
+            const minQty = Math.min(...groupItems.map((gi) => gi.quantity));
+            if (minQty > 0 && groupItems.length >= 2) {
+              totalLookbookDiscount += saving * minQty;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn(`Could not compute lookbook discount for ${lbId}:`, err.message);
+    }
+  }
+
+  return totalLookbookDiscount;
 }
 
 function wasUpdated(result) {
@@ -155,15 +215,23 @@ function validateShippingAddress(address) {
 }
 
 export async function createOrder(user, orderData) {
+  // Capture the checkout start once so time-based fields belong to the same
+  // request, even when inventory preparation takes a little while.
+  const checkoutStartedAt = new Date();
   validateShippingAddress(orderData.shippingAddress);
   const items = await prepareOrderItems(orderData.items);
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
-  // 1. Calculate discount from member tier
+
+  // 1. Calculate Lookbook Set Bundle Discount
+  const lookbookDiscount = await calculateLookbookDiscount(items);
+  const effectiveSubtotal = Math.max(0, subtotal - lookbookDiscount);
+
+  // 2. Calculate discount from member tier
   const membershipTierAtPurchase = user?.membership?.rank || 'MEMBER';
   const rankPercent = RANK_DISCOUNT_PERCENT[membershipTierAtPurchase] || 0;
-  let calculatedDiscount = rankPercent > 0 ? Math.round((subtotal * rankPercent) / 100) : 0;
+  let calculatedDiscount = rankPercent > 0 ? Math.round((effectiveSubtotal * rankPercent) / 100) : 0;
 
-  // 2. Validate coupon if provided
+  // 3. Validate coupon if provided
   const couponCode = orderData.couponCode ? String(orderData.couponCode).trim().toUpperCase() : '';
   let appliedDbCoupon = null;
   const orderId = new mongoose.Types.ObjectId();
@@ -178,7 +246,7 @@ export async function createOrder(user, orderData) {
           orderId,
         });
         if (appliedDbCoupon) {
-          const couponDiscount = Math.round((subtotal * appliedDbCoupon.discountValue) / 100);
+          const couponDiscount = Math.round((effectiveSubtotal * appliedDbCoupon.discountValue) / 100);
           calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
         }
       } catch (couponErr) {
@@ -188,11 +256,14 @@ export async function createOrder(user, orderData) {
 
     // 2.2 Fallback to static VALID_COUPONS (Tier coupons, birthday coupons)
     if (!appliedDbCoupon) {
-      const coupon = VALID_COUPONS[couponCode];
+      const coupon = await getActiveGeneralCoupon(couponCode, effectiveSubtotal) || VALID_COUPONS[couponCode];
       if (coupon) {
-        if (subtotal >= (coupon.minSpend || 0)) {
-          if (coupon.type === 'percent') {
-            const couponDiscount = Math.round((subtotal * coupon.value) / 100);
+        if (effectiveSubtotal >= (coupon.minSpend || 0)) {
+          if (coupon.type === 'GENERAL') {
+            const couponDiscount = Math.round((effectiveSubtotal * coupon.discountValue) / 100);
+            calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
+          } else if (coupon.type === 'percent') {
+            const couponDiscount = Math.round((effectiveSubtotal * coupon.value) / 100);
             calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
           } else if (coupon.type === 'fixed') {
             calculatedDiscount = Math.max(calculatedDiscount, coupon.value);
@@ -203,15 +274,15 @@ export async function createOrder(user, orderData) {
       }
     }
   }
-  const discountAmount = Math.min(subtotal, calculatedDiscount);
+  const discountAmount = Math.min(subtotal, lookbookDiscount + calculatedDiscount);
 
-  // 3. Calculate shipping cost based on shipping method and free shipping rules
+  // 4. Calculate shipping cost based on shipping method and free shipping rules
   const methodKey = String(orderData.shippingMethod || 'standard').toLowerCase();
   const selectedMethod = SHIPPING_METHODS_CONFIG[methodKey] || SHIPPING_METHODS_CONFIG.standard;
   const baseShippingCost = selectedMethod.price;
 
   const freeShippingThreshold = FREE_SHIPPING_MINIMUM[membershipTierAtPurchase] ?? 1000;
-  const isFreeShipping = freeShippingThreshold === 0 || subtotal >= freeShippingThreshold;
+  const isFreeShipping = freeShippingThreshold === 0 || effectiveSubtotal >= freeShippingThreshold;
 
   let shippingCost = baseShippingCost;
   if (methodKey === 'standard') {
@@ -224,7 +295,7 @@ export async function createOrder(user, orderData) {
   const totalAmount = discountedSubtotal + shippingCost;
   const paymentMethod = orderData.paymentMethod || 'credit-card';
   const paymentExpiresAt = ['credit-card', 'promptpay', 'paypal'].includes(paymentMethod)
-    ? new Date(Date.now() + 30 * 60 * 1000)
+    ? new Date(checkoutStartedAt.getTime() + 30 * 60 * 1000)
     : null;
 
   let order;

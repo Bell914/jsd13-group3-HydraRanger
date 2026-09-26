@@ -158,8 +158,7 @@ function getClosestAvailableSize(product, recommendedSize, selectedColor) {
 }
 
 export function getSizeRecommendation(profile, product, fallbackSizes = [], selectedColor = '') {
-  if (!profile) return null;
-  if (profile.consentGiven === false) return null;
+  if (!profile || profile.consentGiven !== true) return null;
 
   const sizes = getProductSizes(product, fallbackSizes);
   if (sizes.length === 0) return noMatchingSize();

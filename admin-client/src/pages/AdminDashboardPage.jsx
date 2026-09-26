@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Banknote, Package, PackageCheck, ShoppingCart, Users } from 'lucide-react';
 import { AdminTopbar } from '../components/AdminTopbar.jsx';
 import { getDashboardSummary } from '../services/dashboardService.js';
 
-function SummaryCard({ label, value, detail, Icon }) {
+function SummaryCard({ label, value, detail }) {
   return (
     <article className="summary-card">
-      <div className="summary-icon"><Icon size={19} /></div>
       <p>{label}</p>
       <strong>{value}</strong>
       <small>{detail}</small>
@@ -75,12 +73,12 @@ export function AdminDashboardPage() {
   const linePath = linePoints.map((point) => `${point.x},${point.y}`).join(' ');
   return (
     <div className="admin-content">
-      <AdminTopbar title="ภาพรวมร้านค้า" />
+      <AdminTopbar title="Dashboard" />
 
       <main className="dashboard-page">
         <header className="page-heading">
           <div>
-            <h1>Admin Dashboard</h1>
+            <h1>ภาพรวมร้านค้า</h1>
             <p>ข้อมูลสินค้า ลูกค้า และคำสั่งซื้อจริงจาก MongoDB</p>
           </div>
           <button type="button" className="primary-action" onClick={loadDashboard} disabled={loading}>
@@ -113,11 +111,11 @@ export function AdminDashboardPage() {
         {summary && (
           <>
             <section className="summary-grid" aria-label="ข้อมูลสรุปของร้านค้า">
-              <SummaryCard label="สินค้าทั้งหมด" value={summary.totalProducts} detail={`พร้อมขาย ${summary.activeProductCount} รายการ`} Icon={Package} />
-              <SummaryCard label="สต็อกรวม" value={summary.totalStock} detail={`สต็อกต่ำ ${summary.lowStockCount} รายการ`} Icon={PackageCheck} />
-              <SummaryCard label="ลูกค้าทั้งหมด" value={summary.customerCount} detail="เฉพาะบัญชีประเภทลูกค้า" Icon={Users} />
-              <SummaryCard label="คำสั่งซื้อทั้งหมด" value={summary.totalOrders} detail={`รอตรวจสอบ ${summary.pendingOrderCount} รายการ`} Icon={ShoppingCart} />
-              <SummaryCard label="รายได้จาก Orders" value={formatMoney(summary.totalRevenue)} detail="เฉพาะ Order ที่ชำระเงินแล้ว" Icon={Banknote} />
+              <SummaryCard label="สินค้าทั้งหมด" value={summary.totalProducts} detail={`พร้อมขาย ${summary.activeProductCount} รายการ`} />
+              <SummaryCard label="สต็อกรวม" value={summary.totalStock} detail={`สต็อกต่ำ ${summary.lowStockCount} รายการ`} />
+              <SummaryCard label="ลูกค้าทั้งหมด" value={summary.customerCount} detail="เฉพาะบัญชีประเภทลูกค้า" />
+              <SummaryCard label="คำสั่งซื้อทั้งหมด" value={summary.totalOrders} detail={`รอตรวจสอบ ${summary.pendingOrderCount} รายการ`} />
+              <SummaryCard label="รายได้จาก Orders" value={formatMoney(summary.totalRevenue)} detail="เฉพาะ Order ที่ชำระเงินแล้ว" />
             </section>
 
             <section className="chart-grid">

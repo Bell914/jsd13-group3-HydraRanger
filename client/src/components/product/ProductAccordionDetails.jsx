@@ -30,7 +30,7 @@ export const ProductAccordionDetails = ({
             <p>{product?.description || "รายละเอียดสินค้าจะอัปเดตเร็ว ๆ นี้"}</p>
 
             <div className="pt-2 text-xs text-gray-500">
-              <p>รหัสสินค้า: {selectedVariant?.sku || product?.sku || product?.productId || "-"}</p>
+              <p>รหัสสินค้า {selectedVariant?.sku || product?.sku || product?.productId || "-"}</p>
             </div>
           </div>
         )}

@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import AuthContext from "./AuthContext.jsx";
 import { authService } from "../../services/authService.js";
+import { useWishlistStore } from "../../store/wishlistStore.js";
+import { useLookbookStore } from "../../store/lookbookStore.js";
 
 export const AuthProvider = ({ children }) => {
   // Local storage is only a display cache.  It must never establish an
@@ -52,6 +54,8 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(async () => {
     await authService.logout();
     setUser(null);
+    useWishlistStore.getState().clearWishlist();
+    useLookbookStore.getState().clearFavorites();
   }, []);
 
   const refreshUser = useCallback(async () => {

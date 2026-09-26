@@ -32,19 +32,19 @@ export const FREE_SHIPPING_MINIMUM = {
 
 export const RANK_BENEFITS = {
   [MEMBERSHIP_RANKS.MEMBER]: [
-    'คูปองต้อนรับ (Welcome Coupon) ลด 10%',
+    'คูปองต้อนรับ ลด 10%',
     'สะสมยอดซื้อเพื่อปลดล็อกระดับถัดไป',
-    'บันทึกรายการสินค้าโปรด (Wishlist) & Favorite Lookbooks'
+    'บันทึกรายการสินค้าโปรด & Favorite Lookbooks'
   ],
   [MEMBERSHIP_RANKS.BRONZE]: [
     'ส่วนลด On-top 3% ทุกคำสั่งซื้อ',
     'คูปองเดือนเกิด ลด 10%',
-    'ส่งฟรีเมื่อซื้อครบ 850 บาท (ปกติ 1,000 บาท)'
+    'ส่งฟรีเมื่อซื้อครบ 850 บาท ปกติ 1,000 บาท'
   ],
   [MEMBERSHIP_RANKS.SILVER]: [
     'ส่วนลด On-top 5% ทุกคำสั่งซื้อ',
     'คูปองเดือนเกิด ลด 15%',
-    'ส่งฟรีเมื่อซื้อครบ 700 บาท (ปกติ 1,000 บาท)',
+    'ส่งฟรีเมื่อซื้อครบ 700 บาท ปกติ 1,000 บาท',
     'Early Access สิทธิ์ซื้อสินค้าคอลเลกชันใหม่ก่อนใคร 12 ชม.'
   ],
   [MEMBERSHIP_RANKS.GOLD]: [
@@ -56,7 +56,7 @@ export const RANK_BENEFITS = {
   [MEMBERSHIP_RANKS.PLATINUM]: [
     'ส่วนลด On-top 15% ทุกคำสั่งซื้อ',
     'คูปองเดือนเกิด ลด 25% + Exclusive Gift',
-    'ส่งฟรีทุกคำสั่งซื้อ + บริการจัดส่งด่วนพิเศษ (Priority Shipping)',
+    'ส่งฟรีทุกคำสั่งซื้อ + บริการจัดส่งด่วนพิเศษ Priority Shipping',
     'Early Access สิทธิ์ซื้อสินค้าคอลเลกชันใหม่ก่อนใคร 48 ชม.',
     'VIP Customer Care บริการดูแลและช่วยเหลือพิเศษแบบส่วนตัว'
   ]

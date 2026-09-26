@@ -27,7 +27,7 @@ describe('Customer Experience & Benefits (ประสบการณ์ลู�
 
       // Verify Next Rank Benefits Preview (Item 6)
       expect(
-        screen.getByText(/สิทธิประโยชน์ที่จะได้รับเมื่อเลื่อนเป็น BRONZE:/i)
+        screen.getByText(/สิทธิประโยชน์ที่จะได้รับเมื่อเลื่อนเป็น BRONZE/i)
       ).toBeInTheDocument();
       expect(
         screen.getByText('ปลดล็อกส่วนลด On-top 3% ทุกคำสั่งซื้อ')
@@ -89,7 +89,7 @@ describe('Customer Experience & Benefits (ประสบการณ์ลู�
       expect(screen.getByText(/CONGRATULATIONS!/i)).toBeInTheDocument();
       expect(screen.getByText('GOLD')).toBeInTheDocument();
       expect(
-        screen.getByText('สิทธิพิเศษใหม่ที่คุณปลดล็อก:')
+        screen.getByText(/สิทธิพิเศษใหม่ที่คุณปลดล็อก/i)
       ).toBeInTheDocument();
       expect(
         screen.getByText('ส่วนลด On-top 10% ทุกคำสั่งซื้อ')

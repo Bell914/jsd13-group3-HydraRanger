@@ -19,7 +19,7 @@ export const HeroSection = () => {
       <div className="hero-product-reel" aria-label="ภาพเคลื่อนไหวคอลเล็กชันสินค้า">
         <div className="hero-product-reel__track">
           {[...heroProducts, ...heroProducts].map((product, index) => (
-            <Link key={`${product.id}-${index}`} to={`/products/${product.id}`} className="hero-product-reel__link" aria-label={`ดูสินค้า: ${product.name}`}>
+            <Link key={`${product.id}-${index}`} to={`/products/${product.id}`} className="hero-product-reel__link" aria-label={`ดูสินค้า ${product.name}`}>
               <img className="hero-product-reel__item" src={product.image} alt="" />
             </Link>
           ))}

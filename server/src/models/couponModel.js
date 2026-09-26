@@ -8,11 +8,11 @@ const couponSchema = new mongoose.Schema(
       uppercase: true,
       trim: true,
     },
-    // ผูก Coupon กับ userId (1 บัญชีต่อ 1 สิทธิ์)
+    // Welcome coupons are owned by a user; GENERAL coupons are reusable.
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
     },
     discountValue: {
       type: Number,
@@ -23,6 +23,21 @@ const couponSchema = new mongoose.Schema(
       type: String,
       enum: ["WELCOME", "GENERAL"],
       default: "WELCOME",
+    },
+    minPurchase: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    eventName: {
+      type: String,
+      trim: true,
+      default: '',
+      maxlength: 100,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
     },
     isUsed: {
       type: Boolean,
@@ -45,8 +60,15 @@ const couponSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Compound Unique Index ป้องกันการสร้าง Welcome Coupon ซ้ำให้ User เดิม
-couponSchema.index({ userId: 1, type: 1 }, { unique: true });
+// One welcome coupon per user, while general coupons must have unique codes.
+couponSchema.index(
+  { userId: 1, type: 1 },
+  { unique: true, partialFilterExpression: { type: "WELCOME" } }
+);
+couponSchema.index(
+  { code: 1 },
+  { unique: true, partialFilterExpression: { type: "GENERAL" } }
+);
 
 export const Coupon = mongoose.model("Coupon", couponSchema);
 export default Coupon;

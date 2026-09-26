@@ -31,7 +31,7 @@ export default function CustomerService() {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen flex flex-col font-['Poppins']">
+    <div className="bg-gray-50 min-h-screen flex flex-col">
       <div className="w-full flex-1 flex justify-center py-10 px-4">
         <main className="w-full max-w-4xl text-left">
           {/* ... โค้ดส่วน Header และ Cards (FAQ) ด้านบนคงเดิม ไม่เปลี่ยนแปลง ... */}

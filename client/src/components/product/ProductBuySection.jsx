@@ -1,5 +1,5 @@
 import React from "react";
-import { Heart, Share2, Ruler, Minus, Plus, ShoppingBag, Sparkles } from "lucide-react";
+import { Heart, Share2, Minus, Plus, ShoppingBag } from "lucide-react";
 import { SizeRecommendationCard } from './SizeRecommendationCard.jsx';
 
 export const ProductBuySection = ({
@@ -61,7 +61,6 @@ export const ProductBuySection = ({
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               {product.isEarlyAccess && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-400 to-yellow-400 px-2 py-0.5 text-xs font-black uppercase text-gray-950 shadow-xs">
-                  <Sparkles size={12} className="text-gray-950" />
                   <span>EARLY ACCESS</span>
                 </span>
               )}
@@ -76,7 +75,6 @@ export const ProductBuySection = ({
             </div>
             {product.isEarlyAccess && (
               <div className="mt-2.5 flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-                <Sparkles size={14} className="text-amber-600 shrink-0" />
                 <span>
                   <strong>Early Access Exclusive:</strong> สิทธิพิเศษช้อปสินค้าคอลเลกชันใหม่ก่อนใคร สำหรับสมาชิก <strong>SILVER</strong> ขึ้นไป
                 </span>
@@ -93,26 +91,28 @@ export const ProductBuySection = ({
             >
               <Share2 size={20} />
             </button>
-            <button
-              type="button"
-              onClick={onToggleWishlist}
-              className={`rounded-full p-2 transition cursor-pointer ${
-                isWishlisted
-                  ? "text-red-500 hover:bg-red-50"
-                  : "text-secondary hover:bg-slate-200"
-              }`}
-              title="บันทึกในรายการโปรด"
-              aria-label="บันทึกสินค้านี้ในรายการโปรด"
-            >
-              <Heart size={20} fill={isWishlisted ? "currentColor" : "none"} />
-            </button>
+            {isLoggedIn && (
+              <button
+                type="button"
+                onClick={onToggleWishlist}
+                className={`rounded-full p-2 transition cursor-pointer ${
+                  isWishlisted
+                    ? "text-red-500 hover:bg-red-50"
+                    : "text-secondary hover:bg-slate-200"
+                }`}
+                title="บันทึกในรายการโปรด"
+                aria-label="บันทึกสินค้านี้ในรายการโปรด"
+              >
+                <Heart size={20} fill={isWishlisted ? "currentColor" : "none"} />
+              </button>
+            )}
           </div>
         </div>
 
         {/* Color Selection */}
         <div className="mt-5">
           <p className="text-sm font-bold text-primary mb-2">
-            สี : <span className="font-semibold text-secondary">{selectedColor || "เลือกสี"}</span>
+            สี <span className="font-semibold text-secondary">{selectedColor || "เลือกสี"}</span>
           </p>
           <div className="flex items-center gap-2.5">
             {colors.map((colorObj) => {
@@ -155,14 +155,13 @@ export const ProductBuySection = ({
           />
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-bold text-primary">
-              ขนาด : <span className="text-secondary font-semibold">{selectedSize}</span>
+              ขนาด <span className="text-secondary font-semibold">{selectedSize}</span>
             </span>
             <button
               type="button"
               onClick={onOpenSizeGuide}
               className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:text-accent underline transition cursor-pointer"
             >
-              <Ruler size={14} />
               <span>ตารางไซส์</span>
             </button>
           </div>
@@ -195,7 +194,7 @@ export const ProductBuySection = ({
             })}
           </div>
           <p className="mt-2 text-[11px] text-secondary">
-            ขนาด: ผู้หญิง {selectedSize} (ทรง Relaxed พอดีตัว)
+            ขนาด ผู้หญิง {selectedSize} (ทรง Relaxed พอดีตัว)
           </p>
         </div>
 

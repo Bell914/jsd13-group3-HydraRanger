@@ -107,6 +107,14 @@ export const LoginPage = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              <div className="mt-2 text-right">
+                <Link
+                  to="/forgot-password"
+                  className="rounded-sm text-xs font-semibold text-accent hover:text-accent-hover hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
+                >
+                  Forgot password?
+                </Link>
+              </div>
             </div>
 
             <Button

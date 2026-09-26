@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Heart, Sparkles } from "lucide-react";
+import { Heart } from "lucide-react";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
 import { useWishlistStore } from "../store/wishlistStore.js";
 import { useAuth } from "../context/Auth/useAuth.jsx";
@@ -77,7 +77,6 @@ export default function ProductCard({ product }) {
 
         {product.isEarlyAccess ? (
           <span className="pointer-events-none absolute top-2 left-2 z-10 inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-400 to-yellow-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-gray-950 shadow-sm">
-            <Sparkles size={11} className="text-gray-950" />
             <span>EARLY ACCESS</span>
           </span>
         ) : categoryName ? (
@@ -87,19 +86,21 @@ export default function ProductCard({ product }) {
         ) : null}
 
         {/* Wishlist Button - outside the Link */}
-        <button
-          type="button"
-          onClick={handleWishlistClick}
-          className={`absolute top-2 right-2 z-20 flex h-8 w-8 items-center justify-center rounded-full transition-all shadow-sm cursor-pointer ${
-            isSaved
-              ? "bg-white text-red-500 hover:bg-red-50 shadow-md scale-105"
-              : "bg-white/80 text-gray-400 hover:bg-white hover:text-red-500"
-          }`}
-          title={isSaved ? "ลบออกจากรายการโปรด" : "บันทึกในรายการโปรด"}
-          aria-label={isSaved ? "ลบออกจากรายการโปรด" : "บันทึกในรายการโปรด"}
-        >
-          <Heart size={16} fill={isSaved ? "currentColor" : "none"} />
-        </button>
+        {isAuthenticated && (
+          <button
+            type="button"
+            onClick={handleWishlistClick}
+            className={`absolute top-2 right-2 z-20 flex h-8 w-8 items-center justify-center rounded-full transition-all shadow-sm cursor-pointer ${
+              isSaved
+                ? "bg-white text-red-500 hover:bg-red-50 shadow-md scale-105"
+                : "bg-white/80 text-gray-400 hover:bg-white hover:text-red-500"
+            }`}
+            title={isSaved ? "ลบออกจากรายการโปรด" : "บันทึกในรายการโปรด"}
+            aria-label={isSaved ? "ลบออกจากรายการโปรด" : "บันทึกในรายการโปรด"}
+          >
+            <Heart size={16} fill={isSaved ? "currentColor" : "none"} />
+          </button>
+        )}
       </div>
 
       {/* Bottom Info Bar matching wireframe */}
@@ -108,11 +109,11 @@ export default function ProductCard({ product }) {
         className="flex min-h-[92px] items-end justify-between gap-3 px-1 pb-1 pt-3 text-[#263639] hover:opacity-75"
       >
         <div className="flex flex-col">
-          <span className="text-sm sm:text-base font-extrabold tracking-wide text-[#263639]">
-            {categoryLabel}
-          </span>
-          <span className="line-clamp-2 text-[11px] leading-4 text-[#526164]">
+          <span className="text-sm sm:text-base font-extrabold tracking-wide text-[#263639] line-clamp-1">
             {title}
+          </span>
+          <span className="text-[11px] text-[#526164] line-clamp-1">
+            {categoryLabel}
           </span>
           {product.tags && product.tags.length > 0 && (
             <div className="mt-0.5 flex flex-wrap gap-1">

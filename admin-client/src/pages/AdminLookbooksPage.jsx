@@ -112,7 +112,7 @@ export function AdminLookbooksPage() {
 
       <main className="data-page">
         <header className="page-heading">
-          <div><h1>Lookbooks</h1><p>จัดการลุคและสินค้าในแต่ละเซ็ตจาก MongoDB</p></div>
+          <div><h1>ลุคบุ๊ก</h1><p>จัดการลุคและสินค้าในแต่ละเซ็ตจาก MongoDB</p></div>
           <button type="button" className="primary-action" onClick={openCreateForm} disabled={products.length === 0}>เพิ่ม Lookbook</button>
         </header>
 

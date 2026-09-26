@@ -67,12 +67,12 @@ export function AdminOrdersPage() {
 
   return (
     <div className="admin-content">
-      <AdminTopbar title="คำสั่งซื้อ" />
+      <AdminTopbar title="Orders" />
 
       <main className="data-page">
         <header className="page-heading">
           <div>
-            <h1>Orders</h1>
+            <h1>คำสั่งซื้อ</h1>
             <p>รายการคำสั่งซื้อจริงจาก MongoDB</p>
           </div>
           <button type="button" className="primary-action" onClick={loadOrders} disabled={loading}>

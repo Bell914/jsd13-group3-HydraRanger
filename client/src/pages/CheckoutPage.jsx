@@ -184,6 +184,14 @@ export default function CheckoutPage() {
   const cancellationRequests = useRef(new Set());
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentStep]);
+
+  useEffect(() => {
     async function loadSavedAddresses() {
       try {
         const response = await getAddresses();
@@ -236,6 +244,7 @@ export default function CheckoutPage() {
       variantId: item.variantId || item.variant_id,
       quantity: item.quantity,
       price: item.price,
+      lookbookId: item.lookbookId || "",
     })),
     shippingData,
     paymentMethod: paymentData.method,
@@ -281,6 +290,7 @@ export default function CheckoutPage() {
         sku: item.sku || "",
         quantity: item.quantity,
         price: item.price,
+        lookbookId: item.lookbookId || "",
       })),
       shippingAddress: {
         firstName: shippingData.firstName,

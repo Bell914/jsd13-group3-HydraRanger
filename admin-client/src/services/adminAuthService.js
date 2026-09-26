@@ -1,28 +1,16 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5002/api';
-const USER_KEY = 'occasion_admin_user';
+import {
+  ADMIN_TOKEN_KEY,
+  ADMIN_USER_KEY,
+  adminRequest,
+  clearAdminSession
+} from './adminApi.js';
 
-async function request(path, options = {}) {
-  try {
-    const response = await fetch(API_BASE_URL + path, {
-      ...options,
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-      }
-    });
-
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(result.message || 'เข้าสู่ระบบไม่สำเร็จ');
-    }
-    return result;
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new Error('เชื่อมต่อ Server ไม่ได้ กรุณาตรวจสอบว่า Server เปิดอยู่');
-    }
-    throw error;
-  }
+function request(path, options = {}) {
+  return adminRequest(path, {
+    ...options,
+    errorMessage: 'เข้าสู่ระบบไม่สำเร็จ',
+    redirectOnUnauthorized: false
+  });
 }
 
 export const adminAuthService = {
@@ -34,7 +22,10 @@ export const adminAuthService = {
     if (response.data?.user?.role !== 'admin') {
       throw new Error('บัญชีนี้ไม่มีสิทธิ์ Admin');
     }
-    localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
+    if (response.data?.token) {
+      sessionStorage.setItem(ADMIN_TOKEN_KEY, response.data.token);
+    }
+    localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(response.data.user));
     return response.data.user;
   },
 
@@ -43,7 +34,7 @@ export const adminAuthService = {
     if (response.data?.role !== 'admin') {
       throw new Error('บัญชีนี้ไม่มีสิทธิ์ Admin');
     }
-    localStorage.setItem(USER_KEY, JSON.stringify(response.data));
+    localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(response.data));
     return response.data;
   },
 
@@ -53,14 +44,13 @@ export const adminAuthService = {
     } catch {
       // Local session data must still be cleared when the server is unavailable.
     } finally {
-      localStorage.removeItem('occasion_admin_token');
-      localStorage.removeItem(USER_KEY);
+      clearAdminSession();
     }
   },
 
   getUser() {
     try {
-      return JSON.parse(localStorage.getItem(USER_KEY));
+      return JSON.parse(localStorage.getItem(ADMIN_USER_KEY));
     } catch {
       return null;
     }

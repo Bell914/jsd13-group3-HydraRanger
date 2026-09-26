@@ -2,7 +2,6 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import {
   HomePage,
-  DashboardPage,
   LoginPage,
   RegisterPage,
   ForgotPasswordPage,
@@ -49,16 +48,6 @@ export const AppRoutes = () => {
       <Route path="/customerservice" element={<CustomerService />} />
       <Route path="/termsconditions" element={<TermAndCondition />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
-
-      {/* Protected Dashboard Route */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
 
       {/* Protected Profile Route */}
       <Route
