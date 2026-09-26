@@ -67,7 +67,7 @@ const MixAndMatchSection = ({ assets }) => {
     setRecommending(true);
     setRecommendError("");
     recommendLookbooks(files)
-      .then(({ lookbooks }) => {
+      .then(({ lookbooks, aiRanked }) => {
         if (requestId !== recommendationRequestId.current) return;
         if (lookbooks.length > 0) {
           setRecommendedLooks(
@@ -76,7 +76,7 @@ const MixAndMatchSection = ({ assets }) => {
               image: normalizeImageUrl(look?.imageUrl || look?.image),
             })),
           );
-          setAiRanked(true);
+          setAiRanked(Boolean(aiRanked));
         }
       })
       .catch((error) => {
@@ -224,7 +224,11 @@ const MixAndMatchSection = ({ assets }) => {
               <p className="mt-1 text-xs text-white/70">
                 จัดอันดับโดย AI จากรูปที่คุณอัปโหลด
               </p>
-            ) : null}
+            ) : (
+              <p className="mt-1 text-xs text-white/70">
+                AI ไม่พร้อมใช้งานชั่วคราว แสดงลุคทั้งหมดจากคอลเลกชัน
+              </p>
+            )}
           </div>
 
           {recommending ? (
