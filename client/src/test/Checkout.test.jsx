@@ -273,7 +273,7 @@ describe("Checkout order integration", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "ยืนยันการสั่งซื้อ" }));
 
-    expect(await screen.findByText(/โหมดจำลองสำหรับเดโม: สร้างคำสั่งซื้อสถานะรอชำระเงินเพื่อทดสอบแล้ว/)).toBeInTheDocument();
+    expect(await screen.findByText(/โหมดจำลองสำหรับเดโม.*สร้างคำสั่งซื้อสถานะรอชำระเงินเพื่อทดสอบแล้ว/)).toBeInTheDocument();
     expect(createOrder).toHaveBeenCalledTimes(1);
     expect(createOrder.mock.calls[0][0]).toMatchObject({ paymentMethod: method });
     expect(apiMocks.post).not.toHaveBeenCalled();

@@ -175,7 +175,7 @@ export default function LookbookDetailPage() {
               {items.map((item, idx) => {
                 const isTop =
                   item.sku?.toUpperCase().startsWith("TOP") || idx === 0;
-                const categoryLabel = isTop ? "TOPS (เสื้อ)" : "BOTTOMS (กางเกง)";
+                const categoryLabel = isTop ? "TOPS เสื้อ" : "BOTTOMS กางเกง";
                 const targetUrl = getProductDetailUrl(item.productId);
                 const itemSizes = item.sizes || standardSizes;
 
@@ -206,7 +206,7 @@ export default function LookbookDetailPage() {
                       </h3>
 
                       <p className="text-xs text-secondary mt-0.5">
-                        สี: <span className="font-semibold text-primary">{item.color}</span>
+                        สี <span className="font-semibold text-primary">{item.color}</span>
                       </p>
 
                       <span className="text-sm sm:text-base font-black text-primary mt-1">
@@ -249,7 +249,7 @@ export default function LookbookDetailPage() {
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
             <div className="flex flex-col">
               <span className="text-[10px] sm:text-xs text-secondary font-medium">
-                ราคาเซ็ตพิเศษ (SET PRICE)
+                ราคาเซ็ตพิเศษ
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="text-lg sm:text-xl font-black text-primary">
@@ -262,7 +262,7 @@ export default function LookbookDetailPage() {
                 )}
                 {look.saving > 0 && (
                   <span className="text-[10px] font-bold text-accent hidden sm:inline">
-                    (ประหยัด ฿{look.saving.toLocaleString()})
+                    ประหยัด ฿{look.saving.toLocaleString()}
                   </span>
                 )}
               </div>
@@ -276,7 +276,7 @@ export default function LookbookDetailPage() {
                   className="px-4 py-2.5 rounded-xl bg-primary text-white font-bold text-xs sm:text-sm hover:bg-primary/90 active:scale-98 transition-all shadow-sm"
                   id="bottom-bar-action-button"
                 >
-                  เลือกสินค้าในเซ็ต &rarr;
+                  เลือกสินค้าในเซ็ต
                 </Link>
               )}
             </div>
