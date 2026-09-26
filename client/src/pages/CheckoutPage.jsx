@@ -26,10 +26,6 @@ import {
   SHIPPING_METHODS,
 } from "../components/checkout";
 
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
-  : null;
-
 function StripePaymentForm({ onSubmit, isSubmitting }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -143,6 +139,12 @@ function getAddressFormData(address) {
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
+  const stripePromise = useMemo(
+    () => import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+      ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+      : null,
+    [],
+  );
   const { cartItems, getTotalPrice, clearCart } = useCartStore();
   const setAddressStore = useAddressStore((state) => state.setAddresses);
   let authUser = null;

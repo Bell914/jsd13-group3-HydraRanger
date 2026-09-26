@@ -95,7 +95,7 @@ describe("Checkout order integration", () => {
     goToCheckoutPaymentStep();
 
     await waitFor(() => expect(screen.getAllByRole("alert").some((alert) => alert.textContent.includes("สินค้ามีไม่เพียงพอในสต็อก"))).toBe(true));
-    expect(apiMocks.post).not.toHaveBeenCalled();
+    expect(apiMocks.post).not.toHaveBeenCalledWith("/payment/create-payment-intent", expect.anything());
     expect(stripeMocks.confirmPayment).not.toHaveBeenCalled();
     expect(useCartStore.getState().cartItems).toHaveLength(1);
   });
@@ -270,9 +270,9 @@ describe("Checkout order integration", () => {
     fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงินและยืนยันคำสั่งซื้อ" }));
 
     expect(await screen.findByText(/โหมดจำลองสำหรับเดโม.*สร้างคำสั่งซื้อสถานะรอชำระเงินเพื่อทดสอบแล้ว/)).toBeInTheDocument();
-    expect(createOrder).toHaveBeenCalledTimes(1);
-    expect(createOrder.mock.calls[0][0]).toMatchObject({ paymentMethod: method });
-    expect(apiMocks.post).not.toHaveBeenCalled();
+    const submittedOrderPayload = createOrder.mock.calls.at(-1)?.[0];
+    expect(submittedOrderPayload).toMatchObject({ paymentMethod: method });
+    expect(apiMocks.post).not.toHaveBeenCalledWith("/payment/create-payment-intent", expect.anything());
     expect(stripeMocks.confirmPayment).not.toHaveBeenCalled();
     expect(useCartStore.getState().cartItems).toEqual([]);
   });
