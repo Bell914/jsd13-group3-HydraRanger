@@ -31,5 +31,7 @@ export async function recommendLookbooks(images) {
       ? result.data.lookbooks
       : [],
     analysis: result.data?.analysis || null,
+    aiRanked:
+      result.data?.aiRanked ?? Boolean(result.data?.analysis),
   };
 }

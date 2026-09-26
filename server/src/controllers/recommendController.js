@@ -70,13 +70,15 @@ function itemSignature(item) {
 }
 
 function scoreLookbook(lookbook, analysis) {
-  const detectedColors = analysis.colors
+  const detectedColors = (analysis?.colors || [])
     .map((c) => bucketOf(c.name))
     .filter(Boolean);
-  const detectedTypes = analysis.garment_types.map((t) =>
+  const detectedTypes = (analysis?.garment_types || []).map((t) =>
     String(t).toLowerCase(),
   );
-  const detectedStyles = analysis.styles.map((s) => String(s).toLowerCase());
+  const detectedStyles = (analysis?.styles || []).map((s) =>
+    String(s).toLowerCase(),
+  );
 
   let score = 0;
   const reasons = [];
@@ -189,9 +191,33 @@ export async function recommendLookbooks(req, res, next) {
       });
     }
 
-    const analysis = await analyzeClothingImage(images);
+    let analysis;
+    try {
+      analysis = await analyzeClothingImage(images);
+    } catch (analysisError) {
+      if (analysisError.code === "NO_GEMINI_KEY") {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: "ระบบ AI ยังไม่ได้ตั้งค่า GEMINI_API_KEY",
+        });
+      }
+      if (
+        analysisError.code === "GEMINI_HTTP" ||
+        analysisError.code === "GEMINI_EMPTY" ||
+        analysisError.code === "GEMINI_INVALID"
+      ) {
+        console.warn(
+          `⚠️ [Mix & Match] analyzeClothingImage ล้มเหลว ใช้โหมดแนะนำแบบพื้นฐาน: ${analysisError.message}`,
+        );
+        analysis = null;
+      } else {
+        throw analysisError;
+      }
+    }
 
-    const invalidSlots = findInvalidGarmentSlots(images, analysis);
+    const invalidSlots = analysis
+      ? findInvalidGarmentSlots(images, analysis)
+      : [];
     if (invalidSlots.length > 0) {
       const labels = invalidSlots.map((slot) =>
         slot === "bottom" ? "กางเกง / ท่อนล่าง" : "เสื้อ / ท่อนบน",
@@ -223,49 +249,55 @@ export async function recommendLookbooks(req, res, next) {
     }));
 
     let ranked;
-    try {
-      const rankings = await rankLookbooks(images, lookbookList);
-      const scoreMap = new Map(rankings.map((r) => [r.lookbookId, r]));
-      ranked = publicLooks
-        .map((look) => {
-          const rank = scoreMap.get(look.id);
-          if (rank) {
-            look.matchScore = rank.score;
-            look.matchReasons = rank.reasons;
-          }
-          return look;
-        })
-        .sort((a, b) => b.matchScore - a.matchScore)
-        .slice(0, 3);
-    } catch (rankError) {
-      if (
-        rankError.code === "NO_GEMINI_KEY" ||
-        rankError.code === "GEMINI_HTTP" ||
-        rankError.code === "GEMINI_EMPTY" ||
-        rankError.code === "GEMINI_INVALID"
-      ) {
-        console.warn(
-          `⚠️  [Mix & Match] rankLookbooks ล้มเหลว ใช้ heuristic แทน: ${rankError.message}`,
-        );
-        ranked = [...publicLooks]
+    if (analysis) {
+      try {
+        const rankings = await rankLookbooks(images, lookbookList);
+        const scoreMap = new Map(rankings.map((r) => [r.lookbookId, r]));
+        ranked = publicLooks
+          .map((look) => {
+            const rank = scoreMap.get(look.id);
+            if (rank) {
+              look.matchScore = rank.score;
+              look.matchReasons = rank.reasons;
+            }
+            return look;
+          })
           .sort((a, b) => b.matchScore - a.matchScore)
           .slice(0, 3);
-      } else {
-        throw rankError;
+      } catch (rankError) {
+        if (
+          rankError.code === "NO_GEMINI_KEY" ||
+          rankError.code === "GEMINI_HTTP" ||
+          rankError.code === "GEMINI_EMPTY" ||
+          rankError.code === "GEMINI_INVALID"
+        ) {
+          console.warn(
+            `⚠️  [Mix & Match] rankLookbooks ล้มเหลว ใช้ heuristic แทน: ${rankError.message}`,
+          );
+          ranked = [...publicLooks]
+            .sort((a, b) => b.matchScore - a.matchScore)
+            .slice(0, 3);
+        } else {
+          throw rankError;
+        }
       }
+    } else {
+      ranked = [...publicLooks].slice(0, 3);
     }
 
-    const analysisSummary = {
-      styles: analysis.styles,
-      garmentTypes: analysis.garment_types,
-      colors: analysis.colors,
-    };
+    const analysisSummary = analysis
+      ? {
+          styles: analysis.styles,
+          garmentTypes: analysis.garment_types,
+          colors: analysis.colors,
+        }
+      : { degraded: true };
 
     console.log(
       `✅ [Mix & Match] ประมวลผลเสร็จ | ${new Date().toISOString()} | ` +
-        `AI ตรวจจับ: styles=${JSON.stringify(analysisSummary.styles)} ` +
-        `types=${JSON.stringify(analysisSummary.garmentTypes)} ` +
-        `colors=${JSON.stringify(analysisSummary.colors)}`,
+        `AI ตรวจจับ: styles=${JSON.stringify(analysisSummary.styles ?? [])} ` +
+        `types=${JSON.stringify(analysisSummary.garmentTypes ?? [])} ` +
+        `colors=${JSON.stringify(analysisSummary.colors ?? [])}`,
     );
     console.log(
       `  🔍 [Mix & Match] ลุคที่แนะนำ (top 3): ` +
@@ -280,7 +312,11 @@ export async function recommendLookbooks(req, res, next) {
 
     res.status(HTTP_STATUS.OK).json({
       success: true,
-      data: { lookbooks: ranked, analysis: analysisSummary },
+      data: {
+        lookbooks: ranked,
+        analysis: analysisSummary,
+        aiRanked: Boolean(analysis),
+      },
     });
   } catch (error) {
     if (error.code === "NO_GEMINI_KEY") {
