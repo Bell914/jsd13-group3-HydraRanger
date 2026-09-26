@@ -94,10 +94,10 @@ const MixAndMatchSection = ({ assets }) => {
   };
 
   return (
-    <div className="my-12 flex flex-col gap-8 rounded-2xl bg-accent p-6 sm:p-10">
+    <div className="my-12 flex flex-col gap-8 rounded-2xl bg-accent px-4 py-10 sm:px-6 sm:py-12 lg:px-10">
       <div className="flex flex-col justify-between gap-8 lg:flex-row">
         {/* ส่วนเนื้อหาคำอธิบายและขั้นตอน */}
-        <div className="flex flex-col p-9 lg:w-2/3">
+        <div className="flex w-full flex-col px-2 pt-2 sm:px-6 sm:pt-6 lg:w-2/3 lg:p-9">
           <div className="mb-6 text-white">
             <p className="text-sm font-bold tracking-wider opacity-80">
               MIX AND MATCH
@@ -110,45 +110,62 @@ const MixAndMatchSection = ({ assets }) => {
             </p>
           </div>
 
-          <ol className="flex flex-col gap-4 text-white">
-            <li className="flex items-center gap-3">
-              <span>
-                เลือกชิ้นส่วนเสื้อผ้า เลือกเสื้อ ท่อนล่าง
-                และเครื่องประดับที่คุณชอบ
-              </span>
-            </li>
+          <ol className="grid grid-cols-1 gap-3 text-white sm:grid-cols-3 sm:gap-4">
+            {[
+              { n: 1, text: "เลือกเสื้อ / กางเกงที่คุณมี" },
+              { n: 2, text: "AI วิเคราะห์สี สไตล์ และประเภทเสื้อผ้า" },
+              { n: 3, text: "รับลุคที่แมตช์ที่สุด 3 ลุคจาก Lookbook" },
+            ].map((step) => (
+              <li
+                key={step.n}
+                className="flex items-center gap-3 rounded-xl bg-white/10 p-3"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-extrabold text-white">
+                  {step.n}
+                </span>
+                <span className="text-sm leading-snug text-white/90 sm:text-xs lg:text-sm">
+                  {step.text}
+                </span>
+              </li>
+            ))}
           </ol>
 
           <div className="mt-6 flex flex-1 items-end gap-3">
             <img
               src="/collection-2026/lookbook/look-02-weekend-market.png"
               alt="ลุค Mix & Match สไตล์ช้อปปิ้งสุดสัปดาห์"
-              className="h-56 w-1/2 rounded-xl object-cover object-top shadow-lg sm:h-72"
+              className="h-36 min-w-0 w-1/2 rounded-xl object-cover object-top shadow-lg sm:h-52 md:h-56 lg:h-64 xl:h-72"
               loading="lazy"
             />
             <img
               src="/collection-2026/lookbook/look-01-city-museum.png"
               alt="ลุค Mix & Match เก๋ไก๋กลางเมือง"
-              className="h-56 w-1/2 rounded-xl object-cover object-top shadow-lg sm:h-72"
+              className="h-36 min-w-0 w-1/2 rounded-xl object-cover object-top shadow-lg sm:h-52 md:h-56 lg:h-64 xl:h-72"
               loading="lazy"
             />
           </div>
         </div>
 
         {/* ส่วน Dropzone สำหรับอัปโหลดรูปภาพ */}
-        <div className="flex flex-col justify-center gap-4 sm:flex-row lg:w-1/3 lg:flex-col">
-          <ImageDropzone
-            assets={assets}
-            label="อัปโหลดเสื้อ / ท่อนบน"
-            onFileChange={handleTopFileChange}
-            persistUpload={false}
-          />
-          <ImageDropzone
-            assets={assets}
-            label="อัปโหลดกางเกง / ท่อนล่าง"
-            onFileChange={handleBottomFileChange}
-            persistUpload={false}
-          />
+        <div className="flex w-full flex-col justify-center gap-4 lg:w-1/3">
+          <div className="flex flex-col gap-4 sm:flex-row lg:flex-col">
+            <ImageDropzone
+              assets={assets}
+              label="อัปโหลดเสื้อ / ท่อนบน"
+              onFileChange={handleTopFileChange}
+              persistUpload={false}
+              className="w-full sm:w-1/2 lg:w-full"
+              buttonClassName="h-44 sm:h-56 xl:h-64"
+            />
+            <ImageDropzone
+              assets={assets}
+              label="อัปโหลดกางเกง / ท่อนล่าง"
+              onFileChange={handleBottomFileChange}
+              persistUpload={false}
+              className="w-full sm:w-1/2 lg:w-full"
+              buttonClassName="h-44 sm:h-56 xl:h-64"
+            />
+          </div>
           <button
             type="button"
             onClick={confirmRecommend}
@@ -221,7 +238,7 @@ const MixAndMatchSection = ({ assets }) => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:px-0 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {recommendedLooks.slice(0, 3).map((look, index) => (
                 <RecommendProduct
                   key={look._id || look.id || `lookbook-${index}`}
