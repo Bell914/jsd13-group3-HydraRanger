@@ -210,9 +210,9 @@ export default function ProductListPage() {
                   {searchKeyword
                     ? `ผลการค้นหา “${searchKeyword}”`
                     : selectedCategory === "tops"
-                    ? "หมวดหมู่: เสื้อ"
+                    ? "หมวดหมู่ เสื้อ"
                     : selectedCategory === "bottoms"
-                    ? "หมวดหมู่: กางเกง"
+                    ? "หมวดหมู่ กางเกง"
                     : "เลือกซื้อสินค้า"}
                 </h2>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -262,8 +262,8 @@ export default function ProductListPage() {
                   >
                     <span>
                       {sortBy === "featured" ? "สินค้าแนะนำ" :
-                       sortBy === "price-low" ? "ราคา: ต่ำไปสูง" :
-                       sortBy === "price-high" ? "ราคา: สูงไปต่ำ" :
+                       sortBy === "price-low" ? "ราคา ต่ำไปสูง" :
+                       sortBy === "price-high" ? "ราคา สูงไปต่ำ" :
                        "ชื่อสินค้า"}
                     </span>
                     <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-primary transition-transform ${isSortOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
@@ -286,7 +286,7 @@ export default function ProductListPage() {
                           className={`font-medium w-full rounded-lg flex text-left px-4 py-2 transition-colors ${sortBy === "price-low" ? "bg-accent text-white" : "text-primary hover:bg-accent/10 hover:text-accent"}`}
                           onClick={() => { setSortBy("price-low"); setIsSortOpen(false); }}
                         >
-                          ราคา: ต่ำไปสูง
+                          ราคา ต่ำไปสูง
                         </button>
                       </li>
                       <li>
@@ -295,7 +295,7 @@ export default function ProductListPage() {
                           className={`font-medium w-full rounded-lg flex text-left px-4 py-2 transition-colors ${sortBy === "price-high" ? "bg-accent text-white" : "text-primary hover:bg-accent/10 hover:text-accent"}`}
                           onClick={() => { setSortBy("price-high"); setIsSortOpen(false); }}
                         >
-                          ราคา: สูงไปต่ำ
+                          ราคา สูงไปต่ำ
                         </button>
                       </li>
                       <li>

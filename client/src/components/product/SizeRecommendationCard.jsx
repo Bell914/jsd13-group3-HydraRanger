@@ -46,7 +46,7 @@ export function SizeRecommendationCard({ isLoggedIn, isLoading, recommendation, 
         <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-secondary">ความมั่นใจ {recommendation.confidence}</span>
       </div>
       <p className="mt-2 text-sm text-secondary">{recommendation.reason}</p>
-      <p className="mt-1 text-xs text-gray-500">อ้างอิงจาก: {recommendation.source} • คำแนะนำอาจแตกต่างตามทรงสินค้า</p>
+      <p className="mt-1 text-xs text-gray-500">อ้างอิงจาก {recommendation.source} • คำแนะนำอาจแตกต่างตามทรงสินค้า</p>
       {!canApply && (
         <p className="mt-2 text-sm text-amber-800" role="status">
           {recommendation.status === 'out-of-stock'
