@@ -2,7 +2,7 @@
 
 เว็บไซต์ E-commerce เสื้อผ้า Unisex พร้อม Lookbook ของทีม **HydraRanger** ในหลักสูตร Generation Thailand Junior Software Developer รุ่น JSD13 ใช้ MongoDB, Express, React และ Node.js โดยแยกหน้าร้าน ระบบ Admin และ API
 
-> **สถานะ:** เวอร์ชันระหว่างพัฒนา ยังไม่ใช่ Final version
+> **สถานะ:** ฟีเจอร์หลักพัฒนาเสร็จสมบูรณ์แล้ว อยู่ระหว่างขั้นตอน integration testing, deployment verification และเตรียมความพร้อมสำหรับการนำเสนอ Final Project
 
 ## ลิงก์
 
