@@ -73,12 +73,12 @@ export function AdminDashboardPage() {
   const linePath = linePoints.map((point) => `${point.x},${point.y}`).join(' ');
   return (
     <div className="admin-content">
-      <AdminTopbar title="ภาพรวมร้านค้า" />
+      <AdminTopbar title="Dashboard" />
 
       <main className="dashboard-page">
         <header className="page-heading">
           <div>
-            <h1>Admin Dashboard</h1>
+            <h1>ภาพรวมร้านค้า</h1>
             <p>ข้อมูลสินค้า ลูกค้า และคำสั่งซื้อจริงจาก MongoDB</p>
           </div>
           <button type="button" className="primary-action" onClick={loadDashboard} disabled={loading}>
