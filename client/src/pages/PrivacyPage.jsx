@@ -1,6 +1,6 @@
 export default function PrivacyPolicy() {
   return (
-    <div className="bg-white min-h-screen flex flex-col font-['Poppins']">
+    <div className="bg-white min-h-screen flex flex-col">
       {/* Navbar Container (หากมีคอมโพเนนต์ Navbar สามารถใส่แทนที่ตรงนี้ได้) */}
       <header id="navbar-container"></header>
 

@@ -6,6 +6,7 @@ import { productSeedData } from '../data/productSeedData.js';
 import { articleSeedData } from '../data/articleSeedData.js';
 import seedData from '../data/seedData.json' with { type: 'json' };
 import lookData from '../../../client/public/collection-2026/look-data.json' with { type: 'json' };
+import { buildDefaultSizeChart } from '../utils/defaultSizeCharts.js';
 
 const { initialUsers, initialItems } = seedData;
 
@@ -115,7 +116,8 @@ async function seedProducts() {
       availableDate: raw.availableDate,
       is_active: raw.isActive ?? true,
       images,
-      variants
+      variants,
+      size_chart: buildDefaultSizeChart({ category: raw.category, variants })
     };
 
     const product = await Product.findOneAndUpdate(

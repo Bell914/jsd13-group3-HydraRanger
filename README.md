@@ -2,7 +2,7 @@
 
 เว็บไซต์ E-commerce เสื้อผ้า Unisex พร้อม Lookbook ของทีม **HydraRanger** ในหลักสูตร Generation Thailand Junior Software Developer รุ่น JSD13 ใช้ MongoDB, Express, React และ Node.js โดยแยกหน้าร้าน ระบบ Admin และ API
 
-> **สถานะ:** เวอร์ชันระหว่างพัฒนา ยังไม่ใช่ Final version
+> **สถานะ:** ฟีเจอร์หลักพัฒนาเสร็จสมบูรณ์แล้ว อยู่ระหว่างขั้นตอน integration testing, deployment verification และเตรียมความพร้อมสำหรับการนำเสนอ Final Project
 
 ## ลิงก์
 
@@ -106,6 +106,13 @@ npm run test:conn --prefix server
 ```
 
 คำสั่งเหล่านี้เป็นคำสั่งที่มีใน `package.json` ไม่ได้หมายความว่าผลทดสอบผ่านแล้ว และ `test:conn` ต้องตั้ง environment กับเปิดฐานข้อมูลให้พร้อมก่อน
+
+ถ้าฐานข้อมูลทดสอบมีสินค้าเก่าที่ยังไม่มี `size_chart` ให้ตรวจรายการก่อน แล้วจึงเติมเฉพาะสินค้าหมวด Tops/Bottoms ที่มีไซส์มาตรฐาน:
+
+```bash
+npm run backfill:size-charts --prefix server -- --dry-run
+npm run backfill:size-charts --prefix server
+```
 
 ## เอกสารและการทำงานร่วมกัน
 
