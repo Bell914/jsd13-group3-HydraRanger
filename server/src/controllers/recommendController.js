@@ -294,7 +294,12 @@ export async function recommendLookbooks(req, res, next) {
       error.code === "GEMINI_EMPTY" ||
       error.code === "GEMINI_INVALID"
     ) {
-      return res.status(HTTP_STATUS.BAD_GATEWAY || 502).json({
+      console.error(
+        `🔴 [Mix & Match] Gemini error | ${error.code}` +
+          (error.status ? ` | HTTP ${error.status}` : "") +
+          ` | ${error.message}`,
+      );
+      return res.status(HTTP_STATUS.BAD_GATEWAY).json({
         success: false,
         message: "ไม่สามารถวิเคราะห์รูปได้ในตอนนี้ กรุณาลองใหม่",
       });
