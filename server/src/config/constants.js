@@ -18,29 +18,6 @@ export const USER_ROLES = {
   MODERATOR: 'moderator'
 };
 
-export const ITEM_STATUS = {
-  TODO: 'Todo',
-  IN_PROGRESS: 'In Progress',
-  DONE: 'Done',
-  REVIEW: 'Review'
-};
-
-export const ITEM_PRIORITY = {
-  LOW: 'Low',
-  MEDIUM: 'Medium',
-  HIGH: 'High',
-  CRITICAL: 'Critical'
-};
-
-export const ITEM_CATEGORIES = [
-  'General',
-  'Frontend',
-  'Backend',
-  'Design',
-  'DevOps',
-  'Testing'
-];
-
 // 🚀 Welcome Coupon Configuration (5%)
 export const WELCOME_COUPON = {
   CODE: "WELCOME5",

@@ -9,7 +9,7 @@
     "dev": "node --watch src/server.js",
     "seed": "node src/scripts/seed.js",
     "backfill:size-charts": "node src/scripts/backfillSizeCharts.js",
-    "test": "node --test src/tests/*.test.js",
+    "test": "NODE_ENV=production JWT_SECRET=test-only-secret node --test src/tests/*.test.js",
     "test:conn": "node src/scripts/testConnection.js",
     "test:loyalty": "node src/scripts/testLoyaltyBackend.js",
     "test:coupon": "node src/scripts/testCouponBackend.js",

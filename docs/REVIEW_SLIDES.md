@@ -1,199 +1,136 @@
-# สไลด์ Review — OCCASION (ทีม HydraRanger, Group 3)
+# สไลด์ Review — OCCASION Sprint 3
 
-> ไฟล์นี้เป็นเนื้อหาสไลด์ฉบับย่อ ครอบคลุม ภาพรวมโปรเจกต์ / เทคนิค & สถาปัตยกรรม / Mix & Match (AI) / การทำงานทีม นำไปวางใน Google Slides, PowerPoint หรือ Canva ได้
+เนื้อหานี้เป็น outline สำหรับนำไปทำ Google Slides, PowerPoint หรือ Canva โดยตรวจเทียบกับ codebase Sprint 3 แล้ว
 
----
+## สไลด์ 1 — OCCASION
 
-## สไลด์ 1 — สไลด์เปิด
+**E-commerce เสื้อผ้า Unisex + Lookbook + Personalized Experience**
 
-**OCCASION**
-E-commerce เสื้อผ้า Unisex + Lookbook พร้อม AI จับคู่เสื้อผ้า
+- ทีม HydraRanger, Group 3 — JSD13
+- Customer Client, Admin Client และ Express API
 
-- ทีม HydraRanger — หลักสูตร Generation Thailand Junior Software Developer (JSD13)
-- รุ่น 3 — Training + Production Project
-- จัดทำโดย: Pathsharasakon, Puttipong Runtakit, Bell914, bird-sitthan, LukNok, Ittikorn Tipson
+## สไลด์ 2 — แนวคิดและปัญหาที่แก้
 
----
+- เลือกซื้อเสื้อผ้าและ Complete Look ในระบบเดียว
+- ลดความไม่มั่นใจเรื่องไซส์ด้วย Personalized Size Recommendation
+- ใช้ Mix & Match ช่วยค้นหา Lookbook จากรูปเสื้อผ้า
+- ให้ทีมร้านค้าจัดการสินค้า stock order content และ coupon ผ่าน Admin
 
-## สไลด์ 2 — ภาพรวมโปรเจกต์
-
-**Concept**: เว็บ E-commerce เสื้อผ้า Unisex ที่ครบทั้งหน้าร้าน ระบบขาย และ Lookbook
-
-- 3 ระบบใน 1 โปรเจกต์: Customer Client, Admin Client, Express API
-- แยกหน้าร้านลูกค้าและหลังบ้าน Admin ออกจากกัน (ใช้ Backend + ฐานข้อมูลร่วมกัน)
-- ฟีเจอร์เด่น: Product, Cart & Checkout (Stripe), Auth & Profile, Lookbook, Review, Coupon/Loyalty, Member, Mix & Match AI
-- Deploy จริง: Frontend → Vercel, API → Render, ฐานข้อมูล → MongoDB Atlas
-
----
-
-## สไลด์ 3 — ฟีเจอร์หลัก
+## สไลด์ 3 — ฟีเจอร์ที่ส่งมอบ
 
 | โซน | ฟีเจอร์ |
 | --- | --- |
-| หน้าร้าน | Product list/detail, Lookbook, Search/Filter, Review |
-| สมาชิก | Register/Login (HttpOnly cookie), Profile, ที่อยู่, Size profile |
-| ขาย | Cart, Checkout, Stripe Payment, Order, Coupon/Welcome 5% |
-| Loyalty | ระบบสะสมแต้มและส่วนลด |
-| AI | Mix & Match จับคู่เสื้อผ้า (Gemini) |
-| Admin | Dashboard, Product/Customer/Order/Review/Article/Lookbook CRUD |
+| หน้าร้าน | Product, Search/Filter, Lookbook, Article, Mix & Match |
+| สมาชิก | Register/Login, Profile, Address, Size Profile, Favorite Lookbook |
+| การขาย | Cart, Checkout, Stripe Payment, Orders, Coupon/Loyalty |
+| Admin | Dashboard, Product/Size Chart, Customer, Order, Lookbook, Article, Coupon |
 
----
+Review feature ถูกตัดออกจาก scope ปัจจุบัน
 
 ## สไลด์ 4 — Tech Stack
 
-**Frontend**
-- React 19 + Vite 6 + TailwindCSS 4 + daisyUI
-- React Router 7, Zustand (state), lucide-react
-- Vitest + Testing Library (client test)
+**Frontend:** React 19, Vite, Tailwind CSS, daisyUI, React Router, Zustand
 
-**Backend**
-- Node.js + Express 4 (MVC + Service Layer)
-- MongoDB + Mongoose
-- JWT + cookie (แยก session ลูกค้า/Admin), bcryptjs, helmet, rate-limit, express-validator
-- Stripe, Nodemailer, Multer (upload), Google Gemini AI
-- Vitest test (server)
+**Backend:** Node.js, Express 4, MongoDB/Mongoose, JWT + HttpOnly cookie, Multer, Nodemailer, Stripe และ Google Gemini
 
----
+**Testing:** Node test runner, Vitest, Testing Library, jest-axe และ build verification
 
-## สไลด์ 5 — สถาปัตยกรรม (High Level)
+## สไลด์ 5 — Architecture
 
-```
-Customer Client (React :5173) ──┐
-                                ├──> Express API ──> MongoDB
-Admin Client (React :5174) ─────┘        │
-                                         └──> Gemini AI (Mix & Match)
+```text
+Customer Client ──┐
+                  ├── Express API ── MongoDB / GridFS
+Admin Client ─────┘       ├──────── Stripe
+                          ├──────── SMTP
+                          └──────── Gemini
 ```
 
-- Decoupled Multi-Client Architecture
-- Frontend ใช้ Service Layer กลาง (API Client, `credentials: include`)
-- Backend แบ่งชั้น: Routes → Middleware → Validators → Controllers → Services → Models
-- แยก session: `occasion_session` (ลูกค้า) / `occasion_admin_session` (Admin)
+- Customer และ Admin deploy แยกกัน
+- ใช้ Backend/Database ร่วมกัน
+- Backend แบ่ง Routes → Middleware → Controllers → Services → Models
 
----
+## สไลด์ 6 — Authentication และ Security
 
-## สไลด์ 6 — API & Data
+- HttpOnly cookie แยก Customer/Admin
+- ตรวจ role และสถานะบัญชีจากฐานข้อมูล
+- CORS allowlist + Helmet + validation
+- Rate limit แยก Login/Register/Password Reset/Recommend/Upload
+- Upload ตรวจ MIME, ขนาด และ magic bytes
+- Secret อยู่ใน environment และไม่ commit `.env`
 
-**API หลัก (`/api`)**
-- `/products`, `/lookbooks`, `/articles` — สาธารณะ (GET)
-- `/auth` — register/login/refresh/profile/reset-password
-- `/orders`, `/payment`, `/coupons` — ต้องล็อกอิน
-- `/admin/*` — ต้อง role `admin` + Admin session แยก
-- `/recommend` — Mix & Match (rate limit 10 ครั้ง/15 นาที)
-- `/uploads` — อัปโหลดรูป (Admin)
+## สไลด์ 7 — Product และ Admin Flow
 
-**Models**: User, Product, Lookbook, Order, Review, Article, Coupon, Category, Item, StockAdjustment, RateLimitEntry
+- Product ใช้ Category, Images, Variants, SKU, Price และ Stock
+- Admin เพิ่ม/แก้/ซ่อน Product และแก้ `size_chart`
+- Order และ Dashboard อ่านข้อมูลจาก MongoDB
+- Article/Lookbook/Coupon มี Public API และ Admin management แยกกัน
 
----
+## สไลด์ 8 — Personalized Size Recommendation
 
-## สไลด์ 7 — ความปลอดภัย (Security)
+1. Customer ให้ Consent และบันทึก chest/waist/hips + preferred fit
+2. Product Detail เทียบข้อมูลกับ `size_chart`
+3. ระบบแสดงไซส์ เหตุผล confidence และ stock status
+4. ลูกค้าแก้หรือลบ Size Profile ได้
+5. Admin Customer API ไม่เห็นสัดส่วนรายบุคคล
 
-- Session ใน **HttpOnly cookie** — JavaScript ใน browser อ่าน token ไม่ได้
-- แยกสิทธิ์: ลูกค้า กับ Admin (Cookie + role ต่างกัน)
-- อัปโหลดรูป: ตรวจ MIME + **magic bytes** (header ของไฟล์จริง) ไม่เชื่อชื่อนามสกุล
-- Input validation ทุก endpoint (express-validator)
-- Rate limit: login/register/forgot-password/recommend/upload
-- helmet + sanitize, ไม่ commit `.env`
-- เอกสารอ้างอิง: `docs/SECURITY_TESTING.md`, `docs/SIZE_SECURITY_FOLLOWUP.md`
+สินค้าจำลองบน staging ใช้ script backfill เพื่อเติมตารางไซส์มาตรฐานก่อน Demo
 
----
+## สไลด์ 9 — Mix & Match AI
 
-## สไลด์ 8 — Mix & Match (AI) — ภาพรวม
+- รับรูป top/bottom สูงสุด 2 รูป ไม่เกิน 5 MB ต่อรูป
+- ตรวจว่าเป็นรูปเสื้อผ้าก่อนวิเคราะห์
+- Gemini วิเคราะห์สี ประเภท และสไตล์
+- จัดอันดับ Lookbook 3 อันดับพร้อมเหตุผล
+- รูปอยู่ใน memory ระหว่าง request และไม่เก็บถาวร
 
-ฟีเจอร์จับคู่เสื้อผ้าด้วย Google Gemini AI
+## สไลด์ 10 — Checkout และ Payment
 
-- ผู้ใช้เลือก / ลากวางรูป **ท่อนบน** และ **ท่อนล่าง** (สูงสุด 2 รูป)
-- ระบบวิเคราะห์ style, garment types, colors จาก Gemini
-- ส่งคืน **Lookbook ที่เข้าคู่ 3 อันดับแรก** พร้อมเหตุผล (TH)
-- รูปถูกรวมเข้ากับสินค้าจริง → กดซื้อทั้งเซ็ตได้ พร้อมคูปองส่วนลด
-- รองรับ JPG/PNG/WebP/GIF ≤ 5MB ต่อรูป
-
----
-
-## สไลด์ 9 — Mix & Match — Data Flow
-
-```
-ผู้ใช้ (Client) → POST /recommend (multipart: top, bottom)
-   → multer memoryStorage (ไม่เขียนลงดิสก์) + ตรวจ magic bytes
-   → แปลงรูปเป็น base64 → ส่ง Gemini (analyzeClothingImage)
-   => styles / garment_types / colors
-   → ดึง Lookbook ทั้งหมด → Gemini rankLookbooks (fallback: heuristic score)
-   → คืน { lookbooks: top 3, analysis }
+```text
+Cart → Create Order → Reserve Stock → Stripe PaymentIntent
+     → Stripe Webhook → Paid Order → Loyalty/Coupon
 ```
 
-- รูปไม่ถูกเก็บถาวร — `persistUpload=false` (อยู่แค่ใน memory/browser)
-- ป้องกัน race condition จากการกดยืนยันซ้ำ (requestId)
-- ถ้า Gemini fail → fallback อัลกอริทึมให้คะแนนความเข้าคู่เอง
+- Server ยืนยันราคาและ stock จากฐานข้อมูล
+- ป้องกันการสร้าง PaymentIntent และคืน stock ซ้ำ
+- Customer ดูรายละเอียด/ประวัติและยกเลิก Order ตามสถานะได้
+
+## สไลด์ 11 — Coupon และ Loyalty
+
+- Welcome Coupon ผูกผู้ใช้และส่งผ่านอีเมลเมื่อ SMTP พร้อม
+- General Coupon จัดการผ่าน Admin
+- ตรวจวันหมดอายุ ยอดขั้นต่ำ สถานะ และการใช้งาน
+- Order บันทึกส่วนลด, coupon code และ membership tier ณ เวลาซื้อ
+
+## สไลด์ 12 — การทำงานทีม
+
+```text
+Product Backlog → Sprint Backlog → To Do → In Progress
+→ Code Review → Testing → Done
+```
+
+- Feature branch จาก `develop`
+- PR พร้อมวิธีทดสอบและ Trello card
+- Reviewer approve ก่อน merge
+- Feature Owner อธิบาย flow และข้อจำกัดได้
+
+## สไลด์ 13 — เอกสารและการตรวจสอบ
+
+- `README.md` — setup, links และ deployment checklist
+- `docs/API_SPEC.md` — endpoints และสิทธิ์
+- `docs/DATABASE_SCHEMA.md` — models และ relationships
+- `docs/ARCHITECTURE.md` — architecture และ data flows
+- `docs/LOYALTY_BUSINESS_RULES.md` — loyalty/coupon rules
+
+ตรวจ Client/Admin build, Client/Admin/Server tests, security tests และ staging flow ก่อน Demo
+
+## สไลด์ 14 — ข้อจำกัดและ Next Steps
+
+- ตั้ง SMTP, Stripe และ Gemini environment ให้ครบก่อนทดสอบ integration จริง
+- ตรวจ staging products ให้มี `size_chart`
+- Cart ยังอยู่ฝั่ง Client และยังไม่มี Cart model/route
+- เพิ่ม CI สำหรับ lint/test/build ก่อน merge
+- เพิ่ม monitoring และ shared production observability
 
 ---
 
-## สไลด์ 10 — Mix & Match — โค้ดที่เกี่ยวข้อง
-
-| ฝั่ง | ไฟล์ | หน้าที่ |
-| --- | --- | --- |
-| Client | `MixAndMatchSection.jsx` | หน้าจอ MIX AND MATCH + แสดงผล top 3 |
-| Client | `ImageDropzone.jsx` | drag & drop, preview blob, validate ไฟล์ |
-| Client | `recommendService.js` | POST /recommend |
-| Server | `recommendController.js` | อ่านรูป → base64 → Gemini → คืน lookbooks |
-| Server | `geminiService.js` | analysis prompt + ranking prompt |
-| Server | `recommendUploadMiddleware.js` | memory upload + magic bytes + ขนาด ≤5MB |
-
----
-
-## สไลด์ 11 — การทำงานทีม (Feature Ownership)
-
-| Flow | Owner | Reviewer |
-| --- | --- | --- |
-| Team Coordination / Integration & Demo | Nae | ทุกคน |
-| React/Server Setup, Shared Layout, Lookbook React | Mos | Nae |
-| Product Mock Data / Admin Product | Nae | BM |
-| Product | BM | Mos |
-| Cart & Checkout | Bird | Mos |
-| User & Form | LukNok | Nae |
-
-หลัก Feature Ownership: เจ้าของงานต้องอธิบายโค้ด ผสานงาน และทดสอบ Flow ของตัวเองได้
-
----
-
-## สไลด์ 12 — กระบวนการพัฒนาร่วมกัน
-
-**Trello**: Product Backlog → Sprint Backlog → To Do → In Progress → Code Review → Testing → Done
-
-**Git Flow**: `main` ← `develop` ← `feature/*`
-
-- ห้าม push ตรงเข้า main / develop
-- ทุกงานผ่าน PR + Code Review เสมอ
-- หลีกเลี่ยง `git add .` และ Commit `.env` / secret
-- Commit message มาตรฐาน: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
-- Shared file ต้องแจ้ง Owner ก่อนแก้
-
----
-
-## สไลด์ 13 — เอกสาร & การทดสอบ
-
-**Docs**: API_SPEC, DATABASE_SCHEMA, ARCHITECTURE, SECURITY_TESTING, LOYALTY_BUSINESS_RULES
-
-**การทดสอบ**
-- Client: Vitest + Testing Library (component + accessibility a11y)
-- Server: test สถานการณ์สำเร็จ/ผิดพลาด, security test
-- Test:conn — ทดสอบการเชื่อมต่อฐานข้อมูลจริง
-
-**ทำเนียบ Commit**: 143+ commits จาก 6 คนผ่าน feature branches
-
----
-
-## สไลด์ 14 — สรุป / Next Step
-
-**สิ่งที่ทำสำเร็จ**
-- เว็บ E-commerce ครบวงจร 3 ชั้น ที่ deploy ได้จริง
-- Admin panel แยกจากหน้าร้าน พร้อม Dashboard
-- ฟีเจอร์ AI จับคู่เสื้อผ้า (Gemini) ต่อยอดเป็นจุดขาย
-- กระบวนการทีมมาตรฐาน: Trello + Git Flow + PR + Feature Ownership
-
-**โอกาสพัฒนา**
-- Personal size recommendation (มี doc white paper แล้ว)
-- เพิ่ม Mix & Match เป็นหลายชิ้น (outerwear, dress)
-- เพิ่ม CI pipeline (lint + test อัตโนมัติ) ก่อน merge
-
----
-
-_เนื้อหาสไลด์จัดทำจากไฟล์จริงใน repo: README, CONTRIBUTING, docs/ARCHITECTURE, docs/API_SPEC และโค้ดปัจจุบัน_
+แหล่งอ้างอิง: source code, `README.md`, `CONTRIBUTING.md` และเอกสารกลางใน `docs/`
