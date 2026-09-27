@@ -9,6 +9,7 @@ const PAYMENT_OPTIONS = [
 export default function PaymentSection({
   paymentData,
   onChangePayment,
+  isCancelling,
   isCollapsed,
   onEdit,
   onBack,
@@ -54,8 +55,9 @@ export default function PaymentSection({
               <button
                 type="button"
                 aria-pressed={isSelected}
+                disabled={isCancelling}
                 onClick={() => onChangePayment({ method: option.id })}
-                className={`flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-gray-50 ${
+                className={`flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 ${
                   isSelected ? "bg-gray-50" : ""
                 }`}
               >
@@ -80,6 +82,7 @@ export default function PaymentSection({
       <p className="mt-4 text-xs text-gray-500">
         ทั้งสองช่องทางเป็นระบบชำระเงินจำลองสำหรับงานสาธิต ระบบจะไม่ตัดเงินจริงจากบัญชีของคุณ
         และ QR ที่แสดงไม่ใช่ QR ของธนาคารหรือพร้อมเพย์
+        {isCancelling && " กำลังยกเลิกออเดอร์เดิม กรุณารอสักครู่"}
       </p>
 
       {onBack && (
@@ -87,7 +90,8 @@ export default function PaymentSection({
           <button
             type="button"
             onClick={onBack}
-            className="w-full rounded-lg bg-gray-200 py-3.5 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-300 sm:w-36"
+            disabled={isCancelling}
+            className="w-full rounded-lg bg-gray-200 py-3.5 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-50 sm:w-36"
           >
             ย้อนกลับ
           </button>

@@ -78,6 +78,11 @@ export default function CheckoutPage() {
   // Set once the order exists on the server so a failed confirmation can be retried
   // against the same order instead of reserving stock a second time.
   const [pendingOrderId, setPendingOrderId] = useState("");
+  // True while the pending order is being released, so the customer cannot start a new
+  // order that would reserve the same stock before the cancel lands.
+  const [isCancelling, setIsCancelling] = useState(false);
+  const pendingOrderIdRef = useRef("");
+  const cancelRequestRef = useRef(null);
   const orderSubmissionInProgress = useRef(false);
 
   useEffect(() => {
@@ -227,10 +232,69 @@ export default function CheckoutPage() {
     setAddressStore(addresses);
   }
 
+  // The pending id lives in a ref as well as state so async flows always read the current
+  // value instead of the one captured when their handler was created.
+  function trackPendingOrder(orderId) {
+    pendingOrderIdRef.current = orderId;
+    setPendingOrderId(orderId);
+  }
+
+  async function cancelPendingOrder(orderId) {
+    setIsCancelling(true);
+    setSubmitError("");
+
+    try {
+      await cancelOrder(orderId);
+      trackPendingOrder("");
+    } catch (error) {
+      // The order still holds stock, so keep the id: a retry then confirms this order
+      // instead of creating a second one, and the customer can cancel it again.
+      console.warn("Could not cancel the pending order:", error.message);
+      setSubmitError("ยกเลิกออเดอร์ไม่สำเร็จ กรุณากดยกเลิกออเดอร์อีกครั้ง");
+    } finally {
+      setIsCancelling(false);
+    }
+  }
+
+  // Releases the order we created but could not confirm so its stock and coupon go back
+  // before the customer changes anything about the order. The id is only dropped once the
+  // server confirms the cancel, so no new order can be created while the old one still
+  // holds stock. Returns a promise only when a cancel is needed, which keeps callers that
+  // have nothing to wait for synchronous, and shares one request with concurrent callers.
+  function abandonPendingOrder() {
+    if (cancelRequestRef.current) return cancelRequestRef.current;
+    if (!pendingOrderIdRef.current) return null;
+
+    const request = cancelPendingOrder(pendingOrderIdRef.current).finally(() => {
+      if (cancelRequestRef.current === request) cancelRequestRef.current = null;
+    });
+    cancelRequestRef.current = request;
+    return request;
+  }
+
   function goToStep(step) {
     // Walking away from the payment step abandons any order created but not confirmed.
-    if (step < 3) abandonPendingOrder();
+    const cancelRequest = step < 3 ? abandonPendingOrder() : null;
+    if (cancelRequest) {
+      cancelRequest.then(() => setCurrentStep(step));
+      return;
+    }
+
     setCurrentStep(step);
+  }
+
+  function handlePaymentMethodChange(nextPayment) {
+    // The old order must release its stock before the channel changes, otherwise the next
+    // attempt could create a second order while the previous one is still reserved.
+    const cancelRequest = abandonPendingOrder();
+    if (cancelRequest) {
+      setSubmitError("");
+      cancelRequest.then(() => setPaymentData(nextPayment));
+      return;
+    }
+
+    setSubmitError("");
+    setPaymentData(nextPayment);
   }
 
   async function finishOrder(payload, order) {
@@ -274,27 +338,6 @@ export default function CheckoutPage() {
     return order;
   }
 
-  // Releases the order we created but could not confirm so its stock and coupon go
-  // back before the customer changes anything about the order.
-  async function abandonPendingOrder() {
-    const orderId = pendingOrderId;
-    setPendingOrderId("");
-    if (!orderId) return;
-
-    try {
-      await cancelOrder(orderId);
-    } catch (error) {
-      // The 30 minute reaper is the fallback when the cancel call cannot reach the API.
-      console.warn("Could not cancel the pending order:", error.message);
-    }
-  }
-
-  function handlePaymentMethodChange(nextPayment) {
-    setSubmitError("");
-    abandonPendingOrder();
-    setPaymentData(nextPayment);
-  }
-
   // Creates the order, then reports the settled demo payment so the server moves the
   // order to `paid` through the normal status machine. Once the order exists, a retry
   // must confirm that same order instead of reserving stock a second time.
@@ -305,8 +348,12 @@ export default function CheckoutPage() {
     setSubmitError("");
 
     try {
+      // A cancel that is still running must land first, otherwise this attempt would
+      // create a second order while the abandoned one still holds stock.
+      if (cancelRequestRef.current) await cancelRequestRef.current;
+
       const payload = buildOrderPayload();
-      let orderId = pendingOrderId;
+      let orderId = pendingOrderIdRef.current;
       let order = null;
 
       if (!orderId) {
@@ -319,12 +366,12 @@ export default function CheckoutPage() {
         if (!orderId) {
           throw new Error("สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
         }
-        setPendingOrderId(orderId);
+        trackPendingOrder(orderId);
       }
 
       const confirmResponse = await confirmPayment(orderId);
       const paidOrder = confirmResponse?.data || confirmResponse || order;
-      setPendingOrderId("");
+      trackPendingOrder("");
 
       await finishOrder(payload, paidOrder);
     } catch (error) {
@@ -332,7 +379,7 @@ export default function CheckoutPage() {
 
       // 400/404 mean this order can never be confirmed, so drop it and start fresh.
       if ([400, 404].includes(error.status)) {
-        setPendingOrderId("");
+        trackPendingOrder("");
       }
 
       setCurrentStep(3);
@@ -428,11 +475,13 @@ export default function CheckoutPage() {
                 <PaymentSection
                   paymentData={paymentData}
                   onChangePayment={handlePaymentMethodChange}
+                  isCancelling={isCancelling}
                   onBack={() => goToStep(2)}
                 />
                 {paymentData.method === "credit-card" ? (
                   <DemoCardForm
                     isSubmitting={isSubmitting}
+                    isCancelling={isCancelling}
                     error={submitError}
                     onSubmit={handlePlaceOrder}
                   />
@@ -440,6 +489,7 @@ export default function CheckoutPage() {
                   <PromptPayQrPanel
                     totalAmount={totalAmount}
                     isSubmitting={isSubmitting}
+                    isCancelling={isCancelling}
                     error={submitError}
                     onConfirm={handlePlaceOrder}
                   />
@@ -453,10 +503,10 @@ export default function CheckoutPage() {
                     <button
                       type="button"
                       onClick={abandonPendingOrder}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || isCancelling}
                       className="mt-3 w-full rounded-lg border border-gray-300 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-6"
                     >
-                      ยกเลิกออเดอร์นี้และเริ่มใหม่
+                      {isCancelling ? "กำลังยกเลิกออเดอร์..." : "ยกเลิกออเดอร์นี้และเริ่มใหม่"}
                     </button>
                   </div>
                 )}

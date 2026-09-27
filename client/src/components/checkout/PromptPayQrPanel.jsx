@@ -15,8 +15,10 @@ export function buildPromptPayPayload(totalAmount) {
   return `${DEMO_PAYMENT_BASE_URL}?${params.toString()}`;
 }
 
-export default function PromptPayQrPanel({ totalAmount, isSubmitting, error, onConfirm }) {
+export default function PromptPayQrPanel({ totalAmount, isSubmitting, isCancelling, error, onConfirm }) {
   const payload = useMemo(() => buildPromptPayPayload(totalAmount), [totalAmount]);
+  // The pending order still holds stock until its cancel lands, so paying has to wait.
+  const isBusy = isSubmitting || isCancelling;
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-xs">
@@ -73,10 +75,15 @@ export default function PromptPayQrPanel({ totalAmount, isSubmitting, error, onC
       <button
         type="button"
         onClick={onConfirm}
-        disabled={isSubmitting}
+        disabled={isBusy}
+        aria-busy={isBusy}
         className="mt-5 w-full rounded-lg bg-[#D0021B] py-3.5 text-sm font-bold tracking-wider text-white transition-colors hover:bg-[#b00217] disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {isSubmitting ? "กำลังยืนยันการโอนเงิน..." : "จำลองการโอนเงินสำเร็จ"}
+        {isCancelling
+          ? "กำลังยกเลิกออเดอร์เดิม..."
+          : isSubmitting
+            ? "กำลังยืนยันการโอนเงิน..."
+            : "จำลองการโอนเงินสำเร็จ"}
       </button>
     </div>
   );

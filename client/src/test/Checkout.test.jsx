@@ -156,10 +156,109 @@ describe("Checkout order integration", () => {
     fireEvent.click(screen.getByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" }));
 
     await waitFor(() => expect(cancelOrder).toHaveBeenCalledWith("order-mongo-id"));
-    // After abandoning, the next attempt has to build a fresh order.
-    expect(screen.queryByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" })).not.toBeInTheDocument();
+    // The order id is only dropped once the cancel lands, then the next attempt builds a fresh order.
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" })).not.toBeInTheDocument(),
+    );
     fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
     await waitFor(() => expect(createOrder).toHaveBeenCalledTimes(2));
+  });
+
+  it("keeps payment blocked until the pending order is cancelled", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("network down"), { status: 503, data: { message: "เชื่อมต่อไม่ได้" } }),
+    );
+    let finishCancel;
+    cancelOrder.mockImplementationOnce(
+      () => new Promise((resolve) => { finishCancel = resolve; }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" }));
+
+    // The old order still holds stock while the cancel is in flight, so paying has to wait.
+    const cancellingButton = await screen.findByRole("button", { name: "กำลังยกเลิกออเดอร์เดิม..." });
+    expect(cancellingButton).toBeDisabled();
+    fireEvent.click(cancellingButton);
+    expect(createOrder).toHaveBeenCalledTimes(1);
+    expect(confirmPayment).toHaveBeenCalledTimes(1);
+
+    finishCancel({ data: { status: "cancelled" } });
+
+    const payButton = await screen.findByRole("button", { name: "จำลองการโอนเงินสำเร็จ" });
+    await waitFor(() => expect(payButton).toBeEnabled());
+    fireEvent.click(payButton);
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    // Only the released order may be replaced by a new one.
+    expect(cancelOrder).toHaveBeenCalledTimes(1);
+    expect(createOrder).toHaveBeenCalledTimes(2);
+  });
+
+  it("defers a payment method change until the pending order is cancelled", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("network down"), { status: 503, data: { message: "เชื่อมต่อไม่ได้" } }),
+    );
+    let finishCancel;
+    cancelOrder.mockImplementationOnce(
+      () => new Promise((resolve) => { finishCancel = resolve; }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Credit / Debit Card" }));
+
+    // Switching channels cannot skip the cancel, so the card form stays closed.
+    expect(await screen.findByRole("button", { name: "กำลังยกเลิกออเดอร์เดิม..." })).toBeDisabled();
+    expect(screen.queryByLabelText("หมายเลขบัตร")).not.toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledTimes(1);
+
+    finishCancel({ data: { status: "cancelled" } });
+
+    const payButton = await screen.findByRole("button", { name: "ชำระเงินและยืนยันคำสั่งซื้อ" });
+    await waitFor(() => expect(payButton).toBeEnabled());
+    fillCardForm();
+    fireEvent.click(payButton);
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(cancelOrder).toHaveBeenCalledTimes(1);
+    expect(createOrder).toHaveBeenCalledTimes(2);
+  });
+
+  it("confirms the pending order instead of creating a new one when the cancel fails", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("network down"), { status: 503, data: { message: "เชื่อมต่อไม่ได้" } }),
+    );
+    cancelOrder.mockRejectedValueOnce(new Error("service unavailable"));
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" }));
+
+    expect(
+      await screen.findByText("ยกเลิกออเดอร์ไม่สำเร็จ กรุณากดยกเลิกออเดอร์อีกครั้ง"),
+    ).toBeInTheDocument();
+    // The cancel never landed, so the order keeps its stock and can be retried.
+    expect(screen.getByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledTimes(1);
+    expect(confirmPayment.mock.calls.map(([orderId]) => orderId)).toEqual([
+      "order-mongo-id",
+      "order-mongo-id",
+    ]);
   });
 
   it("creates a new order when the pending one can no longer be confirmed", async () => {

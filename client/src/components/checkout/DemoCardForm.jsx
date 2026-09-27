@@ -81,7 +81,7 @@ const inputClassName = (hasError) =>
       : "border-gray-300 focus:ring-blue-100 focus:border-blue-600"
   }`;
 
-export default function DemoCardForm({ isSubmitting, error, onSubmit }) {
+export default function DemoCardForm({ isSubmitting, isCancelling, error, onSubmit }) {
   const [card, setCard] = useState({
     cardNumber: "",
     cardholderName: "",
@@ -89,6 +89,8 @@ export default function DemoCardForm({ isSubmitting, error, onSubmit }) {
     cvc: "",
   });
   const [errors, setErrors] = useState({});
+  // The pending order still holds stock until its cancel lands, so paying has to wait.
+  const isBusy = isSubmitting || isCancelling;
 
   function updateField(field, value) {
     setCard((previous) => ({ ...previous, [field]: value }));
@@ -97,7 +99,7 @@ export default function DemoCardForm({ isSubmitting, error, onSubmit }) {
 
   function handleSubmit(submitEvent) {
     submitEvent.preventDefault();
-    if (isSubmitting) return;
+    if (isBusy) return;
 
     const nextErrors = validateCardDetails(card);
     setErrors(nextErrors);
@@ -114,7 +116,7 @@ export default function DemoCardForm({ isSubmitting, error, onSubmit }) {
         วันหมดอายุใดก็ได้ในอนาคต และ CVC 3 หลัก
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isSubmitting}>
+      <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isBusy}>
         <div>
           <label htmlFor="card-number" className="mb-1 block text-sm font-medium text-gray-800">
             หมายเลขบัตร
@@ -216,10 +218,14 @@ export default function DemoCardForm({ isSubmitting, error, onSubmit }) {
 
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isBusy}
           className="w-full rounded-lg bg-[#D0021B] py-3.5 text-sm font-bold tracking-wider text-white transition-colors hover:bg-[#b00217] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isSubmitting ? "กำลังดำเนินการ..." : "ชำระเงินและยืนยันคำสั่งซื้อ"}
+          {isCancelling
+            ? "กำลังยกเลิกออเดอร์เดิม..."
+            : isSubmitting
+              ? "กำลังดำเนินการ..."
+              : "ชำระเงินและยืนยันคำสั่งซื้อ"}
         </button>
       </form>
     </div>
