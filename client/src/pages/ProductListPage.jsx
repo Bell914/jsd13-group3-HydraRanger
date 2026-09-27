@@ -113,10 +113,19 @@ export default function ProductListPage() {
 
   const handlePageClick = (pageNum) => {
     setCurrentPage(pageNum);
-    productsSectionRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    setTimeout(() => {
+      if (productsSectionRef.current) {
+        const yOffset = -24;
+        const y =
+          productsSectionRef.current.getBoundingClientRect().top +
+          window.pageYOffset +
+          yOffset;
+        window.scrollTo({
+          top: Math.max(0, y),
+          behavior: "smooth",
+        });
+      }
+    }, 50);
   };
 
   return (
@@ -200,7 +209,7 @@ export default function ProductListPage() {
 
         {/* Responsive product grid */}
         {!loading && !error && displayedProducts.length > 0 && (
-          <section ref={productsSectionRef} id="products-section" aria-label="รายการสินค้า">
+          <section ref={productsSectionRef} id="products-section" aria-label="รายการสินค้า" className="scroll-mt-6">
             <div className="mb-6 flex flex-col gap-4 border-b border-[#ded8cf] pb-5 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">

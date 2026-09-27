@@ -2,12 +2,31 @@ import { create } from "zustand";
 
 const STORAGE_KEY = "occasion_cart";
 
+export const migrateCartItem = (item) => {
+  if (!item || item.cartItemId) return item;
+
+  const variantId = item.variantId || item.variant_id;
+  if (!variantId) return item;
+
+  const cartItemId = item.isLookbookSet || item.lookbookId
+    ? `${variantId}:lookbook:${item.lookbookId || "set"}`
+    : String(variantId);
+
+  return { ...item, cartItemId };
+};
+
 const loadInitialCart = () => {
   try {
     if (typeof localStorage === "undefined") return [];
     const saved = localStorage.getItem(STORAGE_KEY);
     const parsed = saved ? JSON.parse(saved) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+
+    const migrated = parsed.map(migrateCartItem);
+    if (migrated.some((item, index) => item !== parsed[index])) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+    }
+    return migrated;
   } catch (error) {
     console.error("Failed to load cart from localStorage:", error);
     return [];
@@ -28,36 +47,56 @@ const getStock = (variant) => {
   return Number.isFinite(stock) ? Math.max(0, stock) : 0;
 };
 
+const getVariantId = (variant, product) => {
+  const productId = product._id || product.productId || "product";
+  const colorKey = variant.color || "std";
+  const sizeKey = variant.size || "std";
+  return String(variant._id || variant.variant_id || `${productId}-${colorKey}-${sizeKey}`);
+};
+
+const getCartItemId = (item) => item.cartItemId || item.variantId;
+
+export const quantityInCartForVariant = (items, variantId) => items.reduce(
+  (total, item) => (String(item.variantId || item.variant_id) === String(variantId)
+    ? total + Number(item.quantity || 0)
+    : total),
+  0,
+);
+
 export const useCartStore = create((set, get) => ({
   cartItems: loadInitialCart(),
 
   addToCart: ({ product, variant, quantity = 1 }) => {
     const currentItems = get().cartItems;
     const stockQuantity = getStock(variant);
+    const requestedQuantity = Number(quantity);
 
-    // Do not add an item that has no stock.
-    if (stockQuantity === 0) return currentItems;
+    if (!Number.isInteger(requestedQuantity) || requestedQuantity < 1 || stockQuantity === 0) {
+      return { added: false, items: currentItems };
+    }
 
-    const prodId = product._id || product.productId || "product";
-    const colorKey = variant.color || "std";
-    const sizeKey = variant.size || "std";
     const realVariantId = variant._id || variant.variant_id;
-    const variantId = realVariantId
-      ? String(realVariantId)
-      : `${prodId}-${colorKey}-${sizeKey}`;
+    const variantId = getVariantId(variant, product);
+    const existingQuantity = quantityInCartForVariant(currentItems, variantId);
+
+    // Keep the cart's total for this SKU within the stock reported by the API.
+    if (existingQuantity + requestedQuantity > stockQuantity) {
+      return { added: false, items: currentItems };
+    }
 
     const existingIndex = currentItems.findIndex(
-      (item) => item.variantId === variantId || (realVariantId && item.variant_id === realVariantId)
+      (item) => !item.isLookbookSet && (item.variantId === variantId || (realVariantId && item.variant_id === realVariantId))
     );
 
     let updatedItems;
     if (existingIndex > -1) {
       updatedItems = currentItems.map((item, idx) => {
         if (idx === existingIndex) {
-          const newQty = item.quantity + quantity;
+          const newQty = item.quantity + requestedQuantity;
           return {
             ...item,
-            quantity: Math.min(newQty, stockQuantity),
+            quantity: newQty,
+            stockQuantity,
           };
         }
         return item;
@@ -66,6 +105,7 @@ export const useCartStore = create((set, get) => ({
       const newItem = {
         productId: product._id || product.productId,
         product_id: product._id || product.productId,
+        cartItemId: variantId,
         variantId,
         variant_id: realVariantId || variantId,
         sku: variant.sku || "",
@@ -74,7 +114,7 @@ export const useCartStore = create((set, get) => ({
         size: variant.size,
         price: variant.price,
         imageUrl: variant.imageUrl || product.imageUrl,
-        quantity: Math.min(Math.max(1, Number(quantity) || 1), stockQuantity),
+        quantity: requestedQuantity,
         stockQuantity,
       };
       updatedItems = [...currentItems, newItem];
@@ -82,7 +122,7 @@ export const useCartStore = create((set, get) => ({
 
     saveCart(updatedItems);
     set({ cartItems: updatedItems });
-    return updatedItems;
+    return { added: true, items: updatedItems };
   },
 
   addLookbookSet: ({ lookbook, items }) => {
@@ -114,32 +154,43 @@ export const useCartStore = create((set, get) => ({
       };
     });
 
+    const setId = String(lookbook.id || lookbook.lookbookId || "set");
+    const requestedByVariant = new Map();
+    for (const { product, variant, quantity = 1 } of itemsToAdd) {
+      const requestedQuantity = Number(quantity);
+      const variantId = getVariantId(variant, product);
+      const stockQuantity = getStock(variant);
+      if (!Number.isInteger(requestedQuantity) || requestedQuantity < 1 || stockQuantity === 0) {
+        return { added: false, items: get().cartItems };
+      }
+      const requested = (requestedByVariant.get(variantId) || 0) + requestedQuantity;
+      if (quantityInCartForVariant(currentItems, variantId) + requested > stockQuantity) {
+        return { added: false, items: get().cartItems };
+      }
+      requestedByVariant.set(variantId, requested);
+    }
+
     for (const it of itemsToAdd) {
       const { product, variant, quantity = 1, discountedPrice, originalPrice } = it;
       const stockQuantity = getStock(variant);
-      if (stockQuantity === 0) continue;
-
-      const prodId = product._id || product.productId || "product";
-      const colorKey = variant.color || "std";
-      const sizeKey = variant.size || "std";
       const realVariantId = variant._id || variant.variant_id;
-      const variantId = realVariantId
-        ? String(realVariantId)
-        : `${prodId}-${colorKey}-${sizeKey}`;
+      const variantId = getVariantId(variant, product);
+      const cartItemId = `${variantId}:lookbook:${setId}`;
 
       const existingIndex = currentItems.findIndex(
-        (item) => item.variantId === variantId || (realVariantId && item.variant_id === realVariantId)
+        (item) => getCartItemId(item) === cartItemId
       );
 
       if (existingIndex > -1) {
         const existing = currentItems[existingIndex];
-        const newQty = existing.quantity + quantity;
+        const newQty = existing.quantity + Number(quantity);
         currentItems[existingIndex] = {
           ...existing,
-          quantity: Math.min(newQty, stockQuantity),
+          quantity: newQty,
+          stockQuantity,
           price: discountedPrice,
           originalPrice,
-          lookbookId: lookbook.id || lookbook.lookbookId,
+          lookbookId: setId,
           lookbookName: lookbook.nameTh || lookbook.name,
           isLookbookSet: true,
         };
@@ -147,6 +198,7 @@ export const useCartStore = create((set, get) => ({
         const newItem = {
           productId: product._id || product.productId,
           product_id: product._id || product.productId,
+          cartItemId,
           variantId,
           variant_id: realVariantId || variantId,
           sku: variant.sku || "",
@@ -156,9 +208,9 @@ export const useCartStore = create((set, get) => ({
           price: discountedPrice,
           originalPrice,
           imageUrl: variant.imageUrl || product.imageUrl,
-          quantity: Math.min(Math.max(1, Number(quantity) || 1), stockQuantity),
+          quantity: Number(quantity),
           stockQuantity,
-          lookbookId: lookbook.id || lookbook.lookbookId,
+          lookbookId: setId,
           lookbookName: lookbook.nameTh || lookbook.name,
           isLookbookSet: true,
         };
@@ -168,30 +220,39 @@ export const useCartStore = create((set, get) => ({
 
     saveCart(currentItems);
     set({ cartItems: currentItems });
-    return currentItems;
+    return { added: true, items: currentItems };
   },
 
-  removeFromCart: (variantId) => {
+  removeFromCart: (cartItemId) => {
     const updatedItems = get().cartItems.filter(
-      (item) => item.variantId !== variantId
+      (item) => getCartItemId(item) !== cartItemId
     );
     saveCart(updatedItems);
     set({ cartItems: updatedItems });
   },
 
-  updateQuantity: (variantId, quantity) => {
+  updateQuantity: (cartItemId, quantity) => {
     if (quantity <= 0) {
-      get().removeFromCart(variantId);
+      get().removeFromCart(cartItemId);
       return;
     }
     const updatedItems = get().cartItems
-      .filter((item) => item.variantId !== variantId || getStock(item) > 0)
+      .filter((item) => getCartItemId(item) !== cartItemId || getStock(item) > 0)
       .map((item) => {
-        if (item.variantId !== variantId) return item;
+        if (getCartItemId(item) !== cartItemId) return item;
 
         return {
           ...item,
-          quantity: Math.min(quantity, getStock(item)),
+          quantity: Math.min(
+            quantity,
+            Math.max(
+              0,
+              getStock(item) - quantityInCartForVariant(
+                get().cartItems.filter((other) => getCartItemId(other) !== cartItemId),
+                item.variantId,
+              ),
+            ),
+          ),
         };
       });
     saveCart(updatedItems);

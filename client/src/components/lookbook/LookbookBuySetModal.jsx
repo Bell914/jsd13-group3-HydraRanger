@@ -27,6 +27,7 @@ export function LookbookBuySetModal({ isOpen, onClose, look }) {
   const [productDetails, setProductDetails] = useState({});
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [addedSuccess, setAddedSuccess] = useState(false);
+  const [addError, setAddError] = useState("");
 
   // Helper to extract unique, sorted sizes for an item
   const getItemSizes = (item, idx) => {
@@ -75,6 +76,7 @@ export function LookbookBuySetModal({ isOpen, onClose, look }) {
     });
     setSelectedSizes(initial);
     setAddedSuccess(false);
+    setAddError("");
 
     // Fetch full product details for each item to resolve real variants & stock
     async function fetchProducts() {
@@ -159,10 +161,14 @@ export function LookbookBuySetModal({ isOpen, onClose, look }) {
   const handleAddToCart = (e) => {
     e.preventDefault();
     const setItems = prepareSetItems();
-    addLookbookSet({
+    const result = addLookbookSet({
       lookbook: look,
       items: setItems,
     });
+    if (!result.added) {
+      setAddError("สินค้าในเซ็ตมีไม่เพียงพอในสต็อก กรุณาเลือกสินค้าใหม่");
+      return;
+    }
     setAddedSuccess(true);
     setTimeout(() => {
       setAddedSuccess(false);
@@ -173,10 +179,14 @@ export function LookbookBuySetModal({ isOpen, onClose, look }) {
   const handleBuyNow = (e) => {
     e.preventDefault();
     const setItems = prepareSetItems();
-    addLookbookSet({
+    const result = addLookbookSet({
       lookbook: look,
       items: setItems,
     });
+    if (!result.added) {
+      setAddError("สินค้าในเซ็ตมีไม่เพียงพอในสต็อก กรุณาเลือกสินค้าใหม่");
+      return;
+    }
     onClose();
     navigate("/checkout");
   };
@@ -214,6 +224,11 @@ export function LookbookBuySetModal({ isOpen, onClose, look }) {
           <div className="my-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 animate-fade-in">
             <Check size={16} className="text-emerald-600" />
             <span>เพิ่มทั้งเซ็ตลงตะกร้าเรียบร้อยแล้ว กำลังปิดหน้าต่าง</span>
+          </div>
+        )}
+        {addError && (
+          <div role="alert" className="my-3 p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-bold">
+            {addError}
           </div>
         )}
 
