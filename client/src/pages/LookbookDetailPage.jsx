@@ -58,14 +58,14 @@ export default function LookbookDetailPage() {
   return (
     <main className="min-h-screen bg-background pb-28 pt-4 px-4 sm:px-6">
       <div className="max-w-2xl mx-auto flex flex-col gap-5">
-        {/* Wireframe Top Bar: < DETAIL */}
+        {/* Wireframe Top Bar: < กลับ */}
         <div className="flex items-center justify-between py-2 border-b border-stone-200">
           <Link
             to="/lookbook"
-            className="inline-flex items-center gap-2 text-sm sm:text-base font-extrabold text-primary hover:text-accent transition-colors"
+            className="inline-flex items-center text-sm sm:text-base font-extrabold text-primary hover:text-accent transition-colors"
             id="back-to-lookbook-link"
           >
-            <span className="text-lg font-black">&larr;</span> DETAIL
+            กลับ
           </Link>
           <span className="text-xs font-bold text-secondary uppercase tracking-wider">
             {look?.id}

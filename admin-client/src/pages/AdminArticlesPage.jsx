@@ -96,7 +96,7 @@ export function AdminArticlesPage() {
 
   return (
     <div className="admin-content">
-      <AdminTopbar title="Articles" />
+      <AdminTopbar title="บทความ" />
       <main className="data-page">
         <header className="page-heading">
           <div><h1>บทความ</h1><p>สร้าง แก้ไข และจัดการบทความที่แสดงบนหน้าเว็บ</p></div>

@@ -7,7 +7,7 @@ export async function uploadProductImage(file) {
     method: 'POST',
     body: form,
     errorMessage: 'อัปโหลดรูปไม่สำเร็จ',
-    networkMessage: 'เชื่อมต่อ Upload API ไม่ได้ กรุณาตรวจสอบว่า Server เปิดอยู่'
+    networkMessage: 'อัปโหลดไฟล์ไม่ได้ กรุณาตรวจสอบว่าเซิร์ฟเวอร์เปิดอยู่'
   });
   return result.data.url;
 }

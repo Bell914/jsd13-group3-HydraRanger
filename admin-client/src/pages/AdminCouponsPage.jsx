@@ -69,7 +69,7 @@ export function AdminCouponsPage() {
 
   return (
     <div className="admin-content">
-      <AdminTopbar title="Coupons" />
+      <AdminTopbar title="คูปอง" />
       <main className="data-page">
         <header className="page-heading">
           <div>
@@ -144,7 +144,7 @@ export function AdminCouponsPage() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Code / อีเวนต์</th>
+                    <th>รหัสคูปอง / อีเวนต์</th>
                     <th>ส่วนลด</th>
                     <th>ยอดขั้นต่ำ</th>
                     <th>หมดอายุ</th>
@@ -158,7 +158,7 @@ export function AdminCouponsPage() {
                     const nearExpiry = isExpiringSoon(coupon.expiresAt);
                     return (
                       <tr key={coupon._id}>
-                        <td data-label="Code / อีเวนต์">
+                        <td data-label="รหัสคูปอง / อีเวนต์">
                           <strong>{coupon.code}</strong>
                           <small>{coupon.eventName || 'ทั่วไป (ไม่มีอีเวนต์)'}</small>
                         </td>

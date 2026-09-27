@@ -11,20 +11,14 @@ import {
   Minus,
   Tag,
 } from "lucide-react";
-import useCartStore from "../store/cartStore.js";
+import useCartStore, { getAvailableQuantity } from "../store/cartStore.js";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
 import { authService } from "../services/authService.js";
 
 export default function CartPage() {
   const navigate = useNavigate();
-  const {
-    cartItems,
-    updateQuantity,
-    removeFromCart,
-    clearCart,
-    getTotalPrice,
-    getAvailableQuantityFor,
-  } = useCartStore();
+  const { cartItems, updateQuantity, removeFromCart, clearCart, getTotalPrice } =
+    useCartStore();
 
   const subtotal = getTotalPrice();
   const totalItemsCount = cartItems.reduce(
@@ -34,15 +28,6 @@ export default function CartPage() {
 
   const shippingFee = subtotal >= 1000 || subtotal === 0 ? 0 : 50;
   const grandTotal = subtotal + shippingFee;
-
-  // A lookbook set spans several SKUs, so the limit is the scarcest one left in the
-  // whole set. Lines saved before stock was tracked report no limit at all; leaving
-  // the control enabled there is what keeps the stepper from being dead on arrival.
-  const isAtStockLimit = (item) => {
-    const available = getAvailableQuantityFor(item.cartItemId);
-    if (available === null) return false;
-    return item.quantity >= available;
-  };
 
   const handleCheckout = () => {
     navigate(authService.getCurrentUser() ? "/checkout" : "/checkout/auth");
@@ -96,8 +81,14 @@ export default function CartPage() {
             {/* Left Column: Cart Items List */}
             <div className="lg:col-span-2 space-y-4">
               <div className="bg-white border border-gray-200 rounded-2xl divide-y divide-gray-100 shadow-xs overflow-hidden">
-                {cartItems.map((item) => (
-                  <div
+                {cartItems.map((item) => {
+                  const availableQuantity = getAvailableQuantity(
+                    cartItems,
+                    item.cartItemId || item.variantId || item._id
+                  );
+
+                  return (
+                    <div
                     key={item.cartItemId || item.variantId || item._id}
                     className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-50/40 transition-colors"
                   >
@@ -172,7 +163,7 @@ export default function CartPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            updateQuantity(item.cartItemId, item.quantity - 1)
+                            updateQuantity(item.cartItemId || item.variantId, item.quantity - 1)
                           }
                           aria-label="Decrease quantity"
                           className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-gray-600 hover:bg-gray-200 hover:text-black transition-colors cursor-pointer"
@@ -185,9 +176,9 @@ export default function CartPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            updateQuantity(item.cartItemId, item.quantity + 1)
+                            updateQuantity(item.cartItemId || item.variantId, item.quantity + 1)
                           }
-                          disabled={isAtStockLimit(item)}
+                          disabled={availableQuantity !== null && item.quantity >= availableQuantity}
                           aria-label="Increase quantity"
                           className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-gray-600 hover:bg-gray-200 hover:text-black transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                         >
@@ -197,15 +188,16 @@ export default function CartPage() {
 
                       <button
                         type="button"
-                        onClick={() => removeFromCart(item.cartItemId)}
+                        onClick={() => removeFromCart(item.cartItemId || item.variantId)}
                         className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50 cursor-pointer"
                         title="Remove item"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Free Shipping Badge (จุดที่ 2: ปรับระยะขยับลงมาติดกับปุ่มเลือกซื้อสินค้าต่อด้านล่าง) */}

@@ -4,7 +4,7 @@ async function sendRequest(path, options = {}) {
   const result = await adminRequest(path, {
     ...options,
     errorMessage: 'โหลดข้อมูลลูกค้าไม่สำเร็จ',
-    networkMessage: 'เชื่อมต่อ Customer API ไม่ได้ กรุณาตรวจสอบว่า Server เปิดอยู่'
+    networkMessage: 'เชื่อมต่อข้อมูลลูกค้าไม่ได้ กรุณาตรวจสอบว่าเซิร์ฟเวอร์เปิดอยู่'
   });
   return result.data;
 }

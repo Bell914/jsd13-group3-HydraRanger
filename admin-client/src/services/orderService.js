@@ -3,8 +3,8 @@ import { adminRequest } from './adminApi.js';
 async function sendRequest(path, options = {}) {
   const result = await adminRequest(path, {
     ...options,
-    errorMessage: 'จัดการข้อมูล Order ไม่สำเร็จ',
-    networkMessage: 'เชื่อมต่อ Order API ไม่ได้ กรุณาตรวจสอบว่า Server เปิดอยู่'
+    errorMessage: 'จัดการข้อมูลคำสั่งซื้อไม่สำเร็จ',
+    networkMessage: 'เชื่อมต่อข้อมูลคำสั่งซื้อไม่ได้ กรุณาตรวจสอบว่าเซิร์ฟเวอร์เปิดอยู่'
   });
   return result.data;
 }

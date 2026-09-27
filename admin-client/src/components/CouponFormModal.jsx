@@ -146,7 +146,7 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
             </span>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#526164]">
-                COUPON MANAGEMENT
+                จัดการคูปอง
               </p>
               <h2 id="coupon-modal-title" className="text-base font-bold text-[#263639] leading-tight">
                 {isEditing ? 'แก้ไขคูปองส่วนลด' : 'เพิ่มคูปองส่วนลดใหม่'}
@@ -171,10 +171,10 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <span className="text-[11px] font-bold text-[#263639] block truncate">
-                  {form.eventName || 'PROMOTION VOUCHER'}
+                  {form.eventName || 'คูปองโปรโมชั่น'}
                 </span>
                 <span className="font-mono text-xl font-extrabold tracking-wider text-[#263639] block truncate">
-                  {form.code || 'COUPON_CODE'}
+                  {form.code || 'รหัสคูปอง'}
                 </span>
               </div>
               <div className="text-right shrink-0">
@@ -323,8 +323,8 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
                   { label: '฿0', val: 0 },
                   { label: '฿500', val: 500 },
                   { label: '฿800', val: 800 },
-                  { label: '฿1k', val: 1000 },
-                  { label: '฿2k', val: 2000 }
+                  { label: '฿1,000', val: 1000 },
+                  { label: '฿2,000', val: 2000 }
                 ].map((item) => (
                   <button
                     key={item.val}
