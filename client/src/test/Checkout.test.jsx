@@ -65,7 +65,7 @@ describe("Checkout order integration", () => {
     });
     cancelOrder.mockResolvedValue({ data: { status: "cancelled" } });
     useCartStore.setState({
-      cartItems: [{ productId: "p1", variantId: "v1", name: "Oversized T-Shirt", price: 590, quantity: 2, stockQuantity: 5 }],
+      cartItems: [{ cartItemId: "ci-test-1", productId: "p1", variantId: "v1", name: "Oversized T-Shirt", price: 590, quantity: 2, stockQuantity: 5 }],
     });
   });
 
@@ -279,7 +279,7 @@ describe("Checkout order integration", () => {
 
   it("does not allow increasing cart quantity beyond known stock", () => {
     const { updateQuantity } = useCartStore.getState();
-    updateQuantity("v1", 99);
+    updateQuantity("ci-test-1", 99);
     expect(useCartStore.getState().cartItems[0].quantity).toBe(5);
   });
 
