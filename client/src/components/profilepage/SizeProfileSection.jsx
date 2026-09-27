@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Ruler, ShieldCheck, Trash2 } from 'lucide-react';
+import { ShieldCheck, Trash2 } from 'lucide-react';
 import { userService } from '../../services/userService.js';
 import { cmToInch, inchToCm } from '../../data/sizeGuide.js';
 
@@ -105,12 +105,9 @@ export function SizeProfileSection() {
 
   return (
     <section>
-      <div className="flex items-start gap-3 mb-5">
-        <div className="rounded-xl bg-pink-50 p-2.5 text-accent"><Ruler size={22} /></div>
-        <div>
-          <h2 className="text-lg font-bold text-primary">คำแนะนำไซส์เฉพาะคุณ</h2>
-          <p className="text-sm text-secondary">บันทึกสัดส่วนครั้งเดียว แล้วดูไซส์แนะนำบนหน้าสินค้า</p>
-        </div>
+      <div className="mb-5">
+        <h2 className="text-lg font-bold text-primary">คำแนะนำไซส์เฉพาะคุณ</h2>
+        <p className="text-sm text-secondary">บันทึกสัดส่วนครั้งเดียว แล้วดูไซส์แนะนำบนหน้าสินค้า</p>
       </div>
 
       <div className="mb-5 flex gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
@@ -146,18 +143,28 @@ export function SizeProfileSection() {
           ))}
         </div>
 
-        <label className="block text-sm font-semibold text-primary">
-          ชอบเสื้อผ้าทรงไหน
-          <select
-            value={form.preferredFit}
-            onChange={(event) => updateField('preferredFit', event.target.value)}
-            className="mt-1.5 w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-accent"
-          >
-            <option value="fitted">พอดีตัว</option>
-            <option value="regular">มาตรฐาน</option>
-            <option value="relaxed">หลวมสบาย</option>
-          </select>
-        </label>
+        <fieldset>
+          <legend className="mb-2 text-sm font-semibold text-primary">ชอบเสื้อผ้าทรงไหน</legend>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {[
+              { value: 'fitted', label: 'เข้ารูป' },
+              { value: 'regular', label: 'มาตรฐาน' },
+              { value: 'relaxed', label: 'หลวมสบาย' }
+            ].map((option) => (
+              <label key={option.value} className={`flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold ${form.preferredFit === option.value ? 'border-primary bg-primary text-white' : 'border-gray-300 text-primary'}`}>
+                <input
+                  type="radio"
+                  name="preferredFit"
+                  value={option.value}
+                  checked={form.preferredFit === option.value}
+                  onChange={() => updateField('preferredFit', option.value)}
+                  className="accent-[#C46731]"
+                />
+                {option.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
 
         <label className="flex items-start gap-3 text-sm text-secondary">
           <input

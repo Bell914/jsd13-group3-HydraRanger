@@ -345,7 +345,7 @@ export default function CheckoutPage() {
     return order;
   }
 
-  // Creates the order, then reports the settled payment so the server moves the order to
+  // Creates the order, then reports the simulated payment so the server moves the order to
   // `paid` through the normal status machine. Once the order exists, a retry must confirm
   // that same order instead of reserving stock a second time.
   async function handlePlaceOrder() {
