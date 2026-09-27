@@ -58,6 +58,8 @@ SMTP ต้องตั้ง `SMTP_USER` และ `SMTP_PASS` ก่อน For
 
 ระบบชำระเงินเป็นโหมดเดโม ไม่มี payment gateway และไม่มีการตัดเงินจริง รองรับ `paymentMethod` เพียง `promptpay` และ `credit-card` เท่านั้น โดย `POST /orders` จะสร้าง Order สถานะ `pending` และ `POST /orders/my/:id/confirm-payment` จะเปลี่ยนเป็น `paid` ซึ่งเป็นจุดที่ loyalty, coupon และสต็อกถูกประมวลผล ถ้าไม่ยืนยันภายใน 30 นาทีระบบจะยกเลิก Order และคืนสต็อกอัตโนมัติ
 
+`POST /orders/my/:id/confirm-payment` เปิดให้บริการด้วยตัวแปร `DEMO_PAYMENT_ENABLED` เมื่อปิดจะตอบ `503` และไม่เปลี่ยนสถานะ Order โดยค่าเริ่มต้นคือปิดเมื่อ `NODE_ENV=production` และเปิดเมื่อเป็น `development` หรือ `test` สถานะปัจจุบันรายงานที่ `GET /health` ในฟิลด์ `services.demoPaymentEnabled`
+
 ### Size Profile
 
 ```json

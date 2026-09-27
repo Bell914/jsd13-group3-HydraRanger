@@ -25,6 +25,9 @@ function sendOrderError(error, res, next) {
   if (badRequestMessages.some((message) => error.message.startsWith(message))) {
     return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: error.message });
   }
+  if (error.message === 'Demo payment is disabled') {
+    return res.status(HTTP_STATUS.SERVICE_UNAVAILABLE).json({ success: false, message: error.message });
+  }
   if (error.message === 'Order not found') {
     return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: error.message });
   }

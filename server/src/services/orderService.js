@@ -10,6 +10,7 @@ import {
   SHIPPING_METHODS_CONFIG
 } from '../config/membershipConfig.js';
 import { refundCouponUsage, claimCouponAtomically, getActiveGeneralCoupon } from './couponService.js';
+import { isDemoPaymentEnabled } from '../config/env.js';
 
 const SHIPPING_COSTS = {
   standard: 0,
@@ -489,6 +490,10 @@ export async function updateOrderStatus(orderId, status) {
 // validated demo card, then the order moves through the normal status machine so
 // loyalty, coupon and stock handling stay in one place.
 export async function confirmOrderPayment(userId, orderId) {
+  if (!isDemoPaymentEnabled()) {
+    throw new Error('Demo payment is disabled');
+  }
+
   const existingOrder = await getOrderById(orderId, userId);
 
   if (!PAYMENT_METHODS.includes(existingOrder.paymentMethod)) {
@@ -496,6 +501,10 @@ export async function confirmOrderPayment(userId, orderId) {
   }
   if (existingOrder.status === 'paid') return existingOrder;
   if (existingOrder.status !== 'pending') {
+    throw new Error('Order is not waiting for payment');
+  }
+  // The 60s reaper may not have cancelled the order yet, so refuse it here too.
+  if (existingOrder.paymentExpiresAt && new Date(existingOrder.paymentExpiresAt).getTime() < Date.now()) {
     throw new Error('Order is not waiting for payment');
   }
 

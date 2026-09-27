@@ -28,3 +28,14 @@ export const ENV = {
     ? Number.parseInt(process.env.TRUST_PROXY, 10)
     : process.env.NODE_ENV === "production" ? 1 : false,
 };
+
+// Read at call time so each environment and each test can toggle it independently.
+export function isDemoPaymentEnabled() {
+  const flag = process.env.DEMO_PAYMENT_ENABLED;
+
+  if (flag === undefined || flag === "") {
+    return process.env.NODE_ENV !== "production";
+  }
+
+  return flag === "true";
+}

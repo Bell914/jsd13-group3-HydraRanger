@@ -20,11 +20,22 @@ export default function PromptPayQrPanel({ totalAmount, isSubmitting, error, onC
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-xs">
-      <h2 className="mb-1 text-xl font-bold text-gray-900">สแกน QR เพื่อชำระเงิน</h2>
+      <h2 className="mb-1 text-xl font-bold text-gray-900">QR สำหรับสาธิตขั้นตอนชำระเงิน</h2>
       <p className="mb-5 text-sm text-gray-600">
-        เปิดแอปธนาคารหรือแอป PromptPay แล้วสแกน QR ด้านล่างเพื่อโอนเงิน
-        ฿{Number(totalAmount || 0).toLocaleString()}
+        QR ด้านล่างสร้างขึ้นจริงและสแกนได้ แต่ไม่ใช่ QR ของธนาคารหรือพร้อมเพย์
+        จึงใช้สาธิตลำดับการชำระเงินเท่านั้น ยอดชำระ ฿{Number(totalAmount || 0).toLocaleString()}
       </p>
+
+      <div className="mb-5 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-900">
+        <p className="flex items-start gap-2 font-semibold">
+          <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>ระบบชำระเงินจำลองสำหรับงานสาธิต</span>
+        </p>
+        <p className="mt-1 pl-6 text-xs leading-relaxed">
+          QR นี้ไม่เชื่อมต่อธนาคารและไม่มีการตัดเงินจริง
+          แอปธนาคารจะไม่สามารถใช้จ่ายเงินผ่าน QR นี้ได้ กดปุ่มด้านล่างเพื่อจำลองการโอนสำเร็จ
+        </p>
+      </div>
 
       <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
         <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-xs">
@@ -34,22 +45,11 @@ export default function PromptPayQrPanel({ totalAmount, isSubmitting, error, onC
             level="M"
             marginSize={0}
             role="img"
-            aria-label={`QR สำหรับชำระเงิน ${Number(totalAmount || 0).toLocaleString()} บาท`}
+            aria-label={`QR สำหรับสาธิต ${Number(totalAmount || 0).toLocaleString()} บาท`}
           />
         </div>
 
         <div className="flex-1 space-y-3 text-sm">
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">
-            <p className="flex items-start gap-2 font-semibold">
-              <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-              <span>ระบบชำระเงินจำลองสำหรับงานสาธิต</span>
-            </p>
-            <p className="mt-1 pl-6 text-xs leading-relaxed">
-              QR นี้ถูกสร้างขึ้นจริงและสแกนได้ แต่ไม่เชื่อมต่อธนาคารและไม่มีการตัดเงินจริง
-              กดปุ่มด้านล่างเพื่อจำลองการโอนสำเร็จ
-            </p>
-          </div>
-
           <p className="flex items-start gap-2 text-xs leading-relaxed text-gray-600">
             <QrCode className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <span>

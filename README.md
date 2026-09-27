@@ -92,13 +92,24 @@ VITE_API_BASE_URL=http://localhost:5002/api
 | ช่องทาง | การทำงาน |
 | --- | --- |
 | `promptpay` | แสดง QR Code จริงที่สแกนได้ (`qrcode.react`) พร้อมยอดชำระ แล้วกดปุ่ม "จำลองการโอนเงินสำเร็จ" |
-| `credit-card` | ฟอร์มบัตรที่ตรวจเลขบัตรด้วย Luhn, วันหมดอายุ และ CVC ก่อนส่ง |
+| `credit-card` | ฟอร์มบัตรที่รับเฉพาะเลขทดสอบที่ระบุไว้ พร้อมตรวจ Luhn, วันหมดอายุ และ CVC |
+
+QR และฟอร์มบัตรเป็นของจำลอง **ไม่ใช่ช่องทางชำระเงินจริง** แอปธนาคารจะใช้จ่ายผ่าน QR นี้ไม่ได้ และฟอร์มบัตรปิด `autocomplete` เพื่อไม่ให้เบราว์เซอร์เติมเลขบัตรจริง
 
 ลำดับการทำงานฝั่ง Server: `POST /api/orders` สร้าง order สถานะ `pending` (จองสต็อกและ claim คูปอง) แล้ว `POST /api/orders/my/:id/confirm-payment` เปลี่ยนเป็น `paid` ผ่าน state machine เดิม ทำให้ loyalty, coupon และสต็อกทำงานถูกต้องโดยไม่ต้องเขียน logic ซ้ำ
 
-ใช้บัตรทดสอบ `4242 4242 4242 4242`, วันหมดอายุใดก็ได้ในอนาคต และ CVC 3 หลัก
+ใช้บัตรทดสอบ `4242 4242 4242 4242` เท่านั้น วันหมดอายุใดก็ได้ในอนาคต และ CVC 3 หลัก
 
 order ที่สร้างแล้วไม่ยืนยันการชำระเงินภายใน 30 นาทีจะถูกยกเลิกและคืนสต็อกอัตโนมัติ
+
+#### เปิด/ปิดระบบชำระเงินจำลอง
+
+`POST /api/orders/my/:id/confirm-payment` ปิดให้บริการด้วยตัวแปร `DEMO_PAYMENT_ENABLED`
+
+- ถ้า `NODE_ENV=production` และไม่ได้ตั้งค่านี้ ระบบจะ **ปิด** โดยค่าเริ่มต้น และตอบ `503` เพื่อไม่ให้ยืนยัน order เป็น `paid` โดยไม่มีหลักฐานการจ่ายเงิน
+- ถ้าเป็น `development` หรือ `test` ระบบจะเปิดโดยค่าเริ่มต้น
+- **Deployment ที่ใช้สาธิตจริง (Render) ต้องตั้ง `DEMO_PAYMENT_ENABLED=true`** ไม่งั้นขั้นตอนชำระเงินจะได้ `503`
+- ตรวจสถานะได้ที่ `GET /api/health` ซึ่งจะรายงาน `services.demoPaymentEnabled`
 
 ### 5. เปิดระบบ
 
@@ -149,8 +160,8 @@ npm run backfill:size-charts --prefix server
 
 ## Checklist ก่อน Demo หรือ Deploy
 
-- `/api/health` ต้องรายงานว่า Server และ Database พร้อมใช้งาน
-- ตั้ง `SMTP_USER` และ `SMTP_PASS` ก่อนทดสอบอีเมลจริง
+- `/api/health` ต้องรายงานว่า Server และ Database พร้อมใช้งาน และ `services.demoPaymentEnabled` เป็น `true`
+- ตั้ง SMTP และ `DEMO_PAYMENT_ENABLED=true` ให้ครบก่อนทดสอบ Checkout และอีเมลจริง
 - ทดสอบ Checkout ทั้ง 2 ช่องทาง (PromptPay QR และบัตรเดโม) แล้วเช็คว่า order เปลี่ยนเป็น `paid` พร้อมเพิ่มยอดสะสมสมาชิก
 - ตั้ง `GEMINI_API_KEY` ก่อนทดสอบ Mix & Match
 - ตรวจว่าสินค้า Tops/Bottoms บน staging มี `size_chart`

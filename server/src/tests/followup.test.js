@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import express from 'express';
 import mongoose from 'mongoose';
 import { once } from 'node:events';
-import { ENV } from '../config/env.js';
+import { ENV, isDemoPaymentEnabled } from '../config/env.js';
 import { User } from '../models/User.js';
 import { Order } from '../models/Order.js';
 import { Product } from '../models/Product.js';
@@ -17,6 +17,9 @@ import { resetPassword } from '../services/authService.js';
 import { matchesUploadedImageHeader } from '../middleware/uploadMiddleware.js';
 import recommendRoutes from '../routes/recommendRoutes.js';
 import { findInvalidGarmentSlots } from '../controllers/recommendController.js';
+
+// The suite runs with NODE_ENV=production, where demo payment is off unless asked for.
+process.env.DEMO_PAYMENT_ENABLED = 'true';
 
 function response() {
   return {
@@ -260,6 +263,92 @@ test('confirming a demo payment is idempotent and does not double-charge loyalty
 
   assert.equal(confirmed.status, 'paid');
   assert.equal(confirmed.loyaltyProcessed, true);
+});
+
+test('confirming a demo payment is refused while the demo flag is off', async (t) => {
+  const userId = 'aaaaaaaaaaaaaaaaaaaaaaaa';
+  const order = {
+    _id: 'bbbbbbbbbbbbbbbbbbbbbbbb',
+    user: userId,
+    status: 'pending',
+    paymentMethod: 'promptpay',
+    stockReserved: true,
+    loyaltyProcessed: false,
+    subtotal: 500,
+    discountAmount: 0,
+    items: [],
+    async save() {},
+    async populate() { return this; }
+  };
+  let touchedDatabase = false;
+
+  t.mock.method(Order, 'findOne', () => {
+    touchedDatabase = true;
+    return { populate: async () => order };
+  });
+  t.after(() => { process.env.DEMO_PAYMENT_ENABLED = 'true'; });
+  process.env.DEMO_PAYMENT_ENABLED = 'false';
+
+  await assert.rejects(
+    () => confirmOrderPayment(userId, order._id),
+    /Demo payment is disabled/
+  );
+  // The order must be left untouched rather than moved to paid.
+  assert.equal(touchedDatabase, false);
+  assert.equal(order.status, 'pending');
+  assert.equal(order.loyaltyProcessed, false);
+});
+
+test('confirming a demo payment refuses an order past the 30 minute window', async (t) => {
+  const userId = 'aaaaaaaaaaaaaaaaaaaaaaaa';
+  const order = {
+    _id: 'bbbbbbbbbbbbbbbbbbbbbbbb',
+    user: userId,
+    status: 'pending',
+    paymentMethod: 'promptpay',
+    stockReserved: true,
+    loyaltyProcessed: false,
+    paymentExpiresAt: new Date(Date.now() - 60 * 1000),
+    subtotal: 500,
+    discountAmount: 0,
+    items: [],
+    async save() {},
+    async populate() { return this; }
+  };
+
+  t.mock.method(Order, 'findOne', () => ({ populate: async () => order }));
+  t.mock.method(Order, 'findById', () => {
+    throw new Error('an expired order must never reach the status machine');
+  });
+
+  await assert.rejects(
+    () => confirmOrderPayment(userId, order._id),
+    /Order is not waiting for payment/
+  );
+  assert.equal(order.status, 'pending');
+});
+
+test('demo payment is off in production unless the flag is set explicitly', () => {
+  const previous = process.env.DEMO_PAYMENT_ENABLED;
+  const previousEnv = process.env.NODE_ENV;
+
+  delete process.env.DEMO_PAYMENT_ENABLED;
+  process.env.NODE_ENV = 'production';
+  assert.equal(isDemoPaymentEnabled(), false);
+
+  process.env.DEMO_PAYMENT_ENABLED = 'true';
+  assert.equal(isDemoPaymentEnabled(), true);
+
+  process.env.DEMO_PAYMENT_ENABLED = 'false';
+  assert.equal(isDemoPaymentEnabled(), false);
+
+  delete process.env.DEMO_PAYMENT_ENABLED;
+  process.env.NODE_ENV = 'development';
+  assert.equal(isDemoPaymentEnabled(), true);
+
+  if (previous === undefined) delete process.env.DEMO_PAYMENT_ENABLED;
+  else process.env.DEMO_PAYMENT_ENABLED = previous;
+  process.env.NODE_ENV = previousEnv;
 });
 
 test('confirming a demo payment refuses an order that is no longer pending', async (t) => {

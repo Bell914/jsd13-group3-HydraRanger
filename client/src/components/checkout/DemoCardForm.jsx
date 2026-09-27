@@ -42,6 +42,9 @@ export function validateCardDetails({ cardNumber, cardholderName, expiry, cvc })
     errors.cardNumber = "กรุณากรอกหมายเลขบัตร 13-19 หลัก";
   } else if (!passesLuhnCheck(digits)) {
     errors.cardNumber = "หมายเลขบัตรไม่ถูกต้อง";
+  } else if (digits !== DEMO_CARD_NUMBER) {
+    // A demo form must never accept a real card number, so only the published test PAN passes.
+    errors.cardNumber = `กรุณาใช้เฉพาะหมายเลขบัตรทดสอบ ${formatCardNumber(DEMO_CARD_NUMBER)}`;
   }
 
   if (!cardholderName.trim()) {
@@ -107,7 +110,7 @@ export default function DemoCardForm({ isSubmitting, error, onSubmit }) {
     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-xs">
       <h2 className="mb-1 text-xl font-bold text-gray-900">กรอกข้อมูลบัตรเครดิต / เดบิต</h2>
       <p className="mb-5 text-sm text-gray-600">
-        ใช้บัตรทดสอบ <span className="font-mono font-semibold text-gray-900">4242 4242 4242 4242</span>{" "}
+        ใช้เฉพาะบัตรทดสอบ <span className="font-mono font-semibold text-gray-900">{formatCardNumber(DEMO_CARD_NUMBER)}</span>{" "}
         วันหมดอายุใดก็ได้ในอนาคต และ CVC 3 หลัก
       </p>
 
@@ -121,7 +124,10 @@ export default function DemoCardForm({ isSubmitting, error, onSubmit }) {
               id="card-number"
               type="text"
               inputMode="numeric"
-              autoComplete="cc-number"
+              name="demo-card-number"
+              autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
               value={card.cardNumber}
               onChange={(event) => updateField("cardNumber", formatCardNumber(event.target.value))}
               placeholder="4242 4242 4242 4242"
@@ -139,7 +145,10 @@ export default function DemoCardForm({ isSubmitting, error, onSubmit }) {
           <input
             id="cardholder-name"
             type="text"
-            autoComplete="cc-name"
+            name="demo-cardholder-name"
+            autoComplete="off"
+            data-1p-ignore
+            data-lpignore="true"
             value={card.cardholderName}
             onChange={(event) => updateField("cardholderName", event.target.value)}
             placeholder="SOMCHAI JAIDEE"
@@ -157,7 +166,10 @@ export default function DemoCardForm({ isSubmitting, error, onSubmit }) {
               id="card-expiry"
               type="text"
               inputMode="numeric"
-              autoComplete="cc-exp"
+              name="demo-card-expiry"
+              autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
               value={card.expiry}
               onChange={(event) => updateField("expiry", formatExpiry(event.target.value))}
               placeholder="12/30"
@@ -174,7 +186,10 @@ export default function DemoCardForm({ isSubmitting, error, onSubmit }) {
               id="card-cvc"
               type="text"
               inputMode="numeric"
-              autoComplete="cc-csc"
+              name="demo-card-cvc"
+              autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
               value={card.cvc}
               onChange={(event) => updateField("cvc", event.target.value.replace(/\D/g, "").slice(0, 4))}
               placeholder="123"
@@ -187,7 +202,9 @@ export default function DemoCardForm({ isSubmitting, error, onSubmit }) {
         <p className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
           <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <span>
-            ระบบชำระเงินจำลองสำหรับงานสาธิต ข้อมูลบัตรนี้ไม่ถูกส่งออกไปนอกเบราว์เซอร์และไม่มีการตัดเงินจริง
+            ระบบชำระเงินจำลองสำหรับงานสาธิต ยอมรับเฉพาะหมายเลขบัตรทดสอบที่ระบุไว้ข้างบน
+            ข้อมูลบัตรไม่ถูกส่งออกไปนอกเบราว์เซอร์และไม่มีการตัดเงินจริง
+            <strong className="mt-1 block">กรุณาอย่ากรอกเลขบัตรจริงของคุณ</strong>
           </span>
         </p>
 

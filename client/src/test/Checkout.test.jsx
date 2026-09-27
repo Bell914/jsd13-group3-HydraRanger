@@ -100,7 +100,7 @@ describe("Checkout order integration", () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("PromptPay");
 
-    const qr = await screen.findByRole("img", { name: /QR สำหรับชำระเงิน/ });
+    const qr = await screen.findByRole("img", { name: /QR สำหรับสาธิต/ });
     expect(qr).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "PayPal" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Credit / Debit Card" })).toBeInTheDocument();
@@ -116,6 +116,44 @@ describe("Checkout order integration", () => {
     expect(createOrder.mock.calls.at(-1)?.[0]).toMatchObject({ paymentMethod: "credit-card" });
     expect(confirmPayment).toHaveBeenCalledWith("order-mongo-id");
     expect(useCartStore.getState().cartItems).toEqual([]);
+  });
+
+  it("rejects a real-looking card number and only accepts the published test number", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("Credit / Debit Card");
+
+    // 5555 5555 5555 4444 is a valid Luhn number, so only the test-PAN rule can stop it.
+    fireEvent.change(screen.getByLabelText("หมายเลขบัตร"), { target: { value: "5555 5555 5555 4444" } });
+    fireEvent.change(screen.getByLabelText("ชื่อผู้ถือบัตร"), { target: { value: "TEST USER" } });
+    fireEvent.change(screen.getByLabelText("วันหมดอายุ (MM/YY)"), { target: { value: "12/30" } });
+    fireEvent.change(screen.getByLabelText("CVC"), { target: { value: "123" } });
+    fireEvent.click(screen.getByRole("button", { name: "ชำระเงินและยืนยันคำสั่งซื้อ" }));
+
+    expect(await screen.findByText(/กรุณาใช้เฉพาะหมายเลขบัตรทดสอบ/)).toBeInTheDocument();
+    expect(createOrder).not.toHaveBeenCalled();
+  });
+
+  it("keeps real card autofill disabled on every card field", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("Credit / Debit Card");
+
+    for (const label of ["หมายเลขบัตร", "ชื่อผู้ถือบัตร", "วันหมดอายุ (MM/YY)", "CVC"]) {
+      const field = screen.getByLabelText(label);
+      expect(field).toHaveAttribute("autocomplete", "off");
+      expect(field).toHaveAttribute("data-1p-ignore");
+      expect(field).toHaveAttribute("data-lpignore", "true");
+    }
+  });
+
+  it("labels the QR as a demo code and never tells the customer to scan with a banking app", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    const qr = await screen.findByRole("img", { name: /QR สำหรับสาธิต/ });
+    expect(qr).toBeInTheDocument();
+    expect(screen.queryByText(/เปิดแอปธนาคาร/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/แอป PromptPay/)).not.toBeInTheDocument();
+    expect(screen.getByText(/แอปธนาคารจะไม่สามารถใช้จ่ายเงินผ่าน QR นี้ได้/)).toBeInTheDocument();
   });
 
   it("rejects a card number that fails the Luhn check without calling the API", async () => {
