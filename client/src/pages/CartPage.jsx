@@ -83,7 +83,7 @@ export default function CartPage() {
               <div className="bg-white border border-gray-200 rounded-2xl divide-y divide-gray-100 shadow-xs overflow-hidden">
                 {cartItems.map((item) => (
                   <div
-                    key={item.variantId || item._id}
+                    key={item.cartItemId || item.variantId || item._id}
                     className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-50/40 transition-colors"
                   >
                     {/* Item Info */}
@@ -157,7 +157,7 @@ export default function CartPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            updateQuantity(item.variantId, item.quantity - 1)
+                            updateQuantity(item.cartItemId || item.variantId, item.quantity - 1)
                           }
                           aria-label="Decrease quantity"
                           className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-gray-600 hover:bg-gray-200 hover:text-black transition-colors cursor-pointer"
@@ -170,7 +170,7 @@ export default function CartPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            updateQuantity(item.variantId, item.quantity + 1)
+                            updateQuantity(item.cartItemId || item.variantId, item.quantity + 1)
                           }
                           disabled={item.quantity >= Number(item.stockQuantity ?? item.stock_quantity ?? 0)}
                           aria-label="Increase quantity"
@@ -182,7 +182,7 @@ export default function CartPage() {
 
                       <button
                         type="button"
-                        onClick={() => removeFromCart(item.variantId)}
+                        onClick={() => removeFromCart(item.cartItemId || item.variantId)}
                         className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50 cursor-pointer"
                         title="Remove item"
                       >

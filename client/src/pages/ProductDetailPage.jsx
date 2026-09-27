@@ -294,11 +294,16 @@ export default function ProductDetailPage() {
       price: currentPrice,
     };
 
-    addToCart({
+    const result = addToCart({
       product,
       variant: variantPayload,
       quantity,
     });
+
+    if (!result.added) {
+      setValidationError("สินค้าในไซส์และสีนี้มีไม่พอสำหรับจำนวนที่เลือก");
+      return;
+    }
 
     setAddedSuccessModal({
       productName: product.name,
