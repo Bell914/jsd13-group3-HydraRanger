@@ -147,15 +147,33 @@ export async function calculateLookbookDiscount(items) {
 
         if (saving > 0) {
           if (Array.isArray(lookbook.items) && lookbook.items.length > 0) {
-            const productIds = lookbook.items.map((it) => String(it.product?._id || it.product));
-            const productCounts = productIds.map((pId) => {
-              const matched = groupItems.filter((gi) => String(gi.product) === pId);
-              return matched.reduce((sum, gi) => sum + gi.quantity, 0);
-            });
-            const completeSets = Math.min(...productCounts);
-            if (completeSets > 0) {
-              totalLookbookDiscount += saving * completeSets;
+            // Never apply a bundle discount based only on a client-provided lookbookId.
+            // The order must contain exactly the products that define this lookbook,
+            // including duplicate products when the configured set has them.
+            const requiredCounts = new Map();
+            for (const configuredItem of lookbook.items) {
+              const productId = String(configuredItem.product?._id || configuredItem.product);
+              requiredCounts.set(productId, (requiredCounts.get(productId) || 0) + 1);
             }
+
+            const orderedCounts = new Map();
+            for (const item of groupItems) {
+              const productId = String(item.product);
+              orderedCounts.set(productId, (orderedCounts.get(productId) || 0) + item.quantity);
+            }
+
+            const setCounts = [...requiredCounts.entries()].map(([productId, required]) => {
+              const ordered = orderedCounts.get(productId) || 0;
+              return Math.floor(ordered / required);
+            });
+            const completeSets = Math.min(...setCounts);
+            const hasOnlyConfiguredItems = [...orderedCounts.keys()].every((productId) => requiredCounts.has(productId));
+            const matchesWholeSets = completeSets > 0 && hasOnlyConfiguredItems &&
+              [...requiredCounts.entries()].every(([productId, required]) =>
+                (orderedCounts.get(productId) || 0) === required * completeSets
+              );
+
+            if (matchesWholeSets) totalLookbookDiscount += saving * completeSets;
           } else {
             const minQty = Math.min(...groupItems.map((gi) => gi.quantity));
             if (minQty > 0 && groupItems.length >= 2) {

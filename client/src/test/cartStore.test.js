@@ -66,6 +66,27 @@ describe("cart stock and lookbook pricing", () => {
     expect(matchingLines.find((item) => item.isLookbookSet)).toMatchObject({ price: 75, quantity: 1 });
   });
 
+  it("counts duplicate SKUs in one lookbook set before adding it", () => {
+    const result = useCartStore.getState().addLookbookSet({
+      lookbook: { lookbookId: "LOOK-1", setPrice: 100 },
+      items: [
+        { product, variant, quantity: 1, originalPrice: 100 },
+        { product, variant, quantity: 1, originalPrice: 100 },
+      ],
+    });
+
+    expect(result.added).toBe(true);
+    expect(useCartStore.getState().cartItems).toHaveLength(1);
+    expect(useCartStore.getState().cartItems[0].quantity).toBe(2);
+    expect(useCartStore.getState().addLookbookSet({
+      lookbook: { lookbookId: "LOOK-1", setPrice: 100 },
+      items: [
+        { product, variant, quantity: 1, originalPrice: 100 },
+        { product, variant, quantity: 1, originalPrice: 100 },
+      ],
+    }).added).toBe(false);
+  });
+
   it("assigns stable line IDs to legacy cart items", () => {
     expect(migrateCartItem({ variantId: "variant-1" }).cartItemId).toBe("variant-1");
     expect(migrateCartItem({
@@ -142,5 +163,15 @@ describe("lookbook set stock", () => {
     setCart([setLine("variant-a", 1), other]);
 
     expect(getAvailableQuantity(useCartStore.getState().cartItems, "variant-c:lookbook:LOOK-2")).toBe(4);
+  });
+
+  it("updates and removes a lookbook as one set", () => {
+    setCart([setLine("variant-a", 4), setLine("variant-b", 4)]);
+
+    useCartStore.getState().updateQuantity("variant-a:lookbook:LOOK-1", 2);
+    expect(useCartStore.getState().cartItems.map((item) => item.quantity)).toEqual([2, 2]);
+
+    useCartStore.getState().removeFromCart("variant-a:lookbook:LOOK-1");
+    expect(useCartStore.getState().cartItems).toEqual([]);
   });
 });

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
-import { createOrder } from '../services/orderService.js';
+import { calculateLookbookDiscount, createOrder } from '../services/orderService.js';
 import { Order } from '../models/Order.js';
 import { Product } from '../models/Product.js';
 import { Lookbook } from '../models/Lookbook.js';
@@ -127,4 +127,23 @@ test('rolling back a failed order returns the combined quantity, not one line at
   assert.equal(restores.length, 1, 'the duplicated SKU is given back in a single update');
   assert.deepEqual(restores[0].update, { $inc: { 'variants.$.stock_quantity': 5 } });
   assert.equal(restores[0].filter['variants._id'], dupVariantId);
+});
+
+test('lookbook discount requires exactly the configured set items', async (t) => {
+  const shirtId = new mongoose.Types.ObjectId();
+  const trousersId = new mongoose.Types.ObjectId();
+  t.mock.method(Lookbook, 'findOne', async () => ({
+    isActive: true,
+    saving: 100,
+    items: [{ product: shirtId }, { product: trousersId }]
+  }));
+
+  const fullSet = [
+    { product: shirtId, quantity: 1, lookbookId: 'LOOK-1' },
+    { product: trousersId, quantity: 1, lookbookId: 'LOOK-1' }
+  ];
+  const incompleteSet = [{ product: shirtId, quantity: 1, lookbookId: 'LOOK-1' }];
+
+  assert.equal(await calculateLookbookDiscount(fullSet), 100);
+  assert.equal(await calculateLookbookDiscount(incompleteSet), 0);
 });

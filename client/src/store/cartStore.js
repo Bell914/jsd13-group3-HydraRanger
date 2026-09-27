@@ -243,6 +243,7 @@ export const useCartStore = create((set, get) => ({
           originalPrice,
           lookbookId: setId,
           lookbookName: lookbook.nameTh || lookbook.name,
+          lookbookSetSize: itemsToAdd.length,
           isLookbookSet: true,
         };
       } else {
@@ -263,6 +264,7 @@ export const useCartStore = create((set, get) => ({
           stockQuantity,
           lookbookId: setId,
           lookbookName: lookbook.nameTh || lookbook.name,
+          lookbookSetSize: itemsToAdd.length,
           isLookbookSet: true,
         };
         currentItems.push(newItem);
@@ -275,9 +277,15 @@ export const useCartStore = create((set, get) => ({
   },
 
   removeFromCart: (cartItemId) => {
-    const updatedItems = get().cartItems.filter(
-      (item) => getCartItemId(item) !== cartItemId
-    );
+    const currentItems = get().cartItems;
+    const target = currentItems.find((item) => getCartItemId(item) === cartItemId);
+    // A set is priced as one bundle. Removing only one line would leave the remaining
+    // lines with a bundle price even though the set is no longer complete.
+    const updatedItems = target?.isLookbookSet
+      ? currentItems.filter(
+        (item) => !(item.isLookbookSet && String(item.lookbookId) === String(target.lookbookId))
+      )
+      : currentItems.filter((item) => getCartItemId(item) !== cartItemId);
     saveCart(updatedItems);
     set({ cartItems: updatedItems });
   },
@@ -298,9 +306,18 @@ export const useCartStore = create((set, get) => ({
       ? Math.min(requested, MAX_UNKNOWN_STOCK)
       : Math.min(requested, available);
 
-    const updatedItems = currentItems.map((item) =>
-      (getCartItemId(item) === cartItemId ? { ...item, quantity: nextQuantity } : item)
-    );
+    // Keep every line in a lookbook set at the same set quantity. This preserves the
+    // client total as the same complete-set total the server will calculate.
+    const target = currentItems.find((item) => getCartItemId(item) === cartItemId);
+    const updatedItems = target?.isLookbookSet
+      ? currentItems.map((item) => (
+        item.isLookbookSet && String(item.lookbookId) === String(target.lookbookId)
+          ? { ...item, quantity: nextQuantity }
+          : item
+      ))
+      : currentItems.map((item) =>
+        (getCartItemId(item) === cartItemId ? { ...item, quantity: nextQuantity } : item)
+      );
     saveCart(updatedItems);
     set({ cartItems: updatedItems });
   },
