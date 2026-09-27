@@ -15,6 +15,8 @@ function sendOrderError(error, res, next) {
     'Missing shipping fields',
     'Order already cancelled',
     'Cannot cancel order',
+    'Order is not waiting for payment',
+    'Unsupported payment method',
     'Invalid shipping method',
     'Cancelled order status',
     'Order status cannot change'
@@ -22,6 +24,9 @@ function sendOrderError(error, res, next) {
 
   if (badRequestMessages.some((message) => error.message.startsWith(message))) {
     return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: error.message });
+  }
+  if (error.message === 'Demo payment is disabled') {
+    return res.status(HTTP_STATUS.SERVICE_UNAVAILABLE).json({ success: false, message: error.message });
   }
   if (error.message === 'Order not found') {
     return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: error.message });
@@ -59,6 +64,21 @@ export async function getMyOrderDetail(req, res, next) {
     const order = await orderService.getOrderById(orderId, userId);
     
     res.status(HTTP_STATUS.OK).json({ success: true, data: order });
+  } catch (error) {
+    sendOrderError(error, res, next);
+  }
+}
+
+export async function confirmPayment(req, res, next) {
+  try {
+    const userId = req.user._id || req.user.id;
+    const order = await orderService.confirmOrderPayment(userId, req.params.id);
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Payment confirmed',
+      data: order
+    });
   } catch (error) {
     sendOrderError(error, res, next);
   }

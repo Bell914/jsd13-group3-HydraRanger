@@ -1,14 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
 import useCartStore from "../store/cartStore";
 import { useAddressStore } from "../store/addressStore.js";
 import { authService } from "../services/authService";
 import { useAuth } from "../context/Auth/useAuth.jsx";
 import { getAddresses, addAddress } from "../services/userService.js";
-import { createOrder } from "../services/orderService.js";
-import { api } from "../services/api.js";
+import { createOrder, confirmPayment, cancelOrder } from "../services/orderService.js";
 import { normalizeProvince } from "../constants/provinces.js";
 import {
   RANK_DISCOUNT_PERCENT,
@@ -21,110 +18,12 @@ import {
   ContactSection,
   ShippingSection,
   PaymentSection,
-  ReviewSection,
+  PromptPayQrPanel,
+  DemoCardForm,
   OrderSummary,
   OrderConfirmationScreen,
   SHIPPING_METHODS,
 } from "../components/checkout";
-
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
-  : null;
-
-function StripePaymentForm({ onSubmit, isSubmitting }) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [error, setError] = useState("");
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    setError("");
-
-    if (!stripe || !elements) return;
-
-    try {
-      await onSubmit(stripe, elements, setError);
-    } catch (submitError) {
-      setError(submitError.message || "ไม่สามารถชำระเงินได้ กรุณาลองใหม่อีกครั้ง");
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement />
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-      <button
-        type="submit"
-        disabled={!stripe || isSubmitting}
-        className="w-full rounded-lg bg-[#D0021B] py-3 font-bold text-white disabled:opacity-50"
-      >
-        {isSubmitting ? "กำลังดำเนินการ..." : "ชำระเงินและยืนยันคำสั่งซื้อ"}
-      </button>
-    </form>
-  );
-}
-
-function StripeIntentSetup({ orderPayload, onReady, onError }) {
-  useEffect(() => {
-    let isActive = true;
-    let order = null;
-    let setupComplete = false;
-
-    async function cancelOrder() {
-      if (!order?._id) return;
-      try {
-        await api.post("/payment/cancel-payment-intent", { orderId: order._id });
-      } catch (error) {
-        console.error("Could not cancel unpaid order:", error);
-      }
-    }
-
-    async function preparePayment() {
-      try {
-        // Save the order first; the server calculates and stores the final total.
-        const orderResponse = await createOrder(orderPayload);
-        order = orderResponse?.data || orderResponse;
-        if (!isActive) {
-          await cancelOrder();
-          return;
-        }
-
-        const paymentResponse = await api.post("/payment/create-payment-intent", {
-          orderId: order._id,
-        });
-        const clientSecret = paymentResponse.clientSecret || paymentResponse.data?.clientSecret;
-        if (!clientSecret) throw new Error("ไม่สามารถเริ่มรายการชำระเงินได้");
-        if (!isActive) {
-          await cancelOrder();
-          return;
-        }
-
-        setupComplete = true;
-        onReady(order, clientSecret);
-      } catch (error) {
-        // If Stripe setup fails, cancel the unpaid order so its stock is released.
-        if (isActive) await cancelOrder();
-
-        if (isActive) {
-          onError(
-            error.data?.message ||
-              error.response?.data?.message ||
-              error.message ||
-              "เริ่มรายการชำระเงินไม่สำเร็จ",
-          );
-        }
-      }
-    }
-
-    preparePayment();
-    return () => {
-      isActive = false;
-      if (!setupComplete) cancelOrder();
-    };
-  }, [orderPayload]);
-
-  return null;
-}
 
 function getAddressFormData(address) {
   const nameParts = (address.recipientName || "").trim().split(/\s+/).filter(Boolean);
@@ -172,16 +71,19 @@ export default function CheckoutPage() {
     giftMessage: "",
   });
   const [savedAddresses, setSavedAddresses] = useState([]);
-  const [paymentData, setPaymentData] = useState({ method: "credit-card" });
+  const [paymentData, setPaymentData] = useState({ method: "promptpay" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
   const [submitError, setSubmitError] = useState("");
-  const [clientSecret, setClientSecret] = useState("");
-  const [intentError, setIntentError] = useState("");
-  const [preparedOrder, setPreparedOrder] = useState(null);
-  const [preparedFingerprint, setPreparedFingerprint] = useState("");
-  const [paymentSetupPaused, setPaymentSetupPaused] = useState(false);
-  const cancellationRequests = useRef(new Set());
+  // Set once the order exists on the server so a failed confirmation can be retried
+  // against the same order instead of reserving stock a second time.
+  const [pendingOrderId, setPendingOrderId] = useState("");
+  // True while the pending order is being released, so the customer cannot start a new
+  // order that would reserve the same stock before the cancel lands.
+  const [isCancelling, setIsCancelling] = useState(false);
+  const pendingOrderIdRef = useRef("");
+  const cancelRequestRef = useRef(null);
+  const orderSubmissionInProgress = useRef(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -190,6 +92,13 @@ export default function CheckoutPage() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentStep]);
+
+  // The confirmation screen is much shorter than the payment form, so the browser
+  // keeps the old offset and lands the customer mid-page. Jump to the top of step 4.
+  useLayoutEffect(() => {
+    if (!completedOrder) return;
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [completedOrder]);
 
   useEffect(() => {
     async function loadSavedAddresses() {
@@ -237,23 +146,6 @@ export default function CheckoutPage() {
   const totalDiscount = Math.max(rankDiscountAmount, couponDiscountAmount);
   const discountedSubtotal = Math.max(0, subtotal - totalDiscount);
   const totalAmount = discountedSubtotal + shippingCost;
-  const checkoutFingerprint = JSON.stringify({
-    email,
-    cartItems: cartItems.map((item) => ({
-      productId: item.productId || item.product_id || item._id,
-      variantId: item.variantId || item.variant_id,
-      quantity: item.quantity,
-      price: item.price,
-      lookbookId: item.lookbookId || "",
-    })),
-    shippingData,
-    paymentMethod: paymentData.method,
-    couponCode: appliedCoupon?.code || "",
-  });
-  const stripeOrderPayload = useMemo(
-    () => buildOrderPayload(),
-    [checkoutFingerprint],
-  );
 
   const handleApplyCoupon = async (code) => {
     try {
@@ -304,7 +196,7 @@ export default function CheckoutPage() {
         deliveryNote: shippingData.deliveryNote || "",
       },
       shippingMethod: shippingData.shippingMethod || "standard",
-      paymentMethod: paymentData.method || "credit-card",
+      paymentMethod: paymentData.method || "promptpay",
       shippingCost,
       couponCode: appliedCoupon?.code || shippingData.couponCode || "",
     };
@@ -340,46 +232,84 @@ export default function CheckoutPage() {
     setAddressStore(addresses);
   }
 
-  async function discardPreparedPayment(order = preparedOrder) {
-    setPreparedOrder(null);
-    setPreparedFingerprint("");
-    setClientSecret("");
-    setIntentError("");
+  // The pending id lives in a ref as well as state so async flows always read the current
+  // value instead of the one captured when their handler was created.
+  function trackPendingOrder(orderId) {
+    pendingOrderIdRef.current = orderId;
+    setPendingOrderId(orderId);
+  }
 
-    if (!order?._id || cancellationRequests.current.has(order._id)) return null;
-    cancellationRequests.current.add(order._id);
+  async function cancelPendingOrder(orderId) {
+    setIsCancelling(true);
+    setSubmitError("");
 
     try {
-      return await api.post("/payment/cancel-payment-intent", {
-        orderId: order._id,
-      });
+      await cancelOrder(orderId);
+      trackPendingOrder("");
+      return true;
     } catch (error) {
-      console.error("Could not cancel unpaid order:", error);
-      return null;
+      // The order still holds stock, so keep the id: a retry then confirms this order
+      // instead of creating a second one, and the customer can cancel it again.
+      console.warn("Could not cancel the pending order:", error.message);
+      setSubmitError("ยกเลิกออเดอร์ไม่สำเร็จ กรุณากดยกเลิกออเดอร์อีกครั้ง");
+      return false;
+    } finally {
+      setIsCancelling(false);
     }
+  }
+
+  // Releases the order we created but could not confirm so its stock and coupon go back
+  // before the customer changes anything about the order. The id is only dropped once the
+  // server confirms the cancel, so no new order can be created while the old one still
+  // holds stock. Resolves to whether the order was really released. Returns a promise only
+  // when a cancel is needed, which keeps callers that have nothing to wait for synchronous,
+  // and shares one request with concurrent callers.
+  function abandonPendingOrder() {
+    if (cancelRequestRef.current) return cancelRequestRef.current;
+    if (!pendingOrderIdRef.current) return null;
+
+    const request = cancelPendingOrder(pendingOrderIdRef.current).finally(() => {
+      if (cancelRequestRef.current === request) cancelRequestRef.current = null;
+    });
+    cancelRequestRef.current = request;
+    return request;
   }
 
   function goToStep(step) {
-    if (step !== 4 && preparedOrder) {
-      discardPreparedPayment();
+    // Walking away from the payment step abandons any order created but not confirmed.
+    // The step only changes once that order is released, so the customer cannot leave a
+    // live order behind and come back to an edited checkout.
+    const cancelRequest = step < 3 ? abandonPendingOrder() : null;
+    if (cancelRequest) {
+      cancelRequest.then((cancelled) => {
+        if (cancelled) setCurrentStep(step);
+      });
+      return;
     }
+
     setCurrentStep(step);
   }
 
-  useEffect(() => {
-    if (!preparedOrder || !preparedFingerprint) return;
-    if (preparedFingerprint !== checkoutFingerprint) {
-      discardPreparedPayment(preparedOrder);
+  function handlePaymentMethodChange(nextPayment) {
+    // The old order must release its stock before the channel changes, otherwise the next
+    // attempt would confirm an order that was created for a different channel.
+    const cancelRequest = abandonPendingOrder();
+    if (cancelRequest) {
+      setSubmitError("");
+      cancelRequest.then((cancelled) => {
+        if (cancelled) setPaymentData(nextPayment);
+      });
+      return;
     }
-  }, [checkoutFingerprint, preparedFingerprint, preparedOrder]);
 
-  async function finishOrder(payload, existingOrder = null) {
-    const response = existingOrder || await createOrder(payload);
-    const order = response?.data || response;
-    const isMockPayment = ["promptpay", "paypal"].includes(payload.paymentMethod);
+    setSubmitError("");
+    setPaymentData(nextPayment);
+  }
+
+  async function finishOrder(payload, order) {
     let upgradedRank = null;
 
-    if (currentUser && !isMockPayment) {
+    if (currentUser) {
       const spending = Number(currentUser.membership?.accumulatedSpending || 0);
       const newRank = calculateRankFromSpending(spending + (order.subtotal ?? discountedSubtotal));
       if (newRank !== userRank) upgradedRank = newRank;
@@ -410,95 +340,66 @@ export default function CheckoutPage() {
       upgradedRank,
       shippingCost: order.shippingCost ?? shippingCost,
       totalAmount: order.totalAmount ?? totalAmount,
-      paymentMode: ["promptpay", "paypal"].includes(payload.paymentMethod)
-        ? "mock"
-        : "stripe",
+      paymentMethod: order.paymentMethod || payload.paymentMethod,
     });
-
-    if (existingOrder) {
-      setPreparedOrder(null);
-      setPreparedFingerprint("");
-      setClientSecret("");
-    }
+    setCurrentStep(4);
     clearCart();
     return order;
   }
 
-  async function handlePlaceOrder(stripe, elements, showFormError = () => {}) {
+  // Creates the order, then reports the settled demo payment so the server moves the
+  // order to `paid` through the normal status machine. Once the order exists, a retry
+  // must confirm that same order instead of reserving stock a second time.
+  async function handlePlaceOrder() {
+    if (orderSubmissionInProgress.current) return;
+    orderSubmissionInProgress.current = true;
     setIsSubmitting(true);
     setSubmitError("");
 
     try {
-      const paymentMethod = paymentData.method || "credit-card";
-      if (!["credit-card", "promptpay", "paypal"].includes(paymentMethod)) {
-        throw new Error("กรุณาเลือกช่องทางการชำระเงินที่รองรับ");
-      }
-
-      const stockError = getStockError();
-      if (stockError) throw new Error(stockError);
+      // A cancel that is still running must land first, otherwise this attempt would
+      // create a second order while the abandoned one still holds stock.
+      if (cancelRequestRef.current) await cancelRequestRef.current;
 
       const payload = buildOrderPayload();
+      let orderId = pendingOrderIdRef.current;
+      let order = null;
 
-      if (paymentMethod === "credit-card") {
-        if (!stripe || !elements) {
-          throw new Error("แบบฟอร์มบัตรยังโหลดไม่เสร็จ กรุณาลองใหม่");
-        }
-        if (!clientSecret) throw new Error("ไม่สามารถเริ่มรายการชำระเงินได้");
+      if (!orderId) {
+        const stockError = getStockError();
+        if (stockError) throw new Error(stockError);
 
-        let result;
-        try {
-          result = await stripe.confirmPayment({
-            elements,
-            clientSecret,
-            confirmParams: { return_url: `${window.location.origin}/checkout` },
-            redirect: "if_required",
-          });
-        } catch (paymentError) {
-          const cancelResult = await discardPreparedPayment(preparedOrder);
-          setPaymentSetupPaused(true);
-          if (cancelResult?.paid && cancelResult.data) {
-            await finishOrder(payload, cancelResult.data);
-            return;
-          }
-          throw paymentError;
+        const createResponse = await createOrder(payload);
+        order = createResponse?.data || createResponse;
+        orderId = order?._id;
+        if (!orderId) {
+          throw new Error("สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
         }
-
-        if (result.error) {
-          const cancelResult = await discardPreparedPayment(preparedOrder);
-          setPaymentSetupPaused(true);
-          if (cancelResult?.paid && cancelResult.data) {
-            await finishOrder(payload, cancelResult.data);
-            return;
-          }
-          throw new Error(result.error.message);
-        }
-        if (result.paymentIntent?.status !== "succeeded") {
-          const cancelResult = await discardPreparedPayment(preparedOrder);
-          setPaymentSetupPaused(true);
-          if (cancelResult?.paid && cancelResult.data) {
-            await finishOrder(payload, cancelResult.data);
-            return;
-          }
-          throw new Error("การชำระเงินยังไม่สำเร็จ");
-        }
-        if (!preparedOrder) throw new Error("ไม่พบคำสั่งซื้อ กรุณาลองใหม่อีกครั้ง");
+        trackPendingOrder(orderId);
       }
 
-      await finishOrder(
-        payload,
-        paymentMethod === "credit-card" ? preparedOrder : null,
-      );
+      const confirmResponse = await confirmPayment(orderId);
+      const paidOrder = confirmResponse?.data || confirmResponse || order;
+      trackPendingOrder("");
+
+      await finishOrder(payload, paidOrder);
     } catch (error) {
       console.error("Order payment failed:", error);
-      const message =
+
+      // 400/404 mean this order can never be confirmed, so drop it and start fresh.
+      if ([400, 404].includes(error.status)) {
+        trackPendingOrder("");
+      }
+
+      setCurrentStep(3);
+      setSubmitError(
         error.data?.message ||
-        error.response?.data?.message ||
-        error.message ||
-        "เกิดข้อผิดพลาดในการบันทึกคำสั่งซื้อ";
-      setSubmitError(message);
-      showFormError(message);
-      throw error;
+          error.response?.data?.message ||
+          error.message ||
+          "เกิดข้อผิดพลาดในการบันทึกคำสั่งซื้อ",
+      );
     } finally {
+      orderSubmissionInProgress.current = false;
       setIsSubmitting(false);
     }
   }
@@ -525,8 +426,6 @@ export default function CheckoutPage() {
       phone: "",
       address: "",
       city: "",
-      state: "",
-      zipCode: "",
       saveAddress: true,
     }));
   }
@@ -551,13 +450,6 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-gray-50/50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <CheckoutStepper currentStep={currentStep} onStepClick={goToStep} />
-
-        {submitError && (
-          <div role="alert" className="mb-6 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            <span>{submitError}</span>
-            <button type="button" aria-label="ปิดข้อความแจ้งเตือน" onClick={() => setSubmitError("")} className="font-bold">✕</button>
-          </div>
-        )}
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="space-y-4 lg:col-span-2">
@@ -591,91 +483,41 @@ export default function CheckoutPage() {
                 <ShippingSection shippingData={shippingData} isCollapsed onEdit={() => goToStep(2)} />
                 <PaymentSection
                   paymentData={paymentData}
-                  onChangePayment={setPaymentData}
-                  onContinue={() => {
-                    setSubmitError("");
-                    setCurrentStep(4);
-                  }}
+                  onChangePayment={handlePaymentMethodChange}
+                  isCancelling={isCancelling}
                   onBack={() => goToStep(2)}
                 />
-              </>
-            )}
-
-            {currentStep === 4 && (
-              <>
-                <ContactSection email={email} isCollapsed onEdit={() => goToStep(1)} />
-                <ShippingSection shippingData={shippingData} isCollapsed onEdit={() => goToStep(2)} />
-                <PaymentSection paymentData={paymentData} isCollapsed onEdit={() => goToStep(3)} />
-
                 {paymentData.method === "credit-card" ? (
-                  <div className="rounded-lg border border-gray-200 bg-white p-6">
-                    <h2 className="mb-4 text-xl font-bold">ชำระเงินด้วย Credit / Debit Card</h2>
-                    {!clientSecret ? (
-                      <>
-                        {paymentSetupPaused ? (
-                          <button
-                            type="button"
-                            onClick={() => setPaymentSetupPaused(false)}
-                            className="rounded-lg bg-[#D0021B] px-5 py-3 font-bold text-white"
-                          >
-                            ลองชำระเงินอีกครั้ง
-                          </button>
-                        ) : (
-                          <>
-                            <Elements stripe={stripePromise}>
-                              <StripeIntentSetup
-                                orderPayload={stripeOrderPayload}
-                                onReady={(order, secret) => {
-                                  setPreparedOrder(order);
-                                  setPreparedFingerprint(checkoutFingerprint);
-                                  setClientSecret(secret || "");
-                                  setIntentError("");
-                                  setSubmitError("");
-                                }}
-                                onError={(message) => {
-                                  setIntentError(message);
-                                  setSubmitError(message);
-                                }}
-                              />
-                            </Elements>
-                            <p className="text-sm text-gray-600">
-                              {intentError || "กำลังเตรียมแบบฟอร์มชำระเงิน..."}
-                            </p>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                        <Elements stripe={stripePromise} options={{ clientSecret, locale: "th" }}>
-                        <StripePaymentForm onSubmit={handlePlaceOrder} isSubmitting={isSubmitting} />
-                      </Elements>
-                    )}
-                  </div>
+                  <DemoCardForm
+                    isSubmitting={isSubmitting}
+                    isCancelling={isCancelling}
+                    error={submitError}
+                    onSubmit={handlePlaceOrder}
+                  />
                 ) : (
-                  <>
-                    <div role="status" className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                      {paymentData.method === "promptpay" ? (
-                        <div className="flex items-center gap-4">
-                          <div aria-label="QR Code จำลองสำหรับเดโม" className="grid h-24 w-24 shrink-0 grid-cols-5 gap-0.5 rounded bg-white p-1 ring-1 ring-amber-300">
-                            {[1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1].map((pixel, index) => (
-                              <span key={index} className={pixel ? "bg-gray-900" : "bg-white"} />
-                            ))}
-                          </div>
-                          <p>QR Code นี้เป็นภาพจำลองสำหรับเดโมเท่านั้น ไม่มีการรับชำระเงินจริง</p>
-                        </div>
-                      ) : (
-                        <p>PayPal (โหมดทดสอบระบบ - ไม่มีการตัดเงินจริง)</p>
-                      )}
-                    </div>
-                    <ReviewSection
-                      email={email}
-                      shippingData={shippingData}
-                      paymentData={paymentData}
-                      onEditStep={setCurrentStep}
-                      onBack={() => goToStep(3)}
-                      onPlaceOrder={() => handlePlaceOrder(null, null)}
-                      isSubmitting={isSubmitting}
-                    />
-                  </>
+                  <PromptPayQrPanel
+                    totalAmount={totalAmount}
+                    isSubmitting={isSubmitting}
+                    isCancelling={isCancelling}
+                    error={submitError}
+                    onConfirm={handlePlaceOrder}
+                  />
+                )}
+                {pendingOrderId && (
+                  <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 shadow-xs">
+                    <p>
+                      ออเดอร์ของคุณถูกสร้างไว้แล้ว กดปุ่มชำระเงินอีกครั้งเพื่อยืนยันออเดอร์เดิม
+                      โดยไม่ต้องสร้างออเดอร์ซ้ำ
+                    </p>
+                    <button
+                      type="button"
+                      onClick={abandonPendingOrder}
+                      disabled={isSubmitting || isCancelling}
+                      className="mt-3 w-full rounded-lg border border-gray-300 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-6"
+                    >
+                      {isCancelling ? "กำลังยกเลิกออเดอร์..." : "ยกเลิกออเดอร์นี้และเริ่มใหม่"}
+                    </button>
+                  </div>
                 )}
               </>
             )}

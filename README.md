@@ -12,7 +12,7 @@ OCCASION คือเว็บไซต์ E-commerce เสื้อผ้า U
 | --- | --- |
 | Customer Client | สมัคร/เข้าสู่ระบบ, Profile และที่อยู่, Product/Lookbook, Cart/Checkout, Order History, Coupon, Size Recommendation และ Mix & Match |
 | Admin Client | Dashboard, Product พร้อม variants/stock/size chart, Customer, Order, Lookbook, Article และ Coupon management |
-| API | Authentication, Products, Orders, Stripe payment, Lookbooks, Articles, Coupons, Uploads, Size Profile และ Gemini recommendation |
+| API | Authentication, Products, Orders, Demo payment (PromptPay QR และบัตร), Lookbooks, Articles, Coupons, Uploads, Size Profile และ Gemini recommendation |
 | Security | HttpOnly session cookies, customer/admin role separation, validation, rate limits, CORS, Helmet และตรวจชนิดไฟล์จาก signature |
 
 Review feature ถูกนำออกจากระบบแล้ว จึงไม่มี Review API, Review model หรือหน้า Admin Review ในขอบเขตปัจจุบัน
@@ -71,10 +71,6 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=
 SMTP_PASS=
-# Stripe: keep both values private and never commit this file.
-STRIPE_SECRET_KEY=sk_test_replace_with_your_secret_key
-# Obtained from `stripe listen` locally, or from the Webhooks page in Stripe Dashboard.
-STRIPE_WEBHOOK_SECRET=whsec_replace_with_your_webhook_secret
 ```
 
 ### 3. ตั้งค่า Frontend ทั้งสองแอป
@@ -83,26 +79,37 @@ STRIPE_WEBHOOK_SECRET=whsec_replace_with_your_webhook_secret
 
 ```dotenv
 VITE_API_BASE_URL=http://localhost:5002/api
-# This key is intentionally usable by the browser; do not put STRIPE_SECRET_KEY here.
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_replace_with_your_publishable_key
 ```
 
 - ถ้าไม่ตั้งค่า หน้าร้านจะไปเรียก API บน Render แทน localhost
 - เปลี่ยนค่าแล้วต้องเปิด development server ใหม่ หรือ build และ deploy ใหม่
 
-### 4. ตั้งค่า Stripe (เฉพาะการจ่ายบัตร)
+### 4. ระบบชำระเงิน (โหมดเดโม)
 
-ระบบมี Stripe Payment Element, PaymentIntent และ webhook อยู่แล้ว จึงไม่ต้องเพิ่ม package หรือ route อีก. ใส่ `STRIPE_SECRET_KEY` ใน `server/.env` และ `VITE_STRIPE_PUBLISHABLE_KEY` ใน `client/.env` ตามตัวอย่างด้านบน แล้วเปิด server ใหม่
+ระบบชำระเงินเป็น **ระบบจำลองสำหรับงานสาธิต** จึงไม่ต้องตั้งค่า key ใด ๆ และไม่มีการตัดเงินจริง
+รองรับ 2 ช่องทาง ทั้งคู่เลือกได้จากขั้นตอนชำระเงินในหน้า Checkout:
 
-การชำระเงินที่สำเร็จจะเปลี่ยนสถานะ order ผ่าน webhook เท่านั้น. สำหรับ local development ให้ติดตั้งและ login [Stripe CLI](https://docs.stripe.com/stripe-cli), แล้วรันคำสั่งนี้ใน terminal แยก:
+| ช่องทาง | การทำงาน |
+| --- | --- |
+| `promptpay` | แสดง QR Code จริงที่สแกนได้ (`qrcode.react`) พร้อมยอดชำระ แล้วกดปุ่ม "จำลองการโอนเงินสำเร็จ" |
+| `credit-card` | ฟอร์มบัตรที่รับเฉพาะเลขทดสอบที่ระบุไว้ พร้อมตรวจ Luhn, วันหมดอายุ และ CVC |
 
-```bash
-stripe listen --forward-to localhost:5002/api/payment/webhook
-```
+QR และฟอร์มบัตรเป็นของจำลอง **ไม่ใช่ช่องทางชำระเงินจริง** แอปธนาคารจะใช้จ่ายผ่าน QR นี้ไม่ได้ และฟอร์มบัตรปิด `autocomplete` เพื่อไม่ให้เบราว์เซอร์เติมเลขบัตรจริง
 
-นำค่า `whsec_...` ที่ Stripe CLI แสดงมาใส่เป็น `STRIPE_WEBHOOK_SECRET` ใน `server/.env` แล้ว restart server. สำหรับ production ให้สร้าง webhook endpoint เป็น `https://<your-api-host>/api/payment/webhook`, เลือก event `payment_intent.succeeded` และใช้ signing secret ของ endpoint production (ไม่ใช่ secret จาก Stripe CLI).
+ลำดับการทำงานฝั่ง Server: `POST /api/orders` สร้าง order สถานะ `pending` (จองสต็อกและ claim คูปอง) แล้ว `POST /api/orders/my/:id/confirm-payment` เปลี่ยนเป็น `paid` ผ่าน state machine เดิม ทำให้ loyalty, coupon และสต็อกทำงานถูกต้องโดยไม่ต้องเขียน logic ซ้ำ
 
-ใช้บัตรทดสอบ `4242 4242 4242 4242`, วันหมดอายุใดก็ได้ในอนาคต และ CVC 3 หลัก. อย่าใช้หรือ commit Secret Key ที่เคยแชร์ในแชต; ให้ rotate คีย์นั้นใน Stripe Dashboard ก่อนใช้งานต่อ.
+ใช้บัตรทดสอบ `4242 4242 4242 4242` เท่านั้น วันหมดอายุใดก็ได้ในอนาคต และ CVC 3 หลัก
+
+order ที่สร้างแล้วไม่ยืนยันการชำระเงินภายใน 30 นาทีจะถูกยกเลิกและคืนสต็อกอัตโนมัติ
+
+#### เปิด/ปิดระบบชำระเงินจำลอง
+
+`POST /api/orders/my/:id/confirm-payment` ปิดให้บริการด้วยตัวแปร `DEMO_PAYMENT_ENABLED`
+
+- ถ้า `NODE_ENV=production` และไม่ได้ตั้งค่านี้ ระบบจะ **ปิด** โดยค่าเริ่มต้น และตอบ `503` เพื่อไม่ให้ยืนยัน order เป็น `paid` โดยไม่มีหลักฐานการจ่ายเงิน
+- ถ้าเป็น `development` หรือ `test` ระบบจะเปิดโดยค่าเริ่มต้น
+- **Deployment ที่ใช้สาธิตจริง (Render) ต้องตั้ง `DEMO_PAYMENT_ENABLED=true`** ไม่งั้นขั้นตอนชำระเงินจะได้ `503`
+- ตรวจสถานะได้ที่ `GET /api/health` ซึ่งจะรายงาน `services.demoPaymentEnabled`
 
 ### 5. เปิดระบบ
 
@@ -153,9 +160,9 @@ npm run backfill:size-charts --prefix server
 
 ## Checklist ก่อน Demo หรือ Deploy
 
-- `/api/health` ต้องรายงานว่า Server และ Database พร้อมใช้งาน
-- ตั้ง `SMTP_USER` และ `SMTP_PASS` ก่อนทดสอบอีเมลจริง
-- ตั้ง Stripe keys ทั้ง Server และ Customer Client ก่อนทดสอบ Card Payment
+- `/api/health` ต้องรายงานว่า Server และ Database พร้อมใช้งาน และ `services.demoPaymentEnabled` เป็น `true`
+- ตั้ง SMTP และ `DEMO_PAYMENT_ENABLED=true` ให้ครบก่อนทดสอบ Checkout และอีเมลจริง
+- ทดสอบ Checkout ทั้ง 2 ช่องทาง (PromptPay QR และบัตรเดโม) แล้วเช็คว่า order เปลี่ยนเป็น `paid` พร้อมเพิ่มยอดสะสมสมาชิก
 - ตั้ง `GEMINI_API_KEY` ก่อนทดสอบ Mix & Match
 - ตรวจว่าสินค้า Tops/Bottoms บน staging มี `size_chart`
 - ทดสอบ Customer/Admin session, Product, Checkout, Upload และ Rate Limit บน environment เป้าหมาย

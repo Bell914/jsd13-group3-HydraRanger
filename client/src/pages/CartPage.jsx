@@ -11,7 +11,7 @@ import {
   Minus,
   Tag,
 } from "lucide-react";
-import useCartStore, { quantityInCartForVariant } from "../store/cartStore.js";
+import useCartStore, { getAvailableQuantity } from "../store/cartStore.js";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
 import { authService } from "../services/authService.js";
 
@@ -82,8 +82,10 @@ export default function CartPage() {
             <div className="lg:col-span-2 space-y-4">
               <div className="bg-white border border-gray-200 rounded-2xl divide-y divide-gray-100 shadow-xs overflow-hidden">
                 {cartItems.map((item) => {
-                  const stockQuantity = Number(item.stockQuantity ?? item.stock_quantity ?? 0);
-                  const skuQuantity = quantityInCartForVariant(cartItems, item.variantId || item.variant_id);
+                  const availableQuantity = getAvailableQuantity(
+                    cartItems,
+                    item.cartItemId || item.variantId || item._id
+                  );
 
                   return (
                     <div
@@ -176,7 +178,7 @@ export default function CartPage() {
                           onClick={() =>
                             updateQuantity(item.cartItemId || item.variantId, item.quantity + 1)
                           }
-                          disabled={skuQuantity >= stockQuantity}
+                          disabled={availableQuantity !== null && item.quantity >= availableQuantity}
                           aria-label="Increase quantity"
                           className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-gray-600 hover:bg-gray-200 hover:text-black transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                         >

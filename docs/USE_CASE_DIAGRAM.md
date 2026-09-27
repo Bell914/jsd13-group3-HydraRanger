@@ -8,7 +8,6 @@ flowchart LR
     Customer((Customer))
     Admin((Admin))
     SMTP[(SMTP)]
-    Stripe[(Stripe)]
     Gemini[(Gemini)]
 
     subgraph Public[Public Shopping]
@@ -46,7 +45,7 @@ flowchart LR
     Customer --> Profile
     Customer --> SizeProfile --> Recommend
     Customer --> Favorite
-    Customer --> Checkout --> Stripe
+    Customer --> Checkout
     Customer --> Order
     Customer --> Coupon --> Checkout
     Admin --> Dashboard

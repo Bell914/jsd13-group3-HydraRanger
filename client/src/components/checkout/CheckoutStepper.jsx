@@ -5,7 +5,7 @@ export default function CheckoutStepper({ currentStep, onStepClick }) {
     { id: 1, label: "ข้อมูลติดต่อ" },
     { id: 2, label: "ที่อยู่จัดส่ง" },
     { id: 3, label: "ชำระเงิน" },
-    { id: 4, label: "ตรวจสอบออเดอร์" },
+    { id: 4, label: "ใบยืนยันคำสั่งซื้อ" },
   ];
 
   return (
