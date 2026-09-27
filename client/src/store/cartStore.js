@@ -2,12 +2,31 @@ import { create } from "zustand";
 
 const STORAGE_KEY = "occasion_cart";
 
+export const migrateCartItem = (item) => {
+  if (!item || item.cartItemId) return item;
+
+  const variantId = item.variantId || item.variant_id;
+  if (!variantId) return item;
+
+  const cartItemId = item.isLookbookSet || item.lookbookId
+    ? `${variantId}:lookbook:${item.lookbookId || "set"}`
+    : String(variantId);
+
+  return { ...item, cartItemId };
+};
+
 const loadInitialCart = () => {
   try {
     if (typeof localStorage === "undefined") return [];
     const saved = localStorage.getItem(STORAGE_KEY);
     const parsed = saved ? JSON.parse(saved) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+
+    const migrated = parsed.map(migrateCartItem);
+    if (migrated.some((item, index) => item !== parsed[index])) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+    }
+    return migrated;
   } catch (error) {
     console.error("Failed to load cart from localStorage:", error);
     return [];
@@ -37,7 +56,7 @@ const getVariantId = (variant, product) => {
 
 const getCartItemId = (item) => item.cartItemId || item.variantId;
 
-const quantityInCartForVariant = (items, variantId) => items.reduce(
+export const quantityInCartForVariant = (items, variantId) => items.reduce(
   (total, item) => (String(item.variantId || item.variant_id) === String(variantId)
     ? total + Number(item.quantity || 0)
     : total),

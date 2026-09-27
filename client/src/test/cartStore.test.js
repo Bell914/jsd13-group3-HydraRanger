@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { useCartStore } from "../store/cartStore.js";
+import { migrateCartItem, useCartStore } from "../store/cartStore.js";
 
 const product = { _id: "product-1", name: "Test product" };
 const variant = { _id: "variant-1", price: 100, stockQuantity: 2 };
@@ -40,5 +40,14 @@ describe("cart stock and lookbook pricing", () => {
     expect(matchingLines).toHaveLength(2);
     expect(matchingLines.find((item) => !item.isLookbookSet)).toMatchObject({ price: 100, quantity: 1 });
     expect(matchingLines.find((item) => item.isLookbookSet)).toMatchObject({ price: 75, quantity: 1 });
+  });
+
+  it("assigns stable line IDs to legacy cart items", () => {
+    expect(migrateCartItem({ variantId: "variant-1" }).cartItemId).toBe("variant-1");
+    expect(migrateCartItem({
+      variantId: "variant-1",
+      isLookbookSet: true,
+      lookbookId: "LOOK-1",
+    }).cartItemId).toBe("variant-1:lookbook:LOOK-1");
   });
 });

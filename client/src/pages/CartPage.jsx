@@ -11,7 +11,7 @@ import {
   Minus,
   Tag,
 } from "lucide-react";
-import useCartStore from "../store/cartStore.js";
+import useCartStore, { quantityInCartForVariant } from "../store/cartStore.js";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
 import { authService } from "../services/authService.js";
 
@@ -81,8 +81,12 @@ export default function CartPage() {
             {/* Left Column: Cart Items List */}
             <div className="lg:col-span-2 space-y-4">
               <div className="bg-white border border-gray-200 rounded-2xl divide-y divide-gray-100 shadow-xs overflow-hidden">
-                {cartItems.map((item) => (
-                  <div
+                {cartItems.map((item) => {
+                  const stockQuantity = Number(item.stockQuantity ?? item.stock_quantity ?? 0);
+                  const skuQuantity = quantityInCartForVariant(cartItems, item.variantId || item.variant_id);
+
+                  return (
+                    <div
                     key={item.cartItemId || item.variantId || item._id}
                     className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-50/40 transition-colors"
                   >
@@ -172,7 +176,7 @@ export default function CartPage() {
                           onClick={() =>
                             updateQuantity(item.cartItemId || item.variantId, item.quantity + 1)
                           }
-                          disabled={item.quantity >= Number(item.stockQuantity ?? item.stock_quantity ?? 0)}
+                          disabled={skuQuantity >= stockQuantity}
                           aria-label="Increase quantity"
                           className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-gray-600 hover:bg-gray-200 hover:text-black transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                         >
@@ -189,8 +193,9 @@ export default function CartPage() {
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Free Shipping Badge (จุดที่ 2: ปรับระยะขยับลงมาติดกับปุ่มเลือกซื้อสินค้าต่อด้านล่าง) */}
