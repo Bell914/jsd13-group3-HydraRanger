@@ -133,6 +133,13 @@ npm run test:security --prefix server
 
 `npm run test:conn --prefix server` ต้องมี environment และฐานข้อมูลที่เชื่อมต่อได้
 
+ถ้าฐานข้อมูล staging มีสินค้าเดิมที่ยังไม่มี `size_chart` ให้ตรวจแบบ dry run ก่อนเติมข้อมูล:
+
+```bash
+npm run backfill:size-charts --prefix server -- --dry-run
+npm run backfill:size-charts --prefix server
+```
+
 ## เอกสาร
 
 - [Documentation Index](docs/README.md)
@@ -141,6 +148,16 @@ npm run test:security --prefix server
 - [Use Case Diagram](docs/USE_CASE_DIAGRAM.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Loyalty Business Rules](docs/LOYALTY_BUSINESS_RULES.md)
+- [Review Slides Outline](docs/REVIEW_SLIDES.md)
 - [Contribution Guidelines](CONTRIBUTING.md)
+
+## Checklist ก่อน Demo หรือ Deploy
+
+- `/api/health` ต้องรายงานว่า Server และ Database พร้อมใช้งาน
+- ตั้ง `SMTP_USER` และ `SMTP_PASS` ก่อนทดสอบอีเมลจริง
+- ตั้ง Stripe keys ทั้ง Server และ Customer Client ก่อนทดสอบ Card Payment
+- ตั้ง `GEMINI_API_KEY` ก่อนทดสอบ Mix & Match
+- ตรวจว่าสินค้า Tops/Bottoms บน staging มี `size_chart`
+- ทดสอบ Customer/Admin session, Product, Checkout, Upload และ Rate Limit บน environment เป้าหมาย
 
 โปรเจกต์นี้จัดทำเพื่อการเรียนรู้และฝึกทำงานเป็นทีมในหลักสูตร JSD13
