@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Order, ORDER_STATUSES } from '../models/Order.js';
+import { Order, ORDER_STATUSES, PAYMENT_METHODS } from '../models/Order.js';
 import { Product } from '../models/Product.js';
 import { Lookbook } from '../models/Lookbook.js';
 import * as loyaltyService from './loyaltyService.js';
@@ -293,8 +293,8 @@ export async function createOrder(user, orderData) {
 
   const discountedSubtotal = Math.max(0, subtotal - discountAmount);
   const totalAmount = discountedSubtotal + shippingCost;
-  const paymentMethod = orderData.paymentMethod || 'credit-card';
-  const paymentExpiresAt = ['credit-card', 'promptpay', 'paypal'].includes(paymentMethod)
+  const paymentMethod = orderData.paymentMethod || 'promptpay';
+  const paymentExpiresAt = PAYMENT_METHODS.includes(paymentMethod)
     ? new Date(checkoutStartedAt.getTime() + 30 * 60 * 1000)
     : null;
 
@@ -322,7 +322,6 @@ export async function createOrder(user, orderData) {
       },
       shippingMethod: orderData.shippingMethod || 'standard',
       paymentMethod,
-      paymentIntentId: orderData.paymentIntentId || '',
       paymentExpiresAt,
       subtotal,
       discountAmount,
@@ -349,20 +348,33 @@ export async function createOrder(user, orderData) {
 }
 
 export async function getExpiredPendingPaymentOrders(now = new Date()) {
-  const oldOrderCutoff = new Date(now.getTime() - 30 * 60 * 1000);
-
   return Order.find({
     status: 'pending',
-    paymentMethod: { $in: ['credit-card', 'promptpay', 'paypal'] },
-    $or: [
-      { paymentExpiresAt: { $lte: now } },
-      {
-        paymentMethod: 'credit-card',
-        paymentExpiresAt: null,
-        createdAt: { $lte: oldOrderCutoff }
-      }
-    ]
+    paymentMethod: { $in: PAYMENT_METHODS },
+    paymentExpiresAt: { $lte: now }
   });
+}
+
+let cleanupIsRunning = false;
+
+// Releases stock held by orders whose demo payment was never confirmed.
+export async function cleanupExpiredPendingPayments() {
+  if (cleanupIsRunning) return;
+  cleanupIsRunning = true;
+
+  try {
+    const expiredOrders = await getExpiredPendingPaymentOrders();
+
+    for (const order of expiredOrders) {
+      try {
+        await cancelOrder(order.user._id || order.user.id || order.user, order._id);
+      } catch (error) {
+        console.error(`Could not clean up expired order ${order._id}:`, error.message);
+      }
+    }
+  } finally {
+    cleanupIsRunning = false;
+  }
 }
 
 export async function getMyOrders(userId) {
@@ -413,6 +425,7 @@ async function applyOrderStatusChanges(existingOrder, status, userId, netSpend, 
   if (userId && !existingOrder.loyaltyProcessed && status === 'paid') {
     await loyaltyService.processOrderSpending(userId, netSpend, 'ADD', session);
     existingOrder.loyaltyProcessed = true;
+    existingOrder.paidAt = existingOrder.paidAt || new Date();
   } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {
     await loyaltyService.processOrderSpending(userId, netSpend, 'SUBTRACT', session);
     existingOrder.loyaltyProcessed = false;
@@ -472,6 +485,23 @@ export async function updateOrderStatus(orderId, status) {
   const order = await Order.findById(orderId).populate('user', 'username email');
   return order;
 }
+// Demo payment confirmation: the client reports a settled PromptPay QR scan or a
+// validated demo card, then the order moves through the normal status machine so
+// loyalty, coupon and stock handling stay in one place.
+export async function confirmOrderPayment(userId, orderId) {
+  const existingOrder = await getOrderById(orderId, userId);
+
+  if (!PAYMENT_METHODS.includes(existingOrder.paymentMethod)) {
+    throw new Error('Unsupported payment method');
+  }
+  if (existingOrder.status === 'paid') return existingOrder;
+  if (existingOrder.status !== 'pending') {
+    throw new Error('Order is not waiting for payment');
+  }
+
+  return updateOrderStatus(orderId, 'paid');
+}
+
 export async function cancelOrder(userId, orderId) {
   if (!mongoose.Types.ObjectId.isValid(orderId)) {
     throw new Error('Order not found');

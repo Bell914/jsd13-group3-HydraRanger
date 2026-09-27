@@ -1,14 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
 import useCartStore from "../store/cartStore";
 import { useAddressStore } from "../store/addressStore.js";
 import { authService } from "../services/authService";
 import { useAuth } from "../context/Auth/useAuth.jsx";
 import { getAddresses, addAddress } from "../services/userService.js";
-import { createOrder } from "../services/orderService.js";
-import { api } from "../services/api.js";
+import { createOrder, confirmPayment } from "../services/orderService.js";
 import { normalizeProvince } from "../constants/provinces.js";
 import {
   RANK_DISCOUNT_PERCENT,
@@ -21,105 +18,12 @@ import {
   ContactSection,
   ShippingSection,
   PaymentSection,
+  PromptPayQrPanel,
+  DemoCardForm,
   OrderSummary,
   OrderConfirmationScreen,
   SHIPPING_METHODS,
 } from "../components/checkout";
-
-function StripePaymentForm({ onSubmit, isSubmitting }) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [error, setError] = useState("");
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    setError("");
-
-    if (!stripe || !elements || isSubmitting) return;
-
-    try {
-      await onSubmit(stripe, elements, setError);
-    } catch (submitError) {
-      setError(submitError.message || "ไม่สามารถชำระเงินได้ กรุณาลองใหม่อีกครั้ง");
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} aria-busy={isSubmitting} className="space-y-4">
-      <PaymentElement />
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-      <button
-        type="submit"
-        disabled={!stripe || isSubmitting}
-        className="w-full rounded-lg bg-[#D0021B] py-3 font-bold text-white disabled:opacity-50"
-      >
-        {isSubmitting ? "กำลังดำเนินการ..." : "ชำระเงินและยืนยันคำสั่งซื้อ"}
-      </button>
-    </form>
-  );
-}
-
-function StripeIntentSetup({ orderPayload, onReady, onError }) {
-  useEffect(() => {
-    let isActive = true;
-    let order = null;
-    let setupComplete = false;
-
-    async function cancelOrder() {
-      if (!order?._id) return;
-      try {
-        await api.post("/payment/cancel-payment-intent", { orderId: order._id });
-      } catch (error) {
-        console.error("Could not cancel unpaid order:", error);
-      }
-    }
-
-    async function preparePayment() {
-      try {
-        // Save the order first; the server calculates and stores the final total.
-        const orderResponse = await createOrder(orderPayload);
-        order = orderResponse?.data || orderResponse;
-        if (!isActive) {
-          await cancelOrder();
-          return;
-        }
-
-        const paymentResponse = await api.post("/payment/create-payment-intent", {
-          orderId: order._id,
-        });
-        const clientSecret = paymentResponse.clientSecret || paymentResponse.data?.clientSecret;
-        if (!clientSecret) throw new Error("ไม่สามารถเริ่มรายการชำระเงินได้");
-        if (!isActive) {
-          await cancelOrder();
-          return;
-        }
-
-        setupComplete = true;
-        onReady(order, clientSecret);
-      } catch (error) {
-        // If Stripe setup fails, cancel the unpaid order so its stock is released.
-        if (isActive) await cancelOrder();
-
-        if (isActive) {
-          onError(
-            error.data?.message ||
-              error.response?.data?.message ||
-              error.message ||
-              "เริ่มรายการชำระเงินไม่สำเร็จ",
-          );
-        }
-      }
-    }
-
-    preparePayment();
-    return () => {
-      isActive = false;
-      if (!setupComplete) cancelOrder();
-    };
-  }, [orderPayload]);
-
-  return null;
-}
 
 function getAddressFormData(address) {
   const nameParts = (address.recipientName || "").trim().split(/\s+/).filter(Boolean);
@@ -139,12 +43,6 @@ function getAddressFormData(address) {
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const stripePromise = useMemo(
-    () => import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
-      ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
-      : null,
-    [],
-  );
   const { cartItems, getTotalPrice, clearCart } = useCartStore();
   const setAddressStore = useAddressStore((state) => state.setAddresses);
   let authUser = null;
@@ -173,16 +71,10 @@ export default function CheckoutPage() {
     giftMessage: "",
   });
   const [savedAddresses, setSavedAddresses] = useState([]);
-  const [paymentData, setPaymentData] = useState({ method: "credit-card" });
+  const [paymentData, setPaymentData] = useState({ method: "promptpay" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
   const [submitError, setSubmitError] = useState("");
-  const [clientSecret, setClientSecret] = useState("");
-  const [intentError, setIntentError] = useState("");
-  const [preparedOrder, setPreparedOrder] = useState(null);
-  const [preparedFingerprint, setPreparedFingerprint] = useState("");
-  const [paymentSetupPaused, setPaymentSetupPaused] = useState(false);
-  const cancellationRequests = useRef(new Set());
   const orderSubmissionInProgress = useRef(false);
 
   useEffect(() => {
@@ -192,6 +84,13 @@ export default function CheckoutPage() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentStep]);
+
+  // The confirmation screen is much shorter than the payment form, so the browser
+  // keeps the old offset and lands the customer mid-page. Jump to the top of step 4.
+  useLayoutEffect(() => {
+    if (!completedOrder) return;
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [completedOrder]);
 
   useEffect(() => {
     async function loadSavedAddresses() {
@@ -239,23 +138,6 @@ export default function CheckoutPage() {
   const totalDiscount = Math.max(rankDiscountAmount, couponDiscountAmount);
   const discountedSubtotal = Math.max(0, subtotal - totalDiscount);
   const totalAmount = discountedSubtotal + shippingCost;
-  const checkoutFingerprint = JSON.stringify({
-    email,
-    cartItems: cartItems.map((item) => ({
-      productId: item.productId || item.product_id || item._id,
-      variantId: item.variantId || item.variant_id,
-      quantity: item.quantity,
-      price: item.price,
-      lookbookId: item.lookbookId || "",
-    })),
-    shippingData,
-    paymentMethod: paymentData.method,
-    couponCode: appliedCoupon?.code || "",
-  });
-  const stripeOrderPayload = useMemo(
-    () => buildOrderPayload(),
-    [checkoutFingerprint],
-  );
 
   const handleApplyCoupon = async (code) => {
     try {
@@ -306,7 +188,7 @@ export default function CheckoutPage() {
         deliveryNote: shippingData.deliveryNote || "",
       },
       shippingMethod: shippingData.shippingMethod || "standard",
-      paymentMethod: paymentData.method || "credit-card",
+      paymentMethod: paymentData.method || "promptpay",
       shippingCost,
       couponCode: appliedCoupon?.code || shippingData.couponCode || "",
     };
@@ -342,46 +224,14 @@ export default function CheckoutPage() {
     setAddressStore(addresses);
   }
 
-  async function discardPreparedPayment(order = preparedOrder) {
-    setPreparedOrder(null);
-    setPreparedFingerprint("");
-    setClientSecret("");
-    setIntentError("");
-
-    if (!order?._id || cancellationRequests.current.has(order._id)) return null;
-    cancellationRequests.current.add(order._id);
-
-    try {
-      return await api.post("/payment/cancel-payment-intent", {
-        orderId: order._id,
-      });
-    } catch (error) {
-      console.error("Could not cancel unpaid order:", error);
-      return null;
-    }
-  }
-
   function goToStep(step) {
-    if (step !== 4 && preparedOrder) {
-      discardPreparedPayment();
-    }
     setCurrentStep(step);
   }
 
-  useEffect(() => {
-    if (!preparedOrder || !preparedFingerprint) return;
-    if (preparedFingerprint !== checkoutFingerprint) {
-      discardPreparedPayment(preparedOrder);
-    }
-  }, [checkoutFingerprint, preparedFingerprint, preparedOrder]);
-
-  async function finishOrder(payload, existingOrder = null) {
-    const response = existingOrder || await createOrder(payload);
-    const order = response?.data || response;
-    const isMockPayment = ["promptpay", "paypal"].includes(payload.paymentMethod);
+  async function finishOrder(payload, order) {
     let upgradedRank = null;
 
-    if (currentUser && !isMockPayment) {
+    if (currentUser) {
       const spending = Number(currentUser.membership?.accumulatedSpending || 0);
       const newRank = calculateRankFromSpending(spending + (order.subtotal ?? discountedSubtotal));
       if (newRank !== userRank) upgradedRank = newRank;
@@ -412,101 +262,45 @@ export default function CheckoutPage() {
       upgradedRank,
       shippingCost: order.shippingCost ?? shippingCost,
       totalAmount: order.totalAmount ?? totalAmount,
-      paymentMode: ["promptpay", "paypal"].includes(payload.paymentMethod)
-        ? "mock"
-        : "stripe",
+      paymentMethod: order.paymentMethod || payload.paymentMethod,
     });
     setCurrentStep(4);
-
-    if (existingOrder) {
-      setPreparedOrder(null);
-      setPreparedFingerprint("");
-      setClientSecret("");
-    }
     clearCart();
     return order;
   }
 
-  async function handlePlaceOrder(stripe, elements, showFormError = () => {}) {
+  // Creates the order, then reports the settled demo payment so the server moves
+  // the order to `paid` through the normal status machine.
+  async function handlePlaceOrder() {
     if (orderSubmissionInProgress.current) return;
     orderSubmissionInProgress.current = true;
     setIsSubmitting(true);
     setSubmitError("");
 
     try {
-      const paymentMethod = paymentData.method || "credit-card";
-      if (!["credit-card", "promptpay", "paypal"].includes(paymentMethod)) {
-        throw new Error("กรุณาเลือกช่องทางการชำระเงินที่รองรับ");
-      }
-
       const stockError = getStockError();
       if (stockError) throw new Error(stockError);
 
       const payload = buildOrderPayload();
-
-      if (paymentMethod === "credit-card") {
-        if (!stripe || !elements) {
-          throw new Error("แบบฟอร์มบัตรยังโหลดไม่เสร็จ กรุณาลองใหม่");
-        }
-        if (!clientSecret) throw new Error("ไม่สามารถเริ่มรายการชำระเงินได้");
-
-        const { error: elementError } = await elements.submit();
-        if (elementError) throw new Error(elementError.message);
-
-        let result;
-        try {
-          result = await stripe.confirmPayment({
-            elements,
-            clientSecret,
-            confirmParams: { return_url: `${window.location.origin}/checkout` },
-            redirect: "if_required",
-          });
-        } catch (paymentError) {
-          const cancelResult = await discardPreparedPayment(preparedOrder);
-          setPaymentSetupPaused(true);
-          if (cancelResult?.paid && cancelResult.data) {
-            await finishOrder(payload, cancelResult.data);
-            return;
-          }
-          throw paymentError;
-        }
-
-        if (result.error) {
-          const cancelResult = await discardPreparedPayment(preparedOrder);
-          setPaymentSetupPaused(true);
-          if (cancelResult?.paid && cancelResult.data) {
-            await finishOrder(payload, cancelResult.data);
-            return;
-          }
-          throw new Error(result.error.message);
-        }
-        if (result.paymentIntent?.status !== "succeeded") {
-          const cancelResult = await discardPreparedPayment(preparedOrder);
-          setPaymentSetupPaused(true);
-          if (cancelResult?.paid && cancelResult.data) {
-            await finishOrder(payload, cancelResult.data);
-            return;
-          }
-          throw new Error("การชำระเงินยังไม่สำเร็จ");
-        }
-        if (!preparedOrder) throw new Error("ไม่พบคำสั่งซื้อ กรุณาลองใหม่อีกครั้ง");
+      const createResponse = await createOrder(payload);
+      const createdOrder = createResponse?.data || createResponse;
+      if (!createdOrder?._id) {
+        throw new Error("สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
       }
 
-      await finishOrder(
-        payload,
-        paymentMethod === "credit-card" ? preparedOrder : null,
-      );
+      const confirmResponse = await confirmPayment(createdOrder._id);
+      const paidOrder = confirmResponse?.data || confirmResponse || createdOrder;
+
+      await finishOrder(payload, paidOrder);
     } catch (error) {
       console.error("Order payment failed:", error);
-      if (paymentData.method === "credit-card") setCurrentStep(3);
-      const message =
+      setCurrentStep(3);
+      setSubmitError(
         error.data?.message ||
-        error.response?.data?.message ||
-        error.message ||
-        "เกิดข้อผิดพลาดในการบันทึกคำสั่งซื้อ";
-      setSubmitError(message);
-      showFormError(message);
-      throw error;
+          error.response?.data?.message ||
+          error.message ||
+          "เกิดข้อผิดพลาดในการบันทึกคำสั่งซื้อ",
+      );
     } finally {
       orderSubmissionInProgress.current = false;
       setIsSubmitting(false);
@@ -535,8 +329,6 @@ export default function CheckoutPage() {
       phone: "",
       address: "",
       city: "",
-      state: "",
-      zipCode: "",
       saveAddress: true,
     }));
   }
@@ -561,13 +353,6 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-gray-50/50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <CheckoutStepper currentStep={currentStep} onStepClick={goToStep} />
-
-        {submitError && (
-          <div role="alert" className="mb-6 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            <span>{submitError}</span>
-            <button type="button" aria-label="ปิดข้อความแจ้งเตือน" onClick={() => setSubmitError("")} className="font-bold">✕</button>
-          </div>
-        )}
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="space-y-4 lg:col-span-2">
@@ -601,67 +386,25 @@ export default function CheckoutPage() {
                 <ShippingSection shippingData={shippingData} isCollapsed onEdit={() => goToStep(2)} />
                 <PaymentSection
                   paymentData={paymentData}
-                  onChangePayment={setPaymentData}
-                  isSubmitting={isSubmitting}
-                  onContinue={() => {
+                  onChangePayment={(nextPayment) => {
                     setSubmitError("");
-                    if (paymentData.method === "credit-card" && (!preparedOrder || !clientSecret)) {
-                      setSubmitError(intentError || "กำลังเตรียมระบบชำระเงิน กรุณารอสักครู่แล้วลองอีกครั้ง");
-                      return;
-                    }
-                    if (paymentData.method === "credit-card") {
-                      setSubmitError("กรุณากรอกข้อมูลบัตรและกดปุ่มชำระเงินด้านล่าง");
-                      return;
-                    }
-                    return handlePlaceOrder(null, null);
+                    setPaymentData(nextPayment);
                   }}
                   onBack={() => goToStep(2)}
                 />
-                {paymentData.method === "credit-card" && stripePromise && !clientSecret && (
-                  <div className="rounded-lg border border-gray-200 bg-white p-6">
-                    <h2 className="mb-4 text-xl font-bold">ชำระเงินด้วย Credit / Debit Card</h2>
-                    {paymentSetupPaused ? (
-                      <button
-                        type="button"
-                        onClick={() => setPaymentSetupPaused(false)}
-                        className="rounded-lg bg-[#D0021B] px-5 py-3 font-bold text-white"
-                      >
-                        ลองเตรียมการชำระเงินอีกครั้ง
-                      </button>
-                    ) : (
-                      <>
-                        <Elements stripe={stripePromise}>
-                          <StripeIntentSetup
-                            orderPayload={stripeOrderPayload}
-                            onReady={(order, secret) => {
-                              setPreparedOrder(order);
-                              setPreparedFingerprint(checkoutFingerprint);
-                              setClientSecret(secret || "");
-                              setIntentError("");
-                              setSubmitError("");
-                              setPaymentSetupPaused(false);
-                            }}
-                            onError={(message) => {
-                              setIntentError(message);
-                              setSubmitError(message);
-                              setPaymentSetupPaused(true);
-                            }}
-                          />
-                        </Elements>
-                        <p className="text-sm text-gray-600">
-                          {intentError || "กำลังเตรียมแบบฟอร์มชำระเงิน..."}
-                        </p>
-                      </>
-                    )}
-                  </div>
-                )}
-                {paymentData.method === "credit-card" && stripePromise && clientSecret && (
-                  <div className="rounded-lg border border-gray-200 bg-white p-6">
-                    <h2 className="mb-4 text-xl font-bold">กรอกข้อมูล Credit / Debit Card</h2>
-                    <Elements stripe={stripePromise} options={{ clientSecret, locale: "th" }}>
-                      <StripePaymentForm onSubmit={handlePlaceOrder} isSubmitting={isSubmitting} />
-                    </Elements>
-                  </div>
+                {paymentData.method === "credit-card" ? (
+                  <DemoCardForm
+                    isSubmitting={isSubmitting}
+                    error={submitError}
+                    onSubmit={handlePlaceOrder}
+                  />
+                ) : (
+                  <PromptPayQrPanel
+                    totalAmount={totalAmount}
+                    isSubmitting={isSubmitting}
+                    error={submitError}
+                    onConfirm={handlePlaceOrder}
+                  />
                 )}
               </>
             )}

@@ -1,3 +1,5 @@
+import { PAYMENT_METHODS } from '../models/Order.js';
+
 const ORDER_STATUSES = [
   'pending', 'paid', 'processing', 'shipped', 'completed', 'cancelled', 'refunded'
 ];
@@ -38,6 +40,10 @@ export function validateCreateOrder(data) {
 
   if (data.shippingMethod && !SHIPPING_METHODS.includes(data.shippingMethod)) {
     errors.push(`Shipping method must be one of: ${SHIPPING_METHODS.join(', ')}`);
+  }
+
+  if (data.paymentMethod && !PAYMENT_METHODS.includes(data.paymentMethod)) {
+    errors.push(`Payment method must be one of: ${PAYMENT_METHODS.join(', ')}`);
   }
 
   return { isValid: errors.length === 0, errors };

@@ -10,7 +10,9 @@ export const ORDER_STATUSES = [
   'refunded'
 ];
 
-const orderItemSchema = new mongoose.Schema(
+export const PAYMENT_METHODS = ['promptpay', 'credit-card'];
+
+export const orderItemSchema = new mongoose.Schema(
   {
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
     variantId: { type: mongoose.Schema.Types.ObjectId, required: true },
@@ -57,11 +59,9 @@ const orderSchema = new mongoose.Schema(
     },
     shippingAddress: { type: shippingAddressSchema, required: true },
     shippingMethod: { type: String, default: 'standard', trim: true },
-    paymentMethod: { type: String, default: 'credit-card', trim: true },
-    paymentIntentId: { type: String, default: '', index: true },
+    paymentMethod: { type: String, default: 'promptpay', trim: true },
     paymentExpiresAt: { type: Date, default: null, index: true },
-    paymentSetupStartedAt: { type: Date, default: null },
-    paymentCancellationRequested: { type: Boolean, default: false },
+    paidAt: { type: Date, default: null },
     subtotal: { type: Number, required: true, min: 0 },
     discountAmount: { type: Number, default: 0, min: 0 },
     couponCode: { type: String, default: '', trim: true },

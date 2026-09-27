@@ -4,30 +4,14 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import CheckoutPage from "../pages/CheckoutPage";
 import { useCartStore } from "../store/cartStore";
-import { createOrder } from "../services/orderService.js";
+import { createOrder, confirmPayment } from "../services/orderService.js";
 import { getAddresses } from "../services/userService.js";
 
-vi.stubEnv("VITE_STRIPE_PUBLISHABLE_KEY", "pk_test_checkout");
-
-const stripeMocks = vi.hoisted(() => ({
-  confirmPayment: vi.fn().mockResolvedValue({ paymentIntent: { id: "pi_test", status: "succeeded" } }),
-  elements: { submit: vi.fn().mockResolvedValue({}) },
+vi.mock("../services/orderService.js", () => ({
+  createOrder: vi.fn(),
+  confirmPayment: vi.fn(),
 }));
-const apiMocks = vi.hoisted(() => ({
-  post: vi.fn().mockResolvedValue({ clientSecret: "pi_secret_test" }),
-  patch: vi.fn().mockResolvedValue({ success: true }),
-}));
-
-vi.mock("../services/orderService.js", () => ({ createOrder: vi.fn() }));
 vi.mock("../services/userService.js", () => ({ getAddresses: vi.fn().mockResolvedValue({ data: [] }) }));
-vi.mock("../services/api.js", () => ({ api: apiMocks }));
-vi.mock("@stripe/stripe-js", () => ({ loadStripe: vi.fn(() => Promise.resolve({})) }));
-vi.mock("@stripe/react-stripe-js", () => ({
-  Elements: ({ children }) => <div>{children}</div>,
-  PaymentElement: () => <div data-testid="payment-element" />,
-  useElements: () => stripeMocks.elements,
-  useStripe: () => ({ confirmPayment: stripeMocks.confirmPayment }),
-}));
 
 const fillShippingForm = () => {
   fireEvent.change(screen.getByLabelText("ชื่อ"), { target: { value: "Test" } });
@@ -39,18 +23,24 @@ const fillShippingForm = () => {
   fireEvent.change(screen.getByLabelText("รหัสไปรษณีย์"), { target: { value: "10110" } });
 };
 
-const goToCheckoutPaymentStep = () => {
+const goToPaymentStep = (methodLabel = "PromptPay") => {
   fillShippingForm();
   fireEvent.click(screen.getAllByRole("button", { name: "ดำเนินการต่อ" })[0]);
-  fireEvent.click(screen.getByRole("button", { name: "Credit / Debit Card" }));
+  fireEvent.click(screen.getByRole("button", { name: methodLabel }));
+};
+
+const fillCardForm = () => {
+  fireEvent.change(screen.getByLabelText("หมายเลขบัตร"), {
+    target: { value: "4242 4242 4242 4242" },
+  });
+  fireEvent.change(screen.getByLabelText("ชื่อผู้ถือบัตร"), { target: { value: "TEST USER" } });
+  fireEvent.change(screen.getByLabelText("วันหมดอายุ (MM/YY)"), { target: { value: "12/30" } });
+  fireEvent.change(screen.getByLabelText("CVC"), { target: { value: "123" } });
 };
 
 describe("Checkout order integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubEnv("VITE_STRIPE_PUBLISHABLE_KEY", "pk_test_checkout");
-    stripeMocks.confirmPayment.mockResolvedValue({ paymentIntent: { id: "pi_test", status: "succeeded" } });
-    apiMocks.post.mockResolvedValue({ clientSecret: "pi_secret_test" });
     createOrder.mockResolvedValue({
       data: {
         _id: "order-mongo-id",
@@ -62,72 +52,113 @@ describe("Checkout order integration", () => {
         status: "pending",
       },
     });
-    useCartStore.setState({ cartItems: [{ productId: "p1", variantId: "v1", name: "Oversized T-Shirt", price: 590, quantity: 2, stockQuantity: 5 }] });
+    confirmPayment.mockResolvedValue({
+      data: {
+        _id: "order-mongo-id",
+        orderNumber: "OCC-123456",
+        shippingAddress: { firstName: "Test", lastName: "User", address: "123 Street" },
+        items: [{ title: "Oversized T-Shirt", unitPrice: 590, quantity: 2 }],
+        totalAmount: 1231.4,
+        status: "paid",
+      },
+    });
+    useCartStore.setState({
+      cartItems: [{ productId: "p1", variantId: "v1", name: "Oversized T-Shirt", price: 590, quantity: 2, stockQuantity: 5 }],
+    });
   });
 
-  it("creates the order before payment, confirms it, then shows confirmation and clears cart", async () => {
+  it("creates the order then confirms payment before showing the confirmation", async () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
-    goToCheckoutPaymentStep();
-    await screen.findByTestId("payment-element");
-    fireEvent.click(screen.getByRole("button", { name: "ชำระเงินและยืนยันคำสั่งซื้อ" }));
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
 
     expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
-    expect(stripeMocks.confirmPayment).toHaveBeenCalled();
-    expect(apiMocks.post).toHaveBeenCalledWith("/payment/create-payment-intent", {
-      orderId: "order-mongo-id",
-    });
     expect(createOrder).toHaveBeenCalledTimes(1);
+    expect(confirmPayment).toHaveBeenCalledWith("order-mongo-id");
+    // The order must exist before payment can be confirmed against it.
     expect(createOrder.mock.invocationCallOrder[0]).toBeLessThan(
-      apiMocks.post.mock.invocationCallOrder[0],
-    );
-    expect(apiMocks.post.mock.invocationCallOrder[0]).toBeLessThan(
-      stripeMocks.elements.submit.mock.invocationCallOrder[0],
-    );
-    expect(stripeMocks.elements.submit.mock.invocationCallOrder[0]).toBeLessThan(
-      stripeMocks.confirmPayment.mock.invocationCallOrder[0],
+      confirmPayment.mock.invocationCallOrder[0],
     );
     expect(useCartStore.getState().cartItems).toEqual([]);
   });
 
-  it("shows API failure in the red alert and preserves cart", async () => {
-    createOrder.mockRejectedValueOnce(Object.assign(new Error("request failed"), { data: { message: "สินค้ามีไม่เพียงพอในสต็อก" } }));
+  it("jumps to the top of the confirmation instead of staying at the payment form", async () => {
+    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
-    goToCheckoutPaymentStep();
+    goToPaymentStep("PromptPay");
+    scrollTo.mockClear();
 
-    await waitFor(() => expect(screen.getAllByRole("alert").some((alert) => alert.textContent.includes("สินค้ามีไม่เพียงพอในสต็อก"))).toBe(true));
-    expect(apiMocks.post).not.toHaveBeenCalledWith("/payment/create-payment-intent", expect.anything());
-    expect(stripeMocks.confirmPayment).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "instant" });
+    scrollTo.mockRestore();
+  });
+
+  it("renders a scannable QR for the PromptPay total and never offers PayPal", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    const qr = await screen.findByRole("img", { name: /QR สำหรับชำระเงิน/ });
+    expect(qr).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "PayPal" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Credit / Debit Card" })).toBeInTheDocument();
+  });
+
+  it("charges a demo card and clears the cart", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("Credit / Debit Card");
+    fillCardForm();
+    fireEvent.click(screen.getByRole("button", { name: "ชำระเงินและยืนยันคำสั่งซื้อ" }));
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder.mock.calls.at(-1)?.[0]).toMatchObject({ paymentMethod: "credit-card" });
+    expect(confirmPayment).toHaveBeenCalledWith("order-mongo-id");
+    expect(useCartStore.getState().cartItems).toEqual([]);
+  });
+
+  it("rejects a card number that fails the Luhn check without calling the API", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("Credit / Debit Card");
+
+    fireEvent.change(screen.getByLabelText("หมายเลขบัตร"), { target: { value: "1234 5678 9012 3456" } });
+    fireEvent.change(screen.getByLabelText("ชื่อผู้ถือบัตร"), { target: { value: "TEST USER" } });
+    fireEvent.change(screen.getByLabelText("วันหมดอายุ (MM/YY)"), { target: { value: "12/30" } });
+    fireEvent.change(screen.getByLabelText("CVC"), { target: { value: "123" } });
+    fireEvent.click(screen.getByRole("button", { name: "ชำระเงินและยืนยันคำสั่งซื้อ" }));
+
+    expect(await screen.findByText("หมายเลขบัตรไม่ถูกต้อง")).toBeInTheDocument();
+    expect(createOrder).not.toHaveBeenCalled();
+    expect(confirmPayment).not.toHaveBeenCalled();
     expect(useCartStore.getState().cartItems).toHaveLength(1);
   });
 
-  it("cancels the prepared order when leaving the payment step", async () => {
+  it("rejects an expired card", async () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
-    goToCheckoutPaymentStep();
-    await screen.findByTestId("payment-element");
+    goToPaymentStep("Credit / Debit Card");
 
-    fireEvent.click(screen.getAllByRole("button", { name: "แก้ไข" })[1]);
-
-    await waitFor(() => {
-      expect(apiMocks.post).toHaveBeenCalledWith("/payment/cancel-payment-intent", {
-        orderId: "order-mongo-id",
-      });
-    });
-    expect(screen.getByRole("heading", { name: "ที่อยู่จัดส่ง" })).toBeInTheDocument();
-  });
-
-  it("cancels an order after payment fails so reserved stock can be released", async () => {
-    stripeMocks.confirmPayment.mockResolvedValueOnce({
-      error: { type: "card_error", message: "บัตรถูกปฏิเสธ" },
-    });
-    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
-    goToCheckoutPaymentStep();
-    await screen.findByTestId("payment-element");
+    fireEvent.change(screen.getByLabelText("หมายเลขบัตร"), { target: { value: "4242 4242 4242 4242" } });
+    fireEvent.change(screen.getByLabelText("ชื่อผู้ถือบัตร"), { target: { value: "TEST USER" } });
+    fireEvent.change(screen.getByLabelText("วันหมดอายุ (MM/YY)"), { target: { value: "01/20" } });
+    fireEvent.change(screen.getByLabelText("CVC"), { target: { value: "123" } });
     fireEvent.click(screen.getByRole("button", { name: "ชำระเงินและยืนยันคำสั่งซื้อ" }));
 
-    expect(await screen.findByText("ลองเตรียมการชำระเงินอีกครั้ง")).toBeInTheDocument();
-    expect(apiMocks.post).toHaveBeenCalledWith("/payment/cancel-payment-intent", {
-      orderId: "order-mongo-id",
-    });
+    expect(await screen.findByText("บัตรหมดอายุแล้ว")).toBeInTheDocument();
+    expect(createOrder).not.toHaveBeenCalled();
+  });
+
+  it("shows an API failure in the red alert and preserves the cart", async () => {
+    createOrder.mockRejectedValueOnce(
+      Object.assign(new Error("request failed"), { data: { message: "สินค้ามีไม่เพียงพอในสต็อก" } }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+
+    expect(await screen.findByText("สินค้ามีไม่เพียงพอในสต็อก")).toBeInTheDocument();
+    expect(confirmPayment).not.toHaveBeenCalled();
     expect(useCartStore.getState().cartItems).toHaveLength(1);
   });
 
@@ -232,48 +263,5 @@ describe("Checkout order integration", () => {
     const provinceSelect = await screen.findByLabelText("จังหวัด");
     await waitFor(() => expect(provinceSelect).toHaveValue("Example Province"));
     expect(screen.getByRole("option", { name: "Example Province" })).toBeInTheDocument();
-  });
-
-  it("offers PromptPay, PayPal, and Stripe in checkout", async () => {
-    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
-    fillShippingForm();
-    fireEvent.click(screen.getAllByRole("button", { name: "ดำเนินการต่อ" })[0]);
-
-    expect(screen.getByText("Credit / Debit Card")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "PromptPay" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "PayPal" })).toBeInTheDocument();
-  });
-
-  it("requires Stripe configuration for card payments but allows PromptPay demo", async () => {
-    vi.stubEnv("VITE_STRIPE_PUBLISHABLE_KEY", "");
-    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
-    fillShippingForm();
-    fireEvent.click(screen.getAllByRole("button", { name: "ดำเนินการต่อ" })[0]);
-
-    expect(await screen.findByRole("alert")).toHaveTextContent("ระบบชำระเงินยังไม่ได้ตั้งค่า Stripe");
-    fireEvent.click(screen.getByRole("button", { name: "PromptPay" }));
-    expect(await screen.findByText(/QR Code จำลองสำหรับเดโมเท่านั้น/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงินและยืนยันคำสั่งซื้อ" }));
-    expect(await screen.findByText(/โหมดจำลองสำหรับเดโม.*สร้างคำสั่งซื้อสถานะรอชำระเงินเพื่อทดสอบแล้ว/)).toBeInTheDocument();
-    expect(createOrder).toHaveBeenCalledTimes(1);
-  });
-
-  it.each(["promptpay", "paypal"])("creates a pending demo order for %s without charging and clears the cart", async (method) => {
-    const methodLabel = method === "promptpay" ? "PromptPay" : "PayPal";
-    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
-    fillShippingForm();
-    fireEvent.click(screen.getAllByRole("button", { name: "ดำเนินการต่อ" })[0]);
-    fireEvent.click(screen.getByRole("button", { name: methodLabel }));
-    expect(await screen.findByText(
-      method === "promptpay" ? /QR Code จำลองสำหรับเดโมเท่านั้น/ : /โหมดทดสอบระบบ - ไม่มีการตัดเงินจริง/,
-    )).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงินและยืนยันคำสั่งซื้อ" }));
-
-    expect(await screen.findByText(/โหมดจำลองสำหรับเดโม.*สร้างคำสั่งซื้อสถานะรอชำระเงินเพื่อทดสอบแล้ว/)).toBeInTheDocument();
-    const submittedOrderPayload = createOrder.mock.calls.at(-1)?.[0];
-    expect(submittedOrderPayload).toMatchObject({ paymentMethod: method });
-    expect(apiMocks.post).not.toHaveBeenCalledWith("/payment/create-payment-intent", expect.anything());
-    expect(stripeMocks.confirmPayment).not.toHaveBeenCalled();
-    expect(useCartStore.getState().cartItems).toEqual([]);
   });
 });

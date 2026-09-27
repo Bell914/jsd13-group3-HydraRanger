@@ -15,7 +15,7 @@ import adminLookbookRoutes from "./adminLookbookRoutes.js";
 import uploadRoutes from "./uploadRoutes.js";
 import recommendRoutes from "./recommendRoutes.js";
 import couponRoutes from "./couponRoutes.js";
-import paymentRoutes from "./paymentRoutes.js";
+import { PAYMENT_METHODS } from "../models/Order.js";
 import articleRoutes from "./articleRoutes.js";
 import adminArticleRoutes from "./adminArticleRoutes.js";
 import adminCouponRoutes from "./adminCouponRoutes.js";
@@ -55,9 +55,7 @@ router.get("/health", (req, res) => {
         (process.env.SMTP_USER || process.env.EMAIL_USER) &&
         (process.env.SMTP_PASS || process.env.EMAIL_PASS),
       ),
-      paymentConfigured: Boolean(
-        process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET,
-      ),
+      paymentMethods: PAYMENT_METHODS,
       recommendationConfigured: Boolean(process.env.GEMINI_API_KEY),
     },
   });
@@ -71,7 +69,6 @@ router.use("/products", productRoutes);
 router.use("/admin/products", adminProductRoutes);
 router.use("/admin/dashboard", adminDashboardRoutes);
 router.use("/orders", orderRoutes);
-router.use("/payment", paymentRoutes);
 router.use("/admin/orders", adminOrderRoutes);
 router.use("/admin/customers", adminCustomerRoutes);
 router.use("/contact", contactRoutes);

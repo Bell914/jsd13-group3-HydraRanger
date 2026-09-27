@@ -15,6 +15,8 @@ function sendOrderError(error, res, next) {
     'Missing shipping fields',
     'Order already cancelled',
     'Cannot cancel order',
+    'Order is not waiting for payment',
+    'Unsupported payment method',
     'Invalid shipping method',
     'Cancelled order status',
     'Order status cannot change'
@@ -59,6 +61,21 @@ export async function getMyOrderDetail(req, res, next) {
     const order = await orderService.getOrderById(orderId, userId);
     
     res.status(HTTP_STATUS.OK).json({ success: true, data: order });
+  } catch (error) {
+    sendOrderError(error, res, next);
+  }
+}
+
+export async function confirmPayment(req, res, next) {
+  try {
+    const userId = req.user._id || req.user.id;
+    const order = await orderService.confirmOrderPayment(userId, req.params.id);
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Payment confirmed',
+      data: order
+    });
   } catch (error) {
     sendOrderError(error, res, next);
   }

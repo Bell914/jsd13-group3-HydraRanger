@@ -9,7 +9,6 @@ flowchart LR
     Customer[Customer Client\nReact + Vite] -->|REST + Customer Cookie| API[Express API]
     Admin[Admin Client\nReact + Vite] -->|REST + Admin Cookie| API
     API --> Mongo[(MongoDB Atlas / MongoDB)]
-    API --> Stripe[Stripe]
     API --> SMTP[SMTP]
     API --> Gemini[Google Gemini]
     API --> GridFS[(GridFS Images)]
@@ -65,23 +64,24 @@ Request
 
 ## Checkout และ Payment Flow
 
+ระบบชำระเงินเป็นโหมดเดโม จึงไม่มีการเรียก payment gateway ภายนอก
+
 ```mermaid
 sequenceDiagram
     participant C as Customer Client
     participant A as API
     participant D as MongoDB
-    participant S as Stripe
+    C->>C: แสดง QR (promptpay) หรือตรวจบัตร (credit-card)
     C->>A: POST /orders
     A->>D: ตรวจ Product/Variant/Stock และ reserve stock
     A-->>C: pending Order
-    C->>A: POST /payment/create-payment-intent
-    A->>S: Create/Reuse PaymentIntent
-    S-->>A: payment_intent.succeeded webhook
+    C->>A: POST /orders/my/:id/confirm-payment
     A->>D: เปลี่ยน Order เป็น paid
     A->>D: บันทึก Loyalty/Coupon ตามกติกา
 ```
 
 Server อ่านราคาและ stock จากฐานข้อมูล ไม่เชื่อยอดจาก Client และใช้ flags ใน Order ป้องกันการคืน/hัก stock ซ้ำ
+Order ที่ไม่ยืนยันภายใน 30 นาทีจะถูกยกเลิกและคืนสต็อกโดย job ที่รันทุก 60 วินาที
 
 ## Personalized Size Recommendation
 
@@ -121,7 +121,7 @@ Server อ่านราคาและ stock จากฐานข้อมู
 | Admin Client | deployment แยกจาก Customer Client |
 | Express API | Render |
 | Database/GridFS | MongoDB Atlas |
-| Payment | Stripe |
+| Payment | โหมดเดโมในระบบ (ไม่ใช้ gateway) |
 | Email | SMTP |
 | AI | Google Gemini |
 
@@ -132,4 +132,5 @@ Environment สำคัญอยู่ใน `server/.env.example`, `client/.en
 - Cart ยังเป็น client state และไม่มี Cart route/model ฝั่ง Server
 - Product flow ใช้ `/products` และ `Product`; scaffold Item CRUD ถูกนำออกแล้ว
 - Review feature ถูกถอดแล้ว
-- Production readiness ต้องยืนยัน environment, database indexes, email, Stripe webhook, Gemini และ staging data ก่อน deploy
+- Payment เป็นโหมดเดโม ไม่มีการตัดเงินจริง
+- Production readiness ต้องยืนยัน environment, database indexes, email, Gemini และ staging data ก่อน deploy

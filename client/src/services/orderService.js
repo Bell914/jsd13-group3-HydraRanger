@@ -5,8 +5,12 @@ export const createOrder = async (orderData) => {
   return response.data;
 };
 
-export const getMyOrders = async () => {
-  const response = await api.get('/orders/my');
+export const confirmPayment = async (orderId) => {
+  const response = await api.post(`/orders/my/${orderId}/confirm-payment`);
+  return response.data;
+};
+
+export const getMyOrders = async () => {  const response = await api.get('/orders/my');
   return Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : [];
 };
 
