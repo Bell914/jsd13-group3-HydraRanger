@@ -33,7 +33,7 @@ async function request(path, options = {}) {
   return adminRequest(path, {
     ...options,
     errorMessage: 'ทำรายการสินค้าไม่สำเร็จ',
-    networkMessage: 'เชื่อมต่อ Product API ไม่ได้ กรุณาตรวจสอบว่า Server เปิดอยู่'
+    networkMessage: 'เชื่อมต่อข้อมูลสินค้าไม่ได้ กรุณาตรวจสอบว่าเซิร์ฟเวอร์เปิดอยู่'
   });
 }
 
@@ -73,7 +73,7 @@ export const productService = {
   async getProducts() {
     const result = await request('/admin/products');
     if (!Array.isArray(result.data)) {
-      throw new Error('รูปแบบข้อมูลสินค้าจาก Server ไม่ถูกต้อง');
+      throw new Error('รูปแบบข้อมูลสินค้าจากเซิร์ฟเวอร์ไม่ถูกต้อง');
     }
     return result.data.map(normalizeProduct);
   },

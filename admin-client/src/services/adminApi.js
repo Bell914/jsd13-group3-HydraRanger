@@ -21,7 +21,7 @@ function redirectToLogin() {
 export async function adminRequest(path, requestOptions = {}) {
   const {
     errorMessage = 'ทำรายการไม่สำเร็จ',
-    networkMessage = 'เชื่อมต่อ Server ไม่ได้ กรุณาตรวจสอบว่า Server เปิดอยู่',
+    networkMessage = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาตรวจสอบว่าเซิร์ฟเวอร์เปิดอยู่',
     redirectOnUnauthorized = true,
     ...fetchOptions
   } = requestOptions;

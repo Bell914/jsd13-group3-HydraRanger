@@ -29,7 +29,7 @@ export function CustomerEditModal({ customer, loading, onClose, onSave }) {
     <div className="modal-backdrop" role="presentation">
       <section className="customer-modal" role="dialog" aria-modal="true" aria-labelledby="customer-modal-title">
         <header className="modal-header">
-          <div><p>EDIT CUSTOMER</p><h2 id="customer-modal-title">แก้ไขข้อมูลลูกค้า</h2></div>
+          <div><p>จัดการลูกค้า</p><h2 id="customer-modal-title">แก้ไขข้อมูลลูกค้า</h2></div>
           <button type="button" onClick={onClose} disabled={loading} aria-label="ปิด"><X size={20} /></button>
         </header>
         <form className="customer-form" onSubmit={submitForm}>
@@ -39,13 +39,13 @@ export function CustomerEditModal({ customer, loading, onClose, onSave }) {
             {error && <small className="field-error">{error}</small>}
           </label>
           <label className="field">
-            <span>Avatar URL</span>
+            <span>ที่อยู่รูปโปรไฟล์</span>
             <input name="avatar" type="url" value={form.avatar} onChange={updateField} disabled={loading} placeholder="https://..." />
           </label>
           <label className="field">
             <span>อีเมล</span>
             <input value={customer.email} disabled />
-            <small>Admin ไม่สามารถเปลี่ยนอีเมลหรือรหัสผ่านของลูกค้าได้</small>
+            <small>ผู้ดูแลระบบไม่สามารถเปลี่ยนอีเมลหรือรหัสผ่านของลูกค้าได้</small>
           </label>
           <div className="customer-modal-actions">
             <button type="button" className="cancel-action" onClick={onClose} disabled={loading}>ยกเลิก</button>

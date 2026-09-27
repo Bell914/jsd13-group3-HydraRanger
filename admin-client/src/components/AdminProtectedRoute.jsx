@@ -5,7 +5,7 @@ export function AdminProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAdminAuth();
 
   if (loading) {
-    return <div className="checking">กำลังตรวจสอบสิทธิ์ Admin…</div>;
+    return <div className="checking">กำลังตรวจสอบสิทธิ์ผู้ดูแลระบบ…</div>;
   }
 
   if (!isAuthenticated) {
