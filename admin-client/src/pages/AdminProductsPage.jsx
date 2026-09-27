@@ -151,7 +151,7 @@ export function AdminProductsPage() {
 
   return (
     <div className="admin-content">
-      <AdminTopbar title="Products" />
+      <AdminTopbar title="สินค้า" />
 
       <main className="products-page">
         <header className="page-heading">
@@ -183,19 +183,19 @@ export function AdminProductsPage() {
         <section className="filter-toolbar" aria-label="ค้นหาและกรองสินค้า">
           <label className="product-search">
             <Search size={15} aria-hidden="true" />
-            <span className="sr-only">ค้นหาชื่อสินค้าหรือ SKU</span>
+            <span className="sr-only">ค้นหาชื่อหรือรหัสสินค้า</span>
             <input
               type="search"
               value={search}
               onChange={changeSearch}
-              placeholder="ค้นหาชื่อสินค้า, SKU..."
+              placeholder="ค้นหาชื่อหรือรหัสสินค้า..."
             />
           </label>
           <div className="filters">
             <select value={selectedCategory} onChange={changeCategory} aria-label="เลือกหมวดหมู่">
-              <option value="all">ทุกหมวดหมู่ (Categories)</option>
-              <option value="tops">เสื้อ (Tops)</option>
-              <option value="bottoms">กางเกง (Bottoms)</option>
+              <option value="all">ทุกหมวดหมู่</option>
+              <option value="tops">เสื้อ</option>
+              <option value="bottoms">กางเกง</option>
             </select>
             <button type="button" className="filter-button" onClick={applyCategoryFilter}>
               <Filter size={15} /> ตัวกรอง

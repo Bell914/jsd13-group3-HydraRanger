@@ -90,7 +90,7 @@ export function ArticleFormModal({ article, loading, onClose, onSave }) {
           </div>
           <div className="field">
             <label htmlFor="article-category">หมวดหมู่ *</label>
-            <input id="article-category" name="category" value={form.category} onChange={updateField} placeholder="Fashion Tips" />
+            <input id="article-category" name="category" value={form.category} onChange={updateField} placeholder="เคล็ดลับแฟชั่น" />
           </div>
           <div className="field">
             <label htmlFor="article-author">ผู้เขียน</label>
@@ -105,8 +105,8 @@ export function ArticleFormModal({ article, loading, onClose, onSave }) {
             <input id="article-image-file" type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadImage} disabled={uploading || loading} />
           </div>
           <div className="field form-wide">
-            <label htmlFor="article-image-url">URL รูปปก *</label>
-            <input id="article-image-url" name="imageUrl" value={form.imageUrl} onChange={updateField} placeholder="วาง URL หรืออัปโหลดไฟล์ด้านบน" />
+            <label htmlFor="article-image-url">ลิงก์รูปปก *</label>
+            <input id="article-image-url" name="imageUrl" value={form.imageUrl} onChange={updateField} placeholder="วางลิงก์หรืออัปโหลดไฟล์ด้านบน" />
             {uploading && <small>กำลังอัปโหลดรูป…</small>}
           </div>
           {form.imageUrl && (

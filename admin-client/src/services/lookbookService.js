@@ -3,8 +3,8 @@ import { adminRequest } from './adminApi.js';
 async function sendRequest(path, options = {}) {
   const result = await adminRequest(path, {
     ...options,
-    errorMessage: 'จัดการ Lookbook ไม่สำเร็จ',
-    networkMessage: 'เชื่อมต่อ Lookbook API ไม่ได้ กรุณาตรวจสอบว่า Server เปิดอยู่'
+    errorMessage: 'จัดการลุคบุ๊กไม่สำเร็จ',
+    networkMessage: 'เชื่อมต่อข้อมูลลุคบุ๊กไม่ได้ กรุณาตรวจสอบว่าเซิร์ฟเวอร์เปิดอยู่'
   });
   return result.data;
 }

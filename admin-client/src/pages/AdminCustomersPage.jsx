@@ -86,11 +86,11 @@ export function AdminCustomersPage() {
 
   return (
     <div className="admin-content">
-      <AdminTopbar title="Customers" />
+      <AdminTopbar title="ลูกค้า" />
 
       <main className="data-page">
         <header className="page-heading">
-          <div><h1>ลูกค้า</h1><p>บัญชีลูกค้าจริงจาก MongoDB</p></div>
+          <div><h1>ลูกค้า</h1><p>บัญชีลูกค้าจริงจากฐานข้อมูล</p></div>
           <button type="button" className="primary-action" onClick={loadCustomers} disabled={loading}>
             {loading ? 'กำลังโหลด…' : 'อัปเดตข้อมูล'}
           </button>
@@ -110,7 +110,7 @@ export function AdminCustomersPage() {
             </select>
           </div>
         </section>
-        {loading && customers.length === 0 && <p className="dashboard-message">กำลังโหลด Customers…</p>}
+        {loading && customers.length === 0 && <p className="dashboard-message">กำลังโหลดข้อมูลลูกค้า…</p>}
         {!loading && !error && customers.length === 0 && <div className="empty-state"><strong>ยังไม่มีลูกค้า</strong><p>ลูกค้าที่สมัครสมาชิกจะแสดงในหน้านี้</p></div>}
         {!loading && customers.length > 0 && visibleCustomers.length === 0 && <div className="empty-state"><strong>ไม่พบลูกค้าที่ตรงกับตัวกรอง</strong><p>ลองเปลี่ยนคำค้นหาหรือสถานะ</p></div>}
 

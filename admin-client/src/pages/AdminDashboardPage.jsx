@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AdminTopbar } from '../components/AdminTopbar.jsx';
+import { getCategoryLabel } from '../utils/categoryLabel.js';
 import { getDashboardSummary } from '../services/dashboardService.js';
 
 function SummaryCard({ label, value, detail }) {
@@ -64,7 +65,9 @@ export function AdminDashboardPage() {
   const allCategoryStock = summary?.stockByCategory || [];
   const categoryStock = allCategoryStock.filter((item) => {
     const matchesCategory = category === 'all' || item.category === category;
-    return matchesCategory && item.category.toLowerCase().includes(search.trim().toLowerCase());
+    const categoryName = getCategoryLabel(item.category).toLowerCase();
+    const searchText = search.trim().toLowerCase();
+    return matchesCategory && (categoryName.includes(searchText) || item.category.toLowerCase().includes(searchText));
   });
   const monthlyOrders = summary?.monthlyOrders || [];
   const highestStock = Math.max(1, ...categoryStock.map((item) => item.stock));
@@ -73,13 +76,13 @@ export function AdminDashboardPage() {
   const linePath = linePoints.map((point) => `${point.x},${point.y}`).join(' ');
   return (
     <div className="admin-content">
-      <AdminTopbar title="Dashboard" />
+      <AdminTopbar title="ภาพรวมร้านค้า" />
 
       <main className="dashboard-page">
         <header className="page-heading">
           <div>
             <h1>ภาพรวมร้านค้า</h1>
-            <p>ข้อมูลสินค้า ลูกค้า และคำสั่งซื้อจริงจาก MongoDB</p>
+            <p>ข้อมูลสินค้า ลูกค้า และคำสั่งซื้อจริงจากฐานข้อมูล</p>
           </div>
           <button type="button" className="primary-action" onClick={loadDashboard} disabled={loading}>
             {loading ? 'กำลังโหลด…' : 'อัปเดตข้อมูล'}
@@ -94,7 +97,7 @@ export function AdminDashboardPage() {
           <div className="filters">
             <select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="กรองหมวดหมู่ในกราฟ">
               <option value="all">ทุกหมวดหมู่</option>
-              {allCategoryStock.map((item) => <option key={item.category} value={item.category}>{item.category}</option>)}
+              {allCategoryStock.map((item) => <option key={item.category} value={item.category}>{getCategoryLabel(item.category)}</option>)}
             </select>
           </div>
         </section>
@@ -106,7 +109,7 @@ export function AdminDashboardPage() {
           </div>
         )}
 
-        {loading && !summary && <p className="dashboard-message">กำลังโหลดข้อมูล Dashboard…</p>}
+        {loading && !summary && <p className="dashboard-message">กำลังโหลดข้อมูลภาพรวมร้านค้า…</p>}
 
         {summary && (
           <>
@@ -115,7 +118,7 @@ export function AdminDashboardPage() {
               <SummaryCard label="สต็อกรวม" value={summary.totalStock} detail={`สต็อกต่ำ ${summary.lowStockCount} รายการ`} />
               <SummaryCard label="ลูกค้าทั้งหมด" value={summary.customerCount} detail="เฉพาะบัญชีประเภทลูกค้า" />
               <SummaryCard label="คำสั่งซื้อทั้งหมด" value={summary.totalOrders} detail={`รอตรวจสอบ ${summary.pendingOrderCount} รายการ`} />
-              <SummaryCard label="รายได้จาก Orders" value={formatMoney(summary.totalRevenue)} detail="เฉพาะ Order ที่ชำระเงินแล้ว" />
+              <SummaryCard label="รายได้จากคำสั่งซื้อ" value={formatMoney(summary.totalRevenue)} detail="เฉพาะคำสั่งซื้อที่ชำระเงินแล้ว" />
             </section>
 
             <section className="chart-grid">
@@ -125,7 +128,7 @@ export function AdminDashboardPage() {
                     <h2>จำนวนสต็อกแยกตามหมวดหมู่</h2>
                     <p>รวมจำนวนสินค้าคงเหลือในแต่ละหมวด</p>
                   </div>
-                  <span className="chart-type">Bar Chart</span>
+                  <span className="chart-type">กราฟแท่ง</span>
                 </header>
                 <div className="bar-chart" role="img" aria-label="กราฟแท่งจำนวนสต็อกแยกตามหมวดหมู่">
                   {categoryStock.length === 0 && <p>ไม่พบหมวดหมู่ที่ค้นหา</p>}
@@ -133,7 +136,7 @@ export function AdminDashboardPage() {
                     <div className="bar-column" key={item.category}>
                       <span>{item.stock}</span>
                       <div className="bar" style={{ height: `${(item.stock / highestStock) * 85}%` }} />
-                      <small>{item.category}</small>
+                      <small>{getCategoryLabel(item.category)}</small>
                     </div>
                   ))}
                 </div>
@@ -142,10 +145,10 @@ export function AdminDashboardPage() {
               <article className="chart-card">
                 <header>
                   <div>
-                    <h2>Orders ใน 6 เดือนล่าสุด</h2>
+                    <h2>คำสั่งซื้อใน 6 เดือนล่าสุด</h2>
                     <p>จำนวนคำสั่งซื้อแยกตามเดือน</p>
                   </div>
-                  <span className="chart-type">Line Chart</span>
+                  <span className="chart-type">กราฟเส้น</span>
                 </header>
                 <div className="line-chart" role="img" aria-label="กราฟเส้นจำนวนคำสั่งซื้อในหกเดือนล่าสุด">
                   <svg viewBox="0 0 560 230" aria-hidden="true">
@@ -165,7 +168,7 @@ export function AdminDashboardPage() {
               </article>
             </section>
 
-            <p className="live-data-note">ข้อมูลจริงจาก MongoDB • กด “อัปเดตข้อมูล” เพื่อโหลดข้อมูลล่าสุด</p>
+            <p className="live-data-note">ข้อมูลจริงจากฐานข้อมูล • กด “อัปเดตข้อมูล” เพื่อโหลดข้อมูลล่าสุด</p>
           </>
         )}
       </main>

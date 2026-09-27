@@ -4,7 +4,7 @@ async function sendRequest(path, options = {}) {
   const result = await adminRequest(path, {
     ...options,
     errorMessage: 'จัดการบทความไม่สำเร็จ',
-    networkMessage: 'เชื่อมต่อ Article API ไม่ได้ กรุณาตรวจสอบว่า Server เปิดอยู่'
+    networkMessage: 'เชื่อมต่อข้อมูลบทความไม่ได้ กรุณาตรวจสอบว่าเซิร์ฟเวอร์เปิดอยู่'
   });
   return result.data;
 }
