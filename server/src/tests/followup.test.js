@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import express from 'express';
 import mongoose from 'mongoose';
 import { once } from 'node:events';
-import { ENV } from '../config/env.js';
+import { ENV, isDemoPaymentEnabled } from '../config/env.js';
 import { User } from '../models/User.js';
 import { Order } from '../models/Order.js';
 import { Product } from '../models/Product.js';
@@ -12,11 +12,14 @@ import { protect } from '../middleware/authMiddleware.js';
 import { rateLimit } from '../middleware/rateLimiterMiddleware.js';
 import { memoryUpload, MAX_RECOMMEND_IMAGE_SIZE } from '../middleware/recommendUploadMiddleware.js';
 import { getProducts, updateProduct } from '../services/productService.js';
-import { canTransitionOrderStatus, cancelOrder, getExpiredPendingPaymentOrders, updateOrderStatus} from '../services/orderService.js';
+import { canTransitionOrderStatus, cancelOrder, confirmOrderPayment, getExpiredPendingPaymentOrders, updateOrderStatus} from '../services/orderService.js';
 import { resetPassword } from '../services/authService.js';
 import { matchesUploadedImageHeader } from '../middleware/uploadMiddleware.js';
 import recommendRoutes from '../routes/recommendRoutes.js';
 import { findInvalidGarmentSlots } from '../controllers/recommendController.js';
+
+// The suite runs with NODE_ENV=production, where demo payment is off unless asked for.
+process.env.DEMO_PAYMENT_ENABLED = 'true';
 
 function response() {
   return {
@@ -172,7 +175,7 @@ test('persistent image upload validates file signatures', () => {
   assert.equal(matchesUploadedImageHeader({ mimetype: 'image/png', buffer: Buffer.from('not png') }), false);
 });
 
-test('expired pending payment lookup includes card and mock methods past their deadline', async (t) => {
+test('expired pending payment lookup includes both demo methods past their deadline', async (t) => {
   const now = new Date('2026-09-24T12:00:00.000Z');
   let filter;
   t.mock.method(Order, 'find', (query) => {
@@ -183,15 +186,216 @@ test('expired pending payment lookup includes card and mock methods past their d
   await getExpiredPendingPaymentOrders(now);
 
   assert.equal(filter.status, 'pending');
-  assert.deepEqual(filter.paymentMethod, { $in: ['credit-card', 'promptpay', 'paypal'] });
-  assert.equal(filter.$or[0].paymentExpiresAt.$lte, now);
-  assert.equal(filter.$or[1].paymentMethod, 'credit-card');
-  assert.equal(filter.$or[1].paymentExpiresAt, null);
-  assert.equal(filter.$or[1].createdAt.$lte.toISOString(), '2026-09-24T11:30:00.000Z');
+  assert.deepEqual(filter.paymentMethod, { $in: ['promptpay', 'credit-card'] });
+  assert.equal(filter.paymentExpiresAt.$lte, now);
 });
 
-test('cancelling a pending order restores its reserved stock', async (t) => {
+test('confirming a demo payment moves a pending order to paid and accrues loyalty', async (t) => {
   const userId = 'aaaaaaaaaaaaaaaaaaaaaaaa';
+  const order = {
+    _id: 'bbbbbbbbbbbbbbbbbbbbbbbb',
+    user: userId,
+    status: 'pending',
+    paymentMethod: 'promptpay',
+    stockReserved: true,
+    stockRestored: false,
+    loyaltyProcessed: false,
+    paidAt: null,
+    subtotal: 500,
+    discountAmount: 100,
+    items: [],
+    async save() {},
+    async populate() { return this; }
+  };
+  const user = {
+    membership: { rank: 'MEMBER', accumulatedSpending: 0, orderCount: 0 },
+    async save() {}
+  };
+  // loyaltyService chains `.session()` onto the query before awaiting it.
+  const userQuery = { session: () => userQuery, then: (resolve, reject) => Promise.resolve(user).then(resolve, reject) };
+  let findByIdCalls = 0;
+
+  t.mock.method(Order, 'findOne', () => ({ populate: async () => order }));
+  t.mock.method(Order, 'findById', () => {
+    findByIdCalls += 1;
+    return findByIdCalls === 1
+      ? Promise.resolve(order)
+      : { populate: async () => order };
+  });
+  t.mock.method(User, 'findById', () => userQuery);
+  t.mock.method(mongoose, 'startSession', async () => ({
+    startTransaction() {},
+    async commitTransaction() {},
+    async abortTransaction() {},
+    endSession() {}
+  }));
+
+  const paidOrder = await confirmOrderPayment(userId, order._id);
+
+  assert.equal(paidOrder.status, 'paid');
+  assert.equal(order.loyaltyProcessed, true);
+  assert.ok(order.paidAt instanceof Date);
+  // 500 subtotal - 100 discount is the amount that earns loyalty.
+  assert.equal(user.membership.accumulatedSpending, 400);
+  assert.equal(user.membership.orderCount, 1);
+});
+
+test('confirming a demo payment is idempotent and does not double-charge loyalty', async (t) => {
+  const userId = 'aaaaaaaaaaaaaaaaaaaaaaaa';
+  const order = {
+    _id: 'bbbbbbbbbbbbbbbbbbbbbbbb',
+    user: userId,
+    status: 'paid',
+    paymentMethod: 'credit-card',
+    loyaltyProcessed: true,
+    paidAt: new Date('2026-09-24T00:00:00.000Z'),
+    subtotal: 500,
+    discountAmount: 0,
+    items: [],
+    async save() {},
+    async populate() { return this; }
+  };
+
+  t.mock.method(Order, 'findOne', () => ({ populate: async () => order }));
+  t.mock.method(User, 'findById', () => { throw new Error('loyalty must not run again'); });
+
+  const confirmed = await confirmOrderPayment(userId, order._id);
+
+  assert.equal(confirmed.status, 'paid');
+  assert.equal(confirmed.loyaltyProcessed, true);
+});
+
+test('confirming a demo payment is refused while the demo flag is off', async (t) => {
+  const userId = 'aaaaaaaaaaaaaaaaaaaaaaaa';
+  const order = {
+    _id: 'bbbbbbbbbbbbbbbbbbbbbbbb',
+    user: userId,
+    status: 'pending',
+    paymentMethod: 'promptpay',
+    stockReserved: true,
+    loyaltyProcessed: false,
+    subtotal: 500,
+    discountAmount: 0,
+    items: [],
+    async save() {},
+    async populate() { return this; }
+  };
+  let touchedDatabase = false;
+
+  t.mock.method(Order, 'findOne', () => {
+    touchedDatabase = true;
+    return { populate: async () => order };
+  });
+  t.after(() => { process.env.DEMO_PAYMENT_ENABLED = 'true'; });
+  process.env.DEMO_PAYMENT_ENABLED = 'false';
+
+  await assert.rejects(
+    () => confirmOrderPayment(userId, order._id),
+    /Demo payment is disabled/
+  );
+  // The order must be left untouched rather than moved to paid.
+  assert.equal(touchedDatabase, false);
+  assert.equal(order.status, 'pending');
+  assert.equal(order.loyaltyProcessed, false);
+});
+
+test('confirming a demo payment refuses an order past the 30 minute window', async (t) => {
+  const userId = 'aaaaaaaaaaaaaaaaaaaaaaaa';
+  const order = {
+    _id: 'bbbbbbbbbbbbbbbbbbbbbbbb',
+    user: userId,
+    status: 'pending',
+    paymentMethod: 'promptpay',
+    stockReserved: true,
+    loyaltyProcessed: false,
+    paymentExpiresAt: new Date(Date.now() - 60 * 1000),
+    subtotal: 500,
+    discountAmount: 0,
+    items: [],
+    async save() {},
+    async populate() { return this; }
+  };
+
+  t.mock.method(Order, 'findOne', () => ({ populate: async () => order }));
+  t.mock.method(Order, 'findById', () => {
+    throw new Error('an expired order must never reach the status machine');
+  });
+
+  await assert.rejects(
+    () => confirmOrderPayment(userId, order._id),
+    /Order is not waiting for payment/
+  );
+  assert.equal(order.status, 'pending');
+});
+
+test('demo payment is off in production unless the flag is set explicitly', () => {
+  const previous = process.env.DEMO_PAYMENT_ENABLED;
+  const previousEnv = process.env.NODE_ENV;
+
+  delete process.env.DEMO_PAYMENT_ENABLED;
+  process.env.NODE_ENV = 'production';
+  assert.equal(isDemoPaymentEnabled(), false);
+
+  process.env.DEMO_PAYMENT_ENABLED = 'true';
+  assert.equal(isDemoPaymentEnabled(), true);
+
+  process.env.DEMO_PAYMENT_ENABLED = 'false';
+  assert.equal(isDemoPaymentEnabled(), false);
+
+  delete process.env.DEMO_PAYMENT_ENABLED;
+  process.env.NODE_ENV = 'development';
+  assert.equal(isDemoPaymentEnabled(), true);
+
+  if (previous === undefined) delete process.env.DEMO_PAYMENT_ENABLED;
+  else process.env.DEMO_PAYMENT_ENABLED = previous;
+  process.env.NODE_ENV = previousEnv;
+});
+
+test('confirming a demo payment refuses an order that is no longer pending', async (t) => {
+  const userId = 'aaaaaaaaaaaaaaaaaaaaaaaa';
+  const order = {
+    _id: 'bbbbbbbbbbbbbbbbbbbbbbbb',
+    user: userId,
+    status: 'cancelled',
+    paymentMethod: 'promptpay',
+    subtotal: 500,
+    discountAmount: 0,
+    items: [],
+    async save() {},
+    async populate() { return this; }
+  };
+
+  t.mock.method(Order, 'findOne', () => ({ populate: async () => order }));
+
+  await assert.rejects(
+    () => confirmOrderPayment(userId, order._id),
+    /Order is not waiting for payment/
+  );
+});
+
+test('confirming a demo payment refuses an unsupported payment method', async (t) => {
+  const userId = 'aaaaaaaaaaaaaaaaaaaaaaaa';
+  const order = {
+    _id: 'bbbbbbbbbbbbbbbbbbbbbbbb',
+    user: userId,
+    status: 'pending',
+    paymentMethod: 'bitcoin',
+    subtotal: 500,
+    discountAmount: 0,
+    items: [],
+    async save() {},
+    async populate() { return this; }
+  };
+
+  t.mock.method(Order, 'findOne', () => ({ populate: async () => order }));
+
+  await assert.rejects(
+    () => confirmOrderPayment(userId, order._id),
+    /Unsupported payment method/
+  );
+});
+
+test('cancelling a pending order restores its reserved stock', async (t) => {  const userId = 'aaaaaaaaaaaaaaaaaaaaaaaa';
   const order = {
     _id: 'bbbbbbbbbbbbbbbbbbbbbbbb',
     user: userId,

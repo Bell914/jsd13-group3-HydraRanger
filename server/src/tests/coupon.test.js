@@ -73,8 +73,8 @@ test('two concurrent createOrder calls persist only one discounted order and res
   assert.equal(String(coupon.orderId), String(orders[0]._id));
 });
 
-for (const paymentMethod of ['promptpay', 'paypal']) {
-  test(`${paymentMethod} mock checkout persists a pending order with an expiry`, async (t) => {
+for (const paymentMethod of ['promptpay', 'credit-card']) {
+  test(`${paymentMethod} demo checkout persists a pending order with an expiry`, async (t) => {
     const user = { _id: new mongoose.Types.ObjectId(), email: 'test@example.com' };
     const productId = new mongoose.Types.ObjectId();
     const variantId = new mongoose.Types.ObjectId();

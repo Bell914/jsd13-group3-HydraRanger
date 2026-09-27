@@ -19,6 +19,21 @@ test('order status rejects an unknown value', () => {
   assert.equal(validateOrderStatus({ status: 'refunded' }).isValid, true);
 });
 
+test('order accepts only the supported payment methods', () => {
+  const baseOrder = {
+    items: [{ productId: 'p1', variantId: 'v1', quantity: 1 }],
+    shippingAddress: {
+      firstName: 'Test', lastName: 'User', phone: '0800000000',
+      address: '123 Street', city: 'Bangkok', zipCode: '10100'
+    }
+  };
+
+  assert.equal(validateCreateOrder({ ...baseOrder, paymentMethod: 'promptpay' }).isValid, true);
+  assert.equal(validateCreateOrder({ ...baseOrder, paymentMethod: 'credit-card' }).isValid, true);
+  assert.equal(validateCreateOrder({ ...baseOrder, paymentMethod: 'paypal' }).isValid, false);
+  assert.equal(validateCreateOrder({ ...baseOrder, paymentMethod: 'bitcoin' }).isValid, false);
+});
+
 test('password reset requires at least eight characters', () => {
   assert.equal(validateResetPasswordInput({ password: '1234567' }).isValid, false);
   assert.equal(validateResetPasswordInput({ password: '12345678' }).isValid, true);

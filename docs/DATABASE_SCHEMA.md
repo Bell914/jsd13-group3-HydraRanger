@@ -67,7 +67,7 @@ pending → paid → processing → shipped → completed
 paid/completed → refunded
 ```
 
-ฟิลด์ Payment ที่สำคัญมี `paymentIntentId`, `paymentExpiresAt`, `paymentSetupStartedAt` และ `paymentCancellationRequested` ส่วน `stockReserved`/`stockRestored` ป้องกันการหักหรือคืน stock ซ้ำ
+ฟิลด์ Payment ที่สำคัญมี `paymentMethod` (`promptpay` หรือ `credit-card`), `paymentExpiresAt` และ `paidAt` ส่วน `stockReserved`/`stockRestored` ป้องกันการหักหรือคืน stock ซ้ำ
 
 ยอดคำสั่งซื้อประกอบด้วย `subtotal`, `discountAmount`, `shippingCost` และ `totalAmount` พร้อม `couponCode` และ `membershipTierAtPurchase`
 

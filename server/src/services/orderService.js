@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Order, ORDER_STATUSES } from '../models/Order.js';
+import { Order, ORDER_STATUSES, PAYMENT_METHODS } from '../models/Order.js';
 import { Product } from '../models/Product.js';
 import { Lookbook } from '../models/Lookbook.js';
 import * as loyaltyService from './loyaltyService.js';
@@ -10,6 +10,7 @@ import {
   SHIPPING_METHODS_CONFIG
 } from '../config/membershipConfig.js';
 import { refundCouponUsage, claimCouponAtomically, getActiveGeneralCoupon } from './couponService.js';
+import { isDemoPaymentEnabled } from '../config/env.js';
 
 const SHIPPING_COSTS = {
   standard: 0,
@@ -58,6 +59,7 @@ async function prepareOrderItems(items) {
   }
 
   const preparedItems = [];
+  const stockSeen = new Map();
 
   for (const item of items) {
     if (!mongoose.Types.ObjectId.isValid(item.productId)) {
@@ -92,6 +94,21 @@ async function prepareOrderItems(items) {
       lineTotal: variant.price * quantity,
       lookbookId: item.lookbookId ? String(item.lookbookId).trim() : ''
     });
+
+    const key = String(variant._id);
+    if (!stockSeen.has(key)) {
+      stockSeen.set(key, { title: product.title, stock: variant.stock_quantity });
+    }
+  }
+
+  // Compare the aggregated claim against the stock the product actually has, so a SKU
+  // spread over two lines is rejected here with the real reason instead of failing
+  // halfway through the reservation.
+  for (const claim of aggregateStockClaims(preparedItems)) {
+    const seen = stockSeen.get(String(claim.variantId));
+    if (seen && claim.quantity > seen.stock) {
+      throw new Error(seen.stock <= 0 ? 'สินค้าหมดแล้ว' : 'สินค้ามีไม่เพียงพอในสต็อก');
+    }
   }
 
   return preparedItems;
@@ -159,11 +176,35 @@ function wasUpdated(result) {
   return (result.modifiedCount ?? result.nModified ?? 0) === 1;
 }
 
-async function restoreOrderStock(items, session = null) {
+// A cart can hold the same SKU on more than one line: a product bought on its own plus
+// the same SKU inside a lookbook set. Stock has to be judged on the total an order
+// claims, not on each line in isolation, otherwise the second line is compared against
+// stock the first line already took.
+function aggregateStockClaims(items) {
+  const byVariant = new Map();
+
   for (const item of items) {
+    const key = String(item.variantId);
+    const existing = byVariant.get(key);
+    if (existing) {
+      existing.quantity += item.quantity;
+    } else {
+      byVariant.set(key, {
+        product: item.product,
+        variantId: item.variantId,
+        quantity: item.quantity,
+      });
+    }
+  }
+
+  return [...byVariant.values()];
+}
+
+async function restoreOrderStock(items, session = null) {
+  for (const claim of aggregateStockClaims(items)) {
     await Product.updateOne(
-      { _id: item.product, 'variants._id': item.variantId },
-      { $inc: { 'variants.$.stock_quantity': item.quantity } },
+      { _id: claim.product, 'variants._id': claim.variantId },
+      { $inc: { 'variants.$.stock_quantity': claim.quantity } },
       session ? { session } : undefined
     );
   }
@@ -173,25 +214,25 @@ async function reserveOrderStock(items) {
   const reservedItems = [];
 
   try {
-    for (const item of items) {
+    for (const claim of aggregateStockClaims(items)) {
       const result = await Product.updateOne(
         {
-          _id: item.product,
+          _id: claim.product,
           variants: {
             $elemMatch: {
-              _id: item.variantId,
-              stock_quantity: { $gte: item.quantity }
+              _id: claim.variantId,
+              stock_quantity: { $gte: claim.quantity }
             }
           }
         },
-        { $inc: { 'variants.$.stock_quantity': -item.quantity } }
+        { $inc: { 'variants.$.stock_quantity': -claim.quantity } }
       );
 
       if (!wasUpdated(result)) {
         throw new Error('สินค้ามีไม่เพียงพอในสต็อก');
       }
 
-      reservedItems.push(item);
+      reservedItems.push(claim);
     }
   } catch (error) {
     await restoreOrderStock(reservedItems);
@@ -293,8 +334,8 @@ export async function createOrder(user, orderData) {
 
   const discountedSubtotal = Math.max(0, subtotal - discountAmount);
   const totalAmount = discountedSubtotal + shippingCost;
-  const paymentMethod = orderData.paymentMethod || 'credit-card';
-  const paymentExpiresAt = ['credit-card', 'promptpay', 'paypal'].includes(paymentMethod)
+  const paymentMethod = orderData.paymentMethod || 'promptpay';
+  const paymentExpiresAt = PAYMENT_METHODS.includes(paymentMethod)
     ? new Date(checkoutStartedAt.getTime() + 30 * 60 * 1000)
     : null;
 
@@ -322,7 +363,6 @@ export async function createOrder(user, orderData) {
       },
       shippingMethod: orderData.shippingMethod || 'standard',
       paymentMethod,
-      paymentIntentId: orderData.paymentIntentId || '',
       paymentExpiresAt,
       subtotal,
       discountAmount,
@@ -349,20 +389,33 @@ export async function createOrder(user, orderData) {
 }
 
 export async function getExpiredPendingPaymentOrders(now = new Date()) {
-  const oldOrderCutoff = new Date(now.getTime() - 30 * 60 * 1000);
-
   return Order.find({
     status: 'pending',
-    paymentMethod: { $in: ['credit-card', 'promptpay', 'paypal'] },
-    $or: [
-      { paymentExpiresAt: { $lte: now } },
-      {
-        paymentMethod: 'credit-card',
-        paymentExpiresAt: null,
-        createdAt: { $lte: oldOrderCutoff }
-      }
-    ]
+    paymentMethod: { $in: PAYMENT_METHODS },
+    paymentExpiresAt: { $lte: now }
   });
+}
+
+let cleanupIsRunning = false;
+
+// Releases stock held by orders whose demo payment was never confirmed.
+export async function cleanupExpiredPendingPayments() {
+  if (cleanupIsRunning) return;
+  cleanupIsRunning = true;
+
+  try {
+    const expiredOrders = await getExpiredPendingPaymentOrders();
+
+    for (const order of expiredOrders) {
+      try {
+        await cancelOrder(order.user._id || order.user.id || order.user, order._id);
+      } catch (error) {
+        console.error(`Could not clean up expired order ${order._id}:`, error.message);
+      }
+    }
+  } finally {
+    cleanupIsRunning = false;
+  }
 }
 
 export async function getMyOrders(userId) {
@@ -413,6 +466,7 @@ async function applyOrderStatusChanges(existingOrder, status, userId, netSpend, 
   if (userId && !existingOrder.loyaltyProcessed && status === 'paid') {
     await loyaltyService.processOrderSpending(userId, netSpend, 'ADD', session);
     existingOrder.loyaltyProcessed = true;
+    existingOrder.paidAt = existingOrder.paidAt || new Date();
   } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {
     await loyaltyService.processOrderSpending(userId, netSpend, 'SUBTRACT', session);
     existingOrder.loyaltyProcessed = false;
@@ -472,6 +526,31 @@ export async function updateOrderStatus(orderId, status) {
   const order = await Order.findById(orderId).populate('user', 'username email');
   return order;
 }
+// Demo payment confirmation: the client reports a settled PromptPay QR scan or a
+// validated demo card, then the order moves through the normal status machine so
+// loyalty, coupon and stock handling stay in one place.
+export async function confirmOrderPayment(userId, orderId) {
+  if (!isDemoPaymentEnabled()) {
+    throw new Error('Demo payment is disabled');
+  }
+
+  const existingOrder = await getOrderById(orderId, userId);
+
+  if (!PAYMENT_METHODS.includes(existingOrder.paymentMethod)) {
+    throw new Error('Unsupported payment method');
+  }
+  if (existingOrder.status === 'paid') return existingOrder;
+  if (existingOrder.status !== 'pending') {
+    throw new Error('Order is not waiting for payment');
+  }
+  // The 60s reaper may not have cancelled the order yet, so refuse it here too.
+  if (existingOrder.paymentExpiresAt && new Date(existingOrder.paymentExpiresAt).getTime() < Date.now()) {
+    throw new Error('Order is not waiting for payment');
+  }
+
+  return updateOrderStatus(orderId, 'paid');
+}
+
 export async function cancelOrder(userId, orderId) {
   if (!mongoose.Types.ObjectId.isValid(orderId)) {
     throw new Error('Order not found');

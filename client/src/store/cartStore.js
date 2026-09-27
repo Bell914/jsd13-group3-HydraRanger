@@ -1,6 +1,9 @@
 import { create } from "zustand";
 
 const STORAGE_KEY = "occasion_cart";
+// Ceiling for lines whose stock is unknown, so a legacy cart cannot be pushed to an
+// absurd quantity while the server keeps the final say on availability.
+const MAX_UNKNOWN_STOCK = 99;
 
 export const migrateCartItem = (item) => {
   if (!item || item.cartItemId) return item;
@@ -14,6 +17,7 @@ export const migrateCartItem = (item) => {
 
   return { ...item, cartItemId };
 };
+
 
 const loadInitialCart = () => {
   try {
@@ -42,10 +46,19 @@ const saveCart = (cart) => {
   }
 };
 
-const getStock = (variant) => {
-  const stock = Number(variant.stockQuantity ?? variant.stock_quantity ?? variant.stock ?? 0);
-  return Number.isFinite(stock) ? Math.max(0, stock) : 0;
+// Returns null when a line carries no stock snapshot. Carts saved before the field
+// existed have none, and reading that as 0 is what leaves the quantity stepper disabled
+// for good and makes updateQuantity drop the line on the next press.
+const readStock = (item) => {
+  const raw = item?.stockQuantity ?? item?.stock_quantity ?? item?.stock;
+  if (raw === undefined || raw === null || raw === "") return null;
+  const stock = Number(raw);
+  return Number.isFinite(stock) ? Math.max(0, stock) : null;
 };
+
+// Stock arrives from a freshly fetched variant at add time, where a missing value still
+// means the product cannot be bought.
+const getStock = (variant) => readStock(variant) ?? 0;
 
 const getVariantId = (variant, product) => {
   const productId = product._id || product.productId || "product";
@@ -62,6 +75,44 @@ export const quantityInCartForVariant = (items, variantId) => items.reduce(
     : total),
   0,
 );
+
+// A lookbook set is stored as one line per SKU, all sharing the same lookbookId, so a
+// set is only as large as the scarcest SKU it contains.
+const getSetGroup = (items, target) => {
+  if (!target?.isLookbookSet) return target ? [target] : [];
+  return items.filter(
+    (item) => item.isLookbookSet && String(item.lookbookId) === String(target.lookbookId)
+  );
+};
+
+// How many more of this line the cart can hold, counting the SKUs its sibling set lines
+// already claim. Returns null when nothing in the group reports a stock snapshot, so a
+// legacy cart is not blocked by a value it never had.
+export const getAvailableQuantity = (items, cartItemId) => {
+  const target = items.find((item) => getCartItemId(item) === cartItemId);
+  if (!target) return null;
+
+  const group = getSetGroup(items, target);
+  if (group.length === 0) return null;
+  const groupIds = new Set(group.map((item) => getCartItemId(item)));
+
+  let available = null;
+  for (const line of group) {
+    const stock = readStock(line);
+    if (stock === null) continue;
+
+    const claimedElsewhere = quantityInCartForVariant(
+      items.filter((other) => !groupIds.has(getCartItemId(other))),
+      line.variantId
+    );
+
+    const remaining = Math.max(0, stock - claimedElsewhere);
+    available = available === null ? remaining : Math.min(available, remaining);
+  }
+
+  return available;
+};
+
 
 export const useCartStore = create((set, get) => ({
   cartItems: loadInitialCart(),
@@ -232,29 +283,24 @@ export const useCartStore = create((set, get) => ({
   },
 
   updateQuantity: (cartItemId, quantity) => {
+    const currentItems = get().cartItems;
+    if (!currentItems.some((item) => getCartItemId(item) === cartItemId)) return;
+
     if (quantity <= 0) {
       get().removeFromCart(cartItemId);
       return;
     }
-    const updatedItems = get().cartItems
-      .filter((item) => getCartItemId(item) !== cartItemId || getStock(item) > 0)
-      .map((item) => {
-        if (getCartItemId(item) !== cartItemId) return item;
 
-        return {
-          ...item,
-          quantity: Math.min(
-            quantity,
-            Math.max(
-              0,
-              getStock(item) - quantityInCartForVariant(
-                get().cartItems.filter((other) => getCartItemId(other) !== cartItemId),
-                item.variantId,
-              ),
-            ),
-          ),
-        };
-      });
+    // For a set the scarcest SKU in the group sets the cap, not just this line's stock.
+    const available = getAvailableQuantity(currentItems, cartItemId);
+    const requested = Math.max(1, Number(quantity) || 1);
+    const nextQuantity = available === null
+      ? Math.min(requested, MAX_UNKNOWN_STOCK)
+      : Math.min(requested, available);
+
+    const updatedItems = currentItems.map((item) =>
+      (getCartItemId(item) === cartItemId ? { ...item, quantity: nextQuantity } : item)
+    );
     saveCart(updatedItems);
     set({ cartItems: updatedItems });
   },

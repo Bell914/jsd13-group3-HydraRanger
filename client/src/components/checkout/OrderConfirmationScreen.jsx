@@ -26,9 +26,7 @@ export default function OrderConfirmationScreen({ orderData }) {
   const [trackingNumber] = useState(
     () =>
       orderData?.trackingNumber ||
-      (orderData?.paymentMode === "mock"
-        ? ""
-        : `OCC-${new Date().getFullYear()}-${Math.floor(10000000 + Math.random() * 90000000)}`),
+      `OCC-${new Date().getFullYear()}-${Math.floor(10000000 + Math.random() * 90000000)}`,
   );
 
   const orderDate = new Date().toLocaleDateString("th-TH", {
@@ -54,7 +52,6 @@ export default function OrderConfirmationScreen({ orderData }) {
     upgradedRank,
     shippingCost = 0,
     totalAmount = 0,
-    paymentMode,
   } = orderData || {};
 
   return (
@@ -90,11 +87,6 @@ export default function OrderConfirmationScreen({ orderData }) {
         <p className="mx-auto mb-6 max-w-md text-sm font-light leading-relaxed text-gray-600 sm:text-base">
           เตรียมพร้อมยกระดับสไตล์การแต่งกายของคุณได้เลย!
         </p>
-        {paymentMode === "mock" && (
-          <p role="status" className="mx-auto mb-6 max-w-xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            โหมดจำลองสำหรับเดโม สร้างคำสั่งซื้อสถานะรอชำระเงินเพื่อทดสอบแล้ว แต่ไม่ได้เชื่อมต่อเพื่อรับชำระเงินจริง คำสั่งซื้อจะหมดอายุภายใน 30 นาทีหากไม่มีการยืนยันการชำระเงิน
-          </p>
-        )}
 
         {/* Divider with Truck */}
         <div className="mx-auto my-6 flex max-w-xs items-center justify-center gap-4">
@@ -109,7 +101,7 @@ export default function OrderConfirmationScreen({ orderData }) {
               ไม่ต้องนั่งเฝ้าหน้าตู้โพสต์แมน!
             </p>
             <p className="mb-2 text-sm text-gray-600">
-              ใช้หมายเลขนี้เพื่อติดตามพัสดุของคุณ
+              ใช้หมายเลขนี้เพื่อติดตามพัสดุของคุณ:
             </p>
             <div className="mb-8 inline-flex items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2 text-gray-900 transition-colors hover:bg-orange-100">
               <span className="font-mono text-base font-bold tracking-wider underline decoration-orange-600 underline-offset-4 sm:text-lg">

@@ -157,7 +157,7 @@ function validateForm(form) {
 
   const tags = form.tags.split(',').map((tag) => tag.trim()).filter((tag) => tag !== '');
   if (tags.length === 0) {
-    errors.tags = 'กรุณากรอก Tag อย่างน้อย 1 รายการ';
+    errors.tags = 'กรุณากรอกคำค้นหาอย่างน้อย 1 รายการ';
   }
 
   if (!form.availableDate) {
@@ -166,7 +166,7 @@ function validateForm(form) {
 
   form.variants.forEach((variant, index) => {
     if (!variant.sku.trim()) {
-      errors[`variant-${index}-sku`] = 'กรุณากรอก SKU';
+      errors[`variant-${index}-sku`] = 'กรุณากรอกรหัสสินค้า';
     }
     if (!variant.color.trim()) {
       errors[`variant-${index}-color`] = 'กรุณากรอกสี';
@@ -358,7 +358,7 @@ export function ProductFormModal({ product, onClose, onSave }) {
       <section className="product-modal" role="dialog" aria-modal="true" aria-labelledby="product-form-title">
         <header className="modal-header">
           <div>
-            <p>PRODUCT MANAGEMENT</p>
+            <p>จัดการสินค้า</p>
             <h2 id="product-form-title">{isEditing ? 'แก้ไขสินค้า' : 'เพิ่มสินค้าใหม่'}</h2>
           </div>
           <button type="button" onClick={onClose} aria-label="ปิดฟอร์มสินค้า"><X size={20} /></button>
@@ -389,22 +389,22 @@ export function ProductFormModal({ product, onClose, onSave }) {
             <label className="field">
               <span>หมวดหมู่</span>
               <select value={form.category} onChange={(event) => updateField('category', event.target.value)}>
-                <option value="tops">เสื้อ (Tops)</option>
-                <option value="bottoms">กางเกง (Bottoms)</option>
+                <option value="tops">เสื้อ</option>
+                <option value="bottoms">กางเกง</option>
               </select>
             </label>
 
             <label className="field">
               <span>เพศ</span>
               <select value={form.gender} onChange={(event) => updateField('gender', event.target.value)}>
-                <option value="unisex">Unisex</option>
-                <option value="women">Women</option>
-                <option value="men">Men</option>
+                <option value="unisex">ทุกเพศ</option>
+                <option value="women">ผู้หญิง</option>
+                <option value="men">ผู้ชาย</option>
               </select>
             </label>
 
             <label className="field">
-              <span>Tags <b>*</b></span>
+              <span>คำค้นหา <b>*</b></span>
               <input type="text" value={form.tags} onChange={(event) => updateField('tags', event.target.value)} placeholder="casual, minimal" aria-invalid={Boolean(errors.tags)} />
               {errors.tags && <small className="field-error">{errors.tags}</small>}
             </label>
@@ -416,7 +416,7 @@ export function ProductFormModal({ product, onClose, onSave }) {
             </label>
 
             <label className="field full-width">
-              <span>Image URL</span>
+              <span>ที่อยู่รูปภาพ</span>
               <input type="text" value={form.imageUrl} onChange={(event) => updateField('imageUrl', event.target.value)} placeholder="/collection-2026/products/..." />
             </label>
             <label className="field full-width">
@@ -489,32 +489,32 @@ export function ProductFormModal({ product, onClose, onSave }) {
 
           <div className="variant-heading">
             <div>
-              <h3>ตัวเลือกสินค้า (Variants)</h3>
-              <p>กำหนด SKU สี ไซซ์ ราคา และจำนวนสินค้า</p>
+              <h3>ตัวเลือกสินค้า</h3>
+              <p>กำหนดรหัส สี ไซซ์ ราคา และจำนวนสินค้า</p>
             </div>
             <button type="button" className="secondary-action" onClick={addVariant}>
-              <Plus size={15} /> เพิ่ม Variant
+              <Plus size={15} /> เพิ่มตัวเลือก
             </button>
           </div>
 
           <div className="variant-list">
             {form.variants.map((variant, index) => (
               <fieldset className="variant-card" key={variant.id}>
-                <legend>Variant {index + 1}</legend>
+                <legend>ตัวเลือกที่ {index + 1}</legend>
                 <div className="variant-grid">
-                  <label className="field"><span>SKU *</span><input type="text" value={variant.sku} onChange={(event) => updateVariant(index, 'sku', event.target.value)} aria-invalid={Boolean(errors[`variant-${index}-sku`])} />{errors[`variant-${index}-sku`] && <small className="field-error">{errors[`variant-${index}-sku`]}</small>}</label>
+                  <label className="field"><span>รหัสสินค้า *</span><input type="text" value={variant.sku} onChange={(event) => updateVariant(index, 'sku', event.target.value)} aria-invalid={Boolean(errors[`variant-${index}-sku`])} />{errors[`variant-${index}-sku`] && <small className="field-error">{errors[`variant-${index}-sku`]}</small>}</label>
                   <label className="field"><span>สี *</span><input type="text" value={variant.color} onChange={(event) => updateVariant(index, 'color', event.target.value)} aria-invalid={Boolean(errors[`variant-${index}-color`])} />{errors[`variant-${index}-color`] && <small className="field-error">{errors[`variant-${index}-color`]}</small>}</label>
                   <label className="field"><span>รหัสสี</span><input type="text" value={variant.colorCode} onChange={(event) => updateVariant(index, 'colorCode', event.target.value)} placeholder="OW" /></label>
                   <label className="field"><span>ไซซ์</span><select value={variant.size} onChange={(event) => updateVariant(index, 'size', event.target.value)}>{['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => <option key={size}>{size}</option>)}</select></label>
                   <label className="field"><span>ราคา *</span><input type="number" min="1" step="0.01" value={variant.price} onChange={(event) => updateVariant(index, 'price', event.target.value)} aria-invalid={Boolean(errors[`variant-${index}-price`])} />{errors[`variant-${index}-price`] && <small className="field-error">{errors[`variant-${index}-price`]}</small>}</label>
-                  <label className="field"><span>Stock *</span><input type="number" min="0" step="1" value={variant.stockQuantity} onChange={(event) => updateVariant(index, 'stockQuantity', event.target.value)} aria-invalid={Boolean(errors[`variant-${index}-stock`])} />{errors[`variant-${index}-stock`] && <small className="field-error">{errors[`variant-${index}-stock`]}</small>}</label>
-                  <label className="field full-width"><span>รูปของ Variant</span><input type="text" value={variant.imageUrl || ''} onChange={(event) => updateVariant(index, 'imageUrl', event.target.value)} placeholder="เว้นว่างเพื่อใช้รูปหลัก" /></label>
+                  <label className="field"><span>จำนวนคงเหลือ *</span><input type="number" min="0" step="1" value={variant.stockQuantity} onChange={(event) => updateVariant(index, 'stockQuantity', event.target.value)} aria-invalid={Boolean(errors[`variant-${index}-stock`])} />{errors[`variant-${index}-stock`] && <small className="field-error">{errors[`variant-${index}-stock`]}</small>}</label>
+                  <label className="field full-width"><span>รูปของตัวเลือกสินค้า</span><input type="text" value={variant.imageUrl || ''} onChange={(event) => updateVariant(index, 'imageUrl', event.target.value)} placeholder="เว้นว่างเพื่อใช้รูปหลัก" /></label>
                   <div className="field full-width">
-                    <span>ตัวอย่างรูป Variant {index + 1}</span>
-                    <ImagePreview imageUrl={variant.imageUrl || form.imageUrl} label={`ตัวอย่าง ${variant.sku || `Variant ${index + 1}`}`} />
+                    <span>ตัวอย่างรูปตัวเลือกที่ {index + 1}</span>
+                    <ImagePreview imageUrl={variant.imageUrl || form.imageUrl} label={`ตัวอย่าง ${variant.sku || `ตัวเลือกที่ ${index + 1}`}`} />
                   </div>
                 </div>
-                {form.variants.length > 1 && <button type="button" className="remove-variant" onClick={() => removeVariant(index)}><Trash2 size={14} /> ลบ Variant</button>}
+                {form.variants.length > 1 && <button type="button" className="remove-variant" onClick={() => removeVariant(index)}><Trash2 size={14} /> ลบตัวเลือก</button>}
               </fieldset>
             ))}
           </div>

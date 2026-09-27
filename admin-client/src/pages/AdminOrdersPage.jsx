@@ -67,13 +67,13 @@ export function AdminOrdersPage() {
 
   return (
     <div className="admin-content">
-      <AdminTopbar title="Orders" />
+      <AdminTopbar title="คำสั่งซื้อ" />
 
       <main className="data-page">
         <header className="page-heading">
           <div>
             <h1>คำสั่งซื้อ</h1>
-            <p>รายการคำสั่งซื้อจริงจาก MongoDB</p>
+            <p>รายการคำสั่งซื้อจริงจากฐานข้อมูล</p>
           </div>
           <button type="button" className="primary-action" onClick={loadOrders} disabled={loading}>
             {loading ? 'กำลังโหลด…' : 'อัปเดตข้อมูล'}
@@ -84,7 +84,7 @@ export function AdminOrdersPage() {
         <section className="filter-toolbar" aria-label="ค้นหาและกรองคำสั่งซื้อ">
           <label className="product-search plain-search">
             <span className="sr-only">ค้นหาเลขที่คำสั่งซื้อ ชื่อลูกค้า หรืออีเมล</span>
-            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ค้นหา Order หรือลูกค้า..." />
+            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ค้นหาคำสั่งซื้อหรือลูกค้า..." />
           </label>
           <div className="filters">
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="กรองสถานะคำสั่งซื้อ">
@@ -93,20 +93,20 @@ export function AdminOrdersPage() {
             </select>
           </div>
         </section>
-        {loading && orders.length === 0 && <p className="dashboard-message">กำลังโหลด Orders…</p>}
-        {!loading && !error && orders.length === 0 && <div className="empty-state"><strong>ยังไม่มีคำสั่งซื้อ</strong><p>รายการจะปรากฏเมื่อลูกค้าสร้าง Order ผ่าน API</p></div>}
+        {loading && orders.length === 0 && <p className="dashboard-message">กำลังโหลดคำสั่งซื้อ…</p>}
+        {!loading && !error && orders.length === 0 && <div className="empty-state"><strong>ยังไม่มีคำสั่งซื้อ</strong><p>รายการจะปรากฏเมื่อลูกค้าสั่งซื้อสินค้า</p></div>}
         {!loading && orders.length > 0 && visibleOrders.length === 0 && <div className="empty-state"><strong>ไม่พบคำสั่งซื้อที่ตรงกับตัวกรอง</strong><p>ลองเปลี่ยนคำค้นหาหรือสถานะ</p></div>}
 
         {visibleOrders.length > 0 && (
           <section className="product-table-card">
             <div className="table-scroll">
               <table className="data-table">
-                <thead><tr><th>เลขที่ Order</th><th>ลูกค้า</th><th>สินค้า</th><th>ยอดรวม</th><th>วันที่</th><th>สถานะ</th></tr></thead>
+                <thead><tr><th>เลขที่คำสั่งซื้อ</th><th>ลูกค้า</th><th>สินค้า</th><th>ยอดรวม</th><th>วันที่</th><th>สถานะ</th></tr></thead>
                 <tbody>
                   {visibleOrders.map((order) => (
                     <tr key={order._id}>
-                      <td data-label="เลขที่ Order"><strong>{order.orderNumber}</strong></td>
-                      <td data-label="ลูกค้า"><strong>{order.user?.username || 'Customer'}</strong><small>{order.customerEmail}</small></td>
+                      <td data-label="เลขที่คำสั่งซื้อ"><strong>{order.orderNumber}</strong></td>
+                      <td data-label="ลูกค้า"><strong>{order.user?.username || 'ลูกค้า'}</strong><small>{order.customerEmail}</small></td>
                       <td data-label="สินค้า">{order.items.length} รายการ</td>
                       <td data-label="ยอดรวม" className="price">{formatMoney(order.totalAmount)}</td>
                       <td data-label="วันที่">{formatDate(order.createdAt)}</td>

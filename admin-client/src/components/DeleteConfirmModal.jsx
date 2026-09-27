@@ -15,7 +15,7 @@ export function DeleteConfirmModal({ product, loading, onCancel, onConfirm }) {
       >
         <header className="modal-header">
           <div>
-            <p>PRODUCT MANAGEMENT</p>
+            <p>จัดการสินค้า</p>
             <h2 id="delete-product-title">ยืนยันการปิดการขาย</h2>
           </div>
           <button type="button" onClick={onCancel} aria-label="ปิดหน้าต่างยืนยัน">
@@ -31,7 +31,7 @@ export function DeleteConfirmModal({ product, loading, onCancel, onConfirm }) {
             <p id="delete-product-description">
               ต้องการปิดการขายสินค้า <strong>“{product.name}”</strong> ใช่หรือไม่?
             </p>
-            <small>สินค้าจะซ่อนจากหน้าร้าน แต่ยังแก้ไขและเปิดขายใหม่ได้ในหน้า Admin</small>
+            <small>สินค้าจะซ่อนจากหน้าร้าน แต่ยังแก้ไขและเปิดขายใหม่ได้ในหน้าผู้ดูแลระบบ</small>
           </div>
         </div>
 

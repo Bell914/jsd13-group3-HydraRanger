@@ -22,7 +22,7 @@
 | --- | --- |
 | หน้าร้าน | Product, Search/Filter, Lookbook, Article, Mix & Match |
 | สมาชิก | Register/Login, Profile, Address, Size Profile, Favorite Lookbook |
-| การขาย | Cart, Checkout, Stripe Payment, Orders, Coupon/Loyalty |
+| การขาย | Cart, Checkout, Demo Payment (PromptPay QR/บัตร), Orders, Coupon/Loyalty |
 | Admin | Dashboard, Product/Size Chart, Customer, Order, Lookbook, Article, Coupon |
 
 Review feature ถูกตัดออกจาก scope ปัจจุบัน
@@ -31,7 +31,7 @@ Review feature ถูกตัดออกจาก scope ปัจจุบั�
 
 **Frontend:** React 19, Vite, Tailwind CSS, daisyUI, React Router, Zustand
 
-**Backend:** Node.js, Express 4, MongoDB/Mongoose, JWT + HttpOnly cookie, Multer, Nodemailer, Stripe และ Google Gemini
+**Backend:** Node.js, Express 4, MongoDB/Mongoose, JWT + HttpOnly cookie, Multer, Nodemailer, qrcode.react และ Google Gemini
 
 **Testing:** Node test runner, Vitest, Testing Library, jest-axe และ build verification
 
@@ -40,7 +40,7 @@ Review feature ถูกตัดออกจาก scope ปัจจุบั�
 ```text
 Customer Client ──┐
                   ├── Express API ── MongoDB / GridFS
-Admin Client ─────┘       ├──────── Stripe
+Admin Client ─────┘       ├──────── Demo Payment (QR / บัตร)
                           ├──────── SMTP
                           └──────── Gemini
 ```
@@ -86,12 +86,16 @@ Admin Client ─────┘       ├──────── Stripe
 ## สไลด์ 10 — Checkout และ Payment
 
 ```text
-Cart → Create Order → Reserve Stock → Stripe PaymentIntent
-     → Stripe Webhook → Paid Order → Loyalty/Coupon
+Cart → Create Order → Reserve Stock → Confirm Demo Payment
+     → Paid Order → Loyalty/Coupon
 ```
 
+- Payment เป็นโหมดเดโม ไม่มีการตัดเงินจริงและไม่ต้องใช้ key ใด ๆ
+- 2 ช่องทาง: QR สำหรับสาธิต (ไม่ใช่ QR ธนาคาร) และฟอร์มบัตรที่รับเฉพาะเลขทดสอบ พร้อมปิด `autocomplete`
+- ปิดช่องทางที่ยืนยัน `paid` ได้ด้วย flag `DEMO_PAYMENT_ENABLED` ซึ่งปิดเป็นค่าเริ่มต้นเมื่อ `NODE_ENV=production`
 - Server ยืนยันราคาและ stock จากฐานข้อมูล
-- ป้องกันการสร้าง PaymentIntent และคืน stock ซ้ำ
+- ป้องกันการยืนยันซ้ำและคืน stock ซ้ำ
+- Order ที่ไม่ยืนยันภายใน 30 นาทีจะถูกยกเลิกและคืนสต็อกอัตโนมัติ
 - Customer ดูรายละเอียด/ประวัติและยกเลิก Order ตามสถานะได้
 
 ## สไลด์ 11 — Coupon และ Loyalty
@@ -125,7 +129,7 @@ Product Backlog → Sprint Backlog → To Do → In Progress
 
 ## สไลด์ 14 — ข้อจำกัดและ Next Steps
 
-- ตั้ง SMTP, Stripe และ Gemini environment ให้ครบก่อนทดสอบ integration จริง
+- ตั้ง SMTP และ Gemini environment ให้ครบก่อนทดสอบ integration จริง
 - ตรวจ staging products ให้มี `size_chart`
 - Cart ยังอยู่ฝั่ง Client และยังไม่มี Cart model/route
 - เพิ่ม CI สำหรับ lint/test/build ก่อน merge

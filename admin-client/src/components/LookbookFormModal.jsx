@@ -95,36 +95,36 @@ export function LookbookFormModal({ lookbook, products, loading, onClose, onSave
 
   return (
     <div className="modal-backdrop" role="presentation">
-      <section className="product-modal lookbook-modal" role="dialog" aria-modal="true" aria-label="ฟอร์ม Lookbook">
-        <header className="modal-header"><div><h2>{lookbook ? 'แก้ไข Lookbook' : 'เพิ่ม Lookbook'}</h2><p>เลือกสินค้าและ Variant ที่มีอยู่จริงในระบบ</p></div><button type="button" onClick={onClose}>×</button></header>
+      <section className="product-modal lookbook-modal" role="dialog" aria-modal="true" aria-label="ฟอร์มลุคบุ๊ก">
+        <header className="modal-header"><div><h2>{lookbook ? 'แก้ไขลุคบุ๊ก' : 'เพิ่มลุคบุ๊ก'}</h2><p>เลือกสินค้าและตัวเลือกสินค้าที่มีอยู่จริงในระบบ</p></div><button type="button" onClick={onClose}>×</button></header>
         <form className="product-form" onSubmit={submitForm}>
           {error && <p className="error form-wide" role="alert">{error}</p>}
-          <div className="field"><label>Lookbook ID *</label><input name="lookbookId" value={form.lookbookId} onChange={updateField} placeholder="LOOK-011" /></div>
+          <div className="field"><label>รหัสลุคบุ๊ก *</label><input name="lookbookId" value={form.lookbookId} onChange={updateField} placeholder="LOOK-011" /></div>
           <div className="field"><label>ชื่อภาษาอังกฤษ *</label><input name="name" value={form.name} onChange={updateField} /></div>
           <div className="field"><label>ชื่อภาษาไทย *</label><input name="nameTh" value={form.nameTh} onChange={updateField} /></div>
-          <div className="field form-wide"><label>Concept *</label><textarea name="concept" value={form.concept} onChange={updateField} rows="3" /></div>
-          <div className="field form-wide"><label>URL รูปภาพ *</label><input name="imageUrl" value={form.imageUrl} onChange={updateField} /></div>
-          {form.imageUrl && <div className="form-wide lookbook-preview"><img src={getImageUrl(form.imageUrl)} alt="ตัวอย่าง Lookbook" /></div>}
-          <div className="field"><label>โอกาส (คั่นด้วย comma)</label><input name="occasion" value={form.occasion} onChange={updateField} /></div>
-          <div className="field"><label>Style tags (คั่นด้วย comma)</label><input name="styleTags" value={form.styleTags} onChange={updateField} /></div>
+          <div className="field form-wide"><label>แนวคิด *</label><textarea name="concept" value={form.concept} onChange={updateField} rows="3" /></div>
+          <div className="field form-wide"><label>ที่อยู่รูปภาพ *</label><input name="imageUrl" value={form.imageUrl} onChange={updateField} /></div>
+          {form.imageUrl && <div className="form-wide lookbook-preview"><img src={getImageUrl(form.imageUrl)} alt="ตัวอย่างลุคบุ๊ก" /></div>}
+          <div className="field"><label>โอกาส (คั่นแต่ละรายการด้วยจุลภาค)</label><input name="occasion" value={form.occasion} onChange={updateField} /></div>
+          <div className="field"><label>คำค้นหาสไตล์ (คั่นแต่ละรายการด้วยจุลภาค)</label><input name="styleTags" value={form.styleTags} onChange={updateField} /></div>
           <div className="field"><label>ราคาปกติ *</label><input name="regularPrice" type="number" min="0" value={form.regularPrice} onChange={updateField} /></div>
           <div className="field"><label>ราคาเซ็ต *</label><input name="setPrice" type="number" min="0" value={form.setPrice} onChange={updateField} /></div>
 
           <fieldset className="form-wide lookbook-items">
-            <legend>สินค้าใน Lookbook</legend>
+            <legend>สินค้าในลุคบุ๊ก</legend>
             {form.items.map((item, index) => {
               const product = products.find((current) => current._id === item.product);
               return (
                 <div className="lookbook-item-row" key={index}>
                   <div className="field"><label>สินค้า {index + 1}</label><select value={item.product} onChange={(event) => updateProduct(index, event.target.value)}>{products.map((option) => <option key={option._id} value={option._id}>{option.name}</option>)}</select></div>
-                  <div className="field"><label>Variant</label><select value={item.defaultVariantSku} onChange={(event) => updateVariant(index, event.target.value)}>{(product?.variants || []).map((variant) => <option key={variant.sku} value={variant.sku}>{variant.sku}</option>)}</select></div>
+                  <div className="field"><label>ตัวเลือกสินค้า</label><select value={item.defaultVariantSku} onChange={(event) => updateVariant(index, event.target.value)}>{(product?.variants || []).map((variant) => <option key={variant.sku} value={variant.sku}>{variant.sku}</option>)}</select></div>
                 </div>
               );
             })}
           </fieldset>
 
-          <label className="checkbox-field form-wide"><input name="isActive" type="checkbox" checked={form.isActive} onChange={updateField} /> แสดง Lookbook บนหน้าเว็บ</label>
-          <div className="modal-actions form-wide"><button type="button" className="secondary-button" onClick={onClose} disabled={loading}>ยกเลิก</button><button type="submit" disabled={loading}>{loading ? 'กำลังบันทึก…' : 'บันทึก Lookbook'}</button></div>
+          <label className="checkbox-field form-wide"><input name="isActive" type="checkbox" checked={form.isActive} onChange={updateField} /> แสดงลุคบุ๊กบนหน้าเว็บ</label>
+          <div className="modal-actions form-wide"><button type="button" className="secondary-button" onClick={onClose} disabled={loading}>ยกเลิก</button><button type="submit" disabled={loading}>{loading ? 'กำลังบันทึก…' : 'บันทึกลุคบุ๊ก'}</button></div>
         </form>
       </section>
     </div>
