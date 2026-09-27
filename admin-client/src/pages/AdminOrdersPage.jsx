@@ -34,20 +34,22 @@ export function AdminOrdersPage() {
     return matchesStatus && orderText.includes(searchText);
   });
 
-  async function loadOrders() {
-    setLoading(true);
+  async function loadOrders({ silent = false } = {}) {
+    if (!silent) setLoading(true);
     setError('');
     try {
       setOrders(await getOrders());
     } catch (loadError) {
       setError(loadError.message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 
   useEffect(() => {
     loadOrders();
+    const refreshTimer = window.setInterval(() => loadOrders({ silent: true }), 15_000);
+    return () => window.clearInterval(refreshTimer);
   }, []);
 
   async function changeStatus(orderId, status) {
@@ -73,7 +75,7 @@ export function AdminOrdersPage() {
         <header className="page-heading">
           <div>
             <h1>คำสั่งซื้อ</h1>
-            <p>รายการคำสั่งซื้อจริงจากฐานข้อมูล</p>
+            <p>รายการจากฐานข้อมูล อัปเดตอัตโนมัติทุก 15 วินาที</p>
           </div>
           <button type="button" className="primary-action" onClick={loadOrders} disabled={loading}>
             {loading ? 'กำลังโหลด…' : 'อัปเดตข้อมูล'}

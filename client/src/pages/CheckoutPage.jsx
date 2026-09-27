@@ -84,7 +84,6 @@ export default function CheckoutPage() {
   const pendingOrderIdRef = useRef("");
   const cancelRequestRef = useRef(null);
   const orderSubmissionInProgress = useRef(false);
-  // The card fields own their validation, so the shared pay button asks them through this.
   const cardFormRef = useRef(null);
 
   useEffect(() => {
@@ -293,8 +292,6 @@ export default function CheckoutPage() {
   }
 
   function handlePaymentMethodChange(nextPayment) {
-    // The old order must release its stock before the channel changes, otherwise the next
-    // attempt would confirm an order that was created for a different channel.
     const cancelRequest = abandonPendingOrder();
     if (cancelRequest) {
       setSubmitError("");
@@ -303,7 +300,6 @@ export default function CheckoutPage() {
       });
       return;
     }
-
     setSubmitError("");
     setPaymentData(nextPayment);
   }
@@ -354,9 +350,7 @@ export default function CheckoutPage() {
   // that same order instead of reserving stock a second time.
   async function handlePlaceOrder() {
     if (orderSubmissionInProgress.current) return;
-    // Card details never leave the browser, so the page only creates the order once the
-    // fields report themselves complete.
-    if (cardFormRef.current && !cardFormRef.current.validate()) return;
+    if (paymentData.method === "credit-card" && !cardFormRef.current?.validate()) return;
     orderSubmissionInProgress.current = true;
     setIsSubmitting(true);
     setSubmitError("");
@@ -508,7 +502,7 @@ export default function CheckoutPage() {
                 {pendingOrderId && (
                   <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 shadow-xs">
                     <p>
-                      ออเดอร์ของคุณถูกสร้างไว้แล้ว กดปุ่มชำระเงินอีกครั้งเพื่อยืนยันออเดอร์เดิม
+                      ออเดอร์ของคุณถูกสร้างไว้แล้ว กดปุ่มจำลองการชำระเงินอีกครั้งเพื่อยืนยันออเดอร์เดิม
                       โดยไม่ต้องสร้างออเดอร์ซ้ำ
                     </p>
                     <button

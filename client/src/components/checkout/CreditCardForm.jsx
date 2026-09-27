@@ -114,10 +114,10 @@ const CreditCardForm = forwardRef(function CreditCardForm({ onPay, isBusy = fals
   return (
     <div className="space-y-4" onKeyDown={handleKeyDown}>
       <div>
-        <h3 className="text-sm font-bold text-gray-900">          กรอกข้อมูลบัตรเครดิต / เดบิต อย่างปลอดภัย
+        <h3 className="text-sm font-bold text-gray-900">          กรอกข้อมูลบัตรทดสอบสำหรับ Demo
 </h3>
         <p className="mt-1 text-xs leading-relaxed text-gray-600">
-          ใช้หมายเลขบัตร{" "}
+          ใช้เฉพาะหมายเลขทดสอบ{" "}
           <span className="font-mono font-semibold text-gray-900">
             {formatCardNumber(ACCEPTED_CARD_NUMBER)}
           </span>{" "}

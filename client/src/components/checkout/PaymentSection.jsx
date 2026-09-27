@@ -4,20 +4,20 @@ import { Check, CreditCard, QrCode } from "lucide-react";
 const PAYMENT_OPTIONS = [
   {
     id: "promptpay",
-    name: "PromptPay",
-    description: "สแกน QR Code ผ่านแอปพลิเคชันธนาคาร",
+    name: "PromptPay (Demo)",
+    description: "QR ตัวอย่าง ไม่มีการโอนเงินจริง",
     icon: QrCode,
   },
   {
     id: "credit-card",
-    name: "Credit / Debit Card",
-    description: "ชำระเงินผ่านบัตรเครดิตหรือเดบิต",
+    name: "Credit / Debit Card (Demo)",
+    description: "ใช้เลขบัตรทดสอบ ไม่มีการตัดเงินจริง",
     icon: CreditCard,
   },
 ];
 
 const SUBMIT_LABELS = {
-  idle: "ยืนยันการชำระเงิน",
+  idle: "จำลองการชำระเงิน",
   submitting: "กำลังดำเนินการ...",
   cancelling: "กำลังยกเลิกออเดอร์เดิม...",
 };
@@ -65,7 +65,7 @@ export default function PaymentSection({
   return (
     <section className="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-xs">
       <h2 className="text-2xl font-bold text-gray-900">ช่องทางการชำระเงิน</h2>
-      <p className="mt-1.5 text-sm text-gray-600">เลือกช่องทางที่ต้องการชำระเงิน</p>
+      <p className="mt-1.5 text-sm text-gray-600">ทั้งสองช่องทางเป็นการจำลอง ไม่มีการโอนหรือตัดเงินจริง</p>
 
       <ul className="mt-5 space-y-3">
         {PAYMENT_OPTIONS.map((option) => {
