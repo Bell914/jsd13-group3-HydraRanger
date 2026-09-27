@@ -9,7 +9,7 @@ function getFitEase(preferredFit) {
 }
 
 function getFitLabel(preferredFit) {
-  if (preferredFit === 'fitted') return 'พอดีตัว';
+  if (preferredFit === 'fitted') return 'เข้ารูป';
   if (preferredFit === 'relaxed') return 'หลวมสบาย';
   return 'มาตรฐาน';
 }

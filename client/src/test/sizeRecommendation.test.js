@@ -25,6 +25,18 @@ describe('Personalized Size Recommendation', () => {
     expect(result.confidence).toBe('ปานกลาง');
   });
 
+  it('calls the fitted preference เข้ารูป in its explanation', () => {
+    const product = {
+      category: 'tops',
+      variants: [{ size: 'S', stockQuantity: 1 }],
+      size_chart: [{ size_name: 'S', garment_chest_actual: 94 }]
+    };
+    const result = getSizeRecommendation({ ...regularProfile, preferredFit: 'fitted' }, product);
+
+    expect(result.size).toBe('S');
+    expect(result.reason).toContain('เข้ารูป');
+  });
+
   it('falls back to body measurements when a product has no size chart', () => {
     const product = {
       category: 'tops',
