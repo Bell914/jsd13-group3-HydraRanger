@@ -3,7 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/Auth/useAuth.jsx";
 import { LoadingSpinner } from "./index.js";
 
-export const ProtectedRoute = ({ children }) => {
+export const ProtectedRoute = ({ children, redirectTo = "/login" }) => {
   const location = useLocation();
   const { user, isAuthenticated, loading, logout } = useAuth();
 
@@ -14,7 +14,7 @@ export const ProtectedRoute = ({ children }) => {
   if (loading) return <LoadingSpinner message="Checking session..." />;
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
   return children;
