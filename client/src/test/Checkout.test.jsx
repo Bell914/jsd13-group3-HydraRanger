@@ -232,6 +232,54 @@ describe("Checkout order integration", () => {
     expect(createOrder).toHaveBeenCalledTimes(2);
   });
 
+  it("keeps the payment method when the pending order could not be cancelled", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("network down"), { status: 503, data: { message: "เชื่อมต่อไม่ได้" } }),
+    );
+    cancelOrder.mockRejectedValueOnce(new Error("service unavailable"));
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Credit / Debit Card" }));
+
+    expect(
+      await screen.findByText("ยกเลิกออเดอร์ไม่สำเร็จ กรุณากดยกเลิกออเดอร์อีกครั้ง"),
+    ).toBeInTheDocument();
+    // The old order is still live, so the screen must keep showing the channel it was created with.
+    expect(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("หมายเลขบัตร")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledTimes(1);
+    expect(createOrder.mock.calls[0][0].paymentMethod).toBe("promptpay");
+  });
+
+  it("stays on the payment step when the pending order could not be cancelled", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("network down"), { status: 503, data: { message: "เชื่อมต่อไม่ได้" } }),
+    );
+    cancelOrder.mockRejectedValueOnce(new Error("service unavailable"));
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "ไปยังขั้นตอน ที่อยู่จัดส่ง" }));
+
+    expect(
+      await screen.findByText("ยกเลิกออเดอร์ไม่สำเร็จ กรุณากดยกเลิกออเดอร์อีกครั้ง"),
+    ).toBeInTheDocument();
+    // Walking away would edit a checkout whose live order can no longer be replaced.
+    expect(screen.getByRole("heading", { name: "QR สำหรับสาธิตขั้นตอนชำระเงิน" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("จังหวัด")).not.toBeInTheDocument();
+  });
+
   it("confirms the pending order instead of creating a new one when the cancel fails", async () => {
     confirmPayment.mockRejectedValueOnce(
       Object.assign(new Error("network down"), { status: 503, data: { message: "เชื่อมต่อไม่ได้" } }),

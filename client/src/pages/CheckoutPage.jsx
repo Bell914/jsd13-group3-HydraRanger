@@ -246,11 +246,13 @@ export default function CheckoutPage() {
     try {
       await cancelOrder(orderId);
       trackPendingOrder("");
+      return true;
     } catch (error) {
       // The order still holds stock, so keep the id: a retry then confirms this order
       // instead of creating a second one, and the customer can cancel it again.
       console.warn("Could not cancel the pending order:", error.message);
       setSubmitError("ยกเลิกออเดอร์ไม่สำเร็จ กรุณากดยกเลิกออเดอร์อีกครั้ง");
+      return false;
     } finally {
       setIsCancelling(false);
     }
@@ -259,8 +261,9 @@ export default function CheckoutPage() {
   // Releases the order we created but could not confirm so its stock and coupon go back
   // before the customer changes anything about the order. The id is only dropped once the
   // server confirms the cancel, so no new order can be created while the old one still
-  // holds stock. Returns a promise only when a cancel is needed, which keeps callers that
-  // have nothing to wait for synchronous, and shares one request with concurrent callers.
+  // holds stock. Resolves to whether the order was really released. Returns a promise only
+  // when a cancel is needed, which keeps callers that have nothing to wait for synchronous,
+  // and shares one request with concurrent callers.
   function abandonPendingOrder() {
     if (cancelRequestRef.current) return cancelRequestRef.current;
     if (!pendingOrderIdRef.current) return null;
@@ -274,9 +277,13 @@ export default function CheckoutPage() {
 
   function goToStep(step) {
     // Walking away from the payment step abandons any order created but not confirmed.
+    // The step only changes once that order is released, so the customer cannot leave a
+    // live order behind and come back to an edited checkout.
     const cancelRequest = step < 3 ? abandonPendingOrder() : null;
     if (cancelRequest) {
-      cancelRequest.then(() => setCurrentStep(step));
+      cancelRequest.then((cancelled) => {
+        if (cancelled) setCurrentStep(step);
+      });
       return;
     }
 
@@ -285,11 +292,13 @@ export default function CheckoutPage() {
 
   function handlePaymentMethodChange(nextPayment) {
     // The old order must release its stock before the channel changes, otherwise the next
-    // attempt could create a second order while the previous one is still reserved.
+    // attempt would confirm an order that was created for a different channel.
     const cancelRequest = abandonPendingOrder();
     if (cancelRequest) {
       setSubmitError("");
-      cancelRequest.then(() => setPaymentData(nextPayment));
+      cancelRequest.then((cancelled) => {
+        if (cancelled) setPaymentData(nextPayment);
+      });
       return;
     }
 
