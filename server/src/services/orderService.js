@@ -59,6 +59,7 @@ async function prepareOrderItems(items) {
   }
 
   const preparedItems = [];
+  const stockSeen = new Map();
 
   for (const item of items) {
     if (!mongoose.Types.ObjectId.isValid(item.productId)) {
@@ -93,6 +94,21 @@ async function prepareOrderItems(items) {
       lineTotal: variant.price * quantity,
       lookbookId: item.lookbookId ? String(item.lookbookId).trim() : ''
     });
+
+    const key = String(variant._id);
+    if (!stockSeen.has(key)) {
+      stockSeen.set(key, { title: product.title, stock: variant.stock_quantity });
+    }
+  }
+
+  // Compare the aggregated claim against the stock the product actually has, so a SKU
+  // spread over two lines is rejected here with the real reason instead of failing
+  // halfway through the reservation.
+  for (const claim of aggregateStockClaims(preparedItems)) {
+    const seen = stockSeen.get(String(claim.variantId));
+    if (seen && claim.quantity > seen.stock) {
+      throw new Error(seen.stock <= 0 ? 'สินค้าหมดแล้ว' : 'สินค้ามีไม่เพียงพอในสต็อก');
+    }
   }
 
   return preparedItems;
@@ -160,11 +176,35 @@ function wasUpdated(result) {
   return (result.modifiedCount ?? result.nModified ?? 0) === 1;
 }
 
-async function restoreOrderStock(items, session = null) {
+// A cart can hold the same SKU on more than one line: a product bought on its own plus
+// the same SKU inside a lookbook set. Stock has to be judged on the total an order
+// claims, not on each line in isolation, otherwise the second line is compared against
+// stock the first line already took.
+function aggregateStockClaims(items) {
+  const byVariant = new Map();
+
   for (const item of items) {
+    const key = String(item.variantId);
+    const existing = byVariant.get(key);
+    if (existing) {
+      existing.quantity += item.quantity;
+    } else {
+      byVariant.set(key, {
+        product: item.product,
+        variantId: item.variantId,
+        quantity: item.quantity,
+      });
+    }
+  }
+
+  return [...byVariant.values()];
+}
+
+async function restoreOrderStock(items, session = null) {
+  for (const claim of aggregateStockClaims(items)) {
     await Product.updateOne(
-      { _id: item.product, 'variants._id': item.variantId },
-      { $inc: { 'variants.$.stock_quantity': item.quantity } },
+      { _id: claim.product, 'variants._id': claim.variantId },
+      { $inc: { 'variants.$.stock_quantity': claim.quantity } },
       session ? { session } : undefined
     );
   }
@@ -174,25 +214,25 @@ async function reserveOrderStock(items) {
   const reservedItems = [];
 
   try {
-    for (const item of items) {
+    for (const claim of aggregateStockClaims(items)) {
       const result = await Product.updateOne(
         {
-          _id: item.product,
+          _id: claim.product,
           variants: {
             $elemMatch: {
-              _id: item.variantId,
-              stock_quantity: { $gte: item.quantity }
+              _id: claim.variantId,
+              stock_quantity: { $gte: claim.quantity }
             }
           }
         },
-        { $inc: { 'variants.$.stock_quantity': -item.quantity } }
+        { $inc: { 'variants.$.stock_quantity': -claim.quantity } }
       );
 
       if (!wasUpdated(result)) {
         throw new Error('สินค้ามีไม่เพียงพอในสต็อก');
       }
 
-      reservedItems.push(item);
+      reservedItems.push(claim);
     }
   } catch (error) {
     await restoreOrderStock(reservedItems);
