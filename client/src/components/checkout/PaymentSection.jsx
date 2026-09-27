@@ -1,22 +1,45 @@
 import React from "react";
-import { CreditCard, Plus, QrCode } from "lucide-react";
+import { Check, CreditCard, QrCode } from "lucide-react";
 
 const PAYMENT_OPTIONS = [
-  { id: "promptpay", name: "PromptPay", icon: QrCode },
-  { id: "credit-card", name: "Credit / Debit Card", icon: CreditCard },
+  {
+    id: "promptpay",
+    name: "PromptPay",
+    description: "สแกน QR Code ผ่านแอปพลิเคชันธนาคาร",
+    icon: QrCode,
+  },
+  {
+    id: "credit-card",
+    name: "Credit / Debit Card",
+    description: "ชำระเงินผ่านบัตรเครดิตหรือเดบิต",
+    icon: CreditCard,
+  },
 ];
+
+const SUBMIT_LABELS = {
+  idle: "ยืนยันการชำระเงิน",
+  submitting: "กำลังดำเนินการ...",
+  cancelling: "กำลังยกเลิกออเดอร์เดิม...",
+};
 
 export default function PaymentSection({
   paymentData,
   onChangePayment,
-  isCancelling,
+  isSubmitting = false,
+  isCancelling = false,
+  error,
+  onSubmit,
+  onBack,
+  children,
   isCollapsed,
   onEdit,
-  onBack,
 }) {
   const selectedMethod = paymentData.method || "promptpay";
   const SelectedPaymentIcon =
     PAYMENT_OPTIONS.find((option) => option.id === selectedMethod)?.icon || QrCode;
+  // Releasing the pending order has to finish before a new payment can be started, so the
+  // whole channel stays locked while the cancel is in flight.
+  const isBusy = isSubmitting || isCancelling;
 
   if (isCollapsed) {
     return (
@@ -40,53 +63,70 @@ export default function PaymentSection({
   }
 
   return (
-    <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-xs">
-      <h2 className="mb-2 text-2xl font-bold text-gray-900">ช่องทางการชำระเงิน</h2>
-      <p className="mb-6 text-sm text-gray-600">
-        เลือกช่องทางที่ต้องการ แล้วกรอกข้อมูลในขั้นตอนถัดไปเพื่อยืนยันคำสั่งซื้อ
-      </p>
+    <section className="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-xs">
+      <h2 className="text-2xl font-bold text-gray-900">ช่องทางการชำระเงิน</h2>
+      <p className="mt-1.5 text-sm text-gray-600">เลือกช่องทางที่ต้องการชำระเงิน</p>
 
-      <div className="space-y-3">
+      <ul className="mt-5 space-y-3">
         {PAYMENT_OPTIONS.map((option) => {
           const isSelected = selectedMethod === option.id;
+          const OptionIcon = option.icon;
 
           return (
-            <div key={option.id} className="overflow-hidden rounded-lg border border-gray-200">
+            <li key={option.id} className="overflow-hidden rounded-xl border border-gray-200">
               <button
                 type="button"
                 aria-pressed={isSelected}
+                aria-expanded={isSelected}
                 disabled={isCancelling}
                 onClick={() => onChangePayment({ method: option.id })}
-                className={`flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 ${
+                className={`flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 ${
                   isSelected ? "bg-gray-50" : ""
                 }`}
               >
                 <span className="flex items-center gap-3">
-                  <option.icon size={20} aria-hidden="true" />
-                  <span className="text-sm font-semibold">{option.name}</span>
+                  <span
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                      isSelected ? "bg-[#D0021B] text-white" : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    <OptionIcon size={18} aria-hidden="true" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold text-gray-900">{option.name}</span>
+                    <span className="block text-xs text-gray-500">{option.description}</span>
+                  </span>
                 </span>
-                <Plus className={`h-4 w-4 transition-transform ${isSelected ? "rotate-45" : ""}`} />
+                <span
+                  aria-hidden="true"
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                    isSelected ? "border-[#D0021B] bg-[#D0021B] text-white" : "border-gray-300"
+                  }`}
+                >
+                  {isSelected && <Check size={12} />}
+                </span>
               </button>
-              {isSelected && (
-                <p className="border-t bg-gray-50 p-4 text-sm text-gray-600">
-                  {option.id === "promptpay"
-                    ? "ดู QR สำหรับสาธิตด้านล่าง แล้วกดยืนยันการโอน (QR นี้ไม่เชื่อมต่อธนาคาร)"
-                    : "กรอกเฉพาะหมายเลขบัตรทดสอบด้านล่าง แล้วกดปุ่มชำระเงินเพื่อยืนยันคำสั่งซื้อ"}
-                </p>
+
+              {isSelected && children && (
+                <div className="border-t border-gray-200 bg-gray-50/60 p-4 sm:p-5">{children}</div>
               )}
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
 
-      <p className="mt-4 text-xs text-gray-500">
-        ทั้งสองช่องทางเป็นระบบชำระเงินจำลองสำหรับงานสาธิต ระบบจะไม่ตัดเงินจริงจากบัญชีของคุณ
-        และ QR ที่แสดงไม่ใช่ QR ของธนาคารหรือพร้อมเพย์
-        {isCancelling && " กำลังยกเลิกออเดอร์เดิม กรุณารอสักครู่"}
-      </p>
+      {error && (
+        <p role="alert" className="mt-4 text-sm font-medium text-red-600">
+          {error}
+        </p>
+      )}
 
-      {onBack && (
-        <div className="pt-6">
+      <div
+        className={`mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center ${
+          onBack ? "sm:justify-between" : "sm:justify-end"
+        }`}
+      >
+        {onBack && (
           <button
             type="button"
             onClick={onBack}
@@ -95,8 +135,22 @@ export default function PaymentSection({
           >
             ย้อนกลับ
           </button>
-        </div>
-      )}
-    </div>
+        )}
+
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={isBusy}
+          aria-busy={isBusy}
+          className="w-full rounded-lg bg-[#D0021B] py-3.5 text-sm font-bold tracking-wider text-white transition-colors hover:bg-[#b00217] disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-72"
+        >
+          {isCancelling
+            ? SUBMIT_LABELS.cancelling
+            : isSubmitting
+              ? SUBMIT_LABELS.submitting
+              : SUBMIT_LABELS.idle}
+        </button>
+      </div>
+    </section>
   );
 }

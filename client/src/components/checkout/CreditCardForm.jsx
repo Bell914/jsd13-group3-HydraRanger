@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { CreditCard, Info } from "lucide-react";
+import React, { forwardRef, useImperativeHandle, useState } from "react";
+import { CreditCard, Lock } from "lucide-react";
 
-export const DEMO_CARD_NUMBER = "4242424242424242";
+export const ACCEPTED_CARD_NUMBER = "4242424242424242";
 
 function passesLuhnCheck(digits) {
   let sum = 0;
@@ -42,9 +42,9 @@ export function validateCardDetails({ cardNumber, cardholderName, expiry, cvc })
     errors.cardNumber = "กรุณากรอกหมายเลขบัตร 13-19 หลัก";
   } else if (!passesLuhnCheck(digits)) {
     errors.cardNumber = "หมายเลขบัตรไม่ถูกต้อง";
-  } else if (digits !== DEMO_CARD_NUMBER) {
-    // A demo form must never accept a real card number, so only the published test PAN passes.
-    errors.cardNumber = `กรุณาใช้เฉพาะหมายเลขบัตรทดสอบ ${formatCardNumber(DEMO_CARD_NUMBER)}`;
+  } else if (digits !== ACCEPTED_CARD_NUMBER) {
+    // The form must never take a real card number, so only the published number passes.
+    errors.cardNumber = `กรุณากรอกหมายเลขบัตร ${formatCardNumber(ACCEPTED_CARD_NUMBER)}`;
   }
 
   if (!cardholderName.trim()) {
@@ -81,7 +81,9 @@ const inputClassName = (hasError) =>
       : "border-gray-300 focus:ring-blue-100 focus:border-blue-600"
   }`;
 
-export default function DemoCardForm({ isSubmitting, isCancelling, error, onSubmit }) {
+// The primary pay button lives at the bottom of PaymentSection, so the fields own their
+// validation and expose it to the page, which only creates the order once every field is valid.
+const CreditCardForm = forwardRef(function CreditCardForm({ onPay, isBusy = false }, ref) {
   const [card, setCard] = useState({
     cardNumber: "",
     cardholderName: "",
@@ -89,34 +91,41 @@ export default function DemoCardForm({ isSubmitting, isCancelling, error, onSubm
     cvc: "",
   });
   const [errors, setErrors] = useState({});
-  // The pending order still holds stock until its cancel lands, so paying has to wait.
-  const isBusy = isSubmitting || isCancelling;
+
+  useImperativeHandle(ref, () => ({ validate: validateCard }), [validateCard]);
 
   function updateField(field, value) {
     setCard((previous) => ({ ...previous, [field]: value }));
     setErrors((previous) => ({ ...previous, [field]: undefined }));
   }
 
-  function handleSubmit(submitEvent) {
-    submitEvent.preventDefault();
-    if (isBusy) return;
-
+  function validateCard() {
     const nextErrors = validateCardDetails(card);
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+    return Object.keys(nextErrors).length === 0;
+  }
 
-    onSubmit();
+  function handleKeyDown(keyEvent) {
+    if (keyEvent.key !== "Enter" || isBusy) return;
+    keyEvent.preventDefault();
+    if (validateCard()) onPay?.();
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-xs">
-      <h2 className="mb-1 text-xl font-bold text-gray-900">กรอกข้อมูลบัตรเครดิต / เดบิต</h2>
-      <p className="mb-5 text-sm text-gray-600">
-        ใช้เฉพาะบัตรทดสอบ <span className="font-mono font-semibold text-gray-900">{formatCardNumber(DEMO_CARD_NUMBER)}</span>{" "}
-        วันหมดอายุใดก็ได้ในอนาคต และ CVC 3 หลัก
-      </p>
+    <div className="space-y-4" onKeyDown={handleKeyDown}>
+      <div>
+        <h3 className="text-sm font-bold text-gray-900">          กรอกข้อมูลบัตรเครดิต / เดบิต อย่างปลอดภัย
+</h3>
+        <p className="mt-1 text-xs leading-relaxed text-gray-600">
+          ใช้หมายเลขบัตร{" "}
+          <span className="font-mono font-semibold text-gray-900">
+            {formatCardNumber(ACCEPTED_CARD_NUMBER)}
+          </span>{" "}
+          วันหมดอายุใดก็ได้ในอนาคต และ CVC 3 หลัก
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isBusy}>
+      <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-4">
         <div>
           <label htmlFor="card-number" className="mb-1 block text-sm font-medium text-gray-800">
             หมายเลขบัตร
@@ -126,13 +135,14 @@ export default function DemoCardForm({ isSubmitting, isCancelling, error, onSubm
               id="card-number"
               type="text"
               inputMode="numeric"
-              name="demo-card-number"
+              name="card-number"
               autoComplete="off"
               data-1p-ignore
               data-lpignore="true"
               value={card.cardNumber}
               onChange={(event) => updateField("cardNumber", formatCardNumber(event.target.value))}
               placeholder="4242 4242 4242 4242"
+              aria-invalid={Boolean(errors.cardNumber)}
               className={`${inputClassName(errors.cardNumber)} pr-10 font-mono`}
             />
             <CreditCard className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
@@ -147,13 +157,14 @@ export default function DemoCardForm({ isSubmitting, isCancelling, error, onSubm
           <input
             id="cardholder-name"
             type="text"
-            name="demo-cardholder-name"
+            name="cardholder-name"
             autoComplete="off"
             data-1p-ignore
             data-lpignore="true"
             value={card.cardholderName}
             onChange={(event) => updateField("cardholderName", event.target.value)}
             placeholder="SOMCHAI JAIDEE"
+            aria-invalid={Boolean(errors.cardholderName)}
             className={inputClassName(errors.cardholderName)}
           />
           {errors.cardholderName && <p className="mt-1 text-xs text-red-500">{errors.cardholderName}</p>}
@@ -168,13 +179,14 @@ export default function DemoCardForm({ isSubmitting, isCancelling, error, onSubm
               id="card-expiry"
               type="text"
               inputMode="numeric"
-              name="demo-card-expiry"
+              name="card-expiry"
               autoComplete="off"
               data-1p-ignore
               data-lpignore="true"
               value={card.expiry}
               onChange={(event) => updateField("expiry", formatExpiry(event.target.value))}
               placeholder="12/30"
+              aria-invalid={Boolean(errors.expiry)}
               className={`${inputClassName(errors.expiry)} font-mono`}
             />
             {errors.expiry && <p className="mt-1 text-xs text-red-500">{errors.expiry}</p>}
@@ -188,46 +200,27 @@ export default function DemoCardForm({ isSubmitting, isCancelling, error, onSubm
               id="card-cvc"
               type="text"
               inputMode="numeric"
-              name="demo-card-cvc"
+              name="card-cvc"
               autoComplete="off"
               data-1p-ignore
               data-lpignore="true"
               value={card.cvc}
               onChange={(event) => updateField("cvc", event.target.value.replace(/\D/g, "").slice(0, 4))}
               placeholder="123"
+              aria-invalid={Boolean(errors.cvc)}
               className={`${inputClassName(errors.cvc)} font-mono`}
             />
             {errors.cvc && <p className="mt-1 text-xs text-red-500">{errors.cvc}</p>}
           </div>
         </div>
 
-        <p className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
-          <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>
-            ระบบชำระเงินจำลองสำหรับงานสาธิต ยอมรับเฉพาะหมายเลขบัตรทดสอบที่ระบุไว้ข้างบน
-            ข้อมูลบัตรไม่ถูกส่งออกไปนอกเบราว์เซอร์และไม่มีการตัดเงินจริง
-            <strong className="mt-1 block">กรุณาอย่ากรอกเลขบัตรจริงของคุณ</strong>
-          </span>
+        <p className="flex items-start gap-2 text-xs leading-relaxed text-gray-600">
+          <Lock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>ข้อมูลบัตรของคุณไม่ถูกส่งออกไปยังเซิร์ฟเวอร์หรือบันทึกไว้ในระบบ</span>
         </p>
-
-        {error && (
-          <p role="alert" className="text-sm text-red-600">
-            {error}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={isBusy}
-          className="w-full rounded-lg bg-[#D0021B] py-3.5 text-sm font-bold tracking-wider text-white transition-colors hover:bg-[#b00217] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isCancelling
-            ? "กำลังยกเลิกออเดอร์เดิม..."
-            : isSubmitting
-              ? "กำลังดำเนินการ..."
-              : "ชำระเงินและยืนยันคำสั่งซื้อ"}
-        </button>
-      </form>
+      </div>
     </div>
   );
-}
+});
+
+export default CreditCardForm;

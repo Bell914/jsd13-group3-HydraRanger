@@ -18,8 +18,8 @@ import {
   ContactSection,
   ShippingSection,
   PaymentSection,
-  PromptPayQrPanel,
-  DemoCardForm,
+  PromptPaySection,
+  CreditCardForm,
   OrderSummary,
   OrderConfirmationScreen,
   SHIPPING_METHODS,
@@ -84,6 +84,8 @@ export default function CheckoutPage() {
   const pendingOrderIdRef = useRef("");
   const cancelRequestRef = useRef(null);
   const orderSubmissionInProgress = useRef(false);
+  // The card fields own their validation, so the shared pay button asks them through this.
+  const cardFormRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -347,11 +349,14 @@ export default function CheckoutPage() {
     return order;
   }
 
-  // Creates the order, then reports the settled demo payment so the server moves the
-  // order to `paid` through the normal status machine. Once the order exists, a retry
-  // must confirm that same order instead of reserving stock a second time.
+  // Creates the order, then reports the settled payment so the server moves the order to
+  // `paid` through the normal status machine. Once the order exists, a retry must confirm
+  // that same order instead of reserving stock a second time.
   async function handlePlaceOrder() {
     if (orderSubmissionInProgress.current) return;
+    // Card details never leave the browser, so the page only creates the order once the
+    // fields report themselves complete.
+    if (cardFormRef.current && !cardFormRef.current.validate()) return;
     orderSubmissionInProgress.current = true;
     setIsSubmitting(true);
     setSubmitError("");
@@ -484,25 +489,22 @@ export default function CheckoutPage() {
                 <PaymentSection
                   paymentData={paymentData}
                   onChangePayment={handlePaymentMethodChange}
+                  isSubmitting={isSubmitting}
                   isCancelling={isCancelling}
+                  error={submitError}
+                  onSubmit={handlePlaceOrder}
                   onBack={() => goToStep(2)}
-                />
-                {paymentData.method === "credit-card" ? (
-                  <DemoCardForm
-                    isSubmitting={isSubmitting}
-                    isCancelling={isCancelling}
-                    error={submitError}
-                    onSubmit={handlePlaceOrder}
-                  />
-                ) : (
-                  <PromptPayQrPanel
-                    totalAmount={totalAmount}
-                    isSubmitting={isSubmitting}
-                    isCancelling={isCancelling}
-                    error={submitError}
-                    onConfirm={handlePlaceOrder}
-                  />
-                )}
+                >
+                  {paymentData.method === "credit-card" ? (
+                    <CreditCardForm
+                      ref={cardFormRef}
+                      isBusy={isSubmitting || isCancelling}
+                      onPay={handlePlaceOrder}
+                    />
+                  ) : (
+                    <PromptPaySection totalAmount={totalAmount} />
+                  )}
+                </PaymentSection>
                 {pendingOrderId && (
                   <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 shadow-xs">
                     <p>
