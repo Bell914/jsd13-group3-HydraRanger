@@ -85,6 +85,36 @@ describe("Checkout order integration", () => {
     expect(useCartStore.getState().cartItems).toEqual([]);
   });
 
+  it("locks payment method and back navigation while order creation is pending", async () => {
+    let resolveCreateOrder;
+    createOrder.mockImplementationOnce(
+      () => new Promise((resolve) => { resolveCreateOrder = resolve; }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+
+    expect(await screen.findByRole("button", { name: "กำลังดำเนินการ..." })).toBeDisabled();
+    const cardOption = screen.getByRole("button", { name: /^Credit \/ Debit Card/ });
+    const backButton = screen.getByRole("button", { name: "ย้อนกลับ" });
+    expect(screen.getByRole("button", { name: /^PromptPay/ })).toBeDisabled();
+    expect(cardOption).toBeDisabled();
+    expect(backButton).toBeDisabled();
+
+    fireEvent.click(cardOption);
+    fireEvent.click(backButton);
+    expect(screen.queryByLabelText("หมายเลขบัตร")).not.toBeInTheDocument();
+    expect(screen.getByText("PromptPay QR ตัวอย่างสำหรับ Demo")).toBeInTheDocument();
+
+    resolveCreateOrder({
+      data: { _id: "order-mongo-id", orderNumber: "OCC-123456", status: "pending" },
+    });
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({ paymentMethod: "promptpay" }));
+  });
+
   it("jumps to the top of the confirmation instead of staying at the payment form", async () => {
     const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);

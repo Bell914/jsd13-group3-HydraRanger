@@ -78,7 +78,7 @@ export default function PaymentSection({
                 type="button"
                 aria-pressed={isSelected}
                 aria-expanded={isSelected}
-                disabled={isCancelling}
+                disabled={isBusy}
                 onClick={() => onChangePayment({ method: option.id })}
                 className={`flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 ${
                   isSelected ? "bg-gray-50" : ""
@@ -130,7 +130,7 @@ export default function PaymentSection({
           <button
             type="button"
             onClick={onBack}
-            disabled={isCancelling}
+            disabled={isBusy}
             className="w-full rounded-lg bg-gray-200 py-3.5 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-50 sm:w-36"
           >
             ย้อนกลับ
