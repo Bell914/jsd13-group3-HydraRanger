@@ -18,8 +18,8 @@ import {
   ContactSection,
   ShippingSection,
   PaymentSection,
-  PromptPayQrPanel,
-  DemoCardForm,
+  PromptPaySection,
+  CreditCardForm,
   OrderSummary,
   OrderConfirmationScreen,
   SHIPPING_METHODS,
@@ -84,6 +84,7 @@ export default function CheckoutPage() {
   const pendingOrderIdRef = useRef("");
   const cancelRequestRef = useRef(null);
   const orderSubmissionInProgress = useRef(false);
+  const cardFormRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -291,8 +292,6 @@ export default function CheckoutPage() {
   }
 
   function handlePaymentMethodChange(nextPayment) {
-    // The old order must release its stock before the channel changes, otherwise the next
-    // attempt would confirm an order that was created for a different channel.
     const cancelRequest = abandonPendingOrder();
     if (cancelRequest) {
       setSubmitError("");
@@ -301,7 +300,6 @@ export default function CheckoutPage() {
       });
       return;
     }
-
     setSubmitError("");
     setPaymentData(nextPayment);
   }
@@ -347,11 +345,12 @@ export default function CheckoutPage() {
     return order;
   }
 
-  // Creates the order, then reports the settled demo payment so the server moves the
-  // order to `paid` through the normal status machine. Once the order exists, a retry
-  // must confirm that same order instead of reserving stock a second time.
+  // Creates the order, then reports the simulated payment so the server moves the order to
+  // `paid` through the normal status machine. Once the order exists, a retry must confirm
+  // that same order instead of reserving stock a second time.
   async function handlePlaceOrder() {
     if (orderSubmissionInProgress.current) return;
+    if (paymentData.method === "credit-card" && !cardFormRef.current?.validate()) return;
     orderSubmissionInProgress.current = true;
     setIsSubmitting(true);
     setSubmitError("");
@@ -484,29 +483,26 @@ export default function CheckoutPage() {
                 <PaymentSection
                   paymentData={paymentData}
                   onChangePayment={handlePaymentMethodChange}
+                  isSubmitting={isSubmitting}
                   isCancelling={isCancelling}
+                  error={submitError}
+                  onSubmit={handlePlaceOrder}
                   onBack={() => goToStep(2)}
-                />
-                {paymentData.method === "credit-card" ? (
-                  <DemoCardForm
-                    isSubmitting={isSubmitting}
-                    isCancelling={isCancelling}
-                    error={submitError}
-                    onSubmit={handlePlaceOrder}
-                  />
-                ) : (
-                  <PromptPayQrPanel
-                    totalAmount={totalAmount}
-                    isSubmitting={isSubmitting}
-                    isCancelling={isCancelling}
-                    error={submitError}
-                    onConfirm={handlePlaceOrder}
-                  />
-                )}
+                >
+                  {paymentData.method === "credit-card" ? (
+                    <CreditCardForm
+                      ref={cardFormRef}
+                      isBusy={isSubmitting || isCancelling}
+                      onPay={handlePlaceOrder}
+                    />
+                  ) : (
+                    <PromptPaySection totalAmount={totalAmount} />
+                  )}
+                </PaymentSection>
                 {pendingOrderId && (
                   <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 shadow-xs">
                     <p>
-                      ออเดอร์ของคุณถูกสร้างไว้แล้ว กดปุ่มชำระเงินอีกครั้งเพื่อยืนยันออเดอร์เดิม
+                      ออเดอร์ของคุณถูกสร้างไว้แล้ว กดปุ่มจำลองการชำระเงินอีกครั้งเพื่อยืนยันออเดอร์เดิม
                       โดยไม่ต้องสร้างออเดอร์ซ้ำ
                     </p>
                     <button

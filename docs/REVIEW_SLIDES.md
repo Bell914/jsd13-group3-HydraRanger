@@ -22,7 +22,7 @@
 | --- | --- |
 | หน้าร้าน | Product, Search/Filter, Lookbook, Article, Mix & Match |
 | สมาชิก | Register/Login, Profile, Address, Size Profile, Favorite Lookbook |
-| การขาย | Cart, Checkout, Demo Payment (PromptPay QR/บัตร), Orders, Coupon/Loyalty |
+| การขาย | Cart, Checkout, Demo Payment (QR / บัตรทดสอบ), Orders, Coupon/Loyalty |
 | Admin | Dashboard, Product/Size Chart, Customer, Order, Lookbook, Article, Coupon |
 
 Review feature ถูกตัดออกจาก scope ปัจจุบัน
@@ -40,7 +40,7 @@ Review feature ถูกตัดออกจาก scope ปัจจุบั�
 ```text
 Customer Client ──┐
                   ├── Express API ── MongoDB / GridFS
-Admin Client ─────┘       ├──────── Demo Payment (QR / บัตร)
+Admin Client ─────┘       ├──────── Demo Payment (QR / บัตรทดสอบ)
                           ├──────── SMTP
                           └──────── Gemini
 ```
@@ -91,10 +91,11 @@ Cart → Create Order → Reserve Stock → Confirm Demo Payment
 ```
 
 - Payment เป็นโหมดเดโม ไม่มีการตัดเงินจริงและไม่ต้องใช้ key ใด ๆ
-- 2 ช่องทาง: QR สำหรับสาธิต (ไม่ใช่ QR ธนาคาร) และฟอร์มบัตรที่รับเฉพาะเลขทดสอบ พร้อมปิด `autocomplete`
+- 2 ช่องทาง: Demo QR ที่ไม่มีข้อมูลรับเงินจริง และบัตรทดสอบ `4242 4242 4242 4242`; ไม่มีการตัดเงินจริง
 - ปิดช่องทางที่ยืนยัน `paid` ได้ด้วย flag `DEMO_PAYMENT_ENABLED` ซึ่งปิดเป็นค่าเริ่มต้นเมื่อ `NODE_ENV=production`
 - Server ยืนยันราคาและ stock จากฐานข้อมูล
 - ป้องกันการยืนยันซ้ำและคืน stock ซ้ำ
+- Admin Orders อ่านสถานะจากฐานข้อมูลร่วม และรีเฟรชรายการอัตโนมัติทุก 15 วินาทีหลัง Demo Payment สำเร็จ
 - Order ที่ไม่ยืนยันภายใน 30 นาทีจะถูกยกเลิกและคืนสต็อกอัตโนมัติ
 - Customer ดูรายละเอียด/ประวัติและยกเลิก Order ตามสถานะได้
 

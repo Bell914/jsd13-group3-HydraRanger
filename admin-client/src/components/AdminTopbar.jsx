@@ -19,6 +19,8 @@ export function AdminTopbar({ title }) {
       }
     }
     loadNotifications();
+    const refreshTimer = window.setInterval(loadNotifications, 15_000);
+    return () => window.clearInterval(refreshTimer);
   }, []);
 
   const notifications = [];
@@ -30,6 +32,9 @@ export function AdminTopbar({ title }) {
   }
   if (summary?.pendingOrderCount > 0) {
     notifications.push({ message: `มีคำสั่งซื้อรอตรวจสอบ ${summary.pendingOrderCount} รายการ`, date: updatedAt, path: '/orders' });
+  }
+  if (summary?.paidOrderCount > 0) {
+    notifications.push({ message: `มีคำสั่งซื้อชำระแล้วรอเตรียมสินค้า ${summary.paidOrderCount} รายการ`, date: updatedAt, path: '/orders' });
   }
 
   return (

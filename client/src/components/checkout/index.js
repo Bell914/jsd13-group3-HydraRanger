@@ -2,6 +2,8 @@ export { default as CheckoutStepper } from "./CheckoutStepper";
 export { default as ContactSection } from "./ContactSection";
 export { default as ShippingSection, SHIPPING_METHODS } from "./ShippingSection";
 export { default as PaymentSection } from "./PaymentSection";
+export { default as PromptPaySection } from "./PromptPaySection";
+export { default as CreditCardForm } from "./CreditCardForm";
 export { default as PromptPayQrPanel } from "./PromptPayQrPanel";
 export { default as DemoCardForm } from "./DemoCardForm";
 export { default as ReviewSection } from "./ReviewSection";

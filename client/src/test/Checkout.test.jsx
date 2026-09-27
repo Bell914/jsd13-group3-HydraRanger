@@ -27,7 +27,7 @@ const fillShippingForm = () => {
 const goToPaymentStep = (methodLabel = "PromptPay") => {
   fillShippingForm();
   fireEvent.click(screen.getAllByRole("button", { name: "ดำเนินการต่อ" })[0]);
-  fireEvent.click(screen.getByRole("button", { name: methodLabel }));
+  fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${methodLabel}`) }));
 };
 
 const fillCardForm = () => {
@@ -73,7 +73,7 @@ describe("Checkout order integration", () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("PromptPay");
 
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
     expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
     expect(createOrder).toHaveBeenCalledTimes(1);
@@ -85,13 +85,43 @@ describe("Checkout order integration", () => {
     expect(useCartStore.getState().cartItems).toEqual([]);
   });
 
+  it("locks payment method and back navigation while order creation is pending", async () => {
+    let resolveCreateOrder;
+    createOrder.mockImplementationOnce(
+      () => new Promise((resolve) => { resolveCreateOrder = resolve; }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+
+    expect(await screen.findByRole("button", { name: "กำลังดำเนินการ..." })).toBeDisabled();
+    const cardOption = screen.getByRole("button", { name: /^Credit \/ Debit Card/ });
+    const backButton = screen.getByRole("button", { name: "ย้อนกลับ" });
+    expect(screen.getByRole("button", { name: /^PromptPay/ })).toBeDisabled();
+    expect(cardOption).toBeDisabled();
+    expect(backButton).toBeDisabled();
+
+    fireEvent.click(cardOption);
+    fireEvent.click(backButton);
+    expect(screen.queryByLabelText("หมายเลขบัตร")).not.toBeInTheDocument();
+    expect(screen.getByText("PromptPay QR ตัวอย่างสำหรับ Demo")).toBeInTheDocument();
+
+    resolveCreateOrder({
+      data: { _id: "order-mongo-id", orderNumber: "OCC-123456", status: "pending" },
+    });
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({ paymentMethod: "promptpay" }));
+  });
+
   it("jumps to the top of the confirmation instead of staying at the payment form", async () => {
     const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("PromptPay");
     scrollTo.mockClear();
 
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
     expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "instant" });
@@ -102,17 +132,17 @@ describe("Checkout order integration", () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("PromptPay");
 
-    const qr = await screen.findByRole("img", { name: /QR สำหรับสาธิต/ });
+    const qr = await screen.findByRole("img", { name: /QR Demo/ });
     expect(qr).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "PayPal" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Credit / Debit Card" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Credit \/ Debit Card/ })).toBeInTheDocument();
   });
 
-  it("charges a demo card and clears the cart", async () => {
+  it("charges a card and clears the cart", async () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("Credit / Debit Card");
     fillCardForm();
-    fireEvent.click(screen.getByRole("button", { name: "ชำระเงินและยืนยันคำสั่งซื้อ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
     expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
     expect(createOrder.mock.calls.at(-1)?.[0]).toMatchObject({ paymentMethod: "credit-card" });
@@ -122,18 +152,18 @@ describe("Checkout order integration", () => {
 
   it("retries the same order when only the payment confirmation fails", async () => {
     confirmPayment.mockRejectedValueOnce(
-      Object.assign(new Error("unavailable"), { status: 503, data: { message: "Demo payment is disabled" } }),
+      Object.assign(new Error("unavailable"), { status: 503, data: { message: "ชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" } }),
     );
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("PromptPay");
 
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
-    expect(await screen.findByText("Demo payment is disabled")).toBeInTheDocument();
+    expect(await screen.findByText("ชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")).toBeInTheDocument();
     expect(createOrder).toHaveBeenCalledTimes(1);
 
     // The order already exists, so retrying must not reserve stock a second time.
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
     expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
     expect(createOrder).toHaveBeenCalledTimes(1);
@@ -150,7 +180,7 @@ describe("Checkout order integration", () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("PromptPay");
 
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
     expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" }));
@@ -160,7 +190,7 @@ describe("Checkout order integration", () => {
     await waitFor(() =>
       expect(screen.queryByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" })).not.toBeInTheDocument(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
     await waitFor(() => expect(createOrder).toHaveBeenCalledTimes(2));
   });
 
@@ -175,7 +205,7 @@ describe("Checkout order integration", () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("PromptPay");
 
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
     expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" }));
@@ -189,7 +219,7 @@ describe("Checkout order integration", () => {
 
     finishCancel({ data: { status: "cancelled" } });
 
-    const payButton = await screen.findByRole("button", { name: "จำลองการโอนเงินสำเร็จ" });
+    const payButton = await screen.findByRole("button", { name: "จำลองการชำระเงิน" });
     await waitFor(() => expect(payButton).toBeEnabled());
     fireEvent.click(payButton);
 
@@ -210,10 +240,10 @@ describe("Checkout order integration", () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("PromptPay");
 
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
     expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Credit / Debit Card" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Credit \/ Debit Card/ }));
 
     // Switching channels cannot skip the cancel, so the card form stays closed.
     expect(await screen.findByRole("button", { name: "กำลังยกเลิกออเดอร์เดิม..." })).toBeDisabled();
@@ -222,7 +252,7 @@ describe("Checkout order integration", () => {
 
     finishCancel({ data: { status: "cancelled" } });
 
-    const payButton = await screen.findByRole("button", { name: "ชำระเงินและยืนยันคำสั่งซื้อ" });
+    const payButton = await screen.findByRole("button", { name: "จำลองการชำระเงิน" });
     await waitFor(() => expect(payButton).toBeEnabled());
     fillCardForm();
     fireEvent.click(payButton);
@@ -240,19 +270,19 @@ describe("Checkout order integration", () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("PromptPay");
 
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
     expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Credit / Debit Card" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Credit \/ Debit Card/ }));
 
     expect(
       await screen.findByText("ยกเลิกออเดอร์ไม่สำเร็จ กรุณากดยกเลิกออเดอร์อีกครั้ง"),
     ).toBeInTheDocument();
     // The old order is still live, so the screen must keep showing the channel it was created with.
-    expect(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "จำลองการชำระเงิน" })).toBeInTheDocument();
     expect(screen.queryByLabelText("หมายเลขบัตร")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
     expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
     expect(createOrder).toHaveBeenCalledTimes(1);
@@ -267,7 +297,7 @@ describe("Checkout order integration", () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("PromptPay");
 
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
     expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "ไปยังขั้นตอน ที่อยู่จัดส่ง" }));
@@ -276,7 +306,7 @@ describe("Checkout order integration", () => {
       await screen.findByText("ยกเลิกออเดอร์ไม่สำเร็จ กรุณากดยกเลิกออเดอร์อีกครั้ง"),
     ).toBeInTheDocument();
     // Walking away would edit a checkout whose live order can no longer be replaced.
-    expect(screen.getByRole("heading", { name: "QR สำหรับสาธิตขั้นตอนชำระเงิน" })).toBeInTheDocument();
+    expect(screen.getByText("PromptPay QR ตัวอย่างสำหรับ Demo")).toBeInTheDocument();
     expect(screen.queryByLabelText("จังหวัด")).not.toBeInTheDocument();
   });
 
@@ -288,7 +318,7 @@ describe("Checkout order integration", () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("PromptPay");
 
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
     expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" }));
@@ -299,7 +329,7 @@ describe("Checkout order integration", () => {
     // The cancel never landed, so the order keeps its stock and can be retried.
     expect(screen.getByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
     expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
     expect(createOrder).toHaveBeenCalledTimes(1);
@@ -316,12 +346,12 @@ describe("Checkout order integration", () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("PromptPay");
 
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
     expect(await screen.findByText("Order is not waiting for payment")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
     expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
     expect(createOrder).toHaveBeenCalledTimes(2);
@@ -334,7 +364,7 @@ describe("Checkout order integration", () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("PromptPay");
 
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
     expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "ไปยังขั้นตอน ที่อยู่จัดส่ง" }));
@@ -342,18 +372,18 @@ describe("Checkout order integration", () => {
     await waitFor(() => expect(cancelOrder).toHaveBeenCalledWith("order-mongo-id"));
   });
 
-  it("rejects a real-looking card number and only accepts the published test number", async () => {
+  it("rejects a real-looking card number and only accepts the published card number", async () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("Credit / Debit Card");
 
-    // 5555 5555 5555 4444 is a valid Luhn number, so only the test-PAN rule can stop it.
+    // 5555 5555 5555 4444 is a valid Luhn number, so only the published number rule can stop it.
     fireEvent.change(screen.getByLabelText("หมายเลขบัตร"), { target: { value: "5555 5555 5555 4444" } });
     fireEvent.change(screen.getByLabelText("ชื่อผู้ถือบัตร"), { target: { value: "TEST USER" } });
     fireEvent.change(screen.getByLabelText("วันหมดอายุ (MM/YY)"), { target: { value: "12/30" } });
     fireEvent.change(screen.getByLabelText("CVC"), { target: { value: "123" } });
-    fireEvent.click(screen.getByRole("button", { name: "ชำระเงินและยืนยันคำสั่งซื้อ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
-    expect(await screen.findByText(/กรุณาใช้เฉพาะหมายเลขบัตรทดสอบ/)).toBeInTheDocument();
+    expect(await screen.findByText("กรุณากรอกหมายเลขบัตร 4242 4242 4242 4242")).toBeInTheDocument();
     expect(createOrder).not.toHaveBeenCalled();
   });
 
@@ -369,15 +399,72 @@ describe("Checkout order integration", () => {
     }
   });
 
-  it("labels the QR as a demo code and never tells the customer to scan with a banking app", async () => {
+  it("clearly labels the QR as a demo with no bank connection", async () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("PromptPay");
 
-    const qr = await screen.findByRole("img", { name: /QR สำหรับสาธิต/ });
-    expect(qr).toBeInTheDocument();
-    expect(screen.queryByText(/เปิดแอปธนาคาร/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/แอป PromptPay/)).not.toBeInTheDocument();
-    expect(screen.getByText(/แอปธนาคารจะไม่สามารถใช้จ่ายเงินผ่าน QR นี้ได้/)).toBeInTheDocument();
+    expect(await screen.findByRole("img", { name: /QR Demo/ })).toBeInTheDocument();
+    expect(screen.getByText("PromptPay QR ตัวอย่างสำหรับ Demo")).toBeInTheDocument();
+    expect(screen.getByText(/ไม่มีการเชื่อมต่อธนาคารหรือเรียกเก็บเงินจริง/)).toBeInTheDocument();
+  });
+
+  it("clearly labels the card form as demo only", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("Credit / Debit Card");
+
+    expect(screen.getByText("กรอกข้อมูลบัตรทดสอบสำหรับ Demo")).toBeInTheDocument();
+    expect(screen.getByText(/ใช้เฉพาะหมายเลขทดสอบ/)).toBeInTheDocument();
+    expect(screen.getByText(/ทั้งสองช่องทางเป็นการจำลอง/)).toBeInTheDocument();
+  });
+
+  it("keeps both channels, the expanded body and one pay button inside a single payment card", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    const promptPayOption = screen.getByRole("button", { name: /^PromptPay/ });
+    const cardOption = screen.getByRole("button", { name: /^Credit \/ Debit Card/ });
+    const qr = await screen.findByRole("img", { name: /QR Demo/ });
+
+    // One card holds the channel list, the expanded channel and the pay button.
+    const paymentCard = promptPayOption.closest("section");
+    expect(paymentCard).toBe(cardOption.closest("section"));
+    expect(qr.closest("section")).toBe(paymentCard);
+    expect(screen.getByRole("heading", { name: "ช่องทางการชำระเงิน" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "จำลองการชำระเงิน" })).toHaveLength(1);
+    expect(promptPayOption).toHaveAttribute("aria-expanded", "true");
+    expect(cardOption).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(cardOption);
+
+    // The card form opens inside the same card, and the QR is swapped out.
+    const cardForm = screen.getByLabelText("หมายเลขบัตร");
+    expect(cardForm.closest("section")).toBe(paymentCard);
+    expect(screen.queryByRole("img", { name: /QR Demo/ })).not.toBeInTheDocument();
+    expect(cardOption).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getAllByRole("button", { name: "จำลองการชำระเงิน" })).toHaveLength(1);
+  });
+
+  it("pays with the card entered in the expanded body of the same card", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("Credit / Debit Card");
+
+    fillCardForm();
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder.mock.calls.at(-1)?.[0]).toMatchObject({ paymentMethod: "credit-card" });
+    expect(useCartStore.getState().cartItems).toEqual([]);
+  });
+
+  it("pays when Enter is pressed in a card field", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("Credit / Debit Card");
+
+    fillCardForm();
+    fireEvent.keyDown(screen.getByLabelText("CVC"), { key: "Enter" });
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder.mock.calls.at(-1)?.[0]).toMatchObject({ paymentMethod: "credit-card" });
   });
 
   it("rejects a card number that fails the Luhn check without calling the API", async () => {
@@ -388,7 +475,7 @@ describe("Checkout order integration", () => {
     fireEvent.change(screen.getByLabelText("ชื่อผู้ถือบัตร"), { target: { value: "TEST USER" } });
     fireEvent.change(screen.getByLabelText("วันหมดอายุ (MM/YY)"), { target: { value: "12/30" } });
     fireEvent.change(screen.getByLabelText("CVC"), { target: { value: "123" } });
-    fireEvent.click(screen.getByRole("button", { name: "ชำระเงินและยืนยันคำสั่งซื้อ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
     expect(await screen.findByText("หมายเลขบัตรไม่ถูกต้อง")).toBeInTheDocument();
     expect(createOrder).not.toHaveBeenCalled();
@@ -404,7 +491,7 @@ describe("Checkout order integration", () => {
     fireEvent.change(screen.getByLabelText("ชื่อผู้ถือบัตร"), { target: { value: "TEST USER" } });
     fireEvent.change(screen.getByLabelText("วันหมดอายุ (MM/YY)"), { target: { value: "01/20" } });
     fireEvent.change(screen.getByLabelText("CVC"), { target: { value: "123" } });
-    fireEvent.click(screen.getByRole("button", { name: "ชำระเงินและยืนยันคำสั่งซื้อ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
     expect(await screen.findByText("บัตรหมดอายุแล้ว")).toBeInTheDocument();
     expect(createOrder).not.toHaveBeenCalled();
@@ -417,7 +504,7 @@ describe("Checkout order integration", () => {
     render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
     goToPaymentStep("PromptPay");
 
-    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
     expect(await screen.findByText("สินค้ามีไม่เพียงพอในสต็อก")).toBeInTheDocument();
     expect(confirmPayment).not.toHaveBeenCalled();

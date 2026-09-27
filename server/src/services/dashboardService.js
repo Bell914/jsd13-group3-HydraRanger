@@ -38,6 +38,7 @@ export async function getDashboardSummary() {
   let activeProductCount = 0;
   let totalRevenue = 0;
   let pendingOrderCount = 0;
+  let paidOrderCount = 0;
 
   const monthlyOrders = getLastSixMonths();
 
@@ -46,6 +47,7 @@ export async function getDashboardSummary() {
       totalRevenue += order.totalAmount || 0;
     }
     if (order.status === 'pending') pendingOrderCount += 1;
+    if (order.status === 'paid') paidOrderCount += 1;
 
     const createdDate = new Date(order.createdAt);
     const monthKey = `${createdDate.getFullYear()}-${createdDate.getMonth()}`;
@@ -80,6 +82,7 @@ export async function getDashboardSummary() {
     customerCount,
     totalOrders: orders.length,
     pendingOrderCount,
+    paidOrderCount,
     totalRevenue,
     stockByCategory,
     monthlyProducts: monthlyProducts.map(({ label, count }) => ({ label, count })),

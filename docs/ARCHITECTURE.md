@@ -64,14 +64,14 @@ Request
 
 ## Checkout และ Payment Flow
 
-ระบบชำระเงินเป็นโหมดเดโม จึงไม่มีการเรียก payment gateway ภายนอก
+ระบบชำระเงินเป็นโหมดเดโม จึงไม่มีการเรียก payment gateway ภายนอก คำสั่งซื้อและผลจำลองการชำระจะถูกบันทึกผ่าน API ลงฐานข้อมูลร่วม แอดมินไม่ได้รับคำสั่งชำระเงินโดยตรง แต่หน้า Orders อ่านสถานะจากฐานข้อมูลและรีเฟรชอัตโนมัติทุก 15 วินาที ส่วน notification แสดงจำนวนคำสั่งซื้อที่ชำระแล้วและรอเตรียมสินค้า
 
 ```mermaid
 sequenceDiagram
     participant C as Customer Client
     participant A as API
     participant D as MongoDB
-    C->>C: แสดง QR (promptpay) หรือตรวจบัตร (credit-card)
+    C->>C: แสดง Demo QR หรือรับเฉพาะหมายเลขบัตรทดสอบ
     C->>A: POST /orders
     A->>D: ตรวจ Product/Variant/Stock และ reserve stock
     A-->>C: pending Order

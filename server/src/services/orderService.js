@@ -526,9 +526,9 @@ export async function updateOrderStatus(orderId, status) {
   const order = await Order.findById(orderId).populate('user', 'username email');
   return order;
 }
-// Demo payment confirmation: the client reports a settled PromptPay QR scan or a
-// validated demo card, then the order moves through the normal status machine so
-// loyalty, coupon and stock handling stay in one place.
+// Demo payment confirmation: the client simulates a successful PromptPay checkout,
+// then the order moves through the normal status machine so loyalty, coupon and stock
+// handling stay in one place. No bank or card payment is verified here.
 export async function confirmOrderPayment(userId, orderId) {
   if (!isDemoPaymentEnabled()) {
     throw new Error('Demo payment is disabled');
