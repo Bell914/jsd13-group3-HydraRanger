@@ -5,7 +5,7 @@ import { useAddressStore } from "../store/addressStore.js";
 import { authService } from "../services/authService";
 import { useAuth } from "../context/Auth/useAuth.jsx";
 import { getAddresses, addAddress } from "../services/userService.js";
-import { createOrder, confirmPayment } from "../services/orderService.js";
+import { createOrder, confirmPayment, cancelOrder } from "../services/orderService.js";
 import { normalizeProvince } from "../constants/provinces.js";
 import {
   RANK_DISCOUNT_PERCENT,
@@ -75,6 +75,9 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
   const [submitError, setSubmitError] = useState("");
+  // Set once the order exists on the server so a failed confirmation can be retried
+  // against the same order instead of reserving stock a second time.
+  const [pendingOrderId, setPendingOrderId] = useState("");
   const orderSubmissionInProgress = useRef(false);
 
   useEffect(() => {
@@ -225,6 +228,8 @@ export default function CheckoutPage() {
   }
 
   function goToStep(step) {
+    // Walking away from the payment step abandons any order created but not confirmed.
+    if (step < 3) abandonPendingOrder();
     setCurrentStep(step);
   }
 
@@ -269,8 +274,30 @@ export default function CheckoutPage() {
     return order;
   }
 
-  // Creates the order, then reports the settled demo payment so the server moves
-  // the order to `paid` through the normal status machine.
+  // Releases the order we created but could not confirm so its stock and coupon go
+  // back before the customer changes anything about the order.
+  async function abandonPendingOrder() {
+    const orderId = pendingOrderId;
+    setPendingOrderId("");
+    if (!orderId) return;
+
+    try {
+      await cancelOrder(orderId);
+    } catch (error) {
+      // The 30 minute reaper is the fallback when the cancel call cannot reach the API.
+      console.warn("Could not cancel the pending order:", error.message);
+    }
+  }
+
+  function handlePaymentMethodChange(nextPayment) {
+    setSubmitError("");
+    abandonPendingOrder();
+    setPaymentData(nextPayment);
+  }
+
+  // Creates the order, then reports the settled demo payment so the server moves the
+  // order to `paid` through the normal status machine. Once the order exists, a retry
+  // must confirm that same order instead of reserving stock a second time.
   async function handlePlaceOrder() {
     if (orderSubmissionInProgress.current) return;
     orderSubmissionInProgress.current = true;
@@ -278,22 +305,36 @@ export default function CheckoutPage() {
     setSubmitError("");
 
     try {
-      const stockError = getStockError();
-      if (stockError) throw new Error(stockError);
-
       const payload = buildOrderPayload();
-      const createResponse = await createOrder(payload);
-      const createdOrder = createResponse?.data || createResponse;
-      if (!createdOrder?._id) {
-        throw new Error("สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      let orderId = pendingOrderId;
+      let order = null;
+
+      if (!orderId) {
+        const stockError = getStockError();
+        if (stockError) throw new Error(stockError);
+
+        const createResponse = await createOrder(payload);
+        order = createResponse?.data || createResponse;
+        orderId = order?._id;
+        if (!orderId) {
+          throw new Error("สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+        }
+        setPendingOrderId(orderId);
       }
 
-      const confirmResponse = await confirmPayment(createdOrder._id);
-      const paidOrder = confirmResponse?.data || confirmResponse || createdOrder;
+      const confirmResponse = await confirmPayment(orderId);
+      const paidOrder = confirmResponse?.data || confirmResponse || order;
+      setPendingOrderId("");
 
       await finishOrder(payload, paidOrder);
     } catch (error) {
       console.error("Order payment failed:", error);
+
+      // 400/404 mean this order can never be confirmed, so drop it and start fresh.
+      if ([400, 404].includes(error.status)) {
+        setPendingOrderId("");
+      }
+
       setCurrentStep(3);
       setSubmitError(
         error.data?.message ||
@@ -386,10 +427,7 @@ export default function CheckoutPage() {
                 <ShippingSection shippingData={shippingData} isCollapsed onEdit={() => goToStep(2)} />
                 <PaymentSection
                   paymentData={paymentData}
-                  onChangePayment={(nextPayment) => {
-                    setSubmitError("");
-                    setPaymentData(nextPayment);
-                  }}
+                  onChangePayment={handlePaymentMethodChange}
                   onBack={() => goToStep(2)}
                 />
                 {paymentData.method === "credit-card" ? (
@@ -405,6 +443,22 @@ export default function CheckoutPage() {
                     error={submitError}
                     onConfirm={handlePlaceOrder}
                   />
+                )}
+                {pendingOrderId && (
+                  <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 shadow-xs">
+                    <p>
+                      ออเดอร์ของคุณถูกสร้างไว้แล้ว กดปุ่มชำระเงินอีกครั้งเพื่อยืนยันออเดอร์เดิม
+                      โดยไม่ต้องสร้างออเดอร์ซ้ำ
+                    </p>
+                    <button
+                      type="button"
+                      onClick={abandonPendingOrder}
+                      disabled={isSubmitting}
+                      className="mt-3 w-full rounded-lg border border-gray-300 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-6"
+                    >
+                      ยกเลิกออเดอร์นี้และเริ่มใหม่
+                    </button>
+                  </div>
                 )}
               </>
             )}

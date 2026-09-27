@@ -4,12 +4,13 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import CheckoutPage from "../pages/CheckoutPage";
 import { useCartStore } from "../store/cartStore";
-import { createOrder, confirmPayment } from "../services/orderService.js";
+import { createOrder, confirmPayment, cancelOrder } from "../services/orderService.js";
 import { getAddresses } from "../services/userService.js";
 
 vi.mock("../services/orderService.js", () => ({
   createOrder: vi.fn(),
   confirmPayment: vi.fn(),
+  cancelOrder: vi.fn(),
 }));
 vi.mock("../services/userService.js", () => ({ getAddresses: vi.fn().mockResolvedValue({ data: [] }) }));
 
@@ -62,6 +63,7 @@ describe("Checkout order integration", () => {
         status: "paid",
       },
     });
+    cancelOrder.mockResolvedValue({ data: { status: "cancelled" } });
     useCartStore.setState({
       cartItems: [{ productId: "p1", variantId: "v1", name: "Oversized T-Shirt", price: 590, quantity: 2, stockQuantity: 5 }],
     });
@@ -116,6 +118,81 @@ describe("Checkout order integration", () => {
     expect(createOrder.mock.calls.at(-1)?.[0]).toMatchObject({ paymentMethod: "credit-card" });
     expect(confirmPayment).toHaveBeenCalledWith("order-mongo-id");
     expect(useCartStore.getState().cartItems).toEqual([]);
+  });
+
+  it("retries the same order when only the payment confirmation fails", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("unavailable"), { status: 503, data: { message: "Demo payment is disabled" } }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+
+    expect(await screen.findByText("Demo payment is disabled")).toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledTimes(1);
+
+    // The order already exists, so retrying must not reserve stock a second time.
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledTimes(1);
+    expect(confirmPayment.mock.calls.map(([orderId]) => orderId)).toEqual([
+      "order-mongo-id",
+      "order-mongo-id",
+    ]);
+  });
+
+  it("offers to cancel the pending order so its stock can be released", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("network down"), { status: 503, data: { message: "เชื่อมต่อไม่ได้" } }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+
+    expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" }));
+
+    await waitFor(() => expect(cancelOrder).toHaveBeenCalledWith("order-mongo-id"));
+    // After abandoning, the next attempt has to build a fresh order.
+    expect(screen.queryByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    await waitFor(() => expect(createOrder).toHaveBeenCalledTimes(2));
+  });
+
+  it("creates a new order when the pending one can no longer be confirmed", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("gone"), { status: 400, data: { message: "Order is not waiting for payment" } }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+
+    expect(await screen.findByText("Order is not waiting for payment")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledTimes(2);
+  });
+
+  it("releases the pending order when the customer steps back to the address", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("network down"), { status: 503, data: { message: "เชื่อมต่อไม่ได้" } }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการโอนเงินสำเร็จ" }));
+    expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "ไปยังขั้นตอน ที่อยู่จัดส่ง" }));
+
+    await waitFor(() => expect(cancelOrder).toHaveBeenCalledWith("order-mongo-id"));
   });
 
   it("rejects a real-looking card number and only accepts the published test number", async () => {
