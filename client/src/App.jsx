@@ -1,5 +1,5 @@
 import React from "react";
-import { Footer, Navbar } from "./components/index.js";
+import { ApiSwitcher, Footer, Navbar } from "./components/index.js";
 import ScrollToTop from "./components/ScrollToTop.jsx";
 import { AppRoutes } from "./routes/index.js";
 
@@ -10,6 +10,7 @@ function App() {
       <Navbar />
       <AppRoutes />
       <Footer />
+      <ApiSwitcher />
     </div>
   );
 }

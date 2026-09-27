@@ -166,7 +166,7 @@ export function AdminProductsPage() {
 
         {successMessage && (
           <p
-            className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-bold text-emerald-700"
+            className="mb-5 rounded-lg border border-[#EFC3BC] bg-[#F1EEE8] px-3.5 py-2.5 text-xs font-bold text-[#263639]"
             role="status"
           >
             {successMessage}
