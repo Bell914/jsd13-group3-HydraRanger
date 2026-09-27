@@ -126,29 +126,29 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#263639]/50 backdrop-blur-xs overflow-y-auto"
       role="presentation"
       onClick={(e) => {
         if (e.target === e.currentTarget && !saving) onClose();
       }}
     >
       <div
-        className="w-full max-w-xl rounded-2xl bg-white shadow-2xl border border-stone-200 overflow-hidden my-auto"
+        className="w-full max-w-xl rounded-2xl bg-[#FBF8F3] shadow-2xl border border-[#EFC3BC] overflow-hidden my-auto"
         role="dialog"
         aria-modal="true"
         aria-labelledby="coupon-modal-title"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-stone-200 bg-stone-50/70 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-[#EFC3BC] bg-[#F1EEE8]/70 px-6 py-4">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-pink-100 text-[#e2156d]">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EFC3BC] text-[#263639]">
               <Ticket className="h-5 w-5" />
             </span>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#526164]">
                 COUPON MANAGEMENT
               </p>
-              <h2 id="coupon-modal-title" className="text-base font-bold text-stone-900 leading-tight">
+              <h2 id="coupon-modal-title" className="text-base font-bold text-[#263639] leading-tight">
                 {isEditing ? 'แก้ไขคูปองส่วนลด' : 'เพิ่มคูปองส่วนลดใหม่'}
               </h2>
             </div>
@@ -157,7 +157,7 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-200 hover:text-stone-700 transition"
+            className="rounded-lg p-1.5 text-[#526164] hover:bg-[#EFC3BC] hover:text-[#263639] transition"
             aria-label="ปิด"
           >
             <X size={18} />
@@ -167,41 +167,41 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
         {/* Modal Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Live Preview Ticket Card */}
-          <div className="rounded-xl border border-dashed border-stone-300 bg-gradient-to-r from-stone-50 via-white to-pink-50/20 p-4">
+          <div className="rounded-xl border border-dashed border-[#987B76] bg-gradient-to-r from-[#F1EEE8] via-[#FBF8F3] to-[#EFC3BC]/20 p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <span className="text-[11px] font-bold text-[#e2156d] block truncate">
+                <span className="text-[11px] font-bold text-[#263639] block truncate">
                   {form.eventName || 'PROMOTION VOUCHER'}
                 </span>
-                <span className="font-mono text-xl font-extrabold tracking-wider text-[#0046a7] block truncate">
+                <span className="font-mono text-xl font-extrabold tracking-wider text-[#263639] block truncate">
                   {form.code || 'COUPON_CODE'}
                 </span>
               </div>
               <div className="text-right shrink-0">
-                <span className="inline-block rounded-full bg-[#e2156d] px-3 py-1 text-xs font-bold text-white shadow-xs">
+                <span className="inline-block rounded-full bg-[#263639] px-3 py-1 text-xs font-bold text-[#FBF8F3] shadow-xs">
                   ลด {form.discountValue || 0}%
                 </span>
-                <p className="text-[11px] text-stone-500 mt-1">
+                <p className="text-[11px] text-[#526164] mt-1">
                   {form.minPurchase > 0 ? `ขั้นต่ำ ฿${Number(form.minPurchase).toLocaleString()}` : 'ไม่มีขั้นต่ำ'}
                 </p>
               </div>
             </div>
 
-            <div className="mt-3 flex items-center justify-between border-t border-stone-200/80 pt-2 text-[11px] text-stone-500">
+            <div className="mt-3 flex items-center justify-between border-t border-[#EFC3BC]/80 pt-2 text-[11px] text-[#526164]">
               <span className="flex items-center gap-1.5 truncate">
-                <Clock size={13} className="text-stone-400 shrink-0" />
+                <Clock size={13} className="text-[#526164] shrink-0" />
                 {form.expiresAt ? (
                   <span>หมดอายุ <strong>{formatPreviewDate(form.expiresAt)}</strong></span>
                 ) : (
-                  <span className="italic text-stone-400">ยังไม่กำหนดวันหมดอายุ</span>
+                  <span className="italic text-[#526164]">ยังไม่กำหนดวันหมดอายุ</span>
                 )}
               </span>
               <span className={`inline-flex items-center gap-1 font-semibold text-[10px] px-2 py-0.5 rounded-full ${
                 form.isActive && !isExpired
-                  ? 'bg-emerald-50 text-emerald-700'
-                  : 'bg-stone-100 text-stone-500'
+                  ? 'bg-[#EFC3BC] text-[#263639]'
+                  : 'bg-[#F1EEE8] text-[#526164]'
               }`}>
-                <span className={`h-1.5 w-1.5 rounded-full ${form.isActive && !isExpired ? 'bg-emerald-500' : 'bg-stone-400'}`} />
+                <span className={`h-1.5 w-1.5 rounded-full ${form.isActive && !isExpired ? 'bg-[#263639]' : 'bg-[#987B76]'}`} />
                 {isExpired ? 'หมดอายุ' : form.isActive ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
               </span>
             </div>
@@ -212,13 +212,13 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
             {/* Field: Coupon Code */}
             <div className="space-y-1">
               <div className="flex items-center justify-between min-h-[22px]">
-                <label className="text-xs font-bold text-stone-700">
+                <label className="text-xs font-bold text-[#263639]">
                   รหัสคูปอง
                 </label>
                 <button
                   type="button"
                   onClick={handleRandomCode}
-                  className="text-xs font-semibold text-[#e2156d] hover:text-[#b81159] flex items-center gap-1 transition cursor-pointer"
+                  className="text-xs font-semibold text-[#263639] hover:text-[#C46731] flex items-center gap-1 transition cursor-pointer"
                   title="สุ่มรหัสอัตโนมัติ"
                 >
                   <Dices size={13} />
@@ -231,14 +231,14 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
                 onChange={handleCodeChange}
                 maxLength={32}
                 required
-                className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-bold tracking-wide uppercase text-stone-900 focus:border-[#e2156d] focus:ring-1 focus:ring-[#e2156d] outline-none"
+                className="w-full rounded-lg border border-[#987B76] bg-[#FBF8F3] px-3 py-2 text-sm font-bold tracking-wide uppercase text-[#263639] focus:border-[#C46731] focus:ring-1 focus:ring-[#C46731] outline-none"
               />
             </div>
 
             {/* Field: Campaign Name */}
             <div className="space-y-1">
               <div className="flex items-center min-h-[22px]">
-                <label className="text-xs font-bold text-stone-700">
+                <label className="text-xs font-bold text-[#263639]">
                   ชื่อแคมเปญ / อีเวนต์
                 </label>
               </div>
@@ -247,14 +247,14 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
                 value={form.eventName}
                 onChange={(e) => setForm({ ...form, eventName: e.target.value })}
                 maxLength={100}
-                className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 focus:border-[#e2156d] focus:ring-1 focus:ring-[#e2156d] outline-none"
+                className="w-full rounded-lg border border-[#987B76] bg-[#FBF8F3] px-3 py-2 text-sm text-[#263639] focus:border-[#C46731] focus:ring-1 focus:ring-[#C46731] outline-none"
               />
             </div>
 
             {/* Field: Discount */}
             <div className="space-y-1">
               <div className="flex items-center min-h-[22px]">
-                <label className="text-xs font-bold text-stone-700">
+                <label className="text-xs font-bold text-[#263639]">
                   ส่วนลด
                 </label>
               </div>
@@ -269,9 +269,9 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
                     setForm({ ...form, discountValue: Math.min(100, Math.max(1, Number(e.target.value) || 0)) })
                   }
                   required
-                  className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 pr-7 text-sm font-bold text-stone-900 focus:border-[#e2156d] focus:ring-1 focus:ring-[#e2156d] outline-none"
+                  className="w-full rounded-lg border border-[#987B76] bg-[#FBF8F3] px-3 py-2 pr-7 text-sm font-bold text-[#263639] focus:border-[#C46731] focus:ring-1 focus:ring-[#C46731] outline-none"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#526164]">
                   %
                 </span>
               </div>
@@ -284,8 +284,8 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
                     onClick={() => setForm((prev) => ({ ...prev, discountValue: val }))}
                     className={`flex-1 py-1 rounded text-[11px] font-bold border transition ${
                       form.discountValue === val
-                        ? 'bg-[#e2156d] text-white border-[#e2156d]'
-                        : 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100'
+                        ? 'bg-[#263639] text-[#FBF8F3] border-[#C46731]'
+                        : 'bg-[#F1EEE8] border-[#EFC3BC] text-[#526164] hover:bg-[#F1EEE8]'
                     }`}
                   >
                     {val}%
@@ -297,7 +297,7 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
             {/* Field: Min Purchase */}
             <div className="space-y-1">
               <div className="flex items-center min-h-[22px]">
-                <label className="text-xs font-bold text-stone-700">
+                <label className="text-xs font-bold text-[#263639]">
                   ยอดซื้อขั้นต่ำ
                 </label>
               </div>
@@ -311,9 +311,9 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
                     setForm({ ...form, minPurchase: Math.max(0, Number(e.target.value) || 0) })
                   }
                   required
-                  className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 pr-8 text-sm font-bold text-stone-900 focus:border-[#e2156d] focus:ring-1 focus:ring-[#e2156d] outline-none"
+                  className="w-full rounded-lg border border-[#987B76] bg-[#FBF8F3] px-3 py-2 pr-8 text-sm font-bold text-[#263639] focus:border-[#C46731] focus:ring-1 focus:ring-[#C46731] outline-none"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#526164]">
                   ฿
                 </span>
               </div>
@@ -332,8 +332,8 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
                     onClick={() => setForm((prev) => ({ ...prev, minPurchase: item.val }))}
                     className={`flex-1 py-1 rounded text-[11px] font-bold border transition ${
                       form.minPurchase === item.val
-                        ? 'bg-[#0046a7] text-white border-[#0046a7]'
-                        : 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100'
+                        ? 'bg-[#263639] text-[#FBF8F3] border-[#263639]'
+                        : 'bg-[#F1EEE8] border-[#EFC3BC] text-[#526164] hover:bg-[#F1EEE8]'
                     }`}
                   >
                     {item.label}
@@ -345,11 +345,11 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
             {/* Field: Expiration Date */}
             <div className="sm:col-span-2 space-y-1">
               <div className="flex items-center justify-between min-h-[22px]">
-                <label className="text-xs font-bold text-stone-700">
+                <label className="text-xs font-bold text-[#263639]">
                   วันหมดอายุ
                 </label>
                 {isExpired && (
-                  <span className="text-[11px] font-bold text-red-600 flex items-center gap-1">
+                  <span className="text-[11px] font-bold text-[#263639] flex items-center gap-1">
                     <AlertCircle size={12} />
                     <span>วันหมดอายุอยู่ในอดีต</span>
                   </span>
@@ -364,10 +364,10 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
                   setValidationError('');
                 }}
                 required
-                className={`w-full rounded-lg border px-3 py-2 text-sm text-stone-900 outline-none ${
+                className={`w-full rounded-lg border px-3 py-2 text-sm text-[#263639] outline-none ${
                   isExpired
-                    ? 'border-red-400 bg-red-50/30'
-                    : 'border-stone-300 bg-white focus:border-[#e2156d] focus:ring-1 focus:ring-[#e2156d]'
+                    ? 'border-[#C46731] bg-[#EFC3BC]/30'
+                    : 'border-[#987B76] bg-[#FBF8F3] focus:border-[#C46731] focus:ring-1 focus:ring-[#C46731]'
                 }`}
               />
               {/* Expiry Presets */}
@@ -383,7 +383,7 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
                     key={item.label}
                     type="button"
                     onClick={item.fn}
-                    className="px-2.5 py-1 rounded text-[11px] font-medium border border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-200 transition"
+                    className="px-2.5 py-1 rounded text-[11px] font-medium border border-[#EFC3BC] bg-[#F1EEE8] text-[#526164] hover:bg-[#EFC3BC] transition"
                   >
                     {item.label}
                   </button>
@@ -392,10 +392,10 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
             </div>
 
             {/* Field: Toggle Active */}
-            <div className="sm:col-span-2 flex items-center justify-between p-3 rounded-xl border border-stone-200 bg-stone-50">
+            <div className="sm:col-span-2 flex items-center justify-between p-3 rounded-xl border border-[#EFC3BC] bg-[#F1EEE8]">
               <div>
-                <p className="text-xs font-bold text-stone-800 m-0">เปิดให้ลูกค้าใช้งานคูปองทันที</p>
-                <p className="text-[11px] text-stone-500 m-0">ลูกค้าสามารถนำโค้ดไปกรอกเพื่อรับส่วนลดได้ทันที</p>
+                <p className="text-xs font-bold text-[#263639] m-0">เปิดให้ลูกค้าใช้งานคูปองทันที</p>
+                <p className="text-[11px] text-[#526164] m-0">ลูกค้าสามารถนำโค้ดไปกรอกเพื่อรับส่วนลดได้ทันที</p>
               </div>
               <button
                 type="button"
@@ -403,11 +403,11 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
                 aria-checked={form.isActive}
                 onClick={() => setForm((prev) => ({ ...prev, isActive: !prev.isActive }))}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  form.isActive ? 'bg-[#e2156d]' : 'bg-stone-300'
+                  form.isActive ? 'bg-[#C46731]' : 'bg-[#987B76]'
                 }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  className={`inline-block h-4 w-4 transform rounded-full bg-[#FBF8F3] transition-transform ${
                     form.isActive ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
@@ -417,26 +417,26 @@ export function CouponFormModal({ coupon, saving, onClose, onSave }) {
 
           {/* Error Banner */}
           {validationError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs font-semibold text-red-700 flex items-center gap-2">
+            <div className="rounded-lg border border-[#C46731] bg-[#F1EEE8] p-2.5 text-xs font-semibold text-[#263639] flex items-center gap-2">
               <AlertCircle size={14} className="shrink-0" />
               <span>{validationError}</span>
             </div>
           )}
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-stone-200">
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#EFC3BC]">
             <button
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="px-4 py-2 rounded-lg border border-stone-300 bg-white hover:bg-stone-100 text-stone-700 text-xs font-bold transition"
+              className="px-4 py-2 rounded-lg border border-[#987B76] bg-[#FBF8F3] hover:bg-[#F1EEE8] text-[#263639] text-xs font-bold transition"
             >
               ยกเลิก
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2 rounded-lg bg-[#e2156d] hover:bg-[#b81159] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition disabled:opacity-60"
+              className="px-5 py-2 rounded-lg border border-[#C46731] bg-[#263639] hover:bg-[#526164] text-[#FBF8F3] text-sm font-bold shadow-xs flex items-center gap-1.5 transition disabled:opacity-60"
             >
               {saving && <Loader2 size={13} className="animate-spin" />}
               <span>{isEditing ? 'อัปเดตคูปอง' : 'บันทึกคูปอง'}</span>

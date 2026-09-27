@@ -13,6 +13,7 @@ const ImageDropzone = ({
   onFileChange,
   persistUpload = true,
   className = "",
+  buttonClassName = "h-56",
   localOnly = false,
 }) => {
   const inputRef = useRef(null);
@@ -124,7 +125,7 @@ const ImageDropzone = ({
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
-        className={`relative flex h-56 w-full items-center justify-center overflow-hidden rounded-xl border-2 bg-secondary/80 text-white transition hover:bg-secondary lg:bg-gray-600 ${borderClass}`}
+        className={`relative flex ${buttonClassName} w-full items-center justify-center overflow-hidden rounded-xl border-2 bg-secondary/80 text-white transition hover:bg-secondary lg:bg-gray-600 ${borderClass}`}
       >
         {fileUrl ? (
           <>

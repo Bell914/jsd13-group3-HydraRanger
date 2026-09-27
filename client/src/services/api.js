@@ -1,5 +1,6 @@
 const OVERRIDE_KEY = "occasion_api_url";
-const REMOTE_API_URL = "https://jsd13-group3-hydraranger.onrender.com/api";
+export const LOCAL_API_URL = "http://localhost:5002/api";
+export const REMOTE_API_URL = "https://jsd13-group3-hydraranger.onrender.com/api";
 
 const ENV_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "";
@@ -59,7 +60,7 @@ export const resolveApiUrl = () => {
 
   // 4. If on localhost and no envUrl specified, use local server
   if (isLocalhost) {
-    return "http://localhost:5002/api";
+    return LOCAL_API_URL;
   }
 
   // 5. Fallback: the deployed (real) backend on Render

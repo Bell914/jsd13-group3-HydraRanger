@@ -19,3 +19,4 @@ export { ErrorBoundary } from "./ErrorBoundary.jsx";
 export { default as LookbookCard } from "./lookbook/LookbookCard.jsx";
 export { default as MixAndMatchSection } from "./MixAndMatchSection.jsx";
 export { default as ImageDropzone } from "./ImageDropzone.jsx";
+export { default as ApiSwitcher } from "./ApiSwitcher.jsx";
