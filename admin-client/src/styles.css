@@ -36,6 +36,8 @@ h1 { margin: 0; }
 .login-card form input { width: 100%; padding: 13px 14px; border: 1px solid #987B76; border-radius: 10px; outline: none; }
 .login-card form input:focus { border-color: #C46731; box-shadow: 0 0 0 3px #EFC3BC; }
 .login-card form button { margin-top: 14px; padding: 14px; border: 0; border-radius: 10px; background: #C46731; color: #FBF8F3; font-weight: 800; }
+.login-card .password-field { position: relative; }
+.login-card .password-field input { padding-right: 96px; }
 .login-card form .password-toggle { position: absolute; top: 50%; right: 8px; display: inline-flex; align-items: center; gap: 5px; min-height: 34px; margin: 0; padding: 6px 8px; transform: translateY(-50%); border: 0; border-radius: 7px; background: transparent; color: #526164; font-size: 12px; font-weight: 700; }
 .login-card form .password-toggle:hover { background: #EFC3BC; color: #263639; }
 .login-card form .password-toggle:focus-visible { outline: 2px solid #C46731; outline-offset: 1px; }
