@@ -100,18 +100,21 @@ npm run dev --prefix admin-client
 
 ```bash
 npm test --prefix client
+npm run test:security --prefix server
 npm run build --prefix client
 npm run build --prefix admin-client
 npm run test:conn --prefix server
+npm run test:e2e
 ```
 
-คำสั่งเหล่านี้เป็นคำสั่งที่มีใน `package.json` ไม่ได้หมายความว่าผลทดสอบผ่านแล้ว และ `test:conn` ต้องตั้ง environment กับเปิดฐานข้อมูลให้พร้อมก่อน
+`test:e2e` ต้องมี MongoDB และข้อมูลจาก `npm run seed --prefix server` พร้อมใช้งาน โดยจะตรวจ My Coupons, Size Profile, Product CRUD, error cases และ Admin Order workflow ผ่าน browser/API จริง รายละเอียด quality gates, monitoring และ load smoke test อยู่ที่ [Portfolio Quality and Verification](docs/PORTFOLIO_QUALITY.md)
 
 ## เอกสารและการทำงานร่วมกัน
 
 - [API Specification](docs/API_SPEC.md)
 - [Database Schema](docs/DATABASE_SCHEMA.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Portfolio Quality and Verification](docs/PORTFOLIO_QUALITY.md)
 - [Contribution Guidelines และผู้รับผิดชอบ](CONTRIBUTING.md)
 
 อ่านแนวทางทีมก่อนเริ่มงาน สร้าง branch สำหรับงาน เปิด PR เข้า `develop` และเชื่อมการ์ด Trello พร้อมวิธีทดสอบและข้อจำกัด เอกสาร API และฐานข้อมูลควรตรวจเทียบกับโค้ดปัจจุบันก่อนใช้อ้างอิง

@@ -37,7 +37,7 @@ export const validateLoginInput = ({ email, password }) => {
   };
 };
 
-export const validateUpdateProfileInput = ({ username, email }) => {
+export const validateUpdateProfileInput = ({ username, email, birthMonth }) => {
   const errors = [];
 
   if (
@@ -53,6 +53,14 @@ export const validateUpdateProfileInput = ({ username, email }) => {
     (typeof email !== 'string' || !emailRegex.test(email.trim()))
   ) {
     errors.push('A valid email address is required');
+  }
+
+  if (
+    birthMonth !== undefined &&
+    birthMonth !== null &&
+    (!Number.isInteger(Number(birthMonth)) || Number(birthMonth) < 1 || Number(birthMonth) > 12)
+  ) {
+    errors.push('Birth month must be a whole number from 1 to 12');
   }
 
   return {

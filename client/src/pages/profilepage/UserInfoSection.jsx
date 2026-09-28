@@ -11,6 +11,7 @@ export const UserInfoSection = () => {
     username: user.username || '',
     email: user.email || '',
     avatar: user.avatar || '',
+    birthMonth: user.birthMonth || '',
   });
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
@@ -38,6 +39,7 @@ export const UserInfoSection = () => {
         username: form.username,
         email: form.email,
         avatar: form.avatar,
+        birthMonth: form.birthMonth ? Number(form.birthMonth) : null,
       });
       setSuccess('บันทึกข้อมูลส่วนตัวสำเร็จ');
     } catch (err) {
@@ -116,6 +118,23 @@ export const UserInfoSection = () => {
                 required
                 className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
               />
+            </div>
+            <div>
+              <label htmlFor="profile-birth-month" className="mb-1 block text-sm font-medium text-gray-600">
+                เดือนเกิด (ใช้ตรวจสิทธิ์ Birthday Reward)
+              </label>
+              <select
+                id="profile-birth-month"
+                value={form.birthMonth}
+                onChange={handleProfileChange('birthMonth')}
+                className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
+              >
+                <option value="">ไม่ระบุ</option>
+                {['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'].map((month, index) => (
+                  <option key={month} value={index + 1}>{month}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">จัดเก็บเฉพาะเดือน ไม่เก็บวันหรือปีเกิด</p>
             </div>
             <div>
               <label htmlFor="profile-avatar" className="mb-1 block text-sm font-medium text-gray-600">

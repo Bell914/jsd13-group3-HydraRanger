@@ -143,6 +143,36 @@ Server คำนวณ `saving` จาก `regularPrice - setPrice` และต
 - Admin Customer API ไม่ส่งข้อมูลสัดส่วนรายบุคคล
 - หน้าสินค้าใช้ `size_chart` ก่อน หากไม่มีจะใช้เกณฑ์ S/M/L มาตรฐานและแสดงความมั่นใจระดับปานกลาง
 
+## My Coupons API
+
+`GET /users/me/coupons` ต้องใช้ Customer JWT และคืนสิทธิ์ที่ Backend คำนวณจาก Membership, เดือนเกิด และประวัติการใช้จริง ตัวอย่าง:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "OCCWELCOME10:lifetime",
+      "code": "OCCWELCOME10",
+      "title": "คูปองต้อนรับสมาชิกใหม่",
+      "discountType": "percent",
+      "discountValue": 10,
+      "minSpend": 500,
+      "campaignKey": "lifetime",
+      "usable": true,
+      "alreadyRedeemed": false,
+      "unavailableReason": null
+    }
+  ]
+}
+```
+
+- หน้าเว็บไม่มีสิทธิ์กำหนด Rank, เดือนเกิด หรือยอดส่วนลดเอง
+- Checkout ส่งเฉพาะ `couponCode`; Server ตรวจ eligibility และคำนวณยอดใหม่
+- Unique index ของ Coupon Redemption ป้องกันการใช้สิทธิ์เดียวกันพร้อมกันหลายคำขอ
+- Welcome ใช้ได้ครั้งเดียว, Tier/Free Shipping ใช้ได้ครั้งละหนึ่งครั้งต่อเดือน และ Birthday ใช้ได้หนึ่งครั้งต่อปีในเดือนเกิด
+- Profile เก็บเฉพาะ `birthMonth` 1–12 เพื่อหลีกเลี่ยงการเก็บวันและปีเกิดเกินความจำเป็น
+
 ## Cart API ที่เสนอ — ยังไม่มี Route
 
 | Method | Path | Body |

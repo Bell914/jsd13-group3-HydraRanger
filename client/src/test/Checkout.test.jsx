@@ -62,6 +62,13 @@ const fillCardForm = () => {
 
 describe("Cart & Checkout Flow", () => {
   beforeEach(() => {
+    createOrder.mockResolvedValue({
+      orderNumber: "OCC-123456",
+      customerEmail: "test@example.com",
+      shippingAddress: { firstName: "Test", lastName: "User", address: "123 Street" },
+      items: [{ title: "Oversized T-Shirt", unitPrice: 590, quantity: 2 }],
+      totalAmount: 1231.4,
+    });
     useCartStore.setState({
       cartItems: [
         {
@@ -216,6 +223,28 @@ describe("Cart & Checkout Flow", () => {
       expect(
         screen.getByRole("link", { name: /continue shopping/i })
       ).toBeInTheDocument();
+    });
+
+    it("sends the normalized coupon code to the backend checkout", async () => {
+      render(
+        <MemoryRouter>
+          <CheckoutPage />
+        </MemoryRouter>
+      );
+
+      fillShippingForm();
+      fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
+      fireEvent.click(screen.getByRole("button", { name: /ใส่รหัส Gift Card/i }));
+      fireEvent.change(screen.getByPlaceholderText(/กรอกรหัส Gift Card/i), {
+        target: { value: " occwelcome10 " },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "ใช้งาน" }));
+      fillCardForm();
+      fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
+      fireEvent.click(screen.getByRole("button", { name: "PLACE ORDER" }));
+
+      await waitFor(() => expect(createOrder).toHaveBeenCalled());
+      expect(createOrder.mock.calls.at(-1)[0].couponCode).toBe("OCCWELCOME10");
     });
 
     it("shows an error message and stays on Review when createOrder fails", async () => {

@@ -63,15 +63,50 @@ export const RANK_BENEFITS = {
 };
 
 export const VALID_COUPONS = {
-  OCCWELCOME10: { code: 'OCCWELCOME10', type: 'percent', value: 10, minSpend: 500 },
-  BRONZEVIP3: { code: 'BRONZEVIP3', type: 'percent', value: 3, minSpend: 0, minRank: 'BRONZE' },
-  SILVERVIP5: { code: 'SILVERVIP5', type: 'percent', value: 5, minSpend: 0, minRank: 'SILVER' },
-  GOLDVIP10: { code: 'GOLDVIP10', type: 'percent', value: 10, minSpend: 0, minRank: 'GOLD' },
-  PLATINUMVIP15: { code: 'PLATINUMVIP15', type: 'percent', value: 15, minSpend: 0, minRank: 'PLATINUM' },
-  BDAY10: { code: 'BDAY10', type: 'percent', value: 10, minSpend: 0 },
-  BDAY15: { code: 'BDAY15', type: 'percent', value: 15, minSpend: 0 },
-  BDAY20: { code: 'BDAY20', type: 'percent', value: 20, minSpend: 0 },
-  BDAY25: { code: 'BDAY25', type: 'percent', value: 25, minSpend: 0 }
+  OCCWELCOME10: {
+    code: 'OCCWELCOME10', title: 'คูปองต้อนรับสมาชิกใหม่', type: 'percent', value: 10,
+    minSpend: 500, category: 'welcome', badge: 'Welcome Reward', cadence: 'once'
+  },
+  BRONZEVIP3: {
+    code: 'BRONZEVIP3', title: 'ส่วนลดพิเศษประจำเดือน (BRONZE)', type: 'percent', value: 3,
+    minSpend: 0, rank: 'BRONZE', category: 'monthly', badge: 'Tier Perk: BRONZE', cadence: 'monthly'
+  },
+  SILVERVIP5: {
+    code: 'SILVERVIP5', title: 'ส่วนลดพิเศษประจำเดือน (SILVER)', type: 'percent', value: 5,
+    minSpend: 0, rank: 'SILVER', category: 'monthly', badge: 'Tier Perk: SILVER', cadence: 'monthly'
+  },
+  GOLDVIP10: {
+    code: 'GOLDVIP10', title: 'ส่วนลดพิเศษประจำเดือน (GOLD)', type: 'percent', value: 10,
+    minSpend: 0, rank: 'GOLD', category: 'monthly', badge: 'Tier Perk: GOLD', cadence: 'monthly'
+  },
+  PLATINUMVIP15: {
+    code: 'PLATINUMVIP15', title: 'ส่วนลดพิเศษประจำเดือน (PLATINUM)', type: 'percent', value: 15,
+    minSpend: 0, rank: 'PLATINUM', category: 'monthly', badge: 'Tier Perk: PLATINUM', cadence: 'monthly'
+  },
+  BDAY5: {
+    code: 'BDAY5', title: 'Birthday Celebration Privilege', type: 'percent', value: 5,
+    minSpend: 0, rank: 'MEMBER', category: 'birthday', badge: 'Birthday Reward', cadence: 'yearly'
+  },
+  BDAY10: {
+    code: 'BDAY10', title: 'Birthday Celebration Privilege', type: 'percent', value: 10,
+    minSpend: 0, rank: 'BRONZE', category: 'birthday', badge: 'Birthday Reward', cadence: 'yearly'
+  },
+  BDAY15: {
+    code: 'BDAY15', title: 'Birthday Celebration Privilege', type: 'percent', value: 15,
+    minSpend: 0, rank: 'SILVER', category: 'birthday', badge: 'Birthday Reward', cadence: 'yearly'
+  },
+  BDAY20: {
+    code: 'BDAY20', title: 'Birthday Celebration Privilege', type: 'percent', value: 20,
+    minSpend: 0, rank: 'GOLD', category: 'birthday', badge: 'Birthday Reward', cadence: 'yearly'
+  },
+  BDAY25: {
+    code: 'BDAY25', title: 'Birthday Celebration Privilege', type: 'percent', value: 25,
+    minSpend: 0, rank: 'PLATINUM', category: 'birthday', badge: 'Birthday Reward', cadence: 'yearly'
+  },
+  OCCFREESHIP: {
+    code: 'OCCFREESHIP', title: 'คูปองส่งฟรีไม่มีขั้นต่ำ', type: 'shipping', value: 100,
+    minSpend: 0, category: 'shipping', badge: 'Free Shipping', cadence: 'monthly'
+  }
 };
 
 export const SHIPPING_METHODS_CONFIG = {
@@ -79,4 +114,3 @@ export const SHIPPING_METHODS_CONFIG = {
   express: { id: 'express', name: 'EXPRESS SHIPPING', price: 50 },
   priority: { id: 'priority', name: 'PRIORITY SHIPPING', price: 100 }
 };
-

@@ -140,7 +140,7 @@ test('password reset revokes existing sessions', async (t) => {
     resetPasswordExpires: new Date(Date.now() + 1000),
     async save() {}
   };
-  t.mock.method(User, 'findOne', async () => user);
+  t.mock.method(User, 'findOne', () => ({ select: async () => user }));
 
   await resetPassword({ token: 'valid-token', password: 'new-password' });
   assert.equal(user.tokenVersion, 3);

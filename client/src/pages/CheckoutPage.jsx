@@ -108,6 +108,7 @@ export default function CheckoutPage() {
     cardNumber: "",
     cardExp: "",
     cardCvv: "",
+    couponCode: "",
   });
 
   // Order Submission State
@@ -177,7 +178,7 @@ export default function CheckoutPage() {
       shippingMethod: shippingData.shippingMethod || 'standard',
       paymentMethod: paymentData.method || 'credit-card',
       shippingCost: shippingCost,
-      couponCode: shippingData.couponCode || ''
+      couponCode: paymentData.couponCode || ''
     };
 
     try {

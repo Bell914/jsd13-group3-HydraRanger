@@ -15,7 +15,8 @@ function sendOrderError(error, res, next) {
     'Cannot cancel order',
     'Invalid shipping method',
     'Cancelled order status',
-    'Order status cannot change'
+    'Order status cannot change',
+    'Coupon'
   ];
 
   if (badRequestMessages.some((message) => error.message.startsWith(message))) {

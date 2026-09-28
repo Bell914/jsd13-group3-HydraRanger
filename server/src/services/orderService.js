@@ -2,10 +2,10 @@ import mongoose from 'mongoose';
 import { Order, ORDER_STATUSES } from '../models/Order.js';
 import { Product } from '../models/Product.js';
 import * as loyaltyService from './loyaltyService.js';
+import * as couponService from './couponService.js';
 import {
   RANK_DISCOUNT_PERCENT,
   FREE_SHIPPING_MINIMUM,
-  VALID_COUPONS,
   SHIPPING_METHODS_CONFIG
 } from '../config/membershipConfig.js';
 
@@ -159,20 +159,14 @@ export async function createOrder(user, orderData) {
   const rankPercent = RANK_DISCOUNT_PERCENT[membershipTierAtPurchase] || 0;
   let calculatedDiscount = rankPercent > 0 ? Math.round((subtotal * rankPercent) / 100) : 0;
 
-  // 2. Validate coupon if provided
+  // 2. The server owns coupon eligibility and redemption. Client totals are never trusted.
   const couponCode = orderData.couponCode ? String(orderData.couponCode).trim().toUpperCase() : '';
-  if (couponCode) {
-    const coupon = VALID_COUPONS[couponCode];
-    if (coupon) {
-      if (subtotal >= (coupon.minSpend || 0)) {
-        if (coupon.type === 'percent') {
-          const couponDiscount = Math.round((subtotal * coupon.value) / 100);
-          calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
-        } else if (coupon.type === 'fixed') {
-          calculatedDiscount = Math.max(calculatedDiscount, coupon.value);
-        }
-      }
-    }
+  const { coupon, reservation } = await couponService.reserveCoupon(user, couponCode, subtotal);
+  if (coupon?.discountType === 'percent') {
+    const couponDiscount = Math.round((subtotal * coupon.discountValue) / 100);
+    calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
+  } else if (coupon?.discountType === 'fixed') {
+    calculatedDiscount = Math.max(calculatedDiscount, coupon.discountValue);
   }
   const discountAmount = Math.min(subtotal, calculatedDiscount);
 
@@ -190,12 +184,18 @@ export async function createOrder(user, orderData) {
   } else if (membershipTierAtPurchase === 'PLATINUM' && methodKey === 'priority') {
     shippingCost = 0; // Platinum priority shipping is free
   }
+  if (coupon?.discountType === 'shipping') shippingCost = 0;
 
   const taxableSubtotal = Math.max(0, subtotal - discountAmount);
   const taxAmount = Math.round(taxableSubtotal * 0.06 * 100) / 100;
   const totalAmount = taxableSubtotal + shippingCost + taxAmount;
 
-  await reserveOrderStock(items);
+  try {
+    await reserveOrderStock(items);
+  } catch (error) {
+    await couponService.releaseCouponReservation(reservation);
+    throw error;
+  }
 
   let order;
   try {
@@ -229,6 +229,16 @@ export async function createOrder(user, orderData) {
     });
   } catch (error) {
     await restoreOrderStock(items);
+    await couponService.releaseCouponReservation(reservation);
+    throw error;
+  }
+
+  try {
+    await couponService.completeCouponRedemption(reservation, order);
+  } catch (error) {
+    await Order.deleteOne({ _id: order._id });
+    await restoreOrderStock(items);
+    await couponService.releaseCouponReservation(reservation);
     throw error;
   }
 
@@ -281,6 +291,19 @@ export async function updateOrderStatus(orderId, status) {
 
   const userId = existingOrder.user?._id || existingOrder.user?.id || existingOrder.user;
   const netSpend = Math.max(0, existingOrder.subtotal - (existingOrder.discountAmount || 0));
+  const originalLoyaltyProcessed = existingOrder.loyaltyProcessed;
+
+  const persistStatusAndLoyalty = async (activeSession = null) => {
+    existingOrder.loyaltyProcessed = originalLoyaltyProcessed;
+    if (userId && !existingOrder.loyaltyProcessed && status === 'paid') {
+      await loyaltyService.processOrderSpending(userId, netSpend, 'ADD', activeSession);
+      existingOrder.loyaltyProcessed = true;
+    } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {
+      await loyaltyService.processOrderSpending(userId, netSpend, 'SUBTRACT', activeSession);
+      existingOrder.loyaltyProcessed = false;
+    }
+    await existingOrder.save(activeSession ? { session: activeSession } : undefined);
+  };
 
   let session = null;
   try {
@@ -291,25 +314,26 @@ export async function updateOrderStatus(orderId, status) {
   }
 
   try {
-    if (userId && !existingOrder.loyaltyProcessed && status === 'paid') {
-      await loyaltyService.processOrderSpending(userId, netSpend, 'ADD', session);
-      existingOrder.loyaltyProcessed = true;
-    } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {
-      await loyaltyService.processOrderSpending(userId, netSpend, 'SUBTRACT', session);
-      existingOrder.loyaltyProcessed = false;
-    }
-
     if (session) {
-      await existingOrder.save({ session });
+      await persistStatusAndLoyalty(session);
       await session.commitTransaction();
     } else {
-      await existingOrder.save();
+      await persistStatusAndLoyalty();
     }
   } catch (err) {
     if (session) {
-      await session.abortTransaction();
+      await session.abortTransaction().catch(() => {});
     }
-    throw err;
+    const transactionUnsupported = /Transaction numbers are only allowed|replica set member|mongos/i.test(
+      err.message || ''
+    );
+    if (session && transactionUnsupported) {
+      session.endSession();
+      session = null;
+      await persistStatusAndLoyalty();
+    } else {
+      throw err;
+    }
   } finally {
     if (session) {
       session.endSession();

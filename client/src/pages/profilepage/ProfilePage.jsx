@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { User, Heart, BookOpen, MapPin, Package, Ruler, Crown, Ticket, Loader2 } from 'lucide-react';
 import { Card } from '../../components';
@@ -28,6 +28,10 @@ export const ProfilePage = () => {
   const initialTab = searchParams.get('tab') || 'profile';
   const { loading, user } = useAuth();
   const [activeTab, setActiveTab] = useState(initialTab);
+
+  useEffect(() => {
+    setActiveTab(searchParams.get('tab') || 'profile');
+  }, [searchParams]);
 
   if (loading) {
     return (

@@ -49,6 +49,7 @@ const buildUserSession = (user) => {
     username: user.username,
     email: user.email,
     role: user.role,
+    birthMonth: user.birthMonth || null,
     createdAt: user.createdAt,
     isActive: user.isActive !== false,
     membership: user.membership || {
@@ -285,7 +286,7 @@ export const changePassword = async ({ userId, currentPassword, newPassword }) =
   return { success: true, message: 'Password updated successfully' };
 };
 
-export const updateProfile = async ({ userId, username, email, avatar }) => {
+export const updateProfile = async ({ userId, username, email, avatar, birthMonth }) => {
   const validatedUsername = (username || '').trim();
   const validatedEmail = (email || '').trim().toLowerCase();
 
@@ -311,6 +312,7 @@ export const updateProfile = async ({ userId, username, email, avatar }) => {
       if (validatedUsername) user.username = validatedUsername;
       if (validatedEmail) user.email = validatedEmail;
       if (typeof avatar === 'string') user.avatar = avatar.trim();
+      if (birthMonth !== undefined) user.birthMonth = birthMonth === null ? null : Number(birthMonth);
       await user.save();
       return user;
     } catch (error) {
@@ -340,6 +342,7 @@ export const updateProfile = async ({ userId, username, email, avatar }) => {
   if (validatedUsername) mockUser.username = validatedUsername;
   if (validatedEmail) mockUser.email = validatedEmail;
   if (typeof avatar === 'string') mockUser.avatar = avatar.trim();
+  if (birthMonth !== undefined) mockUser.birthMonth = birthMonth === null ? null : Number(birthMonth);
   const { password, ...safeUser } = mockUser;
   return safeUser;
 };
@@ -432,7 +435,7 @@ export const resetPassword = async ({ token, password }) => {
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpires: { $gt: Date.now() }
-    });
+    }).select('+resetPasswordToken +resetPasswordExpires');
 
     if (user) {
       user.password = password;

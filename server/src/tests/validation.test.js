@@ -27,6 +27,7 @@ test('password reset requires at least eight characters', () => {
 test('product size chart rejects duplicate sizes and invalid measurements', () => {
   const result = validateProductInput({
     name: 'Shirt',
+    description: 'A shirt used for validation',
     category: 'tops',
     variants: [{ sku: 'SHIRT-S', size: 'S', price: 490, stockQuantity: 1 }],
     size_chart: [
@@ -36,6 +37,19 @@ test('product size chart rejects duplicate sizes and invalid measurements', () =
   });
   assert.equal(result.isValid, false);
   assert.ok(result.errors.some((error) => error.includes('duplicate size')));
+});
+
+test('product rejects blank descriptions and malformed field types', () => {
+  const result = validateProductInput({
+    name: 'Shirt', description: '', category: 'tops', tags: 'not-an-array',
+    availableDate: {}, variants: [{ sku: 'SHIRT-S', size: 'S', price: 'free', stockQuantity: 1.5 }]
+  });
+  assert.equal(result.isValid, false);
+  assert.ok(result.errors.includes('Product description is required'));
+  assert.ok(result.errors.includes('Tags must be an array of strings'));
+  assert.ok(result.errors.some((error) => error.includes('availableDate')));
+  assert.ok(result.errors.some((error) => error.includes('price')));
+  assert.ok(result.errors.some((error) => error.includes('stock')));
 });
 
 test('customer status only accepts a boolean', () => {

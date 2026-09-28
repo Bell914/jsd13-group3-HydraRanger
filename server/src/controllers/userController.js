@@ -1,6 +1,16 @@
 import { HTTP_STATUS } from '../config/constants.js';
 import { User } from '../models/User.js';
 import * as userService from '../services/userService.js';
+import * as couponService from '../services/couponService.js';
+
+export const getMyCoupons = async (req, res, next) => {
+  try {
+    const coupons = await couponService.getMyCoupons(req.user);
+    return res.status(HTTP_STATUS.OK).json({ success: true, data: coupons });
+  } catch (error) {
+    return next(error);
+  }
+};
 
 export const getUsers = async (req, res, next) => {
   try {

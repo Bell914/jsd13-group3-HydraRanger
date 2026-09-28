@@ -6,6 +6,8 @@ import { User } from '../models/User.js';
 import { prepareVariants } from '../services/productService.js';
 import { getShippingCost } from '../services/orderService.js';
 import { validateCreateOrder } from '../validators/orderValidator.js';
+import { validateUpdateProfileInput } from '../validators/authValidator.js';
+import { buildCouponsForUser, validateCouponForUser } from '../services/couponService.js';
 
 test('admin variant fields survive backend preparation and model validation', () => {
   const variantId = new mongoose.Types.ObjectId();
@@ -71,4 +73,39 @@ test('users start with token version zero for password revocation', () => {
   });
 
   assert.equal(user.tokenVersion, 0);
+});
+
+test('coupon API derives membership and birthday eligibility on the server', () => {
+  const now = new Date('2026-09-15T12:00:00.000Z');
+  const user = { birthMonth: 9, membership: { rank: 'SILVER' } };
+  const coupons = buildCouponsForUser(user, [], now);
+
+  assert.deepEqual(coupons.map((coupon) => coupon.code), [
+    'OCCWELCOME10', 'SILVERVIP5', 'BDAY15', 'OCCFREESHIP'
+  ]);
+  assert.equal(coupons.find((coupon) => coupon.code === 'BDAY15').usable, true);
+  assert.throws(
+    () => validateCouponForUser(user, 'GOLDVIP10', 1000, [], now),
+    /not available for this membership/
+  );
+});
+
+test('redeemed and out-of-month coupons cannot be reused', () => {
+  const now = new Date('2026-09-15T12:00:00.000Z');
+  const user = { birthMonth: 2, membership: { rank: 'BRONZE' } };
+  const redemptions = [{ code: 'OCCWELCOME10', campaignKey: 'lifetime' }];
+  const coupons = buildCouponsForUser(user, redemptions, now);
+
+  assert.equal(coupons.find((coupon) => coupon.code === 'OCCWELCOME10').usable, false);
+  assert.equal(coupons.find((coupon) => coupon.code === 'BDAY10').usable, false);
+  assert.throws(
+    () => validateCouponForUser(user, 'OCCWELCOME10', 1000, redemptions, now),
+    /ใช้สิทธิ์นี้แล้ว/
+  );
+});
+
+test('profile validation accepts only a valid birth month', () => {
+  assert.equal(validateUpdateProfileInput({ birthMonth: 9 }).isValid, true);
+  assert.equal(validateUpdateProfileInput({ birthMonth: null }).isValid, true);
+  assert.equal(validateUpdateProfileInput({ birthMonth: 13 }).isValid, false);
 });

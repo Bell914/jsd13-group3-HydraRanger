@@ -6,6 +6,10 @@ export function validateProductInput(product) {
     errors.push('Product title is required');
   }
 
+  if (typeof product.description !== 'string' || !product.description.trim()) {
+    errors.push('Product description is required');
+  }
+
   if (!product.category_id && !product.category) {
     errors.push('Category is required');
   }

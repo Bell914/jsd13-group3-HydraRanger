@@ -22,6 +22,11 @@ export const userService = {
 
   async deleteSizeProfile() {
     return await api.delete('/users/me/size-profile');
+  },
+
+  async getCoupons() {
+    const response = await api.get('/users/me/coupons');
+    return response.data;
   }
 };
 

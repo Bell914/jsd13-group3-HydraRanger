@@ -71,6 +71,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    birthMonth: {
+      type: Number,
+      min: 1,
+      max: 12,
+      default: null
+    },
     isActive: {
       type: Boolean,
       default: true
@@ -125,11 +131,13 @@ const userSchema = new mongoose.Schema(
     // ==========================================
     resetPasswordToken: {
       type: String,
-      default: null
+      default: null,
+      select: false
     },
     resetPasswordExpires: {
       type: Date,
-      default: null
+      default: null,
+      select: false
     }
   },
   {

@@ -17,6 +17,7 @@ import lookbookRoutes from "./lookbookRoutes.js";
 import adminLookbookRoutes from "./adminLookbookRoutes.js";
 import uploadRoutes from "./uploadRoutes.js";
 import recommendRoutes from "./recommendRoutes.js";
+import { getRuntimeMetrics } from "../services/monitoringService.js";
 
 const router = Router();
 
@@ -47,6 +48,7 @@ router.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
     service: "OCCASION API Server (Sprint 2)",
     database: getDBStatus(),
+    metrics: getRuntimeMetrics(),
   });
 });
 

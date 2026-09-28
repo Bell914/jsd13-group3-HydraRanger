@@ -13,8 +13,8 @@ export default function PaymentSection({
     paymentData.method || "credit-card"
   );
   const [giftCardOpen, setGiftCardOpen] = useState(false);
-  const [giftCardCode, setGiftCardCode] = useState("");
-  const [giftCardApplied, setGiftCardApplied] = useState(false);
+  const [giftCardCode, setGiftCardCode] = useState(paymentData.couponCode || "");
+  const [giftCardApplied, setGiftCardApplied] = useState(Boolean(paymentData.couponCode));
   const [errors, setErrors] = useState({});
 
   const validate = () => {
@@ -47,6 +47,9 @@ export default function PaymentSection({
   const handleApplyGiftCard = (e) => {
     e.preventDefault();
     if (giftCardCode.trim()) {
+      const normalizedCode = giftCardCode.trim().toUpperCase();
+      setGiftCardCode(normalizedCode);
+      onChangePayment({ ...paymentData, couponCode: normalizedCode });
       setGiftCardApplied(true);
     }
   };
@@ -155,7 +158,7 @@ export default function PaymentSection({
         ) : (
           <div className="mt-2 text-xs font-medium text-green-600 flex items-center gap-1">
             <Check className="w-4 h-4" />
-            <span>ใช้ส่วนลดรหัส: {giftCardCode} เรียบร้อยแล้ว</span>
+            <span>เพิ่มรหัส {giftCardCode} แล้ว ระบบจะตรวจสอบสิทธิ์กับ Backend เมื่อสั่งซื้อ</span>
           </div>
         )}
       </div>

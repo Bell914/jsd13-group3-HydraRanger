@@ -1,17 +1,30 @@
-import React, { useState } from 'react';
-import { Ticket, Copy, Check, Cake, Sparkles, Gift, Tag, ArrowRight } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Ticket, Copy, Check, Cake, Sparkles, Tag, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getCouponsForUser, getRankTheme } from '../../utils/loyaltyUtils.js';
+import { userService } from '../../services/userService.js';
 
-export const CouponsSection = ({ user }) => {
+export const CouponsSection = ({ user, initialCoupons = null }) => {
   const currentRank = user?.membership?.rank || 'MEMBER';
-  const theme = getRankTheme(currentRank);
   const [copiedCode, setCopiedCode] = useState(null);
-  const [selectedBirthMonth, setSelectedBirthMonth] = useState(
-    new Date().getMonth() + 1
-  );
+  const [coupons, setCoupons] = useState(initialCoupons || []);
+  const [loading, setLoading] = useState(!initialCoupons);
+  const [error, setError] = useState('');
 
-  const coupons = getCouponsForUser(currentRank, selectedBirthMonth);
+  useEffect(() => {
+    if (initialCoupons) return undefined;
+    let active = true;
+    userService.getCoupons()
+      .then((data) => {
+        if (active) setCoupons(Array.isArray(data) ? data : []);
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError.message || 'โหลดคูปองไม่สำเร็จ');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [initialCoupons]);
 
   const handleCopyCode = (code) => {
     if (navigator.clipboard) {
@@ -22,11 +35,6 @@ export const CouponsSection = ({ user }) => {
       setCopiedCode(null);
     }, 2500);
   };
-
-  const months = [
-    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-  ];
 
   return (
     <div className="space-y-6">
@@ -66,7 +74,7 @@ export const CouponsSection = ({ user }) => {
         </div>
       )}
 
-      {/* Birthday Reward Configurator (Item 12) */}
+      {/* Birthday eligibility comes from the authenticated profile, never a browser-selected value. */}
       <div className="p-4 rounded-2xl bg-gradient-to-r from-pink-50 via-rose-50 to-amber-50 border border-pink-200/80 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -80,35 +88,27 @@ export const CouponsSection = ({ user }) => {
                   {currentRank === 'PLATINUM' ? 'ลด 25% + Gift Set' : currentRank === 'GOLD' ? 'ลด 20%' : currentRank === 'SILVER' ? 'ลด 15%' : currentRank === 'BRONZE' ? 'ลด 10%' : 'ลด 5%'}
                 </span>
               </h4>
-              <p className="text-xs text-gray-600 mt-0.5">
-                รับส่วนลดพิเศษ 1 ครั้งในเดือนเกิดของคุณตามระดับสมาชิกปัจจุบัน
-              </p>
+              <p className="text-xs text-gray-600 mt-0.5">รับส่วนลดพิเศษ 1 ครั้งในเดือนเกิดที่บันทึกไว้ในโปรไฟล์</p>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <label htmlFor="birth-month" className="text-xs font-semibold text-gray-700 whitespace-nowrap">
-              เดือนเกิด:
-            </label>
-            <select
-              id="birth-month"
-              value={selectedBirthMonth}
-              onChange={(e) => setSelectedBirthMonth(Number(e.target.value))}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-pink-300 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-pink-500 cursor-pointer"
-            >
-              {months.map((m, idx) => (
-                <option key={idx + 1} value={idx + 1}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Link to="/profile?tab=profile" className="text-xs font-bold text-pink-700 underline">แก้ไขเดือนเกิด</Link>
         </div>
       </div>
 
+      {loading && (
+        <div className="flex items-center gap-2 text-sm text-gray-500" role="status">
+          <Loader2 className="animate-spin" size={16} /> กำลังโหลดสิทธิ์จากระบบ…
+        </div>
+      )}
+      {error && (
+        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">
+          <AlertCircle size={16} /> {error}
+        </div>
+      )}
+
       {/* Coupons Grid (Item 9) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {coupons.map((coupon) => (
+        {!loading && !error && coupons.map((coupon) => (
           <div
             key={coupon.id}
             className={`relative rounded-2xl border p-4 transition-all duration-200 flex flex-col justify-between ${
@@ -125,7 +125,7 @@ export const CouponsSection = ({ user }) => {
                   <span>{coupon.badge}</span>
                 </span>
                 <span className="text-[11px] font-medium text-gray-500">
-                  หมดอายุ: {coupon.expiresAt}
+                  หมดอายุ: {coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString('th-TH') : 'ไม่มีวันหมดอายุ'}
                 </span>
               </div>
 
@@ -137,6 +137,9 @@ export const CouponsSection = ({ user }) => {
                   ? `ส่วนลด ${coupon.discountValue}% ${coupon.minSpend > 0 ? `(เมื่อซื้อขั้นต่ำ ฿${coupon.minSpend})` : '(ไม่มีขั้นต่ำ)'}`
                   : 'คูปองยกเว้นค่าจัดส่งทุกประเภท'}
               </p>
+              {!coupon.usable && coupon.unavailableReason && (
+                <p className="mt-2 text-xs font-semibold text-amber-700">{coupon.unavailableReason}</p>
+              )}
             </div>
 
             {/* Coupon Code Strip */}
@@ -148,10 +151,13 @@ export const CouponsSection = ({ user }) => {
               <button
                 type="button"
                 onClick={() => handleCopyCode(coupon.code)}
+                disabled={!coupon.usable}
                 className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
                   copiedCode === coupon.code
                     ? 'bg-emerald-600 text-white'
-                    : 'bg-primary text-white hover:bg-primary-hover shadow-2xs'
+                    : coupon.usable
+                      ? 'bg-primary text-white hover:bg-primary-hover shadow-2xs'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
                 {copiedCode === coupon.code ? (

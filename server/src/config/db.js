@@ -4,11 +4,12 @@ import { ENV } from "./env.js";
 let isConnected = false;
 let connecting = false;
 let reconnectTimer = null;
+let reconnectEnabled = true;
 
 const RECONNECT_DELAY_MS = 5000;
 
 function scheduleReconnect() {
-  if (reconnectTimer || connecting) return;
+  if (!reconnectEnabled || reconnectTimer || connecting) return;
   reconnectTimer = setTimeout(async () => {
     reconnectTimer = null;
     await connectDB();
@@ -18,6 +19,7 @@ function scheduleReconnect() {
 
 
 export const connectDB = async () => {
+  reconnectEnabled = true;
   if (isConnected && mongoose.connection.readyState === 1) return;
   if (connecting) return;
   connecting = true;
@@ -46,6 +48,16 @@ export const connectDB = async () => {
   }
 };
 
+export const disconnectDB = async () => {
+  reconnectEnabled = false;
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+  await mongoose.disconnect();
+  isConnected = false;
+};
+
 // Lifetime connection monitoring: restore service automatically if the
 // MongoDB connection drops after startup (idle pause, network blip, ...).
 mongoose.connection.on("connected", () => {
@@ -54,9 +66,11 @@ mongoose.connection.on("connected", () => {
 });
 
 mongoose.connection.on("disconnected", () => {
-  console.warn("⚠️  MongoDB disconnected, reconnecting in background...");
   isConnected = false;
-  scheduleReconnect();
+  if (reconnectEnabled) {
+    console.warn("⚠️  MongoDB disconnected, reconnecting in background...");
+    scheduleReconnect();
+  }
 });
 
 mongoose.connection.on("error", (error) => {
