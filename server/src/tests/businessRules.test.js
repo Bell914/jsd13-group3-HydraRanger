@@ -90,6 +90,15 @@ test('coupon API derives membership and birthday eligibility on the server', () 
   );
 });
 
+test('membership coupons return checkout-compatible discount details', () => {
+  const now = new Date('2026-09-15T12:00:00.000Z');
+  const user = { birthMonth: 9, membership: { rank: 'SILVER' } };
+  const coupon = validateCouponForUser(user, 'SILVERVIP5', 1000, [], now);
+
+  assert.equal(coupon.discountType, 'percent');
+  assert.equal(coupon.discountValue, 5);
+});
+
 test('redeemed and out-of-month coupons cannot be reused', () => {
   const now = new Date('2026-09-15T12:00:00.000Z');
   const user = { birthMonth: 2, membership: { rank: 'BRONZE' } };

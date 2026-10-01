@@ -10,6 +10,9 @@ function handleError(error, res, next) {
 export async function getAdminCoupons(req, res, next) {
   try { res.json({ success: true, data: await adminCouponService.getAdminCoupons() }); } catch (error) { next(error); }
 }
+export async function getAdminMembershipCouponRedemptions(req, res, next) {
+  try { res.json({ success: true, data: await adminCouponService.getAdminMembershipCouponRedemptions() }); } catch (error) { next(error); }
+}
 export async function createAdminCoupon(req, res, next) {
   try { res.status(HTTP_STATUS.CREATED).json({ success: true, data: await adminCouponService.createAdminCoupon(req.body) }); } catch (error) { handleError(error, res, next); }
 }

@@ -11,6 +11,7 @@ const isExpiringSoon = (value) => {
 
 export function AdminCouponsPage() {
   const [coupons, setCoupons] = useState([]);
+  const [membershipRedemptions, setMembershipRedemptions] = useState([]);
   const [editing, setEditing] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -20,7 +21,14 @@ export function AdminCouponsPage() {
 
   async function loadCoupons() {
     setLoading(true); setError('');
-    try { setCoupons(await couponService.list()); } catch (err) { setError(err.message); } finally { setLoading(false); }
+    try {
+      const [generalCoupons, redemptions] = await Promise.all([
+        couponService.list(),
+        couponService.listMembershipRedemptions(),
+      ]);
+      setCoupons(generalCoupons);
+      setMembershipRedemptions(redemptions);
+    } catch (err) { setError(err.message); } finally { setLoading(false); }
   }
   useEffect(() => { loadCoupons(); }, []);
 
@@ -105,9 +113,9 @@ export function AdminCouponsPage() {
             <small>ควรปิดหรือสร้างใหม่</small>
           </article>
           <article className="summary-card">
-            <p>คูปองตามอีเวนต์</p>
-            <strong>{coupons.filter((coupon) => coupon.eventName).length}</strong>
-            <small>ผูกกับแคมเปญ</small>
+            <p>คูปองสมาชิกที่ใช้แล้ว</p>
+            <strong>{membershipRedemptions.filter((coupon) => coupon.status === 'redeemed').length}</strong>
+            <small>จากสิทธิ์สมาชิกและวันเกิด</small>
           </article>
         </section>
 
@@ -196,6 +204,58 @@ export function AdminCouponsPage() {
                 </tbody>
               </table>
             </div>
+          </section>
+        )}
+
+        {!loading && (
+          <section className="product-table-card">
+            <div className="table-card-heading">
+              <div>
+                <h2>ประวัติใช้คูปองสมาชิก</h2>
+                <p>ดูสิทธิ์สมาชิกที่กำลังจองหรือถูกใช้กับคำสั่งซื้อแล้ว</p>
+              </div>
+            </div>
+            {membershipRedemptions.length === 0 ? (
+              <div className="empty-state">
+                <strong>ยังไม่มีการใช้คูปองสมาชิก</strong>
+                <p>รายการจะปรากฏเมื่อมีการเริ่ม checkout หรือชำระคำสั่งซื้อด้วยคูปองสมาชิก</p>
+              </div>
+            ) : (
+              <div className="table-scroll">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>คูปอง</th>
+                      <th>ลูกค้า</th>
+                      <th>สถานะ</th>
+                      <th>คำสั่งซื้อ</th>
+                      <th>เวลา</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {membershipRedemptions.map((redemption) => (
+                      <tr key={redemption._id}>
+                        <td data-label="คูปอง">
+                          <strong>{redemption.code}</strong>
+                          <small>{redemption.couponTitle}</small>
+                        </td>
+                        <td data-label="ลูกค้า">
+                          <strong>{redemption.user?.username || '-'}</strong>
+                          <small>{redemption.user?.email || '-'}</small>
+                        </td>
+                        <td data-label="สถานะ">
+                          <span className={`status ${redemption.status === 'redeemed' ? 'active' : 'suspended'}`}>
+                            {redemption.status === 'redeemed' ? 'ใช้แล้ว' : 'กำลังจอง'}
+                          </span>
+                        </td>
+                        <td data-label="คำสั่งซื้อ">{redemption.order?.orderNumber || '-'}</td>
+                        <td data-label="เวลา">{formatDate(redemption.redeemedAt || redemption.createdAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </section>
         )}
 
