@@ -32,6 +32,7 @@ router.put(
   userController.saveMySizeProfile
 );
 router.delete('/me/size-profile', protect, authorize(USER_ROLES.USER), userController.deleteMySizeProfile);
+router.get('/me/coupons', protect, authorize(USER_ROLES.USER), userController.getMyCoupons);
 router.get('/', protect, authorize(USER_ROLES.ADMIN), userController.getUsers);
 router.get('/:id', protect, validateParams(validateIdParam), userController.getUser);
 

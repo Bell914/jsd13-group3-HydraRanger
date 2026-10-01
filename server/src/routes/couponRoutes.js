@@ -8,4 +8,3 @@ export const router = Router();
 router.post("/validate", protect, checkCoupon);
 
 export default router;
-

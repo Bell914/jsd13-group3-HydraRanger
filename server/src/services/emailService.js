@@ -123,7 +123,7 @@ export async function sendWelcomeMemberEmail(user, couponCode = 'OCCWELCOME10') 
 export const sendWelcomeDiscountEmail = async ({ toEmail, username, couponCode = "WELCOME5", discountPercent = 5, expiresAt }) => {
   const user = process.env.SMTP_USER || process.env.EMAIL_USER;
 
-  const formattedDate = expiresAt 
+  const formattedDate = expiresAt
     ? new Date(expiresAt).toLocaleDateString("th-TH", { year: "numeric", month: "long", day: "numeric" })
     : "30 วันนับจากวันที่สมัคร";
 
@@ -135,7 +135,7 @@ export const sendWelcomeDiscountEmail = async ({ toEmail, username, couponCode =
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; line-height: 1.6;">
         <h2 style="color: #111827;">ยินดีต้อนรับคุณ ${username || "สมาชิกใหม่"}! 👋</h2>
         <p>ขอบคุณที่ร่วมเป็นครอบครัวเดียวกับ <b>HydraRanger</b> เราขอมอบของขวัญต้อนรับพิเศษสำหรับการสั่งซื้อครั้งแรก:</p>
-        
+
         <div style="background-color: #fdf2f2; border: 2px dashed #e11d48; border-radius: 8px; padding: 15px; text-align: center; margin: 20px 0;">
           <span style="font-size: 28px; font-weight: bold; letter-spacing: 3px; color: #e11d48;">${couponCode}</span>
           <p style="margin: 5px 0 0; color: #4b5563; font-size: 14px;">รับส่วนลดทันที ${discountPercent}%</p>

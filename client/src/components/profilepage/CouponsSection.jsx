@@ -2,11 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Ticket, Copy, Check, Cake, Crown, Gift, Tag, ArrowRight, Calendar, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getCouponsForUser, getRankTheme } from '../../utils/loyaltyUtils.js';
+import { userService } from '../../services/userService.js';
 
 export const CouponsSection = ({ user }) => {
   const currentRank = user?.membership?.rank || 'MEMBER';
   const theme = getRankTheme(currentRank);
   const [copiedCode, setCopiedCode] = useState(null);
+  const [serverCoupons, setServerCoupons] = useState(null);
+  const [couponError, setCouponError] = useState('');
   const [selectedBirthMonth, setSelectedBirthMonth] = useState(() => {
     const profileBirthday = user?.birthday ? new Date(user.birthday) : null;
     if (profileBirthday && !Number.isNaN(profileBirthday.getTime())) {
@@ -31,8 +34,31 @@ export const CouponsSection = ({ user }) => {
     };
   }, [isMonthPickerOpen]);
 
+  useEffect(() => {
+    let cancelled = false;
+    userService.getCoupons()
+      .then((coupons) => {
+        if (!cancelled) {
+          setServerCoupons(Array.isArray(coupons) ? coupons : []);
+          setCouponError('');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setCouponError('ไม่สามารถโหลดสถานะคูปองล่าสุดจากระบบได้');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, user?._id]);
+
   const profileBirthday = user?.birthday ? new Date(user.birthday) : null;
-  const coupons = getCouponsForUser(currentRank, selectedBirthMonth);
+  const coupons = serverCoupons ?? getCouponsForUser(currentRank, selectedBirthMonth);
+
+  const formatExpiry = (expiresAt) => {
+    if (!expiresAt) return 'ไม่มีกำหนด';
+    const date = new Date(expiresAt);
+    return Number.isNaN(date.getTime()) ? expiresAt : date.toLocaleDateString('th-TH');
+  };
 
   const handleCopyCode = (code) => {
     if (navigator.clipboard) {
@@ -189,6 +215,11 @@ export const CouponsSection = ({ user }) => {
       </div>
 
       {/* Coupons Grid (Item 9) */}
+      {couponError && (
+        <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">
+          {couponError}
+        </p>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {coupons.map((coupon) => (
           <div
@@ -207,7 +238,7 @@ export const CouponsSection = ({ user }) => {
                   <span>{coupon.badge}</span>
                 </span>
                 <span className="text-[11px] font-medium text-gray-500">
-                  หมดอายุ {coupon.expiresAt}
+                  หมดอายุ {formatExpiry(coupon.expiresAt)}
                 </span>
               </div>
 
@@ -219,6 +250,9 @@ export const CouponsSection = ({ user }) => {
                   ? `ส่วนลด ${coupon.discountValue}% ${coupon.minSpend > 0 ? `เมื่อซื้อขั้นต่ำ ฿${coupon.minSpend}` : 'ไม่มีขั้นต่ำ'}`
                   : 'คูปองยกเว้นค่าจัดส่งทุกประเภท'}
               </p>
+              {!coupon.usable && coupon.unavailableReason && (
+                <p className="mt-2 text-xs font-semibold text-amber-700">{coupon.unavailableReason}</p>
+              )}
             </div>
 
             {/* Coupon Code Strip */}
@@ -230,13 +264,18 @@ export const CouponsSection = ({ user }) => {
               <button
                 type="button"
                 onClick={() => handleCopyCode(coupon.code)}
+                disabled={!coupon.usable}
                 className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                  copiedCode === coupon.code
+                  !coupon.usable
+                    ? 'cursor-not-allowed bg-gray-300 text-gray-600'
+                    : copiedCode === coupon.code
                     ? 'bg-emerald-600 text-white'
                     : 'bg-primary text-white hover:bg-primary-hover shadow-2xs'
                 }`}
               >
-                {copiedCode === coupon.code ? (
+                {!coupon.usable ? (
+                  <span>ยังใช้ไม่ได้</span>
+                ) : copiedCode === coupon.code ? (
                   <>
                     <Check size={13} />
                     <span>คัดลอกแล้ว</span>

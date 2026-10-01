@@ -1,6 +1,7 @@
 import { HTTP_STATUS } from "../config/constants.js";
 import { User } from "../models/User.js";
 import * as userService from "../services/userService.js";
+import * as couponService from "../services/couponService.js";
 
 export const getUsers = async (req, res, next) => {
   try {
@@ -265,5 +266,20 @@ export const deleteMySizeProfile = async (req, res, next) => {
       .json({ success: true, message: "Size profile deleted successfully" });
   } catch (error) {
     next(error);
+  }
+};
+
+export const getMyCoupons = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user?.id || req.user?._id).lean();
+    if (!user) {
+      return res
+        .status(HTTP_STATUS.NOT_FOUND)
+        .json({ success: false, message: "User not found" });
+    }
+    const coupons = await couponService.getMyCoupons(user);
+    return res.status(HTTP_STATUS.OK).json({ success: true, data: coupons });
+  } catch (error) {
+    return next(error);
   }
 };

@@ -2,6 +2,9 @@ import { HTTP_STATUS } from '../config/constants.js';
 import * as orderService from '../services/orderService.js';
 
 function sendOrderError(error, res, next) {
+  if (error.statusCode === HTTP_STATUS.BAD_REQUEST) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: error.message });
+  }
   const badRequestMessages = [
     'Order must contain',
     'Invalid product',
@@ -19,7 +22,8 @@ function sendOrderError(error, res, next) {
     'Unsupported payment method',
     'Invalid shipping method',
     'Cancelled order status',
-    'Order status cannot change'
+    'Order status cannot change',
+    'Coupon'
   ];
 
   if (badRequestMessages.some((message) => error.message.startsWith(message))) {

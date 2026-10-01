@@ -6,10 +6,17 @@ import * as loyaltyService from './loyaltyService.js';
 import {
   RANK_DISCOUNT_PERCENT,
   FREE_SHIPPING_MINIMUM,
-  VALID_COUPONS,
   SHIPPING_METHODS_CONFIG
 } from '../config/membershipConfig.js';
-import { refundCouponUsage, claimCouponAtomically, getActiveGeneralCoupon } from './couponService.js';
+import {
+  claimCouponAtomically,
+  completeCouponRedemption,
+  getActiveGeneralCoupon,
+  refundCouponUsage,
+  refundMembershipCouponUsage,
+  releaseCouponReservation,
+  reserveMembershipCoupon,
+} from './couponService.js';
 import { isDemoPaymentEnabled } from '../config/env.js';
 
 const SHIPPING_COSTS = {
@@ -275,6 +282,8 @@ export async function createOrder(user, orderData) {
   // 3. Validate coupon if provided
   const couponCode = orderData.couponCode ? String(orderData.couponCode).trim().toUpperCase() : '';
   let appliedDbCoupon = null;
+  let appliedMembershipCoupon = null;
+  let membershipReservation = null;
   const orderId = new mongoose.Types.ObjectId();
   if (couponCode) {
     // 2.1 First attempt atomic claim on dynamic user coupons in MongoDB (e.g. WELCOME5)
@@ -295,23 +304,34 @@ export async function createOrder(user, orderData) {
       }
     }
 
-    // 2.2 Fallback to static VALID_COUPONS (Tier coupons, birthday coupons)
+    // 2.2 General coupons are reusable and managed by administrators.
     if (!appliedDbCoupon) {
-      const coupon = await getActiveGeneralCoupon(couponCode, effectiveSubtotal) || VALID_COUPONS[couponCode];
-      if (coupon) {
-        if (effectiveSubtotal >= (coupon.minSpend || 0)) {
-          if (coupon.type === 'GENERAL') {
-            const couponDiscount = Math.round((effectiveSubtotal * coupon.discountValue) / 100);
-            calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
-          } else if (coupon.type === 'percent') {
-            const couponDiscount = Math.round((effectiveSubtotal * coupon.value) / 100);
-            calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
-          } else if (coupon.type === 'fixed') {
-            calculatedDiscount = Math.max(calculatedDiscount, coupon.value);
-          }
-        }
+      const generalCoupon = await getActiveGeneralCoupon(couponCode, effectiveSubtotal);
+      if (generalCoupon) {
+        const couponDiscount = Math.round((effectiveSubtotal * generalCoupon.discountValue) / 100);
+        calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
       } else {
-        throw new Error('คูปองไม่ถูกต้อง หรือถูกใช้งานไปแล้ว');
+        // 2.3 Membership coupons are derived and validated by the server. A
+        // short-lived reservation protects one-use campaigns from concurrent checkouts.
+        const reserved = await reserveMembershipCoupon(
+          user,
+          couponCode,
+          effectiveSubtotal,
+          checkoutStartedAt,
+        );
+        appliedMembershipCoupon = reserved.coupon;
+        membershipReservation = reserved.reservation;
+        if (!appliedMembershipCoupon) {
+          throw new Error('คูปองไม่ถูกต้อง หรือถูกใช้งานไปแล้ว');
+        }
+        if (appliedMembershipCoupon.discountType === 'percent') {
+          const couponDiscount = Math.round(
+            (effectiveSubtotal * appliedMembershipCoupon.discountValue) / 100,
+          );
+          calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
+        } else if (appliedMembershipCoupon.discountType === 'fixed') {
+          calculatedDiscount = Math.max(calculatedDiscount, appliedMembershipCoupon.discountValue);
+        }
       }
     }
   }
@@ -331,6 +351,7 @@ export async function createOrder(user, orderData) {
   } else if (membershipTierAtPurchase === 'PLATINUM' && methodKey === 'priority') {
     shippingCost = 0; // Platinum priority shipping is free
   }
+  if (appliedMembershipCoupon?.discountType === 'shipping') shippingCost = 0;
 
   const discountedSubtotal = Math.max(0, subtotal - discountAmount);
   const totalAmount = discountedSubtotal + shippingCost;
@@ -381,7 +402,20 @@ export async function createOrder(user, orderData) {
       if (appliedDbCoupon) {
         await refundCouponUsage({ code: couponCode, userId: user._id || user.id, orderId });
       }
+      await releaseCouponReservation(membershipReservation);
     }
+    throw error;
+  }
+
+  try {
+    await completeCouponRedemption(membershipReservation, order);
+  } catch (error) {
+    await Order.deleteOne({ _id: order._id });
+    await restoreOrderStock(items);
+    if (appliedDbCoupon) {
+      await refundCouponUsage({ code: couponCode, userId: user._id || user.id, orderId });
+    }
+    await releaseCouponReservation(membershipReservation);
     throw error;
   }
 
@@ -518,6 +552,11 @@ export async function updateOrderStatus(orderId, status) {
         userId,
         orderId: existingOrder._id
       });
+      await refundMembershipCouponUsage({
+        code: existingOrder.couponCode,
+        userId,
+        orderId: existingOrder._id,
+      });
     } catch (refundErr) {
       console.warn('Coupon refund warning on updateOrderStatus:', refundErr.message);
     }
@@ -568,4 +607,3 @@ export async function cancelOrder(userId, orderId) {
   // Keep stock and loyalty changes in one status-transition path.
   return updateOrderStatus(orderId, 'cancelled');
 }
-

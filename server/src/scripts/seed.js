@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { connectDB } from '../config/db.js';
+import { connectDB, disconnectDB } from '../config/db.js';
 import { ENV } from '../config/env.js';
 import { User, Product, Lookbook, Category, Article } from '../models/index.js';
 import { productSeedData } from '../data/productSeedData.js';
@@ -186,7 +186,7 @@ async function runSeed() {
     console.error('❌ Seed error:', error.message);
     process.exitCode = 1;
   } finally {
-    await mongoose.disconnect();
+    await disconnectDB();
     console.log('🔌 Disconnected from MongoDB');
   }
 }

@@ -47,7 +47,26 @@ describe('Customer Experience & Benefits (ประสบการณ์ลู�
 
       render(
         <MemoryRouter>
-          <CouponsSection user={mockUser} />
+          <CouponsSection
+            user={mockUser}
+            initialCoupons={[
+              {
+                id: 'welcome:lifetime', code: 'OCCWELCOME10', title: 'คูปองต้อนรับสมาชิกใหม่',
+                discountType: 'percent', discountValue: 10, minSpend: 500,
+                expiresAt: '2026-12-31T23:59:59.999Z', badge: 'Welcome Reward', usable: true
+              },
+              {
+                id: 'tier:2026-09', code: 'SILVERVIP5', title: 'ส่วนลดพิเศษประจำเดือน (SILVER)',
+                discountType: 'percent', discountValue: 5, minSpend: 0,
+                expiresAt: '2026-09-30T23:59:59.999Z', badge: 'Tier Perk: SILVER', usable: true
+              },
+              {
+                id: 'birthday:2026', code: 'BDAY15', title: 'Birthday Celebration Privilege',
+                discountType: 'percent', discountValue: 15, minSpend: 0,
+                expiresAt: '2026-09-30T23:59:59.999Z', badge: 'Birthday Reward', usable: true
+              }
+            ]}
+          />
         </MemoryRouter>
       );
 
