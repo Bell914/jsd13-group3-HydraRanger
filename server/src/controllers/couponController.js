@@ -1,4 +1,6 @@
-import { validateCoupon } from "../services/couponService.js";
+import { User } from "../models/User.js";
+import { VALID_COUPONS } from "../config/membershipConfig.js";
+import { validateCoupon, validateMembershipCouponForUser } from "../services/couponService.js";
 
 // POST /api/coupons/validate
 export const checkCoupon = async (req, res, next) => {
@@ -7,11 +9,21 @@ export const checkCoupon = async (req, res, next) => {
     // ดึง userId จาก Token ของ User ที่ Login อยู่
     const userId = req.user._id || req.user.id;
 
-    const result = await validateCoupon({
-      code,
-      userId,
-      subtotal: Number(subtotal || 0),
-    });
+    const normalizedCode = String(code || "").trim().toUpperCase();
+    const normalizedSubtotal = Number(subtotal || 0);
+    let result;
+
+    if (VALID_COUPONS[normalizedCode]) {
+      const user = await User.findById(userId).lean();
+      if (!user) throw new Error("User not found");
+      result = await validateMembershipCouponForUser(user, normalizedCode, normalizedSubtotal);
+    } else {
+      result = await validateCoupon({
+        code: normalizedCode,
+        userId,
+        subtotal: normalizedSubtotal,
+      });
+    }
 
     return res.status(200).json({
       success: true,

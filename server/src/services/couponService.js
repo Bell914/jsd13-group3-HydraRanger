@@ -115,6 +115,31 @@ export function validateCouponForUser(user, code, subtotal, redemptions = [], no
   return coupon;
 }
 
+// Keep the preview endpoint on the same eligibility rules as checkout. Validation
+// does not reserve a coupon; the reservation is only created with the order.
+export async function validateMembershipCouponForUser(user, code, subtotal, now = new Date()) {
+  const userId = user?._id || user?.id;
+  const normalizedCode = String(code || "").trim().toUpperCase();
+  const redemptions = await CouponRedemption.find({ user: userId, code: normalizedCode })
+    .select("code campaignKey status reservedUntil")
+    .lean();
+  const coupon = validateCouponForUser(user, normalizedCode, subtotal, redemptions, now);
+  const discountAmount = coupon.discountType === "percent"
+    ? Math.round((subtotal * coupon.discountValue) / 100)
+    : coupon.discountType === "fixed"
+      ? coupon.discountValue
+      : 0;
+
+  return {
+    valid: true,
+    code: coupon.code,
+    discountType: coupon.discountType,
+    discountValue: coupon.discountValue,
+    discountAmount,
+    finalTotal: Math.max(0, subtotal - discountAmount),
+  };
+}
+
 // 1. สร้าง Welcome Coupon 5% ให้ลูกค้าใหม่ (ป้องกันการสร้างซ้ำ)
 export const createWelcomeCouponForUser = async (userId) => {
   try {

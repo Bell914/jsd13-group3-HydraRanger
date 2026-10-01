@@ -27,7 +27,11 @@ export default function OrderSummary({
     SHIPPING_METHODS.find((m) => m.id === shippingMethodId) ||
     SHIPPING_METHODS[0];
 
-  const shippingCost = selectedShipping ? selectedShipping.price : 0;
+  const shippingCost = appliedCoupon?.discountType === "shipping"
+    ? 0
+    : selectedShipping
+      ? selectedShipping.price
+      : 0;
   
   const totalDiscount = Math.max(rankDiscountAmount, couponDiscountAmount);
   const discountedSubtotal = Math.max(0, subtotal - totalDiscount);
@@ -123,7 +127,9 @@ export default function OrderSummary({
                 {appliedCoupon.code}
               </span>
               <span className="text-[11px] bg-rose-100 text-rose-800 font-semibold px-1.5 py-0.5 rounded">
-                ลด {appliedCoupon.discountValue}%
+                {appliedCoupon.discountType === "shipping"
+                  ? "ส่งฟรี"
+                  : `ลด ${appliedCoupon.discountValue}%`}
               </span>
             </div>
             <button

@@ -139,9 +139,13 @@ export default function CheckoutPage() {
   const selectedShipping =
     SHIPPING_METHODS.find((method) => method.id === shippingData.shippingMethod) ||
     SHIPPING_METHODS[0];
-  const shippingCost = isFreeShipping ? 0 : selectedShipping.price;
+  const shippingCost = isFreeShipping || appliedCoupon?.discountType === "shipping"
+    ? 0
+    : selectedShipping.price;
 
-  const couponDiscountAmount = appliedCoupon
+  const couponDiscountAmount = appliedCoupon?.discountType === "shipping"
+    ? 0
+    : appliedCoupon
     ? (appliedCoupon.discountAmount || Math.round((subtotal * (appliedCoupon.discountValue || 5)) / 100))
     : 0;
   const totalDiscount = Math.max(rankDiscountAmount, couponDiscountAmount);
