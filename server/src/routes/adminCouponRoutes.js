@@ -3,10 +3,11 @@ import { protect, authorize } from '../middleware/authMiddleware.js';
 import { validate, validateParams } from '../middleware/validatorMiddleware.js';
 import { validateIdParam } from '../validators/commonValidator.js';
 import { validateAdminCouponInput } from '../validators/couponValidator.js';
-import { getAdminCoupons, createAdminCoupon, updateAdminCoupon, updateAdminCouponStatus } from '../controllers/adminCouponController.js';
+import { getAdminCoupons, getAdminMembershipCouponRedemptions, createAdminCoupon, updateAdminCoupon, updateAdminCouponStatus } from '../controllers/adminCouponController.js';
 
 const router = Router();
 router.use(protect, authorize('admin'));
+router.get('/redemptions', getAdminMembershipCouponRedemptions);
 router.get('/', getAdminCoupons);
 router.post('/', validate(validateAdminCouponInput), createAdminCoupon);
 router.put('/:id', validateParams(validateIdParam), validate(validateAdminCouponInput), updateAdminCoupon);

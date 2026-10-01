@@ -13,6 +13,7 @@ async function request(path, options = {}) {
 
 export const couponService = {
   list: () => request('/admin/coupons'),
+  listMembershipRedemptions: () => request('/admin/coupons/redemptions'),
   create: (coupon) => request('/admin/coupons', { method: 'POST', body: JSON.stringify(coupon) }),
   update: (id, coupon) => request(`/admin/coupons/${id}`, { method: 'PUT', body: JSON.stringify(coupon) }),
   setActive: (id, isActive) => request(`/admin/coupons/${id}/status`, { method: 'PATCH', body: JSON.stringify({ isActive }) }),
