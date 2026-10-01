@@ -57,6 +57,15 @@ export const useLookbookStore = create((set, get) => ({
     set({ favorites: updated });
     return updated;
   },
+
+  clearFavorites: () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (error) {
+      console.error("Failed to clear favorite lookbooks from localStorage:", error);
+    }
+    set({ favorites: [] });
+  },
 }));
 
 export default useLookbookStore;

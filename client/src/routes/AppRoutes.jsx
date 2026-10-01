@@ -2,7 +2,6 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import {
   HomePage,
-  DashboardPage,
   LoginPage,
   RegisterPage,
   ForgotPasswordPage,
@@ -13,6 +12,7 @@ import {
   ArticlePages,
   ProductDetailPage,
   CheckoutPage,
+  CheckoutAuthPage,
   ProfilePage,
   CartPage,
   LookbookListPage,
@@ -36,7 +36,15 @@ export const AppRoutes = () => {
       <Route path="/lookbook/:lookId" element={<LookbookDetailPage />} />
       <Route path="/mix-and-match" element={<MixAndMatchPage />} />
       <Route path="/cart" element={<CartPage />} />
-      <Route path="/checkout" element={<CheckoutPage />} />
+      <Route
+        path="/checkout"
+        element={
+          <ProtectedRoute redirectTo="/checkout/auth">
+            <CheckoutPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/checkout/auth" element={<CheckoutAuthPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -47,16 +55,6 @@ export const AppRoutes = () => {
       <Route path="/customerservice" element={<CustomerService />} />
       <Route path="/termsconditions" element={<TermAndCondition />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
-
-      {/* Protected Dashboard Route */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
 
       {/* Protected Profile Route */}
       <Route

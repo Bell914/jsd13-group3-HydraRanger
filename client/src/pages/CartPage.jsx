@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   ArrowLeft,
@@ -9,11 +9,14 @@ import {
   Truck,
   Plus,
   Minus,
+  Tag,
 } from "lucide-react";
-import useCartStore from "../store/cartStore.js";
+import useCartStore, { getAvailableQuantity } from "../store/cartStore.js";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
+import { authService } from "../services/authService.js";
 
 export default function CartPage() {
+  const navigate = useNavigate();
   const { cartItems, updateQuantity, removeFromCart, clearCart, getTotalPrice } =
     useCartStore();
 
@@ -26,18 +29,19 @@ export default function CartPage() {
   const shippingFee = subtotal >= 1000 || subtotal === 0 ? 0 : 50;
   const grandTotal = subtotal + shippingFee;
 
+  const handleCheckout = () => {
+    navigate(authService.getCurrentUser() ? "/checkout" : "/checkout/auth");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50/50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header with Title, Item Count, and Clear Cart Button (จุดที่ 1: ขยับปุ่มลงมาติดเส้นขีด) */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-2 pb-4 border-b border-gray-200">
-          <div className="flex items-center gap-3">
+          <div className="flex items-baseline gap-3">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-primary">
               Shopping Cart
             </h1>
-            <span className="text-sm font-medium text-secondary">
-              ({totalItemsCount} ชิ้น)
-            </span>
           </div>
           {cartItems && cartItems.length > 0 && (
             <button
@@ -77,9 +81,15 @@ export default function CartPage() {
             {/* Left Column: Cart Items List */}
             <div className="lg:col-span-2 space-y-4">
               <div className="bg-white border border-gray-200 rounded-2xl divide-y divide-gray-100 shadow-xs overflow-hidden">
-                {cartItems.map((item) => (
-                  <div
-                    key={item.variantId || item._id}
+                {cartItems.map((item) => {
+                  const availableQuantity = getAvailableQuantity(
+                    cartItems,
+                    item.cartItemId || item.variantId || item._id
+                  );
+
+                  return (
+                    <div
+                    key={item.cartItemId || item.variantId || item._id}
                     className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-50/40 transition-colors"
                   >
                     {/* Item Info */}
@@ -104,6 +114,16 @@ export default function CartPage() {
                           {item.name || "Apparel Item"}
                         </Link>
 
+                        {/* Lookbook Badge if item is part of a Lookbook set */}
+                        {item.lookbookName && (
+                          <div className="pt-0.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                              <Tag size={11} />
+                              เซ็ต {item.lookbookName}
+                            </span>
+                          </div>
+                        )}
+
                         {(item.color || item.size) && (
                           <div className="flex flex-wrap items-center gap-1.5 pt-1">
                             {item.color && (
@@ -119,14 +139,21 @@ export default function CartPage() {
                           </div>
                         )}
 
-                        <p className="text-base sm:text-lg font-extrabold text-gray-950 pt-2">
-                          <span>฿{item.price * (item.quantity || 1)}</span>
-                          {item.quantity > 1 && (
-                            <span className="text-xs font-normal text-gray-500 ml-1.5">
-                              (฿{(item.price || 0).toLocaleString()} / ชิ้น)
+                        <div className="flex items-baseline gap-2 pt-2">
+                          <span className="text-base sm:text-lg font-extrabold text-gray-950">
+                            ฿{(item.price * (item.quantity || 1)).toLocaleString()}
+                          </span>
+                          {item.originalPrice && item.originalPrice > item.price && (
+                            <span className="text-xs text-gray-400 line-through">
+                              ฿{(item.originalPrice * (item.quantity || 1)).toLocaleString()}
                             </span>
                           )}
-                        </p>
+                          {item.quantity > 1 && (
+                            <span className="text-xs font-normal text-gray-500 ml-1">
+                              ฿{(item.price || 0).toLocaleString()} / ชิ้น
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -136,7 +163,7 @@ export default function CartPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            updateQuantity(item.variantId, item.quantity - 1)
+                            updateQuantity(item.cartItemId || item.variantId, item.quantity - 1)
                           }
                           aria-label="Decrease quantity"
                           className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-gray-600 hover:bg-gray-200 hover:text-black transition-colors cursor-pointer"
@@ -149,10 +176,11 @@ export default function CartPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            updateQuantity(item.variantId, item.quantity + 1)
+                            updateQuantity(item.cartItemId || item.variantId, item.quantity + 1)
                           }
+                          disabled={availableQuantity !== null && item.quantity >= availableQuantity}
                           aria-label="Increase quantity"
-                          className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-gray-600 hover:bg-gray-200 hover:text-black transition-colors cursor-pointer"
+                          className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-gray-600 hover:bg-gray-200 hover:text-black transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <Plus size={13} strokeWidth={2.5} />
                         </button>
@@ -160,15 +188,16 @@ export default function CartPage() {
 
                       <button
                         type="button"
-                        onClick={() => removeFromCart(item.variantId)}
+                        onClick={() => removeFromCart(item.cartItemId || item.variantId)}
                         className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50 cursor-pointer"
                         title="Remove item"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Free Shipping Badge (จุดที่ 2: ปรับระยะขยับลงมาติดกับปุ่มเลือกซื้อสินค้าต่อด้านล่าง) */}
@@ -199,7 +228,7 @@ export default function CartPage() {
 
                 <div className="space-y-3 py-4 border-b border-gray-200 text-sm">
                   <div className="flex justify-between text-gray-600">
-                    <span>ราคารวม ({totalItemsCount} ชิ้น)</span>
+                    <span>ราคารวม {totalItemsCount} ชิ้น</span>
                     <span className="font-semibold text-gray-900">
                       ฿{subtotal.toLocaleString()}
                     </span>
@@ -208,7 +237,7 @@ export default function CartPage() {
                     <span>ค่าจัดส่ง</span>
                     <span className="font-semibold text-gray-900">
                       {shippingFee === 0 ? (
-                        <span className="text-emerald-600 font-bold">ฟรี (ยอดเกิน ฿1,000)</span>
+                        <span className="text-emerald-600 font-bold">ฟรี ยอดเกิน ฿1,000</span>
                       ) : (
                         `฿${shippingFee}`
                       )}
@@ -223,14 +252,14 @@ export default function CartPage() {
                   </span>
                 </div>
 
-                <Link
-                  to="/checkout"
+                <button
+                  type="button"
+                  onClick={handleCheckout}
                   aria-label="Proceed to Checkout"
-                  className="group relative w-full mt-4 py-4 px-6 bg-gray-950 hover:bg-black text-white font-bold text-sm tracking-wider uppercase rounded-xl flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg transition-all active:scale-[0.99] cursor-pointer"
+                  className="w-full mt-4 py-4 px-6 bg-gray-950 hover:bg-black text-white font-bold text-sm tracking-wider uppercase rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-all active:scale-[0.99] cursor-pointer"
                 >
                   <span>ดำเนินการชำระเงิน</span>
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </Link>
+                </button>
 
                 <div className="mt-5 pt-5 border-t border-gray-100 flex items-center justify-center gap-2 text-xs text-gray-500">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />

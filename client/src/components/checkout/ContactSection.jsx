@@ -29,13 +29,13 @@ export default function ContactSection({
     return (
       <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-xs mb-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">Contact</h2>
+          <h2 className="text-xl font-bold text-gray-900">ข้อมูลติดต่อ</h2>
           <button
             type="button"
             onClick={onEdit}
             className="text-sm font-semibold text-gray-900 underline hover:text-gray-600 transition-colors cursor-pointer"
           >
-            Edit
+            แก้ไข
           </button>
         </div>
         <p className="mt-2 text-sm text-gray-600 font-medium break-all">
@@ -47,14 +47,14 @@ export default function ContactSection({
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-xs mb-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-4">Contact</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-4">ข้อมูลติดต่อ</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label
             htmlFor="contact-email"
             className="block text-sm font-semibold text-gray-800 mb-1"
           >
-            Email Address
+            อีเมล
           </label>
           <input
             id="contact-email"
@@ -88,7 +88,7 @@ export default function ContactSection({
             type="submit"
             className="flex-1 py-3 bg-[#D0021B] hover:bg-[#b00217] text-white font-bold text-sm tracking-wider uppercase rounded transition-colors shadow-xs cursor-pointer"
           >
-            CONTINUE
+            ดำเนินการต่อ
           </button>
         </div>
       </form>

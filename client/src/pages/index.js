@@ -1,5 +1,4 @@
 export { HomePage } from "./HomePage.jsx";
-export { DashboardPage } from "./DashboardPage.jsx";
 export { LoginPage } from "./LoginPage.jsx";
 export { RegisterPage } from "./RegisterPage.jsx";
 export { default as ForgotPasswordPage } from "./ForgotPasswordPage.jsx";
@@ -10,8 +9,9 @@ export { ArticleDetail } from "./ArticleDetail.jsx";
 export { ArticlePages } from "./ArticlePages.jsx";
 export { default as ProductDetailPage } from "./ProductDetailPage.jsx";
 export { default as CartPage } from "./CartPage.jsx";
+export { default as CheckoutAuthPage } from "./CheckoutAuthPage.jsx";
 export { default as CheckoutPage } from "./CheckoutPage.jsx";
-export { ProfilePage } from './profilepage/ProfilePage.jsx';
+export { ProfilePage } from "./ProfilePage.jsx";
 export { default as LookbookListPage } from "./LookbookListPage.jsx";
 export { default as LookbookDetailPage } from "./LookbookDetailPage.jsx";
 export { default as MixAndMatchPage } from "./MixAndMatchPage.jsx";

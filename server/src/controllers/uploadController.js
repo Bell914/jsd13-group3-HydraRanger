@@ -1,13 +1,10 @@
-import fs from "node:fs/promises";
-import path from "node:path";
 import {
   uploadSingleImage,
   MAX_FILE_SIZE,
-  createUploadedImageName,
   matchesUploadedImageHeader,
-  uploadsFolder,
 } from "../middleware/uploadMiddleware.js";
 import { HTTP_STATUS } from "../config/constants.js";
+import { openImageDownload, storeImage } from "../services/imageStorageService.js";
 
 const MB = Math.round(MAX_FILE_SIZE / (1024 * 1024));
 
@@ -43,13 +40,13 @@ export function uploadImage(req, res) {
       });
     }
 
-    const filename = createUploadedImageName(req.file.mimetype);
+    let storedImage;
     try {
-      await fs.writeFile(path.join(uploadsFolder, filename), req.file.buffer, { flag: "wx" });
-    } catch {
+      storedImage = await storeImage(req.file);
+    } catch (error) {
       return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR || 500).json({
         success: false,
-        message: "บันทึกรูปภาพไม่สำเร็จ กรุณาลองใหม่อีกครั้ง",
+        message: error.message || "บันทึกรูปภาพไม่สำเร็จ กรุณาลองใหม่อีกครั้ง",
       });
     }
 
@@ -57,9 +54,22 @@ export function uploadImage(req, res) {
       success: true,
       message: "อัปโหลดรูปภาพสำเร็จ",
       data: {
-        url: `/collection-2026/mixandmatch/${filename}`,
-        filename,
+        url: `/api/uploads/${storedImage.id}`,
+        filename: storedImage.filename,
       },
     });
   });
+}
+
+export async function getImage(req, res, next) {
+  try {
+    const image = await openImageDownload(req.params.id);
+    if (!image) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Image not found' });
+    res.set('Content-Type', image.file.contentType || 'application/octet-stream');
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    image.stream.on('error', next);
+    image.stream.pipe(res);
+  } catch (error) {
+    next(error);
+  }
 }

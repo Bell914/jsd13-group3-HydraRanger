@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import morgan from "morgan";
 import path from "node:path";
@@ -48,6 +49,7 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Let the Admin website display the same product images as the customer website.
 app.use("/collection-2026", express.static(productImageFolder));
@@ -60,7 +62,7 @@ app.use(requestLogger);
 // Root Welcome Endpoint
 app.get("/", (req, res) => {
   res.json({
-    message: "Welcome to OCCASION API (HydraRanger Team - Sprint 2)",
+    message: "Welcome to OCCASION API (HydraRanger Team - Sprint 3)",
     docs: "/api/health",
     version: "1.0.0",
   });

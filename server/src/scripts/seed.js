@@ -1,12 +1,14 @@
 import mongoose from 'mongoose';
 import { connectDB, disconnectDB } from '../config/db.js';
 import { ENV } from '../config/env.js';
-import { User, Item, Product, Lookbook, Category } from '../models/index.js';
+import { User, Product, Lookbook, Category, Article } from '../models/index.js';
 import { productSeedData } from '../data/productSeedData.js';
+import { articleSeedData } from '../data/articleSeedData.js';
 import seedData from '../data/seedData.json' with { type: 'json' };
 import lookData from '../../../client/public/collection-2026/look-data.json' with { type: 'json' };
+import { buildDefaultSizeChart } from '../utils/defaultSizeCharts.js';
 
-const { initialUsers, initialItems } = seedData;
+const { initialUsers } = seedData;
 
 async function seedUsers() {
   const users = [];
@@ -38,28 +40,6 @@ async function seedUsers() {
 
   console.log(`✅ Users ready: ${users.length}`);
   return users;
-}
-
-async function seedItems(users) {
-  for (let index = 0; index < initialItems.length; index += 1) {
-    const item = initialItems[index];
-    const itemData = {
-      title: item.title,
-      description: item.description,
-      category: item.category,
-      status: item.status,
-      priority: item.priority,
-      creatorName: item.creatorName,
-      createdBy: users[index % users.length]._id
-    };
-    await Item.updateOne(
-      { title: item.title },
-      { $set: itemData },
-      { upsert: true, runValidators: true }
-    );
-  }
-
-  console.log(`✅ Items ready: ${initialItems.length}`);
 }
 
 async function seedProducts() {
@@ -114,7 +94,8 @@ async function seedProducts() {
       availableDate: raw.availableDate,
       is_active: raw.isActive ?? true,
       images,
-      variants
+      variants,
+      size_chart: buildDefaultSizeChart({ category: raw.category, variants })
     };
 
     const product = await Product.findOneAndUpdate(
@@ -175,6 +156,18 @@ async function seedLookbooks(products) {
   console.log(`✅ Lookbooks ready: ${lookData.looks.length}`);
 }
 
+async function seedArticles() {
+  for (const articleData of articleSeedData) {
+    await Article.updateOne(
+      { articleId: articleData.articleId },
+      { $set: { ...articleData, isPublished: articleData.isPublished ?? true } },
+      { upsert: true, runValidators: true }
+    );
+  }
+
+  console.log(`✅ Articles ready: ${articleSeedData.length}`);
+}
+
 async function runSeed() {
   console.log('🌱 Starting safe database seed...');
   await connectDB();
@@ -184,10 +177,10 @@ async function runSeed() {
       throw new Error('MongoDB is not connected');
     }
 
-    const users = await seedUsers();
-    await seedItems(users);
+    await seedUsers();
     const products = await seedProducts();
     await seedLookbooks(products);
+    await seedArticles();
     console.log('🎉 Database seed completed without deleting existing data');
   } catch (error) {
     console.error('❌ Seed error:', error.message);

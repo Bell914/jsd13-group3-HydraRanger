@@ -1,13 +1,23 @@
 import mongoose from 'mongoose';
-import { Order, ORDER_STATUSES } from '../models/Order.js';
+import { Order, ORDER_STATUSES, PAYMENT_METHODS } from '../models/Order.js';
 import { Product } from '../models/Product.js';
+import { Lookbook } from '../models/Lookbook.js';
 import * as loyaltyService from './loyaltyService.js';
-import * as couponService from './couponService.js';
 import {
   RANK_DISCOUNT_PERCENT,
   FREE_SHIPPING_MINIMUM,
   SHIPPING_METHODS_CONFIG
 } from '../config/membershipConfig.js';
+import {
+  claimCouponAtomically,
+  completeCouponRedemption,
+  getActiveGeneralCoupon,
+  refundCouponUsage,
+  refundMembershipCouponUsage,
+  releaseCouponReservation,
+  reserveMembershipCoupon,
+} from './couponService.js';
+import { isDemoPaymentEnabled } from '../config/env.js';
 
 const SHIPPING_COSTS = {
   standard: 0,
@@ -56,6 +66,7 @@ async function prepareOrderItems(items) {
   }
 
   const preparedItems = [];
+  const stockSeen = new Map();
 
   for (const item of items) {
     if (!mongoose.Types.ObjectId.isValid(item.productId)) {
@@ -73,7 +84,7 @@ async function prepareOrderItems(items) {
     const variant = findVariant(product, item);
     if (!variant) throw new Error(`Variant for ${product.title} was not found`);
     if (variant.stock_quantity < quantity) {
-      throw new Error(`Not enough stock for ${product.title}`);
+      throw new Error(variant.stock_quantity <= 0 ? 'สินค้าหมดแล้ว' : 'สินค้ามีไม่เพียงพอในสต็อก');
     }
 
     preparedItems.push({
@@ -82,25 +93,126 @@ async function prepareOrderItems(items) {
       sku: variant.sku,
       title: product.title,
       variant: variant.size_or_color,
+      color: variant.color || '',
+      size: variant.size || '',
       imageUrl: getImageUrl(product),
       unitPrice: variant.price,
       quantity,
-      lineTotal: variant.price * quantity
+      lineTotal: variant.price * quantity,
+      lookbookId: item.lookbookId ? String(item.lookbookId).trim() : ''
     });
+
+    const key = String(variant._id);
+    if (!stockSeen.has(key)) {
+      stockSeen.set(key, { title: product.title, stock: variant.stock_quantity });
+    }
+  }
+
+  // Compare the aggregated claim against the stock the product actually has, so a SKU
+  // spread over two lines is rejected here with the real reason instead of failing
+  // halfway through the reservation.
+  for (const claim of aggregateStockClaims(preparedItems)) {
+    const seen = stockSeen.get(String(claim.variantId));
+    if (seen && claim.quantity > seen.stock) {
+      throw new Error(seen.stock <= 0 ? 'สินค้าหมดแล้ว' : 'สินค้ามีไม่เพียงพอในสต็อก');
+    }
   }
 
   return preparedItems;
+}
+
+export async function calculateLookbookDiscount(items) {
+  const lookbookGroups = {};
+  for (const item of items) {
+    if (item.lookbookId) {
+      const key = String(item.lookbookId).trim();
+      if (!lookbookGroups[key]) {
+        lookbookGroups[key] = [];
+      }
+      lookbookGroups[key].push(item);
+    }
+  }
+
+  let totalLookbookDiscount = 0;
+
+  for (const [lbId, groupItems] of Object.entries(lookbookGroups)) {
+    try {
+      const lookbook = mongoose.Types.ObjectId.isValid(lbId)
+        ? await Lookbook.findById(lbId)
+        : await Lookbook.findOne({
+            $or: [
+              { lookbookId: lbId },
+              { lookbookId: lbId.toUpperCase() },
+              { lookbookId: lbId.toLowerCase() },
+            ],
+          });
+
+      if (lookbook && lookbook.isActive !== false) {
+        const saving = Number(lookbook.saving) > 0
+          ? Number(lookbook.saving)
+          : Math.max(0, Number(lookbook.regularPrice || 0) - Number(lookbook.setPrice || 0));
+
+        if (saving > 0) {
+          if (Array.isArray(lookbook.items) && lookbook.items.length > 0) {
+            const productIds = lookbook.items.map((it) => String(it.product?._id || it.product));
+            const productCounts = productIds.map((pId) => {
+              const matched = groupItems.filter((gi) => String(gi.product) === pId);
+              return matched.reduce((sum, gi) => sum + gi.quantity, 0);
+            });
+            const completeSets = Math.min(...productCounts);
+            if (completeSets > 0) {
+              totalLookbookDiscount += saving * completeSets;
+            }
+          } else {
+            const minQty = Math.min(...groupItems.map((gi) => gi.quantity));
+            if (minQty > 0 && groupItems.length >= 2) {
+              totalLookbookDiscount += saving * minQty;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn(`Could not compute lookbook discount for ${lbId}:`, err.message);
+    }
+  }
+
+  return totalLookbookDiscount;
 }
 
 function wasUpdated(result) {
   return (result.modifiedCount ?? result.nModified ?? 0) === 1;
 }
 
-async function restoreOrderStock(items) {
+// A cart can hold the same SKU on more than one line: a product bought on its own plus
+// the same SKU inside a lookbook set. Stock has to be judged on the total an order
+// claims, not on each line in isolation, otherwise the second line is compared against
+// stock the first line already took.
+function aggregateStockClaims(items) {
+  const byVariant = new Map();
+
   for (const item of items) {
+    const key = String(item.variantId);
+    const existing = byVariant.get(key);
+    if (existing) {
+      existing.quantity += item.quantity;
+    } else {
+      byVariant.set(key, {
+        product: item.product,
+        variantId: item.variantId,
+        quantity: item.quantity,
+      });
+    }
+  }
+
+  return [...byVariant.values()];
+}
+
+async function restoreOrderStock(items, session = null) {
+  for (const claim of aggregateStockClaims(items)) {
     await Product.updateOne(
-      { _id: item.product, 'variants._id': item.variantId },
-      { $inc: { 'variants.$.stock_quantity': item.quantity } }
+      { _id: claim.product, 'variants._id': claim.variantId },
+      { $inc: { 'variants.$.stock_quantity': claim.quantity } },
+      session ? { session } : undefined
     );
   }
 }
@@ -109,25 +221,25 @@ async function reserveOrderStock(items) {
   const reservedItems = [];
 
   try {
-    for (const item of items) {
+    for (const claim of aggregateStockClaims(items)) {
       const result = await Product.updateOne(
         {
-          _id: item.product,
+          _id: claim.product,
           variants: {
             $elemMatch: {
-              _id: item.variantId,
-              stock_quantity: { $gte: item.quantity }
+              _id: claim.variantId,
+              stock_quantity: { $gte: claim.quantity }
             }
           }
         },
-        { $inc: { 'variants.$.stock_quantity': -item.quantity } }
+        { $inc: { 'variants.$.stock_quantity': -claim.quantity } }
       );
 
       if (!wasUpdated(result)) {
-        throw new Error(`Not enough stock for ${item.title}`);
+        throw new Error('สินค้ามีไม่เพียงพอในสต็อก');
       }
 
-      reservedItems.push(item);
+      reservedItems.push(claim);
     }
   } catch (error) {
     await restoreOrderStock(reservedItems);
@@ -151,32 +263,87 @@ function validateShippingAddress(address) {
 }
 
 export async function createOrder(user, orderData) {
+  // Capture the checkout start once so time-based fields belong to the same
+  // request, even when inventory preparation takes a little while.
+  const checkoutStartedAt = new Date();
   validateShippingAddress(orderData.shippingAddress);
   const items = await prepareOrderItems(orderData.items);
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
-  // 1. Calculate discount from member tier
+
+  // 1. Calculate Lookbook Set Bundle Discount
+  const lookbookDiscount = await calculateLookbookDiscount(items);
+  const effectiveSubtotal = Math.max(0, subtotal - lookbookDiscount);
+
+  // 2. Calculate discount from member tier
   const membershipTierAtPurchase = user?.membership?.rank || 'MEMBER';
   const rankPercent = RANK_DISCOUNT_PERCENT[membershipTierAtPurchase] || 0;
-  let calculatedDiscount = rankPercent > 0 ? Math.round((subtotal * rankPercent) / 100) : 0;
+  let calculatedDiscount = rankPercent > 0 ? Math.round((effectiveSubtotal * rankPercent) / 100) : 0;
 
-  // 2. The server owns coupon eligibility and redemption. Client totals are never trusted.
+  // 3. Validate coupon if provided
   const couponCode = orderData.couponCode ? String(orderData.couponCode).trim().toUpperCase() : '';
-  const { coupon, reservation } = await couponService.reserveCoupon(user, couponCode, subtotal);
-  if (coupon?.discountType === 'percent') {
-    const couponDiscount = Math.round((subtotal * coupon.discountValue) / 100);
-    calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
-  } else if (coupon?.discountType === 'fixed') {
-    calculatedDiscount = Math.max(calculatedDiscount, coupon.discountValue);
-  }
-  const discountAmount = Math.min(subtotal, calculatedDiscount);
+  let appliedDbCoupon = null;
+  let appliedMembershipCoupon = null;
+  let membershipReservation = null;
+  const orderId = new mongoose.Types.ObjectId();
+  if (couponCode) {
+    // 2.1 First attempt atomic claim on dynamic user coupons in MongoDB (e.g. WELCOME5)
+    const userId = user?._id || user?.id;
+    if (userId) {
+      try {
+        appliedDbCoupon = await claimCouponAtomically({
+          code: couponCode,
+          userId,
+          orderId,
+        });
+        if (appliedDbCoupon) {
+          const couponDiscount = Math.round((effectiveSubtotal * appliedDbCoupon.discountValue) / 100);
+          calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
+        }
+      } catch (couponErr) {
+        console.warn('Coupon atomic claim warning:', couponErr.message);
+      }
+    }
 
-  // 3. Calculate shipping cost based on shipping method and free shipping rules
+    // 2.2 General coupons are reusable and managed by administrators.
+    if (!appliedDbCoupon) {
+      const generalCoupon = await getActiveGeneralCoupon(couponCode, effectiveSubtotal);
+      if (generalCoupon) {
+        const couponDiscount = Math.round((effectiveSubtotal * generalCoupon.discountValue) / 100);
+        calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
+      } else {
+        // 2.3 Membership coupons are derived and validated by the server. A
+        // short-lived reservation protects one-use campaigns from concurrent checkouts.
+        const reserved = await reserveMembershipCoupon(
+          user,
+          couponCode,
+          effectiveSubtotal,
+          checkoutStartedAt,
+        );
+        appliedMembershipCoupon = reserved.coupon;
+        membershipReservation = reserved.reservation;
+        if (!appliedMembershipCoupon) {
+          throw new Error('คูปองไม่ถูกต้อง หรือถูกใช้งานไปแล้ว');
+        }
+        if (appliedMembershipCoupon.discountType === 'percent') {
+          const couponDiscount = Math.round(
+            (effectiveSubtotal * appliedMembershipCoupon.discountValue) / 100,
+          );
+          calculatedDiscount = Math.max(calculatedDiscount, couponDiscount);
+        } else if (appliedMembershipCoupon.discountType === 'fixed') {
+          calculatedDiscount = Math.max(calculatedDiscount, appliedMembershipCoupon.discountValue);
+        }
+      }
+    }
+  }
+  const discountAmount = Math.min(subtotal, lookbookDiscount + calculatedDiscount);
+
+  // 4. Calculate shipping cost based on shipping method and free shipping rules
   const methodKey = String(orderData.shippingMethod || 'standard').toLowerCase();
   const selectedMethod = SHIPPING_METHODS_CONFIG[methodKey] || SHIPPING_METHODS_CONFIG.standard;
   const baseShippingCost = selectedMethod.price;
 
   const freeShippingThreshold = FREE_SHIPPING_MINIMUM[membershipTierAtPurchase] ?? 1000;
-  const isFreeShipping = freeShippingThreshold === 0 || subtotal >= freeShippingThreshold;
+  const isFreeShipping = freeShippingThreshold === 0 || effectiveSubtotal >= freeShippingThreshold;
 
   let shippingCost = baseShippingCost;
   if (methodKey === 'standard') {
@@ -184,22 +351,22 @@ export async function createOrder(user, orderData) {
   } else if (membershipTierAtPurchase === 'PLATINUM' && methodKey === 'priority') {
     shippingCost = 0; // Platinum priority shipping is free
   }
-  if (coupon?.discountType === 'shipping') shippingCost = 0;
+  if (appliedMembershipCoupon?.discountType === 'shipping') shippingCost = 0;
 
-  const taxableSubtotal = Math.max(0, subtotal - discountAmount);
-  const taxAmount = Math.round(taxableSubtotal * 0.06 * 100) / 100;
-  const totalAmount = taxableSubtotal + shippingCost + taxAmount;
-
-  try {
-    await reserveOrderStock(items);
-  } catch (error) {
-    await couponService.releaseCouponReservation(reservation);
-    throw error;
-  }
+  const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+  const totalAmount = discountedSubtotal + shippingCost;
+  const paymentMethod = orderData.paymentMethod || 'promptpay';
+  const paymentExpiresAt = PAYMENT_METHODS.includes(paymentMethod)
+    ? new Date(checkoutStartedAt.getTime() + 30 * 60 * 1000)
+    : null;
 
   let order;
+  let stockReserved = false;
   try {
+    await reserveOrderStock(items);
+    stockReserved = true;
     order = await Order.create({
+      _id: orderId,
       orderNumber: createOrderNumber(),
       user: user._id || user.id,
       customerEmail: orderData.email || user.email,
@@ -216,37 +383,89 @@ export async function createOrder(user, orderData) {
         deliveryNote: orderData.shippingAddress?.deliveryNote || ''
       },
       shippingMethod: orderData.shippingMethod || 'standard',
-      paymentMethod: orderData.paymentMethod || 'credit-card',
+      paymentMethod,
+      paymentExpiresAt,
       subtotal,
       discountAmount,
       couponCode,
       membershipTierAtPurchase,
       shippingCost,
-      taxAmount,
       totalAmount,
       loyaltyProcessed: false,
       stockReserved: true
     });
   } catch (error) {
-    await restoreOrderStock(items);
-    await couponService.releaseCouponReservation(reservation);
+    try {
+      if (stockReserved) await restoreOrderStock(items);
+    } finally {
+      // Only release the claim owned by this failed checkout, including stock failures.
+      if (appliedDbCoupon) {
+        await refundCouponUsage({ code: couponCode, userId: user._id || user.id, orderId });
+      }
+      await releaseCouponReservation(membershipReservation);
+    }
     throw error;
   }
 
   try {
-    await couponService.completeCouponRedemption(reservation, order);
+    await completeCouponRedemption(membershipReservation, order);
   } catch (error) {
     await Order.deleteOne({ _id: order._id });
     await restoreOrderStock(items);
-    await couponService.releaseCouponReservation(reservation);
+    if (appliedDbCoupon) {
+      await refundCouponUsage({ code: couponCode, userId: user._id || user.id, orderId });
+    }
+    await releaseCouponReservation(membershipReservation);
     throw error;
   }
 
   return Order.findById(order._id).populate('user', 'username email');
 }
 
-export function getMyOrders(userId) {
-  return Order.find({ user: userId }).sort({ createdAt: -1 });
+export async function getExpiredPendingPaymentOrders(now = new Date()) {
+  return Order.find({
+    status: 'pending',
+    paymentMethod: { $in: PAYMENT_METHODS },
+    paymentExpiresAt: { $lte: now }
+  });
+}
+
+let cleanupIsRunning = false;
+
+// Releases stock held by orders whose demo payment was never confirmed.
+export async function cleanupExpiredPendingPayments() {
+  if (cleanupIsRunning) return;
+  cleanupIsRunning = true;
+
+  try {
+    const expiredOrders = await getExpiredPendingPaymentOrders();
+
+    for (const order of expiredOrders) {
+      try {
+        await cancelOrder(order.user._id || order.user.id || order.user, order._id);
+      } catch (error) {
+        console.error(`Could not clean up expired order ${order._id}:`, error.message);
+      }
+    }
+  } finally {
+    cleanupIsRunning = false;
+  }
+}
+
+export async function getMyOrders(userId) {
+  const orders = await Order.find({ user: userId }).sort({ createdAt: -1 }).lean();
+  return orders.map((order) => ({
+    ...order,
+    userId: String(order.user),
+    items: order.items.map((item) => ({
+      ...item,
+      productId: String(item.product),
+      name: item.title,
+      price: item.unitPrice,
+      color: item.color || '',
+      size: item.size || ''
+    }))
+  }));
 }
 
 export async function getOrderById(orderId, userId) {
@@ -268,6 +487,28 @@ export function getAllOrders() {
   return Order.find().populate('user', 'username email').sort({ createdAt: -1 });
 }
 
+function isTransactionUnavailable(error) {
+  return error?.code === 20 || /transaction numbers are only allowed/i.test(error?.message || '');
+}
+
+async function applyOrderStatusChanges(existingOrder, status, userId, netSpend, session = null) {
+  if (['cancelled', 'refunded'].includes(status) && existingOrder.stockReserved && !existingOrder.stockRestored) {
+    await restoreOrderStock(existingOrder.items, session);
+    existingOrder.stockRestored = true;
+  }
+
+  if (userId && !existingOrder.loyaltyProcessed && status === 'paid') {
+    await loyaltyService.processOrderSpending(userId, netSpend, 'ADD', session);
+    existingOrder.loyaltyProcessed = true;
+    existingOrder.paidAt = existingOrder.paidAt || new Date();
+  } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {
+    await loyaltyService.processOrderSpending(userId, netSpend, 'SUBTRACT', session);
+    existingOrder.loyaltyProcessed = false;
+  }
+
+  await existingOrder.save(session ? { session } : undefined);
+}
+
 export async function updateOrderStatus(orderId, status) {
   if (!ORDER_STATUSES.includes(status)) throw new Error('Invalid order status');
 
@@ -282,88 +523,76 @@ export async function updateOrderStatus(orderId, status) {
 
   existingOrder.status = status;
 
-  if (['cancelled', 'refunded'].includes(status)) {
-    if (existingOrder.stockReserved && !existingOrder.stockRestored) {
-      await restoreOrderStock(existingOrder.items);
-      existingOrder.stockRestored = true;
-    }
-  }
-
   const userId = existingOrder.user?._id || existingOrder.user?.id || existingOrder.user;
   const netSpend = Math.max(0, existingOrder.subtotal - (existingOrder.discountAmount || 0));
-  const originalLoyaltyProcessed = existingOrder.loyaltyProcessed;
 
-  const persistStatusAndLoyalty = async (activeSession = null) => {
-    existingOrder.loyaltyProcessed = originalLoyaltyProcessed;
-    if (userId && !existingOrder.loyaltyProcessed && status === 'paid') {
-      await loyaltyService.processOrderSpending(userId, netSpend, 'ADD', activeSession);
-      existingOrder.loyaltyProcessed = true;
-    } else if (userId && existingOrder.loyaltyProcessed && ['cancelled', 'refunded'].includes(status)) {
-      await loyaltyService.processOrderSpending(userId, netSpend, 'SUBTRACT', activeSession);
-      existingOrder.loyaltyProcessed = false;
-    }
-    await existingOrder.save(activeSession ? { session: activeSession } : undefined);
-  };
-
-  let session = null;
+  let session;
   try {
     session = await mongoose.startSession();
     session.startTransaction();
-  } catch {
-    session = null;
-  }
+    await applyOrderStatusChanges(existingOrder, status, userId, netSpend, session);
+    await session.commitTransaction();
+  } catch (error) {
+    await session?.abortTransaction();
 
-  try {
-    if (session) {
-      await persistStatusAndLoyalty(session);
-      await session.commitTransaction();
+    if (!session || isTransactionUnavailable(error)) {
+      await applyOrderStatusChanges(existingOrder, status, userId, netSpend);
     } else {
-      await persistStatusAndLoyalty();
-    }
-  } catch (err) {
-    if (session) {
-      await session.abortTransaction().catch(() => {});
-    }
-    const transactionUnsupported = /Transaction numbers are only allowed|replica set member|mongos/i.test(
-      err.message || ''
-    );
-    if (session && transactionUnsupported) {
-      session.endSession();
-      session = null;
-      await persistStatusAndLoyalty();
-    } else {
-      throw err;
+      throw error;
     }
   } finally {
-    if (session) {
-      session.endSession();
+    await session?.endSession();
+  }
+
+  // Refund coupon if order was cancelled or refunded
+  if (['cancelled', 'refunded'].includes(status) && existingOrder.couponCode && userId) {
+    try {
+      await refundCouponUsage({
+        code: existingOrder.couponCode,
+        userId,
+        orderId: existingOrder._id
+      });
+      await refundMembershipCouponUsage({
+        code: existingOrder.couponCode,
+        userId,
+        orderId: existingOrder._id,
+      });
+    } catch (refundErr) {
+      console.warn('Coupon refund warning on updateOrderStatus:', refundErr.message);
     }
   }
 
   const order = await Order.findById(orderId).populate('user', 'username email');
   return order;
 }
+// Demo payment confirmation: the client simulates a successful PromptPay checkout,
+// then the order moves through the normal status machine so loyalty, coupon and stock
+// handling stay in one place. No bank or card payment is verified here.
+export async function confirmOrderPayment(userId, orderId) {
+  if (!isDemoPaymentEnabled()) {
+    throw new Error('Demo payment is disabled');
+  }
+
+  const existingOrder = await getOrderById(orderId, userId);
+
+  if (!PAYMENT_METHODS.includes(existingOrder.paymentMethod)) {
+    throw new Error('Unsupported payment method');
+  }
+  if (existingOrder.status === 'paid') return existingOrder;
+  if (existingOrder.status !== 'pending') {
+    throw new Error('Order is not waiting for payment');
+  }
+  // The 60s reaper may not have cancelled the order yet, so refuse it here too.
+  if (existingOrder.paymentExpiresAt && new Date(existingOrder.paymentExpiresAt).getTime() < Date.now()) {
+    throw new Error('Order is not waiting for payment');
+  }
+
+  return updateOrderStatus(orderId, 'paid');
+}
+
 export async function cancelOrder(userId, orderId) {
   if (!mongoose.Types.ObjectId.isValid(orderId)) {
     throw new Error('Order not found');
-  }
-
-  const order = await Order.findOneAndUpdate(
-    {
-      _id: orderId,
-      user: userId,
-      status: { $in: ['pending', 'paid'] }
-    },
-    { status: 'cancelled' },
-    { new: true, runValidators: true }
-  );
-
-  if (order) {
-    if (order.stockReserved && !order.stockRestored) {
-      await restoreOrderStock(order.items);
-    }
-    order.stockRestored = true;
-    return order.save();
   }
 
   const existingOrder = await getOrderById(orderId, userId);
@@ -371,5 +600,10 @@ export async function cancelOrder(userId, orderId) {
   if (existingOrder.status === 'cancelled') {
     throw new Error('Order already cancelled');
   }
-  throw new Error('Cannot cancel order in current status');
+  if (!['pending', 'paid'].includes(existingOrder.status)) {
+    throw new Error('Cannot cancel order in current status');
+  }
+
+  // Keep stock and loyalty changes in one status-transition path.
+  return updateOrderStatus(orderId, 'cancelled');
 }

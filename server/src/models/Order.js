@@ -10,17 +10,22 @@ export const ORDER_STATUSES = [
   'refunded'
 ];
 
-const orderItemSchema = new mongoose.Schema(
+export const PAYMENT_METHODS = ['promptpay', 'credit-card'];
+
+export const orderItemSchema = new mongoose.Schema(
   {
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
     variantId: { type: mongoose.Schema.Types.ObjectId, required: true },
     sku: { type: String, required: true, trim: true },
     title: { type: String, required: true, trim: true },
     variant: { type: String, required: true, trim: true },
+    color: { type: String, default: '', trim: true },
+    size: { type: String, default: '', trim: true },
     imageUrl: { type: String, default: '' },
     unitPrice: { type: Number, required: true, min: 0 },
     quantity: { type: Number, required: true, min: 1 },
-    lineTotal: { type: Number, required: true, min: 0 }
+    lineTotal: { type: Number, required: true, min: 0 },
+    lookbookId: { type: String, default: '', trim: true }
   },
   { _id: false }
 );
@@ -54,13 +59,14 @@ const orderSchema = new mongoose.Schema(
     },
     shippingAddress: { type: shippingAddressSchema, required: true },
     shippingMethod: { type: String, default: 'standard', trim: true },
-    paymentMethod: { type: String, default: 'credit-card', trim: true },
+    paymentMethod: { type: String, default: 'promptpay', trim: true },
+    paymentExpiresAt: { type: Date, default: null, index: true },
+    paidAt: { type: Date, default: null },
     subtotal: { type: Number, required: true, min: 0 },
     discountAmount: { type: Number, default: 0, min: 0 },
     couponCode: { type: String, default: '', trim: true },
     membershipTierAtPurchase: { type: String, default: 'MEMBER', trim: true },
     shippingCost: { type: Number, required: true, min: 0 },
-    taxAmount: { type: Number, required: true, min: 0 },
     totalAmount: { type: Number, required: true, min: 0 },
     status: { type: String, enum: ORDER_STATUSES, default: 'pending', index: true },
     loyaltyProcessed: { type: Boolean, default: false, index: true },

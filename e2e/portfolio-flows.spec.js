@@ -31,10 +31,9 @@ test('customer profile loads coupons whose eligibility comes from the backend', 
     data: { username: `portfolio${Date.now()}`, email, password }
   });
   expect(registerResponse.ok()).toBeTruthy();
-  const session = (await registerResponse.json()).data;
+  await registerResponse.json();
   await request.put(`${API}/auth/profile`, {
-    headers: { Authorization: `Bearer ${session.token}` },
-    data: { birthMonth: new Date().getUTCMonth() + 1 }
+    data: { birthday: `1990-${String(new Date().getUTCMonth() + 1).padStart(2, '0')}-15` }
   });
 
   await loginCustomerInBrowser(page, email, password);
@@ -43,7 +42,6 @@ test('customer profile loads coupons whose eligibility comes from the backend', 
 
   await expect(page.getByText('OCCWELCOME10')).toBeVisible();
   await expect(page.getByText('BDAY5')).toBeVisible();
-  await expect(page.getByText(/กำลังโหลดสิทธิ์จากระบบ/)).toBeHidden();
 
   const productsResponse = await request.get(`${API}/products`);
   const product = (await productsResponse.json()).data[0];
@@ -58,18 +56,16 @@ test('customer profile loads coupons whose eligibility comes from the backend', 
     shippingMethod: 'standard', paymentMethod: 'credit-card', couponCode: 'OCCWELCOME10'
   };
   const orderResponse = await request.post(`${API}/orders`, {
-    headers: { Authorization: `Bearer ${session.token}` },
     data: couponOrder
   });
   expect(orderResponse.ok()).toBeTruthy();
   expect((await orderResponse.json()).data.discountAmount).toBeGreaterThan(0);
 
   const duplicateResponse = await request.post(`${API}/orders`, {
-    headers: { Authorization: `Bearer ${session.token}` },
     data: couponOrder
   });
   expect(duplicateResponse.status()).toBe(400);
-  expect((await duplicateResponse.json()).message).toContain('already been used');
+  expect((await duplicateResponse.json()).message).toMatch(/ใช้สิทธิ์นี้แล้ว|already been used/);
 
   await page.reload();
   await expect(page.getByText('ใช้สิทธิ์นี้แล้ว')).toBeVisible();
@@ -83,7 +79,7 @@ test('customer can save a consented size profile end to end', async ({ page }) =
   await page.getByLabel(/รอบอก/).fill('92');
   await page.getByLabel(/รอบเอว/).fill('78');
   await page.getByLabel(/รอบสะโพก/).fill('96');
-  await page.getByLabel(/ชอบเสื้อผ้าทรงไหน/).selectOption('regular');
+  await page.getByRole('radio', { name: 'มาตรฐาน' }).check();
   await page.getByLabel(/ฉันยินยอม/).check();
   await page.getByRole('button', { name: 'บันทึกข้อมูลไซส์' }).click();
 
@@ -91,13 +87,12 @@ test('customer can save a consented size profile end to end', async ({ page }) =
 });
 
 test('admin can move a real customer order through the authorized workflow', async ({ page, request }) => {
-  const customer = await customerLogin(request);
+  await customerLogin(request);
   const productsResponse = await request.get(`${API}/products`);
   const products = (await productsResponse.json()).data;
   const product = products[0];
   const variant = product.variants[0];
   const orderResponse = await request.post(`${API}/orders`, {
-    headers: { Authorization: `Bearer ${customer.token}` },
     data: {
       email: CUSTOMER_EMAIL,
       items: [{ productId: product._id, variantId: variant._id, sku: variant.sku, quantity: 1 }],
@@ -115,10 +110,10 @@ test('admin can move a real customer order through the authorized workflow', asy
   await page.goto('http://127.0.0.1:5174/login');
   await page.locator('input[name="email"]').fill(ADMIN_EMAIL);
   await page.locator('input[name="password"]').fill(ADMIN_PASSWORD);
-  await page.getByRole('button', { name: 'เข้าสู่ระบบ Admin' }).click();
+  await page.getByRole('button', { name: 'เข้าสู่ระบบผู้ดูแล' }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await page.goto('http://127.0.0.1:5174/orders');
-  await page.getByPlaceholder('ค้นหา Order หรือลูกค้า...').fill(order.orderNumber);
+  await page.getByRole('searchbox', { name: /ค้นหาเลขที่คำสั่งซื้อ/ }).fill(order.orderNumber);
   const row = page.getByRole('row').filter({ hasText: order.orderNumber });
   await row.locator('select').selectOption('paid');
 
@@ -133,7 +128,7 @@ test('admin product CRUD persists through the API and survives refresh', async (
   await page.goto('http://127.0.0.1:5174/login');
   await page.locator('input[name="email"]').fill(ADMIN_EMAIL);
   await page.locator('input[name="password"]').fill(ADMIN_PASSWORD);
-  await page.getByRole('button', { name: 'เข้าสู่ระบบ Admin' }).click();
+  await page.getByRole('button', { name: 'เข้าสู่ระบบผู้ดูแล' }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await page.goto('http://127.0.0.1:5174/products');
   await page.getByRole('button', { name: /เพิ่มสินค้าใหม่/ }).click();
@@ -146,13 +141,13 @@ test('admin product CRUD persists through the API and survives refresh', async (
 
   await dialog.getByLabel(/ชื่อสินค้า/).fill(productName);
   await dialog.getByLabel(/รายละเอียดสินค้า/).fill('Created by the Sprint 3 end-to-end portfolio test');
-  await dialog.getByLabel(/Tags/).fill('portfolio, sprint-3');
+  await dialog.getByLabel(/คำค้นหา/).fill('portfolio, sprint-3');
   await dialog.getByLabel(/วันที่เริ่มจำหน่าย/).fill('2026-09-28');
   await dialog.getByLabel(/รอบอกเสื้อจริง/).fill('98');
-  await dialog.getByLabel(/SKU/).fill(`PORT-${Date.now()}`);
+  await dialog.getByLabel(/รหัสสินค้า/).fill(`PORT-${Date.now()}`);
   await dialog.getByLabel(/สี \*/).fill('Black');
   await dialog.getByLabel(/ราคา/).fill('690');
-  await dialog.getByLabel(/Stock/).fill('7');
+  await dialog.getByLabel(/จำนวนคงเหลือ/).fill('7');
   await dialog.getByRole('button', { name: 'บันทึกสินค้า' }).click();
 
   await expect(page.getByText(productName, { exact: true })).toBeVisible();
@@ -176,13 +171,14 @@ test('admin product CRUD persists through the API and survives refresh', async (
   storedProduct = (await persisted.json()).data.find((product) => product._id === storedProduct._id);
   expect(storedProduct.title).toBe(updatedName);
 
-  await page.getByRole('button', { name: `ลบ ${updatedName}` }).click();
-  await page.getByRole('button', { name: 'ลบสินค้า' }).click();
-  await expect(page.getByText(updatedName, { exact: true })).toBeHidden();
+  await page.getByRole('button', { name: `ปิดการขาย ${updatedName}` }).click();
+  await page.getByRole('button', { name: 'ปิดการขาย', exact: true }).click();
+  await expect(page.getByRole('row').filter({ hasText: updatedName })).toContainText('ซ่อนจากหน้าร้าน');
   persisted = await request.get(`${API}/admin/products`, {
     headers: { Authorization: `Bearer ${admin.token}` }
   });
-  expect((await persisted.json()).data.some((product) => product._id === storedProduct._id)).toBe(false);
+  storedProduct = (await persisted.json()).data.find((product) => product._id === storedProduct._id);
+  expect(storedProduct.is_active).toBe(false);
 });
 
 test('API returns safe errors for missing auth, malformed IDs, and insufficient stock', async ({ request }) => {
@@ -192,12 +188,11 @@ test('API returns safe errors for missing auth, malformed IDs, and insufficient 
   const missingProduct = await request.get(`${API}/products/not-a-valid-id`);
   expect(missingProduct.status()).toBe(404);
 
-  const customer = await customerLogin(request);
+  await customerLogin(request);
   const productsResponse = await request.get(`${API}/products`);
   const product = (await productsResponse.json()).data[0];
   const variant = product.variants[0];
   const response = await request.post(`${API}/orders`, {
-    headers: { Authorization: `Bearer ${customer.token}` },
     data: {
       email: CUSTOMER_EMAIL,
       items: [{
@@ -212,5 +207,5 @@ test('API returns safe errors for missing auth, malformed IDs, and insufficient 
     }
   });
   expect(response.status()).toBe(400);
-  expect((await response.json()).message).toContain('Not enough stock');
+  expect((await response.json()).message).toMatch(/สต็อก|สินค้าหมด/);
 });

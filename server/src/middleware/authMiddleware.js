@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import { ENV } from '../config/env.js';
 import { HTTP_STATUS } from '../config/constants.js';
 import { User } from '../models/User.js';
+import { getRequestToken } from '../utils/authCookies.js';
 
 const isDbUnavailableError = (error) => {
   if (!error) return false;
@@ -26,14 +27,10 @@ const isSyntheticUser = (id) =>
   id === 'env-admin' || (typeof id === 'string' && id.startsWith('mock-user-'));
 
 export const protect = async (req, res, next) => {
-  let token;
+  const token = getRequestToken(req);
 
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
+  if (token) {
     try {
-      token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, ENV.JWT_SECRET);
 
       // Synthetic in-memory / env-bootstrap users never exist in DB
@@ -91,12 +88,10 @@ export const protect = async (req, res, next) => {
     }
   }
 
-  if (!token) {
-    return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-      success: false,
-      message: 'Not authorized, no token provided'
-    });
-  }
+  return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+    success: false,
+    message: 'Not authorized, no token provided'
+  });
 };
 
 export const authorize = (...roles) => {

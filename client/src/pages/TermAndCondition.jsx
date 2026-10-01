@@ -1,6 +1,6 @@
 export const TermAndCondition = () => {
   return (
-    <div className="bg-white min-h-screen flex flex-col font-['Prompt']">
+    <div className="bg-white min-h-screen flex flex-col">
       {/* Navbar Container (นำคอมโพเนนต์ Navbar ของคุณมาใส่ตรงนี้) */}
       <header id="navbar-container"></header>
 
@@ -13,7 +13,7 @@ export const TermAndCondition = () => {
               ข้อกำหนดและเงื่อนไขการใช้บริการ
             </h1>
             <p className="text-xs sm:text-sm text-gray-500">
-              บริษัท ออกเคชั่น (ประเทศไทย) จำกัด &bull; อัปเดตล่าสุด:{" "}
+              บริษัท ออกเคชั่น (ประเทศไทย) จำกัด &bull; อัปเดตล่าสุด{" "}
               <span className="font-medium text-gray-700">30 กรกฎาคม 2569</span>
             </p>
           </header>
@@ -201,8 +201,8 @@ export const TermAndCondition = () => {
                         ช่องทางชำระเงิน
                       </td>
                       <td className="px-3 py-2">
-                        รองรับการชำระผ่านโมบายแบงก์กิ้ง, พร้อมเพย์ (PromptPay),
-                        บัตรเครดิต/เดบิตชั้นนำ และกระเปเงินดิจิทัลที่บริษัทกำหนด
+                        หน้า Checkout ปัจจุบันเป็นระบบสาธิต PromptPay QR และบัตรทดสอบ
+                        ไม่มีการโอนหรือตัดเงินจริง และไม่เชื่อมต่อกับธนาคารหรือผู้ให้บริการบัตร
                       </td>
                     </tr>
                   </tbody>
@@ -249,7 +249,7 @@ export const TermAndCondition = () => {
                 และมีหลักฐานวิดีโอขณะเปิดกล่องพัสดุอย่างชัดเจน
               </p>
               <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 p-4 rounded-lg mt-2 ">
-                <strong>* ข้อกำหนดเพิ่มเติม:</strong> สินค้าประเภทดิจิทัล
+                <strong>ข้อกำหนดเพิ่มเติม</strong> สินค้าประเภทดิจิทัล
                 สินค้าสั่งทำพิเศษ (Made-to-order)
                 หรือสินค้าจัดรายการลดราคาล้างสต็อก
                 จะไม่สามารถขอคืนเงินหรือเปลี่ยนคืนได้ทุกกรณี

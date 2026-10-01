@@ -1,15 +1,19 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard.jsx";
 import RecommendedSlider from "../components/RecommendedSlider.jsx";
+import PaginationPrevNext from "../components/PaginationPrevNext.jsx";
 import { getProducts } from "../services/productService.js";
 
 export default function ProductListPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState("featured");
+  const [isSortOpen, setIsSortOpen] = useState(false);
   const productsSectionRef = useRef(null);
 
   // URL query params
@@ -53,22 +57,36 @@ export default function ProductListPage() {
   }, [selectedCategory, searchKeyword]);
 
 
-  // Display products: do not duplicate when user is searching or filtering by category
+  // Never repeat products to fill the grid. Repeated cards make inventory and
+  // pagination misleading, especially when the API only returns a few items.
   const displayedProducts = useMemo(() => {
     if (!products || products.length === 0) return [];
-    const isFiltered = Boolean(searchKeyword || (selectedCategory && selectedCategory !== "all"));
-    if (isFiltered) {
-      return products;
+    const getPrice = (product) => {
+      const prices = (product.variants || [])
+        .map((variant) => Number(variant.price))
+        .filter((price) => Number.isFinite(price));
+      return prices.length ? Math.min(...prices) : Number(product.price) || 0;
+    };
+    const sorted = [...products];
+    if (sortBy === "price-low") sorted.sort((a, b) => getPrice(a) - getPrice(b));
+    if (sortBy === "price-high") sorted.sort((a, b) => getPrice(b) - getPrice(a));
+    if (sortBy === "name") {
+      sorted.sort((a, b) => (a.name || a.title || "").localeCompare(b.name || b.title || "", "th"));
     }
-    if (products.length < 32) {
-      const list = [];
-      while (list.length < 32) {
-        list.push(...products);
-      }
-      return list.slice(0, 32);
-    }
-    return products.slice(0, 32);
-  }, [products, searchKeyword, selectedCategory]);
+    return sorted;
+  }, [products, sortBy]);
+
+  const itemsPerPage = 8;
+  const totalPages = Math.max(1, Math.ceil(displayedProducts.length / itemsPerPage));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedProducts = displayedProducts.slice(
+    (safePage - 1) * itemsPerPage,
+    safePage * itemsPerPage
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, searchKeyword, sortBy]);
 
   // Smooth-scroll to the product cards once search results finish loading
   useEffect(() => {
@@ -81,9 +99,33 @@ export default function ProductListPage() {
     }
   }, [searchKeyword, loading, error, displayedProducts.length]);
 
+  // Land on the top of the products section when requested or category selected
+  useEffect(() => {
+    if (location.state?.scrollTo === "products" || (selectedCategory && selectedCategory !== "all")) {
+      if (!loading && !error && displayedProducts.length > 0) {
+        productsSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    }
+  }, [location.state?.scrollTo, location.state?.timestamp, selectedCategory, loading, error, displayedProducts.length]);
+
   const handlePageClick = (pageNum) => {
     setCurrentPage(pageNum);
-    window.scrollTo({ top: 380, behavior: "smooth" });
+    setTimeout(() => {
+      if (productsSectionRef.current) {
+        const yOffset = -24;
+        const y =
+          productsSectionRef.current.getBoundingClientRect().top +
+          window.pageYOffset +
+          yOffset;
+        window.scrollTo({
+          top: Math.max(0, y),
+          behavior: "smooth",
+        });
+      }
+    }, 50);
   };
 
   return (
@@ -114,21 +156,15 @@ export default function ProductListPage() {
         </section>
 
         {/* HERO SECTION: Auto-sliding Recommended Products Carousel */}
-        <RecommendedSlider products={products} />
+        {!loading && !error && products.length > 0 && (
+          <RecommendedSlider products={products} />
+        )}
 
         {/* Loading Skeleton */}
         {loading && (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-            {[...Array(8)].map((_, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col rounded-2xl bg-primary/20 p-4 animate-pulse min-h-[280px]"
-              >
-                <div className="aspect-square w-full rounded-xl bg-primary/30 mb-4"></div>
-                <div className="h-4 w-3/4 bg-primary/30 rounded mb-2"></div>
-                <div className="h-3 w-1/2 bg-primary/20 rounded mt-auto"></div>
-              </div>
-            ))}
+          <div className="flex h-[40vh] w-full flex-col items-center justify-center gap-4">
+            <span className="loading loading-spinner loading-lg text-accent"></span>
+            <p className="text-sm font-medium text-secondary animate-pulse">กำลังโหลดสินค้า...</p>
           </div>
         )}
 
@@ -171,13 +207,124 @@ export default function ProductListPage() {
           </div>
         )}
 
-        {/* 4-Column Products Grid (32 items matching wireframe) */}
+        {/* Responsive product grid */}
         {!loading && !error && displayedProducts.length > 0 && (
-          <section ref={productsSectionRef} aria-label="รายการสินค้า">
+          <section ref={productsSectionRef} id="products-section" aria-label="รายการสินค้า" className="scroll-mt-6">
+            <div className="mb-6 flex flex-col gap-4 border-b border-[#ded8cf] pb-5 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">
+                  OCCASION COLLECTION
+                </p>
+                <h2 className="mt-1 text-2xl font-black text-primary">
+                  {searchKeyword
+                    ? `ผลการค้นหา “${searchKeyword}”`
+                    : selectedCategory === "tops"
+                    ? "หมวดหมู่ เสื้อ"
+                    : selectedCategory === "bottoms"
+                    ? "หมวดหมู่ กางเกง"
+                    : "เลือกซื้อสินค้า"}
+                </h2>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {[
+                    { id: "all", label: "ทั้งหมด" },
+                    { id: "tops", label: "เสื้อ" },
+                    { id: "bottoms", label: "กางเกง" },
+                  ].map((cat) => {
+                    const isSelected = selectedCategory === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          const newParams = new URLSearchParams(searchParams);
+                          if (cat.id === "all") {
+                            newParams.delete("category");
+                          } else {
+                            newParams.set("category", cat.id);
+                          }
+                          setSearchParams(newParams);
+                        }}
+                        className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-accent text-white shadow-sm"
+                            : "bg-surface border border-occasion-border/60 text-secondary hover:border-accent hover:text-accent"
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-2 text-sm text-secondary">
+                  พบ {displayedProducts.length} รายการ
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 text-sm font-semibold text-primary relative">
+                เรียงตาม
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsSortOpen(!isSortOpen)}
+                    onBlur={() => setTimeout(() => setIsSortOpen(false), 200)}
+                    className="flex cursor-pointer items-center justify-between min-w-[180px] rounded-xl border border-[#d8d1c7] bg-white px-4 py-2.5 text-sm font-medium text-primary outline-none transition hover:border-accent focus:border-accent focus:ring-2 focus:ring-accent/20"
+                  >
+                    <span>
+                      {sortBy === "featured" ? "สินค้าแนะนำ" :
+                       sortBy === "price-low" ? "ราคา ต่ำไปสูง" :
+                       sortBy === "price-high" ? "ราคา สูงไปต่ำ" :
+                       "ชื่อสินค้า"}
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-primary transition-transform ${isSortOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+
+                  {isSortOpen && (
+                    <ul className="absolute right-0 top-full z-[10] mt-2 w-[180px] p-2 shadow-[0_8px_30px_rgb(0,0,0,0.12)] bg-white rounded-xl border border-[#d8d1c7]/50 flex flex-col gap-1">
+                      <li>
+                        <button
+                          type="button"
+                          className={`font-medium w-full rounded-lg flex text-left px-4 py-2 transition-colors ${sortBy === "featured" ? "bg-accent text-white" : "text-primary hover:bg-accent/10 hover:text-accent"}`}
+                          onClick={() => { setSortBy("featured"); setIsSortOpen(false); }}
+                        >
+                          สินค้าแนะนำ
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          type="button"
+                          className={`font-medium w-full rounded-lg flex text-left px-4 py-2 transition-colors ${sortBy === "price-low" ? "bg-accent text-white" : "text-primary hover:bg-accent/10 hover:text-accent"}`}
+                          onClick={() => { setSortBy("price-low"); setIsSortOpen(false); }}
+                        >
+                          ราคา ต่ำไปสูง
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          type="button"
+                          className={`font-medium w-full rounded-lg flex text-left px-4 py-2 transition-colors ${sortBy === "price-high" ? "bg-accent text-white" : "text-primary hover:bg-accent/10 hover:text-accent"}`}
+                          onClick={() => { setSortBy("price-high"); setIsSortOpen(false); }}
+                        >
+                          ราคา สูงไปต่ำ
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          type="button"
+                          className={`font-medium w-full rounded-lg flex text-left px-4 py-2 transition-colors ${sortBy === "name" ? "bg-accent text-white" : "text-primary hover:bg-accent/10 hover:text-accent"}`}
+                          onClick={() => { setSortBy("name"); setIsSortOpen(false); }}
+                        >
+                          ชื่อสินค้า
+                        </button>
+                      </li>
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {displayedProducts.map((product, idx) => (
+              {paginatedProducts.map((product) => (
                 <ProductCard
-                  key={`${product._id || product.productId}-${idx}`}
+                  key={product._id || product.productId}
                   product={product}
                 />
               ))}
@@ -185,36 +332,18 @@ export default function ProductListPage() {
           </section>
         )}
 
-        {/* Pagination Numbers 1-10 matching user screenshot */}
+{/* Dynamic Pagination (8 cards per page, PREV/NEXT style like articles) */}
         {!loading && !error && displayedProducts.length > 0 && (
-          <nav
-            aria-label="การแบ่งหน้าสินค้า"
-            className="my-12 flex items-center justify-center gap-3 sm:gap-6 text-base sm:text-lg font-bold"
-          >
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((pageNum) => {
-              const isActive = currentPage === pageNum;
-              return (
-                <button
-                  key={pageNum}
-                  type="button"
-                  onClick={() => handlePageClick(pageNum)}
-                  className={`transition-all duration-200 cursor-pointer px-1 py-0.5 select-none ${
-                    isActive
-                      ? "text-[#0046a7] font-black text-xl sm:text-2xl underline decoration-accent decoration-2 underline-offset-8 scale-110"
-                      : "text-[#3b82f6] hover:text-[#0046a7] hover:scale-110"
-                  }`}
-                  aria-current={isActive ? "page" : undefined}
-                  aria-label={`หน้า ${pageNum}`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-          </nav>
+          <PaginationPrevNext
+            currentPage={safePage}
+            totalPages={totalPages}
+            onPageChange={handlePageClick}
+            ariaLabel="การแบ่งหน้าสินค้า"
+          />
         )}
       </div>
     </main>
   );
 }
 
-export { ProductListPage };
+export { ProductListPage };

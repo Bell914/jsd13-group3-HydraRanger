@@ -1,51 +1,60 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useCartStore from "../store/cartStore";
 import { useAddressStore } from "../store/addressStore.js";
 import { authService } from "../services/authService";
 import { useAuth } from "../context/Auth/useAuth.jsx";
+import { getAddresses, addAddress } from "../services/userService.js";
+import { createOrder, confirmPayment, cancelOrder } from "../services/orderService.js";
+import { normalizeProvince } from "../constants/provinces.js";
 import {
   RANK_DISCOUNT_PERCENT,
   FREE_SHIPPING_MINIMUM,
-  calculateRankFromSpending
+  calculateRankFromSpending,
 } from "../utils/loyaltyUtils.js";
-import { getAddresses } from "../services/userService";
-import { createOrder } from "../services/orderService.js";
+import { couponService } from "../services/couponService.js";
 import {
   CheckoutStepper,
   ContactSection,
   ShippingSection,
   PaymentSection,
-  ReviewSection,
+  PromptPaySection,
+  CreditCardForm,
   OrderSummary,
-  OrderSuccessModal,
   OrderConfirmationScreen,
   SHIPPING_METHODS,
 } from "../components/checkout";
 
+function getAddressFormData(address) {
+  const nameParts = (address.recipientName || "").trim().split(/\s+/).filter(Boolean);
+
+  return {
+    selectedAddressId: String(address._id || address.id),
+    firstName: address.firstName?.trim() || nameParts[0] || "",
+    lastName: address.lastName?.trim() || nameParts.slice(1).join(" "),
+    phone: address.phone || "",
+    address: address.addressDetail || address.addressLine || "",
+    city: address.district || "",
+    state: normalizeProvince(address.province || address.state),
+    zipCode: address.zipCode || address.postalCode || "",
+    saveAddress: false,
+  };
+}
+
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { cartItems, getTotalPrice, clearCart } = useCartStore();
-  const addAddress = useAddressStore((state) => state.addAddress);
-
+  const setAddressStore = useAddressStore((state) => state.setAddresses);
   let authUser = null;
-  let updateProfile = null;
   try {
-    const auth = useAuth();
-    authUser = auth?.user;
-    updateProfile = auth?.updateProfile;
+    authUser = useAuth()?.user;
   } catch {
     authUser = authService.getCurrentUser();
   }
   const currentUser = authUser || authService.getCurrentUser();
 
-  // Current Step: 1 = Contact, 2 = Shipping, 3 = Payment, 4 = Review
   const [currentStep, setCurrentStep] = useState(2);
-
-  // Contact Form State
   const [email, setEmail] = useState(currentUser?.email || "");
-
-  // Shipping Form State
   const [shippingData, setShippingData] = useState({
     location: "Thailand",
     firstName: "",
@@ -61,101 +70,112 @@ export default function CheckoutPage() {
     isGift: false,
     giftMessage: "",
   });
-
-  // Saved addresses list from Backend
   const [savedAddresses, setSavedAddresses] = useState([]);
+  const [paymentData, setPaymentData] = useState({ method: "promptpay" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [completedOrder, setCompletedOrder] = useState(null);
+  const [submitError, setSubmitError] = useState("");
+  // Set once the order exists on the server so a failed confirmation can be retried
+  // against the same order instead of reserving stock a second time.
+  const [pendingOrderId, setPendingOrderId] = useState("");
+  // True while the pending order is being released, so the customer cannot start a new
+  // order that would reserve the same stock before the cancel lands.
+  const [isCancelling, setIsCancelling] = useState(false);
+  const pendingOrderIdRef = useRef("");
+  const cancelRequestRef = useRef(null);
+  const orderSubmissionInProgress = useRef(false);
+  const cardFormRef = useRef(null);
 
-  // ดึงข้อมูลที่อยู่จัดส่งของผู้ใช้ที่บันทึกไว้เมื่อเปิดหน้า Checkout
   useEffect(() => {
-    fetchUserAddresses();
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
-  const fetchUserAddresses = async () => {
-    try {
-      const res = await getAddresses();
-      const addrList = res.data || (Array.isArray(res) ? res : []);
-      setSavedAddresses(addrList);
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentStep]);
 
-      if (addrList.length > 0) {
-        // เลือกที่อยู่หลัก (isDefault) หรือที่อยู่อันแรกสุดถ้าไม่มีหลัก
-        const defaultAddr = addrList.find((a) => a.isDefault) || addrList[0];
-        if (defaultAddr) {
-          // แยกชื่อผู้รับถ้าเป็นฟิลด์เดียว
-          const nameParts = (defaultAddr.recipientName || "").trim().split(" ");
-          const firstName = nameParts[0] || "";
-          const lastName = nameParts.slice(1).join(" ") || "";
+  // The confirmation screen is much shorter than the payment form, so the browser
+  // keeps the old offset and lands the customer mid-page. Jump to the top of step 4.
+  useLayoutEffect(() => {
+    if (!completedOrder) return;
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [completedOrder]);
 
-          setShippingData((prev) => ({
-            ...prev,
-            firstName: firstName || prev.firstName,
-            lastName: lastName || prev.lastName,
-            phone: defaultAddr.phone || prev.phone,
-            address: defaultAddr.addressLine || prev.address,
-            city: defaultAddr.district || prev.city,
-            state: defaultAddr.province || prev.state,
-            zipCode: defaultAddr.postalCode || prev.zipCode,
+  useEffect(() => {
+    async function loadSavedAddresses() {
+      try {
+        const response = await getAddresses();
+        const addresses = response.data || [];
+        setSavedAddresses(addresses);
+        setAddressStore(addresses);
+
+        const defaultAddress = addresses.find((address) => address.isDefault) || addresses[0];
+        if (defaultAddress) {
+          setShippingData((previous) => ({
+            ...previous,
+            ...getAddressFormData(defaultAddress),
+            selectedAddressId: String(defaultAddress._id || defaultAddress.id),
           }));
         }
+      } catch (error) {
+        console.warn("Could not load saved shipping addresses:", error.message);
+      }
+    }
+
+    loadSavedAddresses();
+  }, [setAddressStore]);
+
+  // Coupon State
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState("");
+
+  const subtotal = getTotalPrice();
+  const userRank = currentUser?.membership?.rank || "MEMBER";
+  const discountPercent = RANK_DISCOUNT_PERCENT[userRank] || 0;
+  const rankDiscountAmount = Math.round((subtotal * discountPercent) / 100);
+  const freeShippingMinimum = FREE_SHIPPING_MINIMUM[userRank] ?? 1000;
+  const isFreeShipping = freeShippingMinimum === 0 || subtotal >= freeShippingMinimum;
+  const selectedShipping =
+    SHIPPING_METHODS.find((method) => method.id === shippingData.shippingMethod) ||
+    SHIPPING_METHODS[0];
+  const shippingCost = isFreeShipping ? 0 : selectedShipping.price;
+
+  const couponDiscountAmount = appliedCoupon
+    ? (appliedCoupon.discountAmount || Math.round((subtotal * (appliedCoupon.discountValue || 5)) / 100))
+    : 0;
+  const totalDiscount = Math.max(rankDiscountAmount, couponDiscountAmount);
+  const discountedSubtotal = Math.max(0, subtotal - totalDiscount);
+  const totalAmount = discountedSubtotal + shippingCost;
+
+  const handleApplyCoupon = async (code) => {
+    try {
+      setCouponLoading(true);
+      setCouponError("");
+      const res = await couponService.validateCoupon(code, subtotal);
+      if (res?.data || res?.valid) {
+        const couponData = res.data || res;
+        setAppliedCoupon(couponData);
+        setCouponError("");
+      } else {
+        setCouponError(res?.message || "โค้ดส่วนลดไม่ถูกต้อง");
+        setAppliedCoupon(null);
       }
     } catch (err) {
-      console.warn("Could not load saved shipping addresses:", err.message);
+      setCouponError(err.message || "ไม่สามารถตรวจสอบโค้ดส่วนลดได้");
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
     }
   };
 
-  // Payment Form State
-  const [paymentData, setPaymentData] = useState({
-    method: "credit-card",
-    cardNumber: "",
-    cardExp: "",
-    cardCvv: "",
-    couponCode: "",
-  });
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponError("");
+  };
 
-  // Order Submission State
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [completedOrder, setCompletedOrder] = useState(null);
-  const [orderError, setOrderError] = useState("");
-  const [submitError, setSubmitError] = useState(null);
-
-  const subtotal = getTotalPrice();
-
-  // Loyalty Rank Discount & Free Shipping Calculations
-  const userRank = currentUser?.membership?.rank || 'MEMBER';
-  const discountPercent = RANK_DISCOUNT_PERCENT[userRank] || 0;
-  const rankDiscountAmount = discountPercent > 0 ? Math.round((subtotal * discountPercent) / 100) : 0;
-  const isFreeShipping = FREE_SHIPPING_MINIMUM[userRank] === 0 || subtotal >= (FREE_SHIPPING_MINIMUM[userRank] ?? 1000);
-
-  // Calculate order total for final order placement
-  const selectedShipping =
-    SHIPPING_METHODS.find((m) => m.id === shippingData.shippingMethod) ||
-    SHIPPING_METHODS[0];
-  const shippingCost = isFreeShipping ? 0 : (selectedShipping ? selectedShipping.price : 0);
-  const discountedSubtotal = Math.max(0, subtotal - rankDiscountAmount);
-  const taxAmount = currentStep >= 3 ? Math.round(discountedSubtotal * 0.06 * 100) / 100 : 0;
-  const totalAmount = discountedSubtotal + shippingCost + taxAmount;
-
-  // Handle Place Order
-  const handlePlaceOrder = async () => {
-    setIsSubmitting(true);
-    setOrderError("");
-    setSubmitError(null);
-
-    if (shippingData.saveAddress && addAddress) {
-      const { firstName, lastName, phone, address, city, state, zipCode, location } = shippingData;
-      addAddress({
-        firstName,
-        lastName,
-        phone,
-        address,
-        city,
-        state,
-        zipCode,
-        location: location || "Thailand",
-      });
-    }
-    const itemsSnapshot = [...cartItems];
-
-    const orderPayload = {
+  function buildOrderPayload() {
+    return {
       email: email || currentUser?.email,
       items: cartItems.map((item) => ({
         productId: item.productId || item._id || item.product_id,
@@ -163,6 +183,7 @@ export default function CheckoutPage() {
         sku: item.sku || "",
         quantity: item.quantity,
         price: item.price,
+        lookbookId: item.lookbookId || "",
       })),
       shippingAddress: {
         firstName: shippingData.firstName,
@@ -170,197 +191,347 @@ export default function CheckoutPage() {
         phone: shippingData.phone,
         address: shippingData.address,
         city: shippingData.city,
-        state: shippingData.state || '',
+        state: shippingData.state || "",
         zipCode: shippingData.zipCode,
-        location: shippingData.location || 'Thailand',
-        deliveryNote: shippingData.deliveryNote || ''
+        location: shippingData.location || "Thailand",
+        deliveryNote: shippingData.deliveryNote || "",
       },
-      shippingMethod: shippingData.shippingMethod || 'standard',
-      paymentMethod: paymentData.method || 'credit-card',
-      shippingCost: shippingCost,
-      couponCode: paymentData.couponCode || ''
+      shippingMethod: shippingData.shippingMethod || "standard",
+      paymentMethod: paymentData.method || "promptpay",
+      shippingCost,
+      couponCode: appliedCoupon?.code || shippingData.couponCode || "",
     };
+  }
+
+  function getStockError() {
+    const outOfStockItem = cartItems.find((item) => {
+      const stock = Number(item.stockQuantity ?? item.stock_quantity);
+      return Number.isFinite(stock) && (stock < 1 || item.quantity > stock);
+    });
+
+    if (!outOfStockItem) return "";
+
+    const stock = Number(outOfStockItem.stockQuantity ?? outOfStockItem.stock_quantity);
+    return stock < 1 ? "สินค้าหมดแล้ว" : "สินค้ามีไม่เพียงพอในสต็อก";
+  }
+
+  async function saveAddressIfRequested() {
+    if (!shippingData.saveAddress) return;
+
+    const response = await addAddress({
+      recipientName: `${shippingData.firstName} ${shippingData.lastName}`.trim(),
+      phone: shippingData.phone,
+      addressDetail: shippingData.address,
+      district: shippingData.city,
+      province: shippingData.state,
+      zipCode: shippingData.zipCode,
+      isDefault: savedAddresses.length === 0,
+    });
+
+    const addresses = response.data || [];
+    setSavedAddresses(addresses);
+    setAddressStore(addresses);
+  }
+
+  // The pending id lives in a ref as well as state so async flows always read the current
+  // value instead of the one captured when their handler was created.
+  function trackPendingOrder(orderId) {
+    pendingOrderIdRef.current = orderId;
+    setPendingOrderId(orderId);
+  }
+
+  async function cancelPendingOrder(orderId) {
+    setIsCancelling(true);
+    setSubmitError("");
 
     try {
-      const res = await createOrder(orderPayload);
-      const created = res?.data || res;
+      await cancelOrder(orderId);
+      trackPendingOrder("");
+      return true;
+    } catch (error) {
+      // The order still holds stock, so keep the id: a retry then confirms this order
+      // instead of creating a second one, and the customer can cancel it again.
+      console.warn("Could not cancel the pending order:", error.message);
+      setSubmitError("ยกเลิกออเดอร์ไม่สำเร็จ กรุณากดยกเลิกออเดอร์อีกครั้ง");
+      return false;
+    } finally {
+      setIsCancelling(false);
+    }
+  }
 
-      let upgradedRank = null;
-      if (currentUser) {
-        const currentSpending = Number(currentUser.membership?.accumulatedSpending || 0);
-        const newSpending = currentSpending + (created?.subtotal ?? discountedSubtotal);
-        const newRank = calculateRankFromSpending(newSpending);
-        if (newRank !== userRank) {
-          upgradedRank = newRank;
+  // Releases the order we created but could not confirm so its stock and coupon go back
+  // before the customer changes anything about the order. The id is only dropped once the
+  // server confirms the cancel, so no new order can be created while the old one still
+  // holds stock. Resolves to whether the order was really released. Returns a promise only
+  // when a cancel is needed, which keeps callers that have nothing to wait for synchronous,
+  // and shares one request with concurrent callers.
+  function abandonPendingOrder() {
+    if (cancelRequestRef.current) return cancelRequestRef.current;
+    if (!pendingOrderIdRef.current) return null;
+
+    const request = cancelPendingOrder(pendingOrderIdRef.current).finally(() => {
+      if (cancelRequestRef.current === request) cancelRequestRef.current = null;
+    });
+    cancelRequestRef.current = request;
+    return request;
+  }
+
+  function goToStep(step) {
+    // Walking away from the payment step abandons any order created but not confirmed.
+    // The step only changes once that order is released, so the customer cannot leave a
+    // live order behind and come back to an edited checkout.
+    const cancelRequest = step < 3 ? abandonPendingOrder() : null;
+    if (cancelRequest) {
+      cancelRequest.then((cancelled) => {
+        if (cancelled) setCurrentStep(step);
+      });
+      return;
+    }
+
+    setCurrentStep(step);
+  }
+
+  function handlePaymentMethodChange(nextPayment) {
+    const cancelRequest = abandonPendingOrder();
+    if (cancelRequest) {
+      setSubmitError("");
+      cancelRequest.then((cancelled) => {
+        if (cancelled) setPaymentData(nextPayment);
+      });
+      return;
+    }
+    setSubmitError("");
+    setPaymentData(nextPayment);
+  }
+
+  async function finishOrder(payload, order) {
+    let upgradedRank = null;
+
+    if (currentUser) {
+      const spending = Number(currentUser.membership?.accumulatedSpending || 0);
+      const newRank = calculateRankFromSpending(spending + (order.subtotal ?? discountedSubtotal));
+      if (newRank !== userRank) upgradedRank = newRank;
+    }
+
+    try {
+      await saveAddressIfRequested();
+    } catch (error) {
+      // Address saving is optional and must not hide a successful payment.
+      console.warn("Could not save shipping address:", error.message);
+    }
+
+    setCompletedOrder({
+      orderId: order.orderNumber || order.orderId || order._id,
+      shippingData: {
+        ...(order.shippingAddress || shippingData),
+        shippingMethod: order.shippingMethod || shippingData.shippingMethod,
+      },
+      email: order.customerEmail || payload.email,
+      items: (order.items || cartItems).map((item) => ({
+        ...item,
+        name: item.title || item.name || item.productName,
+        price: item.unitPrice || item.price,
+      })),
+      subtotal: order.subtotal ?? subtotal,
+      rankDiscountAmount: order.discountAmount ?? totalDiscount,
+      userRank,
+      upgradedRank,
+      shippingCost: order.shippingCost ?? shippingCost,
+      totalAmount: order.totalAmount ?? totalAmount,
+      paymentMethod: order.paymentMethod || payload.paymentMethod,
+    });
+    setCurrentStep(4);
+    clearCart();
+    return order;
+  }
+
+  // Creates the order, then reports the simulated payment so the server moves the order to
+  // `paid` through the normal status machine. Once the order exists, a retry must confirm
+  // that same order instead of reserving stock a second time.
+  async function handlePlaceOrder() {
+    if (orderSubmissionInProgress.current) return;
+    if (paymentData.method === "credit-card" && !cardFormRef.current?.validate()) return;
+    orderSubmissionInProgress.current = true;
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    try {
+      // A cancel that is still running must land first, otherwise this attempt would
+      // create a second order while the abandoned one still holds stock.
+      if (cancelRequestRef.current) await cancelRequestRef.current;
+
+      const payload = buildOrderPayload();
+      let orderId = pendingOrderIdRef.current;
+      let order = null;
+
+      if (!orderId) {
+        const stockError = getStockError();
+        if (stockError) throw new Error(stockError);
+
+        const createResponse = await createOrder(payload);
+        order = createResponse?.data || createResponse;
+        orderId = order?._id;
+        if (!orderId) {
+          throw new Error("สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
         }
+        trackPendingOrder(orderId);
       }
 
-      setCompletedOrder({
-        orderId: created.orderNumber || created.orderId || created._id || `OCC-${Math.floor(100000 + Math.random() * 900000)}`,
-        shippingData: {
-          ...(created?.shippingAddress || shippingData),
-          shippingMethod: created?.shippingMethod || shippingData.shippingMethod,
-        },
-        email: created.customerEmail || orderPayload.email,
-        items: (created.items || itemsSnapshot).map((item) => ({
-          ...item,
-          name: item.title || item.name || item.productName,
-          price: item.unitPrice || item.price,
-        })),
-        subtotal: created.subtotal ?? subtotal,
-        rankDiscountAmount: created.discountAmount ?? rankDiscountAmount,
-        userRank,
-        upgradedRank,
-        shippingCost: created.shippingCost ?? shippingCost,
-        taxAmount: created.taxAmount ?? taxAmount,
-        totalAmount: created.totalAmount ?? totalAmount,
-      });
+      const confirmResponse = await confirmPayment(orderId);
+      const paidOrder = confirmResponse?.data || confirmResponse || order;
+      trackPendingOrder("");
 
-      clearCart();
-    } catch (err) {
-      console.error("Order creation failed:", err);
-      const msg =
-        err.data?.message ||
-        err.response?.data?.message ||
-        err.message ||
-        "เกิดข้อผิดพลาดในการบันทึกคำสั่งซื้อ กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง";
-      setOrderError(msg);
-      setSubmitError(msg);
+      await finishOrder(payload, paidOrder);
+    } catch (error) {
+      console.error("Order payment failed:", error);
+
+      // 400/404 mean this order can never be confirmed, so drop it and start fresh.
+      if ([400, 404].includes(error.status)) {
+        trackPendingOrder("");
+      }
+
+      setCurrentStep(3);
+      setSubmitError(
+        error.data?.message ||
+          error.response?.data?.message ||
+          error.message ||
+          "เกิดข้อผิดพลาดในการบันทึกคำสั่งซื้อ",
+      );
     } finally {
+      orderSubmissionInProgress.current = false;
       setIsSubmitting(false);
     }
-  };
+  }
 
-  // If order is completed, show full Order Confirmation Screen
+  function selectSavedAddress(addressId) {
+    const address = savedAddresses.find(
+      (item) => String(item._id || item.id) === String(addressId),
+    );
+    if (!address) return;
+
+    setShippingData((previous) => ({
+      ...previous,
+      ...getAddressFormData(address),
+      selectedAddressId: String(address._id || address.id),
+    }));
+  }
+
+  function startNewAddress() {
+    setShippingData((previous) => ({
+      ...previous,
+      selectedAddressId: "",
+      firstName: "",
+      lastName: "",
+      phone: "",
+      address: "",
+      city: "",
+      saveAddress: true,
+    }));
+  }
+
   if (completedOrder) {
     return <OrderConfirmationScreen orderData={completedOrder} />;
   }
 
-  // If cart is empty and no completed order, show empty cart view
-  if (!cartItems || cartItems.length === 0) {
+  if (!cartItems.length) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <h1 className="text-3xl font-bold mb-4">Your Cart is Empty</h1>
-        <p className="text-gray-500 mb-8">
-          Please add items to your cart before proceeding to checkout.
-        </p>
-        <Link
-          to="/products"
-          className="inline-block bg-black text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
-        >
-          Explore Products
+      <div className="mx-auto max-w-4xl px-4 py-16 text-center">
+        <h1 className="mb-4 text-3xl font-bold">ตะกร้าสินค้าว่างเปล่า</h1>
+        <p className="mb-8 text-gray-500">กรุณาเพิ่มสินค้าลงในตะกร้าก่อนดำเนินการชำระเงิน</p>
+        <Link to="/products" className="inline-block rounded-lg bg-black px-8 py-3 font-semibold text-white">
+          เลือกดูสินค้า
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Stepper Header */}
-        <CheckoutStepper
-          currentStep={currentStep}
-          onStepClick={(step) => setCurrentStep(step)}
-        />
+    <div className="min-h-screen bg-gray-50/50 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <CheckoutStepper currentStep={currentStep} onStepClick={goToStep} />
 
-        {submitError && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex justify-between items-center">
-            <span>{submitError}</span>
-            <button 
-              onClick={() => setSubmitError(null)}
-              className="text-red-500 font-bold hover:text-red-800"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Multi-Step Forms */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* STEP 1: Contact (Active when step 1) */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="space-y-4 lg:col-span-2">
             {currentStep === 1 && (
               <ContactSection
                 email={email}
                 onChangeEmail={setEmail}
-                isCollapsed={false}
                 onContinue={() => setCurrentStep(2)}
                 onBack={() => navigate("/cart")}
               />
             )}
 
-            {/* STEP 2: Shipping (Active when step 2) */}
             {currentStep === 2 && (
               <>
-                <ContactSection
-                  email={email}
-                  isCollapsed={true}
-                  onEdit={() => setCurrentStep(1)}
-                />
+                <ContactSection email={email} isCollapsed onEdit={() => goToStep(1)} />
                 <ShippingSection
                   shippingData={shippingData}
                   savedAddresses={savedAddresses}
+                  onSelectAddress={selectSavedAddress}
+                  onAddNewAddress={startNewAddress}
                   onChangeShipping={setShippingData}
-                  isCollapsed={false}
                   onContinue={() => setCurrentStep(3)}
                   onBack={() => navigate("/cart")}
                 />
               </>
             )}
 
-            {/* STEP 3: Payment (Active when step 3) */}
             {currentStep === 3 && (
               <>
-                <ContactSection
-                  email={email}
-                  isCollapsed={true}
-                  onEdit={() => setCurrentStep(1)}
-                />
-                <ShippingSection
-                  shippingData={shippingData}
-                  isCollapsed={true}
-                  onEdit={() => setCurrentStep(2)}
-                />
+                <ContactSection email={email} isCollapsed onEdit={() => goToStep(1)} />
+                <ShippingSection shippingData={shippingData} isCollapsed onEdit={() => goToStep(2)} />
                 <PaymentSection
                   paymentData={paymentData}
-                  onChangePayment={setPaymentData}
-                  isCollapsed={false}
-                  onContinue={() => setCurrentStep(4)}
-                  onBack={() => setCurrentStep(2)}
-                />
-              </>
-            )}
-
-            {/* STEP 4: Review (Active when step 4) */}
-            {currentStep === 4 && (
-              <>
-                {orderError && (
-                  <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
-                    {orderError}
+                  onChangePayment={handlePaymentMethodChange}
+                  isSubmitting={isSubmitting}
+                  isCancelling={isCancelling}
+                  error={submitError}
+                  onSubmit={handlePlaceOrder}
+                  onBack={() => goToStep(2)}
+                >
+                  {paymentData.method === "credit-card" ? (
+                    <CreditCardForm
+                      ref={cardFormRef}
+                      isBusy={isSubmitting || isCancelling}
+                      onPay={handlePlaceOrder}
+                    />
+                  ) : (
+                    <PromptPaySection totalAmount={totalAmount} />
+                  )}
+                </PaymentSection>
+                {pendingOrderId && (
+                  <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 shadow-xs">
+                    <p>
+                      ออเดอร์ของคุณถูกสร้างไว้แล้ว กดปุ่มจำลองการชำระเงินอีกครั้งเพื่อยืนยันออเดอร์เดิม
+                      โดยไม่ต้องสร้างออเดอร์ซ้ำ
+                    </p>
+                    <button
+                      type="button"
+                      onClick={abandonPendingOrder}
+                      disabled={isSubmitting || isCancelling}
+                      className="mt-3 w-full rounded-lg border border-gray-300 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-6"
+                    >
+                      {isCancelling ? "กำลังยกเลิกออเดอร์..." : "ยกเลิกออเดอร์นี้และเริ่มใหม่"}
+                    </button>
                   </div>
                 )}
-                <ReviewSection
-                  email={email}
-                  shippingData={shippingData}
-                  paymentData={paymentData}
-                  onEditStep={(step) => setCurrentStep(step)}
-                  onBack={() => setCurrentStep(3)}
-                  onPlaceOrder={handlePlaceOrder}
-                  isSubmitting={isSubmitting}
-                />
               </>
             )}
           </div>
 
-          {/* Right Column: Order Summary */}
           <div className="lg:col-span-1">
             <OrderSummary
               cartItems={cartItems}
               subtotal={subtotal}
               shippingMethodId={shippingData.shippingMethod}
-              currentStep={currentStep}
               userRank={userRank}
               rankDiscountAmount={rankDiscountAmount}
+              appliedCoupon={appliedCoupon}
+              couponDiscountAmount={couponDiscountAmount}
+              onApplyCoupon={handleApplyCoupon}
+              onRemoveCoupon={handleRemoveCoupon}
+              couponLoading={couponLoading}
+              couponError={couponError}
             />
           </div>
         </div>

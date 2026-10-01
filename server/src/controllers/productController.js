@@ -19,9 +19,8 @@ export async function getProducts(req, res, next) {
 
 export async function getAdminProducts(req, res, next) {
   try {
-    // Deleted products have is_active set to false. Do not send them back to
-    // the admin table when the page is refreshed.
-    const products = await productService.getProducts();
+    // Admins need inactive products so they can edit or reopen them.
+    const products = await productService.getProducts({ includeInactive: true });
     res.status(HTTP_STATUS.OK).json({ success: true, data: products });
   } catch (error) {
     next(error);
@@ -65,8 +64,12 @@ export async function updateProduct(req, res, next) {
 
 export async function deleteProduct(req, res, next) {
   try {
-    await productService.deleteProduct(req.params.id);
-    res.status(HTTP_STATUS.OK).json({ success: true, message: 'Product deleted successfully' });
+    const product = await productService.deleteProduct(req.params.id);
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Product deactivated successfully',
+      data: product
+    });
   } catch (error) {
     sendProductError(error, res, next);
   }

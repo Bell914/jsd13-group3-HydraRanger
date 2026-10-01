@@ -23,7 +23,7 @@ export const PaginationPrevNext = ({
             : "bg-white text-primary hover:bg-stone-50 hover:border-primary active:scale-98"
         }`}
       >
-        &larr; PREV
+        PREV
       </button>
 
       <span className="text-sm font-extrabold text-primary tracking-widest">
@@ -40,7 +40,7 @@ export const PaginationPrevNext = ({
             : "bg-white text-primary hover:bg-stone-50 hover:border-primary active:scale-98"
         }`}
       >
-        NEXT &rarr;
+        NEXT
       </button>
     </nav>
   );

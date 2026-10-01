@@ -37,7 +37,7 @@ export const validateLoginInput = ({ email, password }) => {
   };
 };
 
-export const validateUpdateProfileInput = ({ username, email, birthMonth }) => {
+export const validateUpdateProfileInput = ({ username, email, birthday }) => {
   const errors = [];
 
   if (
@@ -55,12 +55,13 @@ export const validateUpdateProfileInput = ({ username, email, birthMonth }) => {
     errors.push('A valid email address is required');
   }
 
-  if (
-    birthMonth !== undefined &&
-    birthMonth !== null &&
-    (!Number.isInteger(Number(birthMonth)) || Number(birthMonth) < 1 || Number(birthMonth) > 12)
-  ) {
-    errors.push('Birth month must be a whole number from 1 to 12');
+  if (birthday !== undefined && birthday !== null && birthday !== '') {
+    const birthDate = new Date(birthday);
+    if (Number.isNaN(birthDate.getTime())) {
+      errors.push('A valid birthday date is required');
+    } else if (birthDate.getTime() > Date.now()) {
+      errors.push('Birthday cannot be in the future');
+    }
   }
 
   return {
@@ -97,7 +98,6 @@ export const validateRefreshToken = ({ token }) => {
     errors: isValid ? [] : ['Token is required']
   };
 };
-
 export const validateForgotPasswordInput = ({ email }) => {
   const isValid = typeof email === 'string' && /^\S+@\S+\.\S+$/.test(email.trim());
   return {

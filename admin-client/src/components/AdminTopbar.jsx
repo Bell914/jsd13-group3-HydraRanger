@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
-import { useAdminAuth } from '../context/useAdminAuth.js';
 import { getDashboardSummary } from '../services/dashboardService.js';
 import { AdminNotifications } from './AdminNotifications.jsx';
 
 export function AdminTopbar({ title }) {
-  const { user } = useAdminAuth();
   const { openSidebar } = useOutletContext();
   const [summary, setSummary] = useState(null);
   const [updatedAt, setUpdatedAt] = useState(new Date());
@@ -21,6 +19,8 @@ export function AdminTopbar({ title }) {
       }
     }
     loadNotifications();
+    const refreshTimer = window.setInterval(loadNotifications, 15_000);
+    return () => window.clearInterval(refreshTimer);
   }, []);
 
   const notifications = [];
@@ -31,7 +31,10 @@ export function AdminTopbar({ title }) {
     notifications.push({ message: `มีสินค้าที่ไม่แสดง ${summary.inactiveProductCount} รายการ`, date: updatedAt, path: '/products' });
   }
   if (summary?.pendingOrderCount > 0) {
-    notifications.push({ message: `มี Order รอตรวจสอบ ${summary.pendingOrderCount} รายการ`, date: updatedAt, path: '/orders' });
+    notifications.push({ message: `มีคำสั่งซื้อรอตรวจสอบ ${summary.pendingOrderCount} รายการ`, date: updatedAt, path: '/orders' });
+  }
+  if (summary?.paidOrderCount > 0) {
+    notifications.push({ message: `มีคำสั่งซื้อชำระแล้วรอเตรียมสินค้า ${summary.paidOrderCount} รายการ`, date: updatedAt, path: '/orders' });
   }
 
   return (
@@ -40,7 +43,7 @@ export function AdminTopbar({ title }) {
       <strong className="topbar-title">{title}</strong>
       <div className="admin-profile">
         <AdminNotifications items={notifications} />
-        <strong>{user?.username || 'Admin'} (Admin)</strong>
+        <strong>แอดมิน หัวหน้า</strong>
       </div>
     </header>
   );

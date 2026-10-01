@@ -1,4 +1,9 @@
-import { api } from "./api.js";
+import { api, getApiBaseUrl } from "./api.js";
+
+function resolveProductImageUrl(url) {
+  if (!url || url.startsWith('http') || !url.startsWith('/api/uploads/')) return url;
+  return `${getApiBaseUrl().replace(/\/api\/?$/, '')}${url}`;
+}
 
 // Fallback products in case backend is loading/connecting
 const fallbackProducts = [
@@ -347,7 +352,7 @@ const fallbackProducts = [
 
 /**
  * Normalize product object from MongoDB to guarantee consistent properties for frontend
- * @param {Object} product 
+ * @param {Object} product
  * @returns {Object} Normalized product
  */
 export function normalizeProduct(product) {
@@ -359,12 +364,13 @@ export function normalizeProduct(product) {
     product.category_id?.name ||
     product.category ||
     "";
-  const imageUrl =
+  const imageUrl = resolveProductImageUrl(
     product.imageUrl ||
     product.images?.[0]?.image_url ||
     product.image ||
     product.variants?.[0]?.imageUrl ||
-    "";
+    ""
+  );
 
   const variants = (product.variants || []).map((v) => {
     const color =
@@ -384,8 +390,8 @@ export function normalizeProduct(product) {
       size,
       price: v.price ?? product.price ?? 590,
       stockQuantity: v.stockQuantity ?? v.stock_quantity ?? 10,
-      imageUrl: v.imageUrl || imageUrl,
-      detailImages: v.detailImages || [],
+      imageUrl: resolveProductImageUrl(v.imageUrl || imageUrl),
+      detailImages: (v.detailImages || []).map(resolveProductImageUrl),
     };
   });
 
@@ -419,16 +425,33 @@ export async function getProducts(params = {}) {
   }
 
   const queryString = query.toString() ? `?${query.toString()}` : "";
+  let list = null;
   try {
     const response = await api.get(`/products${queryString}`);
-    const list = response?.data || response;
-    if (Array.isArray(list)) {
-      return list.map(normalizeProduct);
+    const data = response?.data || response;
+    if (Array.isArray(data)) {
+      list = data.map(normalizeProduct);
     }
   } catch (err) {
     console.warn("Products API unavailable or error:", err.message);
+    if (!import.meta.env.DEV && import.meta.env.MODE !== "test") {
+      throw err;
+    }
   }
-  return fallbackProducts.map(normalizeProduct);
+
+  if (!list) {
+    list = fallbackProducts.map(normalizeProduct);
+  }
+
+  if (params.category && params.category !== "all") {
+    const targetCat = params.category.toLowerCase();
+    list = list.filter((p) => {
+      const pCat = (p.category || p.category_id?.slug || "").toLowerCase();
+      return pCat === targetCat;
+    });
+  }
+
+  return list;
 }
 
 /**
@@ -451,6 +474,9 @@ export async function getProductById(productId) {
     }
   } catch (err) {
     console.warn("Product API unavailable or error:", err.message);
+    if (!import.meta.env.DEV && import.meta.env.MODE !== "test") {
+      throw err;
+    }
   }
 
   // Fallback to local fallbackProducts
@@ -462,4 +488,4 @@ export async function getProductById(productId) {
       p.variants?.some((v) => v.sku?.toLowerCase() === target)
   );
   return fallback ? normalizeProduct(fallback) : null;
-}
+}

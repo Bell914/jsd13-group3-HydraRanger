@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Image } from 'lucide-react';
+import { getCategoryLabel } from '../utils/categoryLabel.js';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5002/api';
 const IMAGE_SERVER_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 const getProductImageUrl = (product) => {
@@ -90,10 +91,10 @@ export function ProductTable({ products, onEdit, onDelete }) {
           <thead>
             <tr>
               <th>รูปภาพ</th>
-              <th>ชื่อสินค้า / SKU</th>
+              <th>ชื่อสินค้า / รหัสสินค้า</th>
               <th>หมวดหมู่</th>
               <th>ราคา</th>
-              <th>คงเหลือ (Stock)</th>
+              <th>คงเหลือ</th>
               <th>สถานะ</th>
               <th className="align-right">จัดการ</th>
             </tr>
@@ -106,11 +107,11 @@ export function ProductTable({ products, onEdit, onDelete }) {
                   <td data-label="รูปภาพ">
                     <ProductThumbnail product={product} />
                   </td>
-                  <td data-label="ชื่อสินค้า / SKU">
+                  <td data-label="ชื่อสินค้า / รหัสสินค้า">
                     <strong className="product-name">{product.name}</strong>
-                    <small>SKU: {summary.sku}</small>
+                    <small>รหัสสินค้า: {summary.sku}</small>
                   </td>
-                  <td data-label="หมวดหมู่" className="capitalize">{product.category}</td>
+                  <td data-label="หมวดหมู่" className="capitalize">{getCategoryLabel(product.category)}</td>
                   <td data-label="ราคา" className="price">{formatPrice.format(summary.price)}</td>
                   <td data-label="คงเหลือ">
                     <span className={summary.totalStock <= 10 ? 'stock low' : 'stock'}>
@@ -130,8 +131,8 @@ export function ProductTable({ products, onEdit, onDelete }) {
                       {(product.isActive !== false && product.is_active !== false) && <button
                         type="button"
                         className="danger"
-                        aria-label={`ลบ ${product.name}`}
-                        title="ลบ"
+                        aria-label={`ปิดการขาย ${product.name}`}
+                        title="ปิดการขาย"
                         onClick={() => onDelete(product)}
                       >
                         ปิดการขาย

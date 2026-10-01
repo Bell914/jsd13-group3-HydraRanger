@@ -1,17 +1,4 @@
 import multer from "multer";
-import path from "node:path";
-import fs from "node:fs";
-import { randomUUID } from "node:crypto";
-import { fileURLToPath } from "node:url";
-
-const currentFilePath = fileURLToPath(import.meta.url);
-const currentFolderPath = path.dirname(currentFilePath);
-export const uploadsFolder = path.resolve(
-  currentFolderPath,
-  "../../../client/public/collection-2026/mixandmatch",
-);
-
-fs.mkdirSync(uploadsFolder, { recursive: true });
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIME_TYPES = [
@@ -50,16 +37,6 @@ export function matchesUploadedImageHeader(file) {
   }
   const header = buffer.toString("ascii", 0, 6);
   return header === "GIF87a" || header === "GIF89a";
-}
-
-export function createUploadedImageName(mimetype) {
-  const extensions = {
-    "image/jpeg": ".jpg",
-    "image/png": ".png",
-    "image/webp": ".webp",
-    "image/gif": ".gif",
-  };
-  return `mixmatch-${randomUUID()}${extensions[mimetype]}`;
 }
 
 export { MAX_FILE_SIZE };

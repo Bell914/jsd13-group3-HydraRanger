@@ -9,7 +9,7 @@ import {
   updateLookbookStatus,
 } from '../services/lookbookService.js';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5002/api';
 
 function getImageUrl(imageUrl) {
   if (!imageUrl || imageUrl.startsWith('http')) return imageUrl;
@@ -108,42 +108,42 @@ export function AdminLookbooksPage() {
 
   return (
     <div className="admin-content">
-      <AdminTopbar title="Lookbooks" />
+      <AdminTopbar title="ลุคบุ๊ก" />
 
       <main className="data-page">
         <header className="page-heading">
-          <div><h1>Lookbooks</h1><p>จัดการลุคและสินค้าในแต่ละเซ็ตจาก MongoDB</p></div>
-          <button type="button" className="primary-action" onClick={openCreateForm} disabled={products.length === 0}>เพิ่ม Lookbook</button>
+          <div><h1>ลุคบุ๊ก</h1><p>จัดการลุคและสินค้าในแต่ละเซ็ตจากฐานข้อมูล</p></div>
+          <button type="button" className="primary-action" onClick={openCreateForm} disabled={products.length === 0}>เพิ่มลุคบุ๊ก</button>
         </header>
 
         {error && <div className="dashboard-error" role="alert"><p>{error}</p><button type="button" onClick={loadData}>ลองใหม่</button></div>}
-        <section className="filter-toolbar" aria-label="ค้นหาและกรอง Lookbook">
+        <section className="filter-toolbar" aria-label="ค้นหาและกรองลุคบุ๊ก">
           <label className="product-search plain-search">
-            <span className="sr-only">ค้นหาชื่อหรือรหัส Lookbook</span>
-            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ค้นหา Lookbook..." />
+            <span className="sr-only">ค้นหาชื่อหรือรหัสลุคบุ๊ก</span>
+            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ค้นหาลุคบุ๊ก..." />
           </label>
           <div className="filters">
-            <select value={visibilityFilter} onChange={(event) => setVisibilityFilter(event.target.value)} aria-label="กรองการมองเห็น Lookbook">
+            <select value={visibilityFilter} onChange={(event) => setVisibilityFilter(event.target.value)} aria-label="กรองการมองเห็นลุคบุ๊ก">
               <option value="all">ทุกสถานะ</option>
               <option value="visible">แสดงอยู่</option>
               <option value="hidden">ซ่อนอยู่</option>
             </select>
           </div>
         </section>
-        {loading && <p className="dashboard-message">กำลังโหลด Lookbooks…</p>}
-        {!loading && !error && lookbooks.length === 0 && <div className="empty-state"><strong>ยังไม่มี Lookbook</strong><p>กดเพิ่ม Lookbook เพื่อสร้างลุคแรก</p></div>}
-        {!loading && lookbooks.length > 0 && visibleLookbooks.length === 0 && <div className="empty-state"><strong>ไม่พบ Lookbook ที่ตรงกับตัวกรอง</strong><p>ลองเปลี่ยนคำค้นหาหรือสถานะ</p></div>}
+        {loading && <p className="dashboard-message">กำลังโหลดลุคบุ๊ก…</p>}
+        {!loading && !error && lookbooks.length === 0 && <div className="empty-state"><strong>ยังไม่มีลุคบุ๊ก</strong><p>กดเพิ่มลุคบุ๊กเพื่อสร้างลุคแรก</p></div>}
+        {!loading && lookbooks.length > 0 && visibleLookbooks.length === 0 && <div className="empty-state"><strong>ไม่พบลุคบุ๊กที่ตรงกับตัวกรอง</strong><p>ลองเปลี่ยนคำค้นหาหรือสถานะ</p></div>}
 
         {visibleLookbooks.length > 0 && (
           <section className="product-table-card">
             <div className="table-scroll">
               <table className="data-table">
-                <thead><tr><th>รูป</th><th>Lookbook</th><th>สินค้า</th><th>ราคาเซ็ต</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+                <thead><tr><th>รูป</th><th>ลุคบุ๊ก</th><th>สินค้า</th><th>ราคาเซ็ต</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
                 <tbody>
                   {visibleLookbooks.map((lookbook) => (
                     <tr key={lookbook._id}>
                       <td data-label="รูป"><img className="lookbook-thumbnail" src={getImageUrl(lookbook.imageUrl)} alt={lookbook.nameTh} /></td>
-                      <td data-label="Lookbook"><strong>{lookbook.nameTh}</strong><small>{lookbook.lookbookId} • {lookbook.name}</small></td>
+                      <td data-label="ลุคบุ๊ก"><strong>{lookbook.nameTh}</strong><small>{lookbook.lookbookId} • {lookbook.name}</small></td>
                       <td data-label="สินค้า">{lookbook.items?.length || 0} รายการ</td>
                       <td data-label="ราคาเซ็ต" className="price">฿{Number(lookbook.setPrice || 0).toLocaleString()}</td>
                       <td data-label="สถานะ"><span className={`status ${lookbook.isActive === false ? 'suspended' : 'active'}`}>{lookbook.isActive === false ? 'ซ่อนอยู่' : 'แสดงอยู่'}</span></td>

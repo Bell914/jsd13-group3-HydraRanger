@@ -84,8 +84,5 @@ export const getDBStatus = () => {
   return {
     isConnected: readyState === 1 || isConnected,
     readyState,
-    uri: ENV.MONGODB_URI
-      ? `${ENV.MONGODB_URI.split("@").pop()}`
-      : "Not configured",
   };
 };

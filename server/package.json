@@ -8,8 +8,11 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "seed": "node src/scripts/seed.js",
+    "backfill:size-charts": "node src/scripts/backfillSizeCharts.js",
+    "test": "NODE_ENV=production JWT_SECRET=test-only-secret node --test src/tests/*.test.js",
     "test:conn": "node src/scripts/testConnection.js",
     "test:loyalty": "node src/scripts/testLoyaltyBackend.js",
+    "test:coupon": "node src/scripts/testCouponBackend.js",
     "test:security": "NODE_ENV=production JWT_SECRET=test-only-secret node --test src/tests/*.test.js"
   },
   "keywords": [
@@ -24,6 +27,7 @@
   "license": "MIT",
   "dependencies": {
     "bcryptjs": "^3.0.2",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

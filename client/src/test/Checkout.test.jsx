@@ -1,281 +1,616 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import CheckoutPage from "../pages/CheckoutPage";
-import CartPage from "../pages/CartPage";
 import { useCartStore } from "../store/cartStore";
-import { createOrder } from "../services/orderService";
+import { createOrder, confirmPayment, cancelOrder } from "../services/orderService.js";
+import { getAddresses } from "../services/userService.js";
 
-// ➕ Mock orderService เพื่อไม่ให้ยิงไปที่ Backend จริงตอนทำ Automated Test
-vi.mock("../services/orderService", () => ({
-  createOrder: vi.fn().mockResolvedValue({
-    orderNumber: "OCC-123456",
-    customerEmail: "test@example.com",
-    shippingAddress: {
-      firstName: "Test",
-      lastName: "User",
-      address: "123 Street",
-    },
-    items: [
-      { title: "Oversized T-Shirt", unitPrice: 590, quantity: 2 }
-    ],
-    totalAmount: 1231.4,
-  }),
+vi.mock("../services/orderService.js", () => ({
+  createOrder: vi.fn(),
+  confirmPayment: vi.fn(),
+  cancelOrder: vi.fn(),
 }));
+vi.mock("../services/userService.js", () => ({ getAddresses: vi.fn().mockResolvedValue({ data: [] }) }));
 
 const fillShippingForm = () => {
-  fireEvent.change(screen.getByLabelText("First name"), {
-    target: { value: "Test" },
-  });
-  fireEvent.change(screen.getByLabelText("Last name"), {
-    target: { value: "User" },
-  });
-  fireEvent.change(screen.getByLabelText("Phone number"), {
-    target: { value: "0812345678" },
-  });
-  fireEvent.change(screen.getByLabelText("Address"), {
-    target: { value: "123 Street" },
-  });
-  fireEvent.change(screen.getByLabelText("City"), {
-    target: { value: "Bangkok" },
-  });
-  fireEvent.change(screen.getByLabelText("State"), {
-    target: { value: "Bangkok" },
-  });
-  fireEvent.change(screen.getByLabelText("Zip code"), {
-    target: { value: "10110" },
-  });
+  fireEvent.change(screen.getByLabelText("ชื่อ"), { target: { value: "Test" } });
+  fireEvent.change(screen.getByLabelText("นามสกุล"), { target: { value: "User" } });
+  fireEvent.change(screen.getByLabelText("เบอร์โทรศัพท์"), { target: { value: "0812345678" } });
+  fireEvent.change(screen.getByLabelText("บ้านเลขที่ / ถนน / อาคาร"), { target: { value: "123 Street" } });
+  fireEvent.change(screen.getByLabelText("อำเภอ / เขต"), { target: { value: "Bangkok" } });
+  fireEvent.change(screen.getByLabelText("จังหวัด"), { target: { value: "กรุงเทพมหานคร" } });
+  fireEvent.change(screen.getByLabelText("รหัสไปรษณีย์"), { target: { value: "10110" } });
+};
+
+const goToPaymentStep = (methodLabel = "PromptPay") => {
+  fillShippingForm();
+  fireEvent.click(screen.getAllByRole("button", { name: "ดำเนินการต่อ" })[0]);
+  fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${methodLabel}`) }));
 };
 
 const fillCardForm = () => {
-  fireEvent.change(screen.getByPlaceholderText("4541 1234 5678 9012"), {
-    target: { value: "4111111111111111" },
+  fireEvent.change(screen.getByLabelText("หมายเลขบัตร"), {
+    target: { value: "4242 4242 4242 4242" },
   });
-  fireEvent.change(screen.getByPlaceholderText("ดด/ปป (เช่น 12/28)"), {
-    target: { value: "12/28" },
-  });
-  fireEvent.change(screen.getByPlaceholderText("รหัส 3 หลักหลังบัตร"), {
-    target: { value: "123" },
-  });
+  fireEvent.change(screen.getByLabelText("ชื่อผู้ถือบัตร"), { target: { value: "TEST USER" } });
+  fireEvent.change(screen.getByLabelText("วันหมดอายุ (MM/YY)"), { target: { value: "12/30" } });
+  fireEvent.change(screen.getByLabelText("CVC"), { target: { value: "123" } });
 };
 
-describe("Cart & Checkout Flow", () => {
+describe("Checkout order integration", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     createOrder.mockResolvedValue({
-      orderNumber: "OCC-123456",
-      customerEmail: "test@example.com",
-      shippingAddress: { firstName: "Test", lastName: "User", address: "123 Street" },
-      items: [{ title: "Oversized T-Shirt", unitPrice: 590, quantity: 2 }],
-      totalAmount: 1231.4,
+      data: {
+        _id: "order-mongo-id",
+        orderNumber: "OCC-123456",
+        customerEmail: "test@example.com",
+        shippingAddress: { firstName: "Test", lastName: "User", address: "123 Street" },
+        items: [{ title: "Oversized T-Shirt", unitPrice: 590, quantity: 2 }],
+        totalAmount: 1231.4,
+        status: "pending",
+      },
     });
+    confirmPayment.mockResolvedValue({
+      data: {
+        _id: "order-mongo-id",
+        orderNumber: "OCC-123456",
+        shippingAddress: { firstName: "Test", lastName: "User", address: "123 Street" },
+        items: [{ title: "Oversized T-Shirt", unitPrice: 590, quantity: 2 }],
+        totalAmount: 1231.4,
+        status: "paid",
+      },
+    });
+    cancelOrder.mockResolvedValue({ data: { status: "cancelled" } });
     useCartStore.setState({
-      cartItems: [
-        {
-          productId: "p1",
-          variantId: "v1",
-          name: "Oversized T-Shirt",
-          color: "Off White",
-          size: "M",
-          price: 590,
-          quantity: 2,
-        },
-      ],
+      cartItems: [{ cartItemId: "ci-test-1", productId: "p1", variantId: "v1", name: "Oversized T-Shirt", price: 590, quantity: 2, stockQuantity: 5 }],
     });
   });
 
-  describe("CartPage", () => {
-    it("renders modern clothing cart with item details and Proceed to Checkout button", () => {
-      render(
-        <MemoryRouter>
-          <CartPage />
-        </MemoryRouter>
-      );
+  it("creates the order then confirms payment before showing the confirmation", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
 
-      expect(
-        screen.getByRole("heading", { name: /shopping cart/i })
-      ).toBeInTheDocument();
-      expect(screen.getByText("Oversized T-Shirt")).toBeInTheDocument();
-      expect(screen.getByText("Off White")).toBeInTheDocument();
-      expect(screen.getByText("Size M")).toBeInTheDocument();
-      expect(screen.getByText(/฿1180/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
-      const checkoutBtn = screen.getByRole("link", {
-        name: /proceed to checkout/i,
-      });
-      expect(checkoutBtn).toBeInTheDocument();
-      expect(checkoutBtn).toHaveAttribute("href", "/checkout");
-    });
-
-    it("allows adjusting quantity and deleting items", () => {
-      render(
-        <MemoryRouter>
-          <CartPage />
-        </MemoryRouter>
-      );
-
-      const increaseBtn = screen.getByRole("button", {
-        name: "Increase quantity",
-      });
-      fireEvent.click(increaseBtn);
-      expect(useCartStore.getState().cartItems[0].quantity).toBe(3);
-
-      const deleteBtn = screen.getByTitle("Remove item");
-      fireEvent.click(deleteBtn);
-      expect(useCartStore.getState().cartItems.length).toBe(0);
-    });
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledTimes(1);
+    expect(confirmPayment).toHaveBeenCalledWith("order-mongo-id");
+    // The order must exist before payment can be confirmed against it.
+    expect(createOrder.mock.invocationCallOrder[0]).toBeLessThan(
+      confirmPayment.mock.invocationCallOrder[0],
+    );
+    expect(useCartStore.getState().cartItems).toEqual([]);
   });
 
-  describe("CheckoutPage", () => {
-    it("renders Stepper with 4 steps and starts on Step 2 Shipping", () => {
-      render(
-        <MemoryRouter>
-          <CheckoutPage />
-        </MemoryRouter>
-      );
+  it("locks payment method and back navigation while order creation is pending", async () => {
+    let resolveCreateOrder;
+    createOrder.mockImplementationOnce(
+      () => new Promise((resolve) => { resolveCreateOrder = resolve; }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
 
-      expect(screen.getAllByText("Contact").length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText("Shipping").length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByText("Payment")).toBeInTheDocument();
-      expect(screen.getByText("Review")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
-      expect(screen.getByLabelText("First name")).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: "CONTINUE" })
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: "ย้อนกลับ" })
-      ).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "กำลังดำเนินการ..." })).toBeDisabled();
+    const cardOption = screen.getByRole("button", { name: /^Credit \/ Debit Card/ });
+    const backButton = screen.getByRole("button", { name: "ย้อนกลับ" });
+    expect(screen.getByRole("button", { name: /^PromptPay/ })).toBeDisabled();
+    expect(cardOption).toBeDisabled();
+    expect(backButton).toBeDisabled();
+
+    fireEvent.click(cardOption);
+    fireEvent.click(backButton);
+    expect(screen.queryByLabelText("หมายเลขบัตร")).not.toBeInTheDocument();
+    expect(screen.getByText("PromptPay QR ตัวอย่างสำหรับ Demo")).toBeInTheDocument();
+
+    resolveCreateOrder({
+      data: { _id: "order-mongo-id", orderNumber: "OCC-123456", status: "pending" },
     });
 
-    it("navigates to Step 3 Payment and has Back button that returns to Step 2", () => {
-      render(
-        <MemoryRouter>
-          <CheckoutPage />
-        </MemoryRouter>
-      );
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({ paymentMethod: "promptpay" }));
+  });
 
-      fillShippingForm();
-      fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
+  it("jumps to the top of the confirmation instead of staying at the payment form", async () => {
+    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+    scrollTo.mockClear();
 
-      expect(screen.getByText(/Use my Gift Card/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
 
-      const backBtn = screen.getByRole("button", { name: "ย้อนกลับ" });
-      expect(backBtn).toBeInTheDocument();
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "instant" });
+    scrollTo.mockRestore();
+  });
 
-      fireEvent.click(backBtn);
-      expect(screen.getByLabelText("First name")).toBeInTheDocument();
+  it("renders a scannable QR for the PromptPay total and never offers PayPal", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    const qr = await screen.findByRole("img", { name: /QR Demo/ });
+    expect(qr).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "PayPal" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Credit \/ Debit Card/ })).toBeInTheDocument();
+  });
+
+  it("charges a card and clears the cart", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("Credit / Debit Card");
+    fillCardForm();
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder.mock.calls.at(-1)?.[0]).toMatchObject({ paymentMethod: "credit-card" });
+    expect(confirmPayment).toHaveBeenCalledWith("order-mongo-id");
+    expect(useCartStore.getState().cartItems).toEqual([]);
+  });
+
+  it("retries the same order when only the payment confirmation fails", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("unavailable"), { status: 503, data: { message: "ชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" } }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+
+    expect(await screen.findByText("ชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")).toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledTimes(1);
+
+    // The order already exists, so retrying must not reserve stock a second time.
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledTimes(1);
+    expect(confirmPayment.mock.calls.map(([orderId]) => orderId)).toEqual([
+      "order-mongo-id",
+      "order-mongo-id",
+    ]);
+  });
+
+  it("offers to cancel the pending order so its stock can be released", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("network down"), { status: 503, data: { message: "เชื่อมต่อไม่ได้" } }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+
+    expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" }));
+
+    await waitFor(() => expect(cancelOrder).toHaveBeenCalledWith("order-mongo-id"));
+    // The order id is only dropped once the cancel lands, then the next attempt builds a fresh order.
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" })).not.toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+    await waitFor(() => expect(createOrder).toHaveBeenCalledTimes(2));
+  });
+
+  it("keeps payment blocked until the pending order is cancelled", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("network down"), { status: 503, data: { message: "เชื่อมต่อไม่ได้" } }),
+    );
+    let finishCancel;
+    cancelOrder.mockImplementationOnce(
+      () => new Promise((resolve) => { finishCancel = resolve; }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+    expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" }));
+
+    // The old order still holds stock while the cancel is in flight, so paying has to wait.
+    const cancellingButton = await screen.findByRole("button", { name: "กำลังยกเลิกออเดอร์เดิม..." });
+    expect(cancellingButton).toBeDisabled();
+    fireEvent.click(cancellingButton);
+    expect(createOrder).toHaveBeenCalledTimes(1);
+    expect(confirmPayment).toHaveBeenCalledTimes(1);
+
+    finishCancel({ data: { status: "cancelled" } });
+
+    const payButton = await screen.findByRole("button", { name: "จำลองการชำระเงิน" });
+    await waitFor(() => expect(payButton).toBeEnabled());
+    fireEvent.click(payButton);
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    // Only the released order may be replaced by a new one.
+    expect(cancelOrder).toHaveBeenCalledTimes(1);
+    expect(createOrder).toHaveBeenCalledTimes(2);
+  });
+
+  it("defers a payment method change until the pending order is cancelled", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("network down"), { status: 503, data: { message: "เชื่อมต่อไม่ได้" } }),
+    );
+    let finishCancel;
+    cancelOrder.mockImplementationOnce(
+      () => new Promise((resolve) => { finishCancel = resolve; }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+    expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Credit \/ Debit Card/ }));
+
+    // Switching channels cannot skip the cancel, so the card form stays closed.
+    expect(await screen.findByRole("button", { name: "กำลังยกเลิกออเดอร์เดิม..." })).toBeDisabled();
+    expect(screen.queryByLabelText("หมายเลขบัตร")).not.toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledTimes(1);
+
+    finishCancel({ data: { status: "cancelled" } });
+
+    const payButton = await screen.findByRole("button", { name: "จำลองการชำระเงิน" });
+    await waitFor(() => expect(payButton).toBeEnabled());
+    fillCardForm();
+    fireEvent.click(payButton);
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(cancelOrder).toHaveBeenCalledTimes(1);
+    expect(createOrder).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps the payment method when the pending order could not be cancelled", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("network down"), { status: 503, data: { message: "เชื่อมต่อไม่ได้" } }),
+    );
+    cancelOrder.mockRejectedValueOnce(new Error("service unavailable"));
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+    expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Credit \/ Debit Card/ }));
+
+    expect(
+      await screen.findByText("ยกเลิกออเดอร์ไม่สำเร็จ กรุณากดยกเลิกออเดอร์อีกครั้ง"),
+    ).toBeInTheDocument();
+    // The old order is still live, so the screen must keep showing the channel it was created with.
+    expect(screen.getByRole("button", { name: "จำลองการชำระเงิน" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("หมายเลขบัตร")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledTimes(1);
+    expect(createOrder.mock.calls[0][0].paymentMethod).toBe("promptpay");
+  });
+
+  it("stays on the payment step when the pending order could not be cancelled", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("network down"), { status: 503, data: { message: "เชื่อมต่อไม่ได้" } }),
+    );
+    cancelOrder.mockRejectedValueOnce(new Error("service unavailable"));
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+    expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "ไปยังขั้นตอน ที่อยู่จัดส่ง" }));
+
+    expect(
+      await screen.findByText("ยกเลิกออเดอร์ไม่สำเร็จ กรุณากดยกเลิกออเดอร์อีกครั้ง"),
+    ).toBeInTheDocument();
+    // Walking away would edit a checkout whose live order can no longer be replaced.
+    expect(screen.getByText("PromptPay QR ตัวอย่างสำหรับ Demo")).toBeInTheDocument();
+    expect(screen.queryByLabelText("จังหวัด")).not.toBeInTheDocument();
+  });
+
+  it("confirms the pending order instead of creating a new one when the cancel fails", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("network down"), { status: 503, data: { message: "เชื่อมต่อไม่ได้" } }),
+    );
+    cancelOrder.mockRejectedValueOnce(new Error("service unavailable"));
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+    expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" }));
+
+    expect(
+      await screen.findByText("ยกเลิกออเดอร์ไม่สำเร็จ กรุณากดยกเลิกออเดอร์อีกครั้ง"),
+    ).toBeInTheDocument();
+    // The cancel never landed, so the order keeps its stock and can be retried.
+    expect(screen.getByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledTimes(1);
+    expect(confirmPayment.mock.calls.map(([orderId]) => orderId)).toEqual([
+      "order-mongo-id",
+      "order-mongo-id",
+    ]);
+  });
+
+  it("creates a new order when the pending one can no longer be confirmed", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("gone"), { status: 400, data: { message: "Order is not waiting for payment" } }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+
+    expect(await screen.findByText("Order is not waiting for payment")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "ยกเลิกออเดอร์นี้และเริ่มใหม่" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder).toHaveBeenCalledTimes(2);
+  });
+
+  it("releases the pending order when the customer steps back to the address", async () => {
+    confirmPayment.mockRejectedValueOnce(
+      Object.assign(new Error("network down"), { status: 503, data: { message: "เชื่อมต่อไม่ได้" } }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+    expect(await screen.findByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "ไปยังขั้นตอน ที่อยู่จัดส่ง" }));
+
+    await waitFor(() => expect(cancelOrder).toHaveBeenCalledWith("order-mongo-id"));
+  });
+
+  it("rejects a real-looking card number and only accepts the published card number", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("Credit / Debit Card");
+
+    // 5555 5555 5555 4444 is a valid Luhn number, so only the published number rule can stop it.
+    fireEvent.change(screen.getByLabelText("หมายเลขบัตร"), { target: { value: "5555 5555 5555 4444" } });
+    fireEvent.change(screen.getByLabelText("ชื่อผู้ถือบัตร"), { target: { value: "TEST USER" } });
+    fireEvent.change(screen.getByLabelText("วันหมดอายุ (MM/YY)"), { target: { value: "12/30" } });
+    fireEvent.change(screen.getByLabelText("CVC"), { target: { value: "123" } });
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+
+    expect(await screen.findByText("กรุณากรอกหมายเลขบัตร 4242 4242 4242 4242")).toBeInTheDocument();
+    expect(createOrder).not.toHaveBeenCalled();
+  });
+
+  it("keeps real card autofill disabled on every card field", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("Credit / Debit Card");
+
+    for (const label of ["หมายเลขบัตร", "ชื่อผู้ถือบัตร", "วันหมดอายุ (MM/YY)", "CVC"]) {
+      const field = screen.getByLabelText(label);
+      expect(field).toHaveAttribute("autocomplete", "off");
+      expect(field).toHaveAttribute("data-1p-ignore");
+      expect(field).toHaveAttribute("data-lpignore", "true");
+    }
+  });
+
+  it("clearly labels the QR as a demo with no bank connection", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    expect(await screen.findByRole("img", { name: /QR Demo/ })).toBeInTheDocument();
+    expect(screen.getByText("PromptPay QR ตัวอย่างสำหรับ Demo")).toBeInTheDocument();
+    expect(screen.getByText(/ไม่มีการเชื่อมต่อธนาคารหรือเรียกเก็บเงินจริง/)).toBeInTheDocument();
+  });
+
+  it("clearly labels the card form as demo only", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("Credit / Debit Card");
+
+    expect(screen.getByText("กรอกข้อมูลบัตรทดสอบสำหรับ Demo")).toBeInTheDocument();
+    expect(screen.getByText(/ใช้เฉพาะหมายเลขทดสอบ/)).toBeInTheDocument();
+    expect(screen.getByText(/ทั้งสองช่องทางเป็นการจำลอง/)).toBeInTheDocument();
+  });
+
+  it("keeps both channels, the expanded body and one pay button inside a single payment card", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    const promptPayOption = screen.getByRole("button", { name: /^PromptPay/ });
+    const cardOption = screen.getByRole("button", { name: /^Credit \/ Debit Card/ });
+    const qr = await screen.findByRole("img", { name: /QR Demo/ });
+
+    // One card holds the channel list, the expanded channel and the pay button.
+    const paymentCard = promptPayOption.closest("section");
+    expect(paymentCard).toBe(cardOption.closest("section"));
+    expect(qr.closest("section")).toBe(paymentCard);
+    expect(screen.getByRole("heading", { name: "ช่องทางการชำระเงิน" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "จำลองการชำระเงิน" })).toHaveLength(1);
+    expect(promptPayOption).toHaveAttribute("aria-expanded", "true");
+    expect(cardOption).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(cardOption);
+
+    // The card form opens inside the same card, and the QR is swapped out.
+    const cardForm = screen.getByLabelText("หมายเลขบัตร");
+    expect(cardForm.closest("section")).toBe(paymentCard);
+    expect(screen.queryByRole("img", { name: /QR Demo/ })).not.toBeInTheDocument();
+    expect(cardOption).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getAllByRole("button", { name: "จำลองการชำระเงิน" })).toHaveLength(1);
+  });
+
+  it("pays with the card entered in the expanded body of the same card", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("Credit / Debit Card");
+
+    fillCardForm();
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder.mock.calls.at(-1)?.[0]).toMatchObject({ paymentMethod: "credit-card" });
+    expect(useCartStore.getState().cartItems).toEqual([]);
+  });
+
+  it("pays when Enter is pressed in a card field", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("Credit / Debit Card");
+
+    fillCardForm();
+    fireEvent.keyDown(screen.getByLabelText("CVC"), { key: "Enter" });
+
+    expect(await screen.findByText("คำสั่งซื้อ OCCASION ของคุณได้รับการยืนยันแล้ว!")).toBeInTheDocument();
+    expect(createOrder.mock.calls.at(-1)?.[0]).toMatchObject({ paymentMethod: "credit-card" });
+  });
+
+  it("rejects a card number that fails the Luhn check without calling the API", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("Credit / Debit Card");
+
+    fireEvent.change(screen.getByLabelText("หมายเลขบัตร"), { target: { value: "1234 5678 9012 3456" } });
+    fireEvent.change(screen.getByLabelText("ชื่อผู้ถือบัตร"), { target: { value: "TEST USER" } });
+    fireEvent.change(screen.getByLabelText("วันหมดอายุ (MM/YY)"), { target: { value: "12/30" } });
+    fireEvent.change(screen.getByLabelText("CVC"), { target: { value: "123" } });
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+
+    expect(await screen.findByText("หมายเลขบัตรไม่ถูกต้อง")).toBeInTheDocument();
+    expect(createOrder).not.toHaveBeenCalled();
+    expect(confirmPayment).not.toHaveBeenCalled();
+    expect(useCartStore.getState().cartItems).toHaveLength(1);
+  });
+
+  it("rejects an expired card", async () => {
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("Credit / Debit Card");
+
+    fireEvent.change(screen.getByLabelText("หมายเลขบัตร"), { target: { value: "4242 4242 4242 4242" } });
+    fireEvent.change(screen.getByLabelText("ชื่อผู้ถือบัตร"), { target: { value: "TEST USER" } });
+    fireEvent.change(screen.getByLabelText("วันหมดอายุ (MM/YY)"), { target: { value: "01/20" } });
+    fireEvent.change(screen.getByLabelText("CVC"), { target: { value: "123" } });
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+
+    expect(await screen.findByText("บัตรหมดอายุแล้ว")).toBeInTheDocument();
+    expect(createOrder).not.toHaveBeenCalled();
+  });
+
+  it("shows an API failure in the red alert and preserves the cart", async () => {
+    createOrder.mockRejectedValueOnce(
+      Object.assign(new Error("request failed"), { data: { message: "สินค้ามีไม่เพียงพอในสต็อก" } }),
+    );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    goToPaymentStep("PromptPay");
+
+    fireEvent.click(screen.getByRole("button", { name: "จำลองการชำระเงิน" }));
+
+    expect(await screen.findByText("สินค้ามีไม่เพียงพอในสต็อก")).toBeInTheDocument();
+    expect(confirmPayment).not.toHaveBeenCalled();
+    expect(useCartStore.getState().cartItems).toHaveLength(1);
+  });
+
+  it("does not allow increasing cart quantity beyond known stock", () => {
+    const { updateQuantity } = useCartStore.getState();
+    updateQuantity("ci-test-1", 99);
+    expect(useCartStore.getState().cartItems[0].quantity).toBe(5);
+  });
+
+  it("does not add an item when its stock is zero", () => {
+    useCartStore.setState({ cartItems: [] });
+    useCartStore.getState().addToCart({
+      product: { _id: "p2", name: "Out of stock" },
+      variant: { _id: "v2", stockQuantity: 0, price: 10 },
+      quantity: 1,
     });
 
-    it("navigates to Step 4 Review and has Back button that returns to Step 3", () => {
-      render(
-        <MemoryRouter>
-          <CheckoutPage />
-        </MemoryRouter>
-      );
+    expect(useCartStore.getState().cartItems).toEqual([]);
+  });
 
-      fillShippingForm();
-      fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
-      fillCardForm();
-      fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
-
-      expect(
-        screen.getByRole("button", { name: "PLACE ORDER" })
-      ).toBeInTheDocument();
-
-      const backBtn = screen.getByRole("button", { name: "ย้อนกลับ" });
-      expect(backBtn).toBeInTheDocument();
-
-      fireEvent.click(backBtn);
-      expect(screen.getByText(/Use my Gift Card/i)).toBeInTheDocument();
+  it("requires a last name when a saved address only has a one-word recipient name", async () => {
+    getAddresses.mockResolvedValueOnce({
+      data: [{
+        _id: "saved-address-one-word-name",
+        recipientName: "สมชาย",
+        phone: "0812345678",
+        addressDetail: "123 ถนนตัวอย่าง",
+        district: "บางรัก",
+        province: "กรุงเทพมหานคร",
+        zipCode: "10500",
+        isDefault: true,
+      }],
     });
 
-    it("places order on Step 4 and displays OrderConfirmationScreen with tracking", async () => {
-      render(
-        <MemoryRouter>
-          <CheckoutPage />
-        </MemoryRouter>
-      );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByLabelText("นามสกุล")).toHaveValue(""));
+    expect(screen.getByLabelText("ชื่อ")).toHaveValue("สมชาย");
+    fireEvent.click(screen.getByRole("button", { name: "ดำเนินการต่อ" }));
 
-      fillShippingForm();
-      fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
-      fillCardForm();
-      fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
+    expect(await screen.findByText("กรุณากรอกนามสกุล")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "ช่องทางการชำระเงิน" })).not.toBeInTheDocument();
+    expect(createOrder).not.toHaveBeenCalled();
+  });
 
-      const placeOrderBtn = screen.getByRole("button", { name: "PLACE ORDER" });
-      fireEvent.click(placeOrderBtn);
-
-      await waitFor(
-        () => {
-          expect(
-            screen.getByText(/Your OCCASION order is confirmed!/i)
-          ).toBeInTheDocument();
-        },
-        { timeout: 2000 }
-      );
-
-      expect(
-        screen.getByText(/Here's what we're packing for you:/i)
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText(/Use this number to track your package:/i)
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("link", { name: /continue shopping/i })
-      ).toBeInTheDocument();
+  it("splits a saved address recipientName into first and last name", async () => {
+    getAddresses.mockResolvedValueOnce({
+      data: [{
+        _id: "saved-address-full-name",
+        recipientName: "สมชาย ใจดี",
+        phone: "0812345678",
+        addressDetail: "123 ถนนตัวอย่าง",
+        district: "บางรัก",
+        province: "กรุงเทพมหานคร",
+        zipCode: "10500",
+        isDefault: true,
+      }],
     });
 
-    it("sends the normalized coupon code to the backend checkout", async () => {
-      render(
-        <MemoryRouter>
-          <CheckoutPage />
-        </MemoryRouter>
-      );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByLabelText("นามสกุล")).toHaveValue("ใจดี"));
 
-      fillShippingForm();
-      fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
-      fireEvent.click(screen.getByRole("button", { name: /ใส่รหัส Gift Card/i }));
-      fireEvent.change(screen.getByPlaceholderText(/กรอกรหัส Gift Card/i), {
-        target: { value: " occwelcome10 " },
-      });
-      fireEvent.click(screen.getByRole("button", { name: "ใช้งาน" }));
-      fillCardForm();
-      fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
-      fireEvent.click(screen.getByRole("button", { name: "PLACE ORDER" }));
+    expect(screen.getByLabelText("ชื่อ")).toHaveValue("สมชาย");
+  });
 
-      await waitFor(() => expect(createOrder).toHaveBeenCalled());
-      expect(createOrder.mock.calls.at(-1)[0].couponCode).toBe("OCCWELCOME10");
+  it("maps an English saved province to the matching Thai Checkout option", async () => {
+    getAddresses.mockResolvedValueOnce({
+      data: [{
+        _id: "saved-address-bangkok-english",
+        recipientName: "Somchai Jaidee",
+        phone: "0812345678",
+        addressDetail: "123 ถนนตัวอย่าง",
+        district: "บางรัก",
+        province: "  bAnGkOk City  ",
+        zipCode: "10500",
+        isDefault: true,
+      }],
     });
 
-    it("shows an error message and stays on Review when createOrder fails", async () => {
-      createOrder.mockRejectedValueOnce(
-        Object.assign(new Error("server error"), {
-          data: { message: "การชำระเงินถูกปฏิเสธ กรุณาตรวจสอบข้อมูลบัตร" },
-        })
-      );
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByLabelText("จังหวัด")).toHaveValue("กรุงเทพมหานคร"));
+    fireEvent.click(screen.getByRole("button", { name: "ดำเนินการต่อ" }));
 
-      render(
-        <MemoryRouter>
-          <CheckoutPage />
-        </MemoryRouter>
-      );
+    expect(screen.getByRole("heading", { name: "ช่องทางการชำระเงิน" })).toBeInTheDocument();
+  });
 
-      fillShippingForm();
-      fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
-      fillCardForm();
-      fireEvent.click(screen.getByRole("button", { name: "CONTINUE" }));
-
-      fireEvent.click(screen.getByRole("button", { name: "PLACE ORDER" }));
-
-      await waitFor(() => {
-        expect(
-          screen.getAllByText(/การชำระเงินถูกปฏิเสธ/).length
-        ).toBeGreaterThanOrEqual(1);
-      });
-
-      expect(
-        screen.getByRole("button", { name: "PLACE ORDER" })
-      ).toBeInTheDocument();
+  it("keeps an unknown saved province visible as a temporary Checkout option", async () => {
+    getAddresses.mockResolvedValueOnce({
+      data: [{
+        _id: "saved-address-custom-province",
+        recipientName: "Somchai Jaidee",
+        phone: "0812345678",
+        addressDetail: "123 ถนนตัวอย่าง",
+        district: "ตัวอย่าง",
+        province: "Example Province",
+        zipCode: "10500",
+        isDefault: true,
+      }],
     });
+
+    render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+
+    const provinceSelect = await screen.findByLabelText("จังหวัด");
+    await waitFor(() => expect(provinceSelect).toHaveValue("Example Province"));
+    expect(screen.getByRole("option", { name: "Example Province" })).toBeInTheDocument();
   });
 });

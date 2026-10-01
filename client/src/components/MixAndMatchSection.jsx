@@ -12,7 +12,8 @@ const MixAndMatchSection = ({ assets }) => {
   const [recommending, setRecommending] = useState(false);
   const [aiRanked, setAiRanked] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
-const recommendationRequestId = useRef(0);
+  const [recommendError, setRecommendError] = useState("");
+  const recommendationRequestId = useRef(0);
 
   useEffect(() => {
     let mounted = true;
@@ -36,11 +37,12 @@ const recommendationRequestId = useRef(0);
 
   const hasFiles = Boolean(topFile || bottomFile);
 
-const resetRecommendation = () => {
+  const resetRecommendation = () => {
     recommendationRequestId.current += 1;
     setConfirmed(false);
     setAiRanked(false);
     setRecommending(false);
+    setRecommendError("");
   };
 
   const handleTopFileChange = (file) => {
@@ -59,13 +61,14 @@ const resetRecommendation = () => {
     if (bottomFile) files.push({ name: "bottom", file: bottomFile });
     if (files.length === 0) return;
 
-const requestId = recommendationRequestId.current + 1;
+    const requestId = recommendationRequestId.current + 1;
     recommendationRequestId.current = requestId;
     setConfirmed(true);
     setRecommending(true);
+    setRecommendError("");
     recommendLookbooks(files)
-      .then(({ lookbooks }) => {
-if (requestId !== recommendationRequestId.current) return;
+      .then(({ lookbooks, aiRanked }) => {
+        if (requestId !== recommendationRequestId.current) return;
         if (lookbooks.length > 0) {
           setRecommendedLooks(
             lookbooks.map((look) => ({
@@ -73,12 +76,14 @@ if (requestId !== recommendationRequestId.current) return;
               image: normalizeImageUrl(look?.imageUrl || look?.image),
             })),
           );
-          setAiRanked(true);
+          setAiRanked(Boolean(aiRanked));
         }
       })
-.catch(() => {
+      .catch((error) => {
         if (requestId === recommendationRequestId.current) {
           setAiRanked(false);
+          setConfirmed(false);
+          setRecommendError(error?.message || "ไม่สามารถแนะนำลุคได้ในตอนนี้");
         }
       })
       .finally(() => {
@@ -89,96 +94,116 @@ if (requestId !== recommendationRequestId.current) return;
   };
 
   return (
-    <div className="my-12 flex flex-col gap-8 rounded-2xl bg-accent p-6 sm:p-10">
+    <div className="my-12 flex flex-col gap-8 rounded-2xl bg-accent px-4 py-10 sm:px-6 sm:py-12 lg:px-10">
       <div className="flex flex-col justify-between gap-8 lg:flex-row">
-      {/* ส่วนเนื้อหาคำอธิบายและขั้นตอน */}
-      <div className="flex flex-col p-9 lg:w-2/3">
-        <div className="mb-6 text-white">
-          <p className="text-sm font-bold tracking-wider opacity-80">
-            MIX AND MATCH
-          </p>
-          <h2 className="mt-1 text-2xl font-bold sm:text-3xl">
-            หมดปัญหาซื้อเสื้อไปแล้วไม่รู้จะแมตช์กับกางเกงตัวไหน!
-          </h2>
-          <p className="mt-2 text-white/90">
-            ทดลองจับคู่ลุคโปรดของคุณในระบบจำลองห้องแต่งตัวก่อนสั่งซื้อ
-          </p>
+        {/* ส่วนเนื้อหาคำอธิบายและขั้นตอน */}
+        <div className="flex w-full flex-col px-2 pt-2 sm:px-6 sm:pt-6 lg:w-2/3 lg:p-9">
+          <div className="mb-6 text-white">
+            <p className="text-sm font-bold tracking-wider opacity-80">
+              MIX AND MATCH
+            </p>
+            <h2 className="mt-1 text-2xl font-bold sm:text-3xl">
+              หมดปัญหาซื้อเสื้อไปแล้วไม่รู้จะแมตช์กับกางเกงตัวไหน!
+            </h2>
+            <p className="mt-2 text-white/90">
+              ทดลองจับคู่ลุคโปรดของคุณในระบบจำลองห้องแต่งตัวก่อนสั่งซื้อ
+            </p>
+          </div>
+
+          <ol className="grid grid-cols-1 gap-3 text-white sm:grid-cols-3 sm:gap-4">
+            {[
+              { n: 1, text: "เลือกเสื้อ / กางเกงที่คุณมี" },
+              { n: 2, text: "AI วิเคราะห์สี สไตล์ และประเภทเสื้อผ้า" },
+              { n: 3, text: "รับลุคที่แมตช์ที่สุด 3 ลุคจาก Lookbook" },
+            ].map((step) => (
+              <li
+                key={step.n}
+                className="flex items-center gap-3 rounded-xl bg-white/10 p-3"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-extrabold text-white">
+                  {step.n}
+                </span>
+                <span className="text-sm leading-snug text-white/90 sm:text-xs lg:text-sm">
+                  {step.text}
+                </span>
+              </li>
+            ))}
+          </ol>
+
+          <div className="mt-6 flex flex-1 items-end gap-3">
+            <img
+              src="/collection-2026/lookbook/look-02-weekend-market.png"
+              alt="ลุค Mix & Match สไตล์ช้อปปิ้งสุดสัปดาห์"
+              className="h-36 min-w-0 w-1/2 rounded-xl object-cover object-top shadow-lg sm:h-52 md:h-56 lg:h-64 xl:h-72"
+              loading="lazy"
+            />
+            <img
+              src="/collection-2026/lookbook/look-01-city-museum.png"
+              alt="ลุค Mix & Match เก๋ไก๋กลางเมือง"
+              className="h-36 min-w-0 w-1/2 rounded-xl object-cover object-top shadow-lg sm:h-52 md:h-56 lg:h-64 xl:h-72"
+              loading="lazy"
+            />
+          </div>
         </div>
 
-        <ol className="flex flex-col gap-4 text-white">
-          <li className="flex items-center gap-3">
-            <span className="inline-flex h-10 min-w-10 items-center justify-center rounded-full bg-primary font-bold text-white">
-              1
-            </span>
-            <span>
-              เลือกชิ้นส่วนเสื้อผ้า เลือกเสื้อ ท่อนล่าง
-              และเครื่องประดับที่คุณชอบ
-            </span>
-          </li>
-          <li className="flex items-center gap-3">
-            <span className="inline-flex h-10 min-w-10 items-center justify-center rounded-full bg-primary font-bold text-white">
-              2
-            </span>
-            <span>
-              ดูพรีวิวบนหุ่นจำลอง ระบบจะจัดเรียงชุดให้เห็นสไตล์โดยรวมทันที
-            </span>
-          </li>
-          <li className="flex items-center gap-3">
-            <span className="inline-flex h-10 min-w-10 items-center justify-center rounded-full bg-primary font-bold text-white">
-              3
-            </span>
-            <span>
-              เพิ่มลงตะกร้าพร้อมกันทั้งเซ็ต รับส่วนลดพิเศษทันที 10%
-              เมื่อซื้อยกเซ็ต
-            </span>
-          </li>
-        </ol>
-      </div>
-
-      {/* ส่วน Dropzone สำหรับอัปโหลดรูปภาพ */}
-      <div className="flex flex-col justify-center gap-4 sm:flex-row lg:w-1/3 lg:flex-col">
-        <ImageDropzone
-          assets={assets}
-          label="อัปโหลดเสื้อ / ท่อนบน"
-          onFileChange={handleTopFileChange}
-          persistUpload={false}
-        />
-        <ImageDropzone
-          assets={assets}
-          label="อัปโหลดกางเกง / ท่อนล่าง"
-          onFileChange={handleBottomFileChange}
-          persistUpload={false}
-        />
-        <button
-          type="button"
-          onClick={confirmRecommend}
-          disabled={!hasFiles || recommending}
-          className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-bold uppercase tracking-wider transition-all ${
-            !hasFiles || recommending
-              ? "cursor-not-allowed bg-white/20 text-white/60"
-              : "cursor-pointer bg-white text-foreground hover:opacity-85 active:scale-95"
-          }`}
-        >
-          {recommending ? "กำลังวิเคราะห์..." : "ยืนยันการอัปโหลด"}
-        </button>
-        {recommending ? (
-          <p className="text-center text-xs text-white/80">
-            กำลังวิเคราะห์รูปด้วย AI หาลุคใกล้เคียง...
-          </p>
-        ) : hasFiles && !confirmed ? (
-          <p className="text-center text-xs text-white/80">
-            เลือกภาพแล้ว กด "ยืนยันการอัปโหลด" เพื่อให้ AI วิเคราะห์ลุค
-          </p>
-        ) : confirmed ? (
-          <p className="text-center text-xs text-white/80">
-            การวิเคราะห์เสร็จสิ้น ดูเซ็ตแนะนำด้านล่าง
-          </p>
-        ) : (
-          <p className="text-center text-xs text-white/80">
-            อัปโหลดเสื้อหรือกางเกงอย่างน้อย 1 ชิ้น แล้วกดยืนยันเพื่อดูเซ็ตแนะนำ
-          </p>
-        )}
-      </div>
+        {/* ส่วน Dropzone สำหรับอัปโหลดรูปภาพ */}
+        <div className="flex w-full flex-col justify-center gap-4 lg:w-1/3">
+          <div className="flex flex-col gap-4 sm:flex-row lg:flex-col">
+            <ImageDropzone
+              assets={assets}
+              label="อัปโหลดเสื้อ / ท่อนบน"
+              onFileChange={handleTopFileChange}
+              persistUpload={false}
+              className="w-full sm:w-1/2 lg:w-full"
+              buttonClassName="h-44 sm:h-56 xl:h-64"
+            />
+            <ImageDropzone
+              assets={assets}
+              label="อัปโหลดกางเกง / ท่อนล่าง"
+              onFileChange={handleBottomFileChange}
+              persistUpload={false}
+              className="w-full sm:w-1/2 lg:w-full"
+              buttonClassName="h-44 sm:h-56 xl:h-64"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={confirmRecommend}
+            disabled={!hasFiles || recommending}
+            className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-bold uppercase tracking-wider transition-all ${
+              !hasFiles || recommending
+                ? "cursor-not-allowed bg-white/20 text-white/60"
+                : "cursor-pointer bg-white text-foreground hover:opacity-85 active:scale-95"
+            }`}
+          >
+            {recommending ? "กำลังวิเคราะห์..." : "ยืนยันการอัปโหลด"}
+          </button>
+          {recommendError ? (
+            <p
+              className="text-center text-xs font-semibold text-red-200"
+              role="alert"
+            >
+              {recommendError}
+            </p>
+          ) : recommending ? (
+            <p className="text-center text-xs text-white/80">
+              กำลังวิเคราะห์รูปด้วย AI หาลุคใกล้เคียง...
+            </p>
+          ) : hasFiles && !confirmed ? (
+            <p className="text-center text-xs text-white/80">
+              เลือกภาพแล้ว กด "ยืนยันการอัปโหลด" เพื่อให้ AI วิเคราะห์ลุค
+            </p>
+          ) : confirmed ? (
+            <p className="text-center text-xs text-white/80">
+              การวิเคราะห์เสร็จสิ้น ดูเซ็ตแนะนำด้านล่าง
+            </p>
+          ) : (
+            <p className="text-center text-xs text-white/80">
+              อัปโหลดเสื้อหรือกางเกงอย่างน้อย 1 ชิ้น
+              แล้วกดยืนยันเพื่อดูเซ็ตแนะนำ
+            </p>
+          )}
+        </div>
       </div>
 
       {/* เซ็ตแนะนำ Lookbook ใกล้เคียงกับที่ลูกค้าเลือก */}
@@ -199,7 +224,11 @@ if (requestId !== recommendationRequestId.current) return;
               <p className="mt-1 text-xs text-white/70">
                 จัดอันดับโดย AI จากรูปที่คุณอัปโหลด
               </p>
-            ) : null}
+            ) : (
+              <p className="mt-1 text-xs text-white/70">
+                AI ไม่พร้อมใช้งานชั่วคราว แสดงลุคทั้งหมดจากคอลเลกชัน
+              </p>
+            )}
           </div>
 
           {recommending ? (
@@ -213,7 +242,7 @@ if (requestId !== recommendationRequestId.current) return;
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:px-0 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {recommendedLooks.slice(0, 3).map((look, index) => (
                 <RecommendProduct
                   key={look._id || look.id || `lookbook-${index}`}

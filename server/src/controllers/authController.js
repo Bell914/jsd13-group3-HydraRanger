@@ -1,16 +1,18 @@
 import { HTTP_STATUS } from '../config/constants.js';
 import * as authService from '../services/authService.js';
+import { clearAuthCookie, getRequestToken, setAuthCookie } from '../utils/authCookies.js';
+
+function sendSession(res, status, message, result) {
+  setAuthCookie(res, result.token, result.user.role);
+  return res.status(status).json({ success: true, message, data: { user: result.user } });
+}
 
 export const register = async (req, res, next) => {
   try {
     const { username, email, password } = req.body;
     const result = await authService.registerUser({ username, email, password });
 
-    res.status(HTTP_STATUS.CREATED).json({
-      success: true,
-      message: 'User registered successfully',
-      data: result
-    });
+    return sendSession(res, HTTP_STATUS.CREATED, 'User registered successfully', result);
   } catch (error) {
     if (error.message.includes('already exists')) {
       return res.status(HTTP_STATUS.CONFLICT).json({
@@ -27,11 +29,7 @@ export const login = async (req, res, next) => {
     const { email, password } = req.body;
     const result = await authService.loginUser({ email, password });
 
-    res.status(HTTP_STATUS.OK).json({
-      success: true,
-      message: 'Login successful',
-      data: result
-    });
+    return sendSession(res, HTTP_STATUS.OK, 'Login successful', result);
   } catch (error) {
     if (
       error.message === 'Invalid email or password' ||
@@ -50,11 +48,14 @@ export const adminLogin = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const result = await authService.loginAdmin({ email, password });
-
-    res.status(HTTP_STATUS.OK).json({
+    setAuthCookie(res, result.token, 'admin');
+    return res.status(HTTP_STATUS.OK).json({
       success: true,
       message: 'Admin login successful',
-      data: result
+      // The cookie remains the primary session mechanism. The token lets the
+      // separate Vercel admin site authenticate when a browser blocks or
+      // mishandles a cross-site cookie.
+      data: { user: result.user, token: result.token }
     });
   } catch (error) {
     if (error.message === 'Invalid admin credentials') {
@@ -113,13 +114,13 @@ export const changePassword = async (req, res, next) => {
 
 export const updateProfile = async (req, res, next) => {
   try {
-    const { username, email, avatar, birthMonth } = req.body;
+    const { username, email, avatar, birthday } = req.body;
     const user = await authService.updateProfile({
       userId: req.user.id || req.user._id,
       username,
       email,
       avatar,
-      birthMonth
+      birthday
     });
     res.status(HTTP_STATUS.OK).json({
       success: true,
@@ -145,7 +146,7 @@ export const updateProfile = async (req, res, next) => {
 
 export const refresh = async (req, res, next) => {
   try {
-    const { token } = req.body;
+    const token = getRequestToken(req) || req.body?.token;
     if (!token) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
@@ -153,9 +154,10 @@ export const refresh = async (req, res, next) => {
       });
     }
     const result = await authService.refreshToken(token);
+    setAuthCookie(res, result.token, result.user?.role || 'user');
     res.status(HTTP_STATUS.OK).json({
       success: true,
-      data: result
+      data: { user: result.user }
     });
   } catch (error) {
     if (
@@ -169,6 +171,16 @@ export const refresh = async (req, res, next) => {
     }
     next(error);
   }
+};
+
+export const logout = (req, res) => {
+  clearAuthCookie(res, 'user');
+  res.status(HTTP_STATUS.OK).json({ success: true, message: 'Logged out successfully' });
+};
+
+export const adminLogout = (req, res) => {
+  clearAuthCookie(res, 'admin');
+  res.status(HTTP_STATUS.OK).json({ success: true, message: 'Logged out successfully' });
 };
 
 // ==========================================

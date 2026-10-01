@@ -104,8 +104,34 @@ test('redeemed and out-of-month coupons cannot be reused', () => {
   );
 });
 
-test('profile validation accepts only a valid birth month', () => {
-  assert.equal(validateUpdateProfileInput({ birthMonth: 9 }).isValid, true);
-  assert.equal(validateUpdateProfileInput({ birthMonth: null }).isValid, true);
-  assert.equal(validateUpdateProfileInput({ birthMonth: 13 }).isValid, false);
+test('expired reservations do not permanently consume a coupon', () => {
+  const now = new Date('2026-09-15T12:00:00.000Z');
+  const user = { birthday: new Date('1990-09-10T00:00:00.000Z'), membership: { rank: 'SILVER' } };
+  const redemptions = [{
+    code: 'BDAY15',
+    campaignKey: '2026',
+    status: 'reserved',
+    reservedUntil: new Date('2026-09-15T11:59:00.000Z')
+  }];
+
+  const coupon = buildCouponsForUser(user, redemptions, now)
+    .find((item) => item.code === 'BDAY15');
+  assert.equal(coupon.usable, true);
+});
+
+test('coupon eligibility errors are typed as bad requests', () => {
+  const now = new Date('2026-09-15T12:00:00.000Z');
+  const user = { birthday: new Date('1990-02-10T00:00:00.000Z'), membership: { rank: 'BRONZE' } };
+
+  assert.throws(
+    () => validateCouponForUser(user, 'BDAY10', 1000, [], now),
+    (error) => error.statusCode === 400 && /เดือนเกิด/.test(error.message)
+  );
+});
+
+test('profile validation accepts only a valid birthday', () => {
+  assert.equal(validateUpdateProfileInput({ birthday: '1990-09-15' }).isValid, true);
+  assert.equal(validateUpdateProfileInput({ birthday: null }).isValid, true);
+  assert.equal(validateUpdateProfileInput({ birthday: 'not-a-date' }).isValid, false);
+  assert.equal(validateUpdateProfileInput({ birthday: '2999-01-01' }).isValid, false);
 });

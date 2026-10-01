@@ -4,20 +4,15 @@ import { adminAuthService } from '../services/adminAuthService.js';
 
 export function AdminAuthProvider({ children }) {
   const [user, setUser] = useState(adminAuthService.getUser());
-  const [loading, setLoading] = useState(Boolean(adminAuthService.getToken()));
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function verifyAdmin() {
-      if (!adminAuthService.getToken()) {
-        setLoading(false);
-        return;
-      }
-
       try {
         const adminUser = await adminAuthService.verify();
         setUser(adminUser);
       } catch {
-        adminAuthService.logout();
+        await adminAuthService.logout();
         setUser(null);
       } finally {
         setLoading(false);
@@ -33,8 +28,8 @@ export function AdminAuthProvider({ children }) {
     return adminUser;
   }
 
-  function logout() {
-    adminAuthService.logout();
+  async function logout() {
+    await adminAuthService.logout();
     setUser(null);
   }
 

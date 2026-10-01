@@ -122,11 +122,13 @@ export function AdminProductsPage() {
     setDeleting(true);
     setErrorMessage('');
     try {
-      await productService.deleteProduct(productToDelete._id);
+      const inactiveProduct = await productService.deleteProduct(productToDelete._id);
       setProductList((currentProducts) => {
-        return currentProducts.filter((product) => product._id !== productToDelete._id);
+        return currentProducts.map((product) => (
+          product._id === inactiveProduct._id ? inactiveProduct : product
+        ));
       });
-      setSuccessMessage(`ลบสินค้า “${productToDelete.name}” เรียบร้อยแล้ว`);
+      setSuccessMessage(`ปิดการขาย “${productToDelete.name}” เรียบร้อยแล้ว`);
       setProductToDelete(null);
     } catch (error) {
       setErrorMessage(error.message);
@@ -154,7 +156,7 @@ export function AdminProductsPage() {
       <main className="products-page">
         <header className="page-heading">
           <div>
-            <h1>จัดการสินค้าทั้งหมด (Products)</h1>
+            <h1>จัดการสินค้าทั้งหมด</h1>
             <p>จัดการคลังสินค้า เพิ่ม แก้ไข และตรวจสอบสถานะสินค้าในระบบ</p>
           </div>
           <button type="button" className="primary-action" onClick={openCreateForm}>
@@ -164,7 +166,7 @@ export function AdminProductsPage() {
 
         {successMessage && (
           <p
-            className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-bold text-emerald-700"
+            className="mb-5 rounded-lg border border-[#EFC3BC] bg-[#F1EEE8] px-3.5 py-2.5 text-xs font-bold text-[#263639]"
             role="status"
           >
             {successMessage}
@@ -181,19 +183,19 @@ export function AdminProductsPage() {
         <section className="filter-toolbar" aria-label="ค้นหาและกรองสินค้า">
           <label className="product-search">
             <Search size={15} aria-hidden="true" />
-            <span className="sr-only">ค้นหาชื่อสินค้าหรือ SKU</span>
+            <span className="sr-only">ค้นหาชื่อหรือรหัสสินค้า</span>
             <input
               type="search"
               value={search}
               onChange={changeSearch}
-              placeholder="ค้นหาชื่อสินค้า, SKU..."
+              placeholder="ค้นหาชื่อหรือรหัสสินค้า..."
             />
           </label>
           <div className="filters">
             <select value={selectedCategory} onChange={changeCategory} aria-label="เลือกหมวดหมู่">
-              <option value="all">ทุกหมวดหมู่ (Categories)</option>
-              <option value="tops">เสื้อ (Tops)</option>
-              <option value="bottoms">กางเกง (Bottoms)</option>
+              <option value="all">ทุกหมวดหมู่</option>
+              <option value="tops">เสื้อ</option>
+              <option value="bottoms">กางเกง</option>
             </select>
             <button type="button" className="filter-button" onClick={applyCategoryFilter}>
               <Filter size={15} /> ตัวกรอง

@@ -26,9 +26,9 @@ export const MatchingProducts = ({ products = [] }) => {
             <Link
               key={match._id || idx}
               to={`/products/${match._id || match.productId}`}
-              className="group flex flex-col justify-between overflow-hidden rounded-2xl bg-[#0046a7] text-white shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl aspect-[3/4] p-3"
+              className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-[#e4ddd3] bg-[#f1eee8] text-[#263639] shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl aspect-[3/4] p-3"
             >
-              <div className="relative w-full flex-1 overflow-hidden rounded-xl bg-white/95 p-3 flex items-center justify-center">
+              <div className="relative w-full flex-1 overflow-hidden rounded-xl bg-[#fbf8f3] p-3 flex items-center justify-center">
                 {imgUrl ? (
                   <img
                     src={imgUrl}
@@ -36,25 +36,25 @@ export const MatchingProducts = ({ products = [] }) => {
                     className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (
-                  <span className="text-xl sm:text-2xl font-extrabold text-[#0046a7]">
+                  <span className="text-xl sm:text-2xl font-extrabold text-[#263639]">
                     Product{idx + 1}
                   </span>
                 )}
-                <span className="absolute top-2 left-2 rounded-md bg-[#0046a7] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                <span className="absolute top-2 left-2 rounded-md bg-[#263639] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
                   {match.category || "item"}
                 </span>
               </div>
-              <div className="pt-3 pb-1 flex items-center justify-between text-white">
+              <div className="pt-3 pb-1 flex items-center justify-between text-[#263639]">
                 <div className="flex flex-col">
-                  <span className="text-sm sm:text-base font-extrabold tracking-wide text-white">
+                  <span className="text-sm sm:text-base font-extrabold tracking-wide text-[#263639]">
                     {match.category === "tops" ? "เสื้อ" : "กางเกง"}
                   </span>
-                  <span className="text-[11px] text-white/80 line-clamp-1 max-w-[130px]">
+                  <span className="text-[11px] text-[#526164] line-clamp-1 max-w-[130px]">
                     {match.name}
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-sm sm:text-base font-black text-amber-200">
+                  <span className="text-sm sm:text-base font-black text-[#c46731]">
                     ฿{minPrice.toLocaleString()}
                   </span>
                 </div>

@@ -16,10 +16,12 @@ export const errorHandler = (err, req, res, next) => {
 
   console.error(`🚨 Error [${req.method} ${req.url}]:`, err.message);
 
+  const hideInternalMessage = ENV.NODE_ENV === 'production' && statusCode >= 500;
+
   res.status(statusCode).json({
     success: false,
-    message: err.message || 'Internal Server Error',
-    errors: err.errors || null,
+    message: hideInternalMessage ? 'Internal Server Error' : (err.message || 'Internal Server Error'),
+    errors: hideInternalMessage ? null : (err.errors || null),
     stack: ENV.NODE_ENV === 'development' ? err.stack : undefined
   });
 };

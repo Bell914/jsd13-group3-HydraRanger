@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getSizeRecommendation } from '../utils/sizeRecommendation.js';
 
 const regularProfile = {
+  consentGiven: true,
   chestCm: 90,
   waistCm: 76,
   hipsCm: 96,
@@ -22,6 +23,18 @@ describe('Personalized Size Recommendation', () => {
     const result = getSizeRecommendation(regularProfile, product, ['S', 'M', 'L']);
     expect(result.size).toBe('M');
     expect(result.confidence).toBe('ปานกลาง');
+  });
+
+  it('calls the fitted preference เข้ารูป in its explanation', () => {
+    const product = {
+      category: 'tops',
+      variants: [{ size: 'S', stockQuantity: 1 }],
+      size_chart: [{ size_name: 'S', garment_chest_actual: 94 }]
+    };
+    const result = getSizeRecommendation({ ...regularProfile, preferredFit: 'fitted' }, product);
+
+    expect(result.size).toBe('S');
+    expect(result.reason).toContain('เข้ารูป');
   });
 
   it('falls back to body measurements when a product has no size chart', () => {
@@ -45,8 +58,30 @@ describe('Personalized Size Recommendation', () => {
     expect(result.reason).toContain('รอบเอวและรอบสะโพก');
   });
 
+  it('uses the product waist and hips chart for bottoms', () => {
+    const product = {
+      category: 'bottoms',
+      variants: [{ size: 'S', stockQuantity: 1 }, { size: 'M', stockQuantity: 1 }],
+      size_chart: [
+        { size_name: 'S', garment_waist_actual: 80, garment_hips_actual: 100 },
+        { size_name: 'M', garment_waist_actual: 88, garment_hips_actual: 108 }
+      ]
+    };
+    const result = getSizeRecommendation(regularProfile, product, ['S', 'M']);
+    expect(result.size).toBe('M');
+    expect(result.source).toContain('ตารางรอบเอวและสะโพก');
+  });
+
   it('does not recommend a size before the customer saves a profile', () => {
     expect(getSizeRecommendation(null, {}, ['S', 'M', 'L'])).toBeNull();
+  });
+
+  it('requires explicit consent before using body measurements', () => {
+    const missingConsent = { ...regularProfile, consentGiven: undefined };
+    const declinedConsent = { ...regularProfile, consentGiven: false };
+
+    expect(getSizeRecommendation(missingConsent, {}, ['S', 'M', 'L'])).toBeNull();
+    expect(getSizeRecommendation(declinedConsent, {}, ['S', 'M', 'L'])).toBeNull();
   });
 });
 
@@ -115,6 +150,21 @@ describe('Size recommendation edge cases', () => {
     });
     expect(getSizeRecommendation(regularProfile, product, [], 'White').status).toBe('available');
     expect(getSizeRecommendation(regularProfile, product, [], 'Blue').status).toBe('unavailable');
+  });
+
+  it('only offers a larger in-stock size as an alternative', () => {
+    const bothSidesAvailable = { category: 'tops', variants: [
+      { size: 'S', color: 'Black', stock_quantity: 5 },
+      { size: 'M', color: 'Black', stock_quantity: 0 },
+      { size: 'L', color: 'Black', stock_quantity: 5 }
+    ] };
+    expect(getSizeRecommendation(regularProfile, bothSidesAvailable, [], 'Black').alternativeSize).toBe('L');
+
+    const smallerOnly = { category: 'tops', variants: [
+      { size: 'S', color: 'Black', stock_quantity: 5 },
+      { size: 'M', color: 'Black', stock_quantity: 0 }
+    ] };
+    expect(getSizeRecommendation(regularProfile, smallerOnly, [], 'Black').alternativeSize).toBeNull();
   });
 
   it('does not enable purchase when stock is unknown', () => {

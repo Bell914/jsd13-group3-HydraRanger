@@ -1,7 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
-const TOKEN_KEY = 'occasion_admin_token';
-
-function normalizeProduct(product) {
+import { adminRequest } from './adminApi.js';
+export function normalizeProduct(product) {
   const category = product.category_id?.slug || product.category || '';
   const imageUrl = product.imageUrl || product.images?.[0]?.image_url || '';
 
@@ -15,7 +13,9 @@ function normalizeProduct(product) {
     isActive: product.is_active ?? product.isActive ?? true,
     sizeChart: (product.size_chart || product.sizeChart || []).map((row) => ({
       sizeName: row.size_name || row.sizeName || '',
-      garmentChestActual: row.garment_chest_actual ?? row.garmentChestActual ?? ''
+      garmentChestActual: row.garment_chest_actual ?? row.garmentChestActual ?? '',
+      garmentWaistActual: row.garment_waist_actual ?? row.garmentWaistActual ?? '',
+      garmentHipsActual: row.garment_hips_actual ?? row.garmentHipsActual ?? ''
     })),
     variants: (product.variants || []).map((variant) => ({
       ...variant,
@@ -30,35 +30,14 @@ function normalizeProduct(product) {
 }
 
 async function request(path, options = {}) {
-  try {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) {
-      throw new Error('ไม่พบสิทธิ์ Admin กรุณาเข้าสู่ระบบใหม่');
-    }
-
-    const response = await fetch(API_BASE_URL + path, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        ...options.headers
-      }
-    });
-
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(result.message || 'ทำรายการสินค้าไม่สำเร็จ');
-    }
-    return result;
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new Error('เชื่อมต่อ Product API ไม่ได้ กรุณาตรวจสอบว่า Server เปิดอยู่');
-    }
-    throw error;
-  }
+  return adminRequest(path, {
+    ...options,
+    errorMessage: 'ทำรายการสินค้าไม่สำเร็จ',
+    networkMessage: 'เชื่อมต่อข้อมูลสินค้าไม่ได้ กรุณาตรวจสอบว่าเซิร์ฟเวอร์เปิดอยู่'
+  });
 }
 
-function prepareProduct(product) {
+export function prepareProduct(product) {
   return {
     name: product.name,
     description: product.description,
@@ -70,7 +49,9 @@ function prepareProduct(product) {
     is_active: product.isActive,
     size_chart: (product.sizeChart || []).map((row) => ({
       size_name: row.sizeName,
-      garment_chest_actual: Number(row.garmentChestActual)
+      ...(row.garmentChestActual !== '' ? { garment_chest_actual: Number(row.garmentChestActual) } : {}),
+      ...(row.garmentWaistActual !== '' ? { garment_waist_actual: Number(row.garmentWaistActual) } : {}),
+      ...(row.garmentHipsActual !== '' ? { garment_hips_actual: Number(row.garmentHipsActual) } : {})
     })),
     variants: product.variants.map((variant) => {
       return {
@@ -92,7 +73,7 @@ export const productService = {
   async getProducts() {
     const result = await request('/admin/products');
     if (!Array.isArray(result.data)) {
-      throw new Error('รูปแบบข้อมูลสินค้าจาก Server ไม่ถูกต้อง');
+      throw new Error('รูปแบบข้อมูลสินค้าจากเซิร์ฟเวอร์ไม่ถูกต้อง');
     }
     return result.data.map(normalizeProduct);
   },
@@ -114,6 +95,7 @@ export const productService = {
   },
 
   async deleteProduct(id) {
-    await request(`/admin/products/${id}`, { method: 'DELETE' });
+    const result = await request(`/admin/products/${id}`, { method: 'DELETE' });
+    return normalizeProduct(result.data);
   }
 };

@@ -9,7 +9,6 @@ import {
   ProductGallery,
   ProductBuySection,
   ProductAccordionDetails,
-  ProductReviews,
   MatchingProducts,
   OccasionLookSection,
   ProductSizeGuideModal,
@@ -23,18 +22,10 @@ export default function ProductDetailPage() {
   const { productId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const addToCart = useCartStore((state) => state.addToCart);
   const wishlist = useWishlistStore((state) => state.wishlist);
   const toggleWishlist = useWishlistStore((state) => state.toggleWishlist);
-
-  let isAuthenticated = false;
-  try {
-    const auth = useAuth();
-    isAuthenticated = Boolean(auth?.isAuthenticated);
-  } catch {
-    isAuthenticated = false;
-  }
 
   const handleToggleWishlist = () => {
     if (!isAuthenticated) {
@@ -252,16 +243,6 @@ export default function ProductDetailPage() {
       product.images.forEach((img) => addUnique(img?.image_url || img));
     }
 
-    // 4) Pad with existing images if less than 7 so all 7 slots are filled
-    if (list.length > 0 && list.length < 7) {
-      const originalCount = list.length;
-      let i = 0;
-      while (list.length < 7) {
-        list.push(list[i % originalCount]);
-        i++;
-      }
-    }
-
     return list.slice(0, 7);
   }, [product, selectedVariant, selectedColor]);
 
@@ -313,11 +294,16 @@ export default function ProductDetailPage() {
       price: currentPrice,
     };
 
-    addToCart({
+    const result = addToCart({
       product,
       variant: variantPayload,
       quantity,
     });
+
+    if (!result.added) {
+      setValidationError("สินค้าในไซส์และสีนี้มีไม่พอสำหรับจำนวนที่เลือก");
+      return;
+    }
 
     setAddedSuccessModal({
       productName: product.name,
@@ -436,14 +422,13 @@ export default function ProductDetailPage() {
 
         {/* DETAILS ACCORDION: รายละเอียด & วัสดุ/การดูแล */}
         <ProductAccordionDetails
+          product={product}
+          selectedVariant={selectedVariant}
           isDetailsOpen={isDetailsOpen}
           setIsDetailsOpen={setIsDetailsOpen}
           isMaterialsOpen={isMaterialsOpen}
           setIsMaterialsOpen={setIsMaterialsOpen}
         />
-
-        {/* REVIEWS SECTION */}
-        <ProductReviews />
 
         {/* RELATED PRODUCTS: สินค้าที่เข้ากันได้ดี */}
         <MatchingProducts products={matchingProducts} />

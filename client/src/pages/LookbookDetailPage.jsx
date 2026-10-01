@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Heart } from "lucide-react";
+import { Heart, ShoppingBag } from "lucide-react";
 import { getLookbookById, getProductDetailUrl } from "../services/lookbookService.js";
 import { LoadingSpinner } from "../components/LoadingSpinner.jsx";
 import { normalizeImageUrl } from "../utils/imageUtils.js";
 import { useLookbookStore } from "../store/lookbookStore.js";
+import { useAuth } from "../context/Auth/useAuth.jsx";
+import { LookbookBuySetModal } from "../components/lookbook/LookbookBuySetModal.jsx";
 
 export default function LookbookDetailPage() {
   const { lookId } = useParams();
@@ -12,8 +14,17 @@ export default function LookbookDetailPage() {
   const [look, setLook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isBuySetModalOpen, setIsBuySetModalOpen] = useState(false);
   const isFavorite = useLookbookStore((state) => state.isFavorite(lookId));
   const toggleFavorite = useLookbookStore((state) => state.toggleFavorite);
+
+  let isAuthenticated = false;
+  try {
+    const auth = useAuth();
+    isAuthenticated = Boolean(auth?.isAuthenticated);
+  } catch {
+    isAuthenticated = false;
+  }
 
   const loadLook = async () => {
     setLoading(true);
@@ -47,14 +58,14 @@ export default function LookbookDetailPage() {
   return (
     <main className="min-h-screen bg-background pb-28 pt-4 px-4 sm:px-6">
       <div className="max-w-2xl mx-auto flex flex-col gap-5">
-        {/* Wireframe Top Bar: < DETAIL */}
+        {/* Wireframe Top Bar: < กลับ */}
         <div className="flex items-center justify-between py-2 border-b border-stone-200">
           <Link
             to="/lookbook"
-            className="inline-flex items-center gap-2 text-sm sm:text-base font-extrabold text-primary hover:text-accent transition-colors"
+            className="inline-flex items-center text-sm sm:text-base font-extrabold text-primary hover:text-accent transition-colors"
             id="back-to-lookbook-link"
           >
-            <span className="text-lg font-black">&larr;</span> DETAIL
+            กลับ
           </Link>
           <span className="text-xs font-bold text-secondary uppercase tracking-wider">
             {look?.id}
@@ -124,19 +135,19 @@ export default function LookbookDetailPage() {
                   <span className="text-xs font-semibold text-secondary">
                     {look.name}
                   </span>
+                  {isAuthenticated && (
                   <button
                     type="button"
                     onClick={() => toggleFavorite(look)}
-                    className={`rounded-full p-2 transition cursor-pointer ${
-                      isFavorite
-                        ? "text-red-500 hover:bg-red-50"
-                        : "text-secondary hover:bg-slate-200 hover:text-red-500"
+                    className={`rounded-full p-2 transition cursor-pointer hover:scale-110 ${
+                      isFavorite ? "text-red-500 bg-red-50" : "text-red-500 hover:bg-red-50"
                     }`}
                     title={isFavorite ? "ลบออกจากลุคโปรด" : "บันทึกเป็นลุคโปรด"}
                     aria-label={isFavorite ? "ลบออกจากลุคโปรด" : "บันทึกเป็นลุคโปรด"}
                   >
                     <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
                   </button>
+                )}
                 </div>
               </div>
 
@@ -159,14 +170,25 @@ export default function LookbookDetailPage() {
 
             {/* Wireframe Item Cards Stack (Tops and Bottoms) */}
             <div className="flex flex-col gap-4">
-              <h2 className="text-sm font-extrabold text-primary uppercase tracking-wider">
-                สินค้าในลุคนี้
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-extrabold text-primary uppercase tracking-wider">
+                  สินค้าในลุคนี้
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setIsBuySetModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent text-white text-xs font-bold hover:bg-accent/90 transition shadow-xs cursor-pointer active:scale-98"
+                  id="buy-set-header-btn"
+                >
+                  <ShoppingBag size={14} />
+                  <span>ซื้อทั้งเซ็ต ฿{(look.setPrice || 0).toLocaleString()}</span>
+                </button>
+              </div>
 
               {items.map((item, idx) => {
                 const isTop =
                   item.sku?.toUpperCase().startsWith("TOP") || idx === 0;
-                const categoryLabel = isTop ? "TOPS (เสื้อ)" : "BOTTOMS (กางเกง)";
+                const categoryLabel = isTop ? "TOPS เสื้อ" : "BOTTOMS กางเกง";
                 const targetUrl = getProductDetailUrl(item.productId);
                 const itemSizes = item.sizes || standardSizes;
 
@@ -197,7 +219,7 @@ export default function LookbookDetailPage() {
                       </h3>
 
                       <p className="text-xs text-secondary mt-0.5">
-                        สี: <span className="font-semibold text-primary">{item.color}</span>
+                        สี <span className="font-semibold text-primary">{item.color}</span>
                       </p>
 
                       <span className="text-sm sm:text-base font-black text-primary mt-1">
@@ -240,7 +262,7 @@ export default function LookbookDetailPage() {
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
             <div className="flex flex-col">
               <span className="text-[10px] sm:text-xs text-secondary font-medium">
-                ราคาเซ็ตพิเศษ (SET PRICE)
+                ราคาเซ็ตพิเศษ
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="text-lg sm:text-xl font-black text-primary">
@@ -253,26 +275,35 @@ export default function LookbookDetailPage() {
                 )}
                 {look.saving > 0 && (
                   <span className="text-[10px] font-bold text-accent hidden sm:inline">
-                    (ประหยัด ฿{look.saving.toLocaleString()})
+                    ประหยัด ฿{look.saving.toLocaleString()}
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Wireframe Action Button */}
+            {/* Action Buttons */}
             <div className="flex items-center gap-2">
-              {items[0] && (
-                <Link
-                  to={getProductDetailUrl(items[0].productId)}
-                  className="px-4 py-2.5 rounded-xl bg-primary text-white font-bold text-xs sm:text-sm hover:bg-primary/90 active:scale-98 transition-all shadow-sm"
-                  id="bottom-bar-action-button"
-                >
-                  เลือกสินค้าในเซ็ต &rarr;
-                </Link>
-              )}
+              <button
+                type="button"
+                onClick={() => setIsBuySetModalOpen(true)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs sm:text-sm hover:bg-primary/90 active:scale-98 transition-all shadow-sm cursor-pointer"
+                id="bottom-bar-buy-set-btn"
+              >
+                <ShoppingBag size={16} />
+                <span>ซื้อทั้งเซ็ต</span>
+              </button>
             </div>
           </div>
         </aside>
+      )}
+
+      {/* Buy Set Size Selection Modal */}
+      {look && (
+        <LookbookBuySetModal
+          isOpen={isBuySetModalOpen}
+          onClose={() => setIsBuySetModalOpen(false)}
+          look={look}
+        />
       )}
     </main>
   );

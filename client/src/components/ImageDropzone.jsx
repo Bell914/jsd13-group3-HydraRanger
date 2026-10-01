@@ -13,6 +13,8 @@ const ImageDropzone = ({
   onFileChange,
   persistUpload = true,
   className = "",
+  buttonClassName = "h-56",
+  localOnly = false,
 }) => {
   const inputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
@@ -60,8 +62,12 @@ const ImageDropzone = ({
       setUploading(true);
 
       try {
-        const url = await uploadImage(file);
-        notify(url);
+        if (localOnly) {
+          notify(previewUrl);
+        } else {
+          const url = await uploadImage(file);
+          notify(url);
+        }
       } catch (err) {
         setError(err?.message || "อัปโหลดรูปภาพไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
         notify(null);
@@ -70,7 +76,7 @@ const ImageDropzone = ({
         setUploading(false);
       }
     },
-    [fileUrl, notify, notifyFile, persistUpload],
+[fileUrl, notify, notifyFile, persistUpload, localOnly],
   );
 
   const clearImage = useCallback(() => {
@@ -119,7 +125,7 @@ const ImageDropzone = ({
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
-        className={`relative flex h-56 w-full items-center justify-center overflow-hidden rounded-xl border-2 bg-secondary/80 text-white transition hover:bg-secondary lg:bg-gray-600 ${borderClass}`}
+        className={`relative flex ${buttonClassName} w-full items-center justify-center overflow-hidden rounded-xl border-2 bg-secondary/80 text-white transition hover:bg-secondary lg:bg-gray-600 ${borderClass}`}
       >
         {fileUrl ? (
           <>

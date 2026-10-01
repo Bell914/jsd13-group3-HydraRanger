@@ -12,7 +12,7 @@ function getRequiredEnv(name) {
 }
 
 export const ENV = {
-  PORT: process.env.PORT || 5001,
+  PORT: process.env.PORT || 5002,
   NODE_ENV: process.env.NODE_ENV || "development",
   MONGODB_URI:
     process.env.MONGODB_URI || "mongodb://localhost:27017/occasion_db",
@@ -23,8 +23,19 @@ export const ENV = {
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || "",
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || "",
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
-  GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+  GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-3.5-flash-lite",
   TRUST_PROXY: process.env.TRUST_PROXY
     ? Number.parseInt(process.env.TRUST_PROXY, 10)
     : process.env.NODE_ENV === "production" ? 1 : false,
 };
+
+// Read at call time so each environment and each test can toggle it independently.
+export function isDemoPaymentEnabled() {
+  const flag = process.env.DEMO_PAYMENT_ENABLED;
+
+  if (flag === undefined || flag === "") {
+    return process.env.NODE_ENV !== "production";
+  }
+
+  return flag === "true";
+}

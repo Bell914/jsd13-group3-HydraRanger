@@ -6,7 +6,7 @@ export function validateProductInput(product) {
     errors.push('Product title is required');
   }
 
-  if (typeof product.description !== 'string' || !product.description.trim()) {
+  if (!product.description || !product.description.trim()) {
     errors.push('Product description is required');
   }
 
@@ -14,17 +14,15 @@ export function validateProductInput(product) {
     errors.push('Category is required');
   }
 
-  // Validate tags if provided
-  if (product.tags !== undefined && product.tags !== null) {
-    if (!Array.isArray(product.tags)) {
-      errors.push('Tags must be an array of strings');
-    } else if (product.tags.some((tag) => typeof tag !== 'string' || !tag.trim())) {
-      errors.push('Each tag must be a non-empty string');
-    }
+  if (!Array.isArray(product.tags) || product.tags.length === 0) {
+    errors.push('At least one product tag is required');
+  } else if (product.tags.some((tag) => typeof tag !== 'string' || !tag.trim())) {
+    errors.push('Each tag must be a non-empty string');
   }
 
-  // Validate availableDate if provided
-  if (product.availableDate !== undefined && product.availableDate !== null && product.availableDate !== '') {
+  if (product.availableDate === undefined || product.availableDate === null || product.availableDate === '') {
+    errors.push('Product available date is required');
+  } else {
     const isStringOrDate = typeof product.availableDate === 'string' || product.availableDate instanceof Date;
     const parsedDate = new Date(product.availableDate);
     if (!isStringOrDate || isNaN(parsedDate.getTime())) {
@@ -58,7 +56,9 @@ export function validateProductInput(product) {
       }
 
       const stock = variant.stock_quantity ?? variant.stockQuantity;
-      if (stock !== undefined && (!Number.isInteger(stock) || stock < 0)) {
+      if (stock === undefined || stock === null || stock === '') {
+        errors.push(`Variant ${index + 1}: stock is required`);
+      } else if (!Number.isInteger(stock) || stock < 0) {
         errors.push(`Variant ${index + 1}: stock must be a whole number of 0 or more`);
       }
     });
@@ -69,13 +69,22 @@ export function validateProductInput(product) {
       errors.push('size_chart must be an array');
     } else {
       const sizeNames = new Set();
+      const category = product.category?.slug || product.category;
       product.size_chart.forEach((row, index) => {
         const sizeName = row?.size_name?.trim();
         const chest = Number(row?.garment_chest_actual);
+        const waist = Number(row?.garment_waist_actual);
+        const hips = Number(row?.garment_hips_actual);
         if (!sizeName) errors.push(`Size chart ${index + 1}: size_name is required`);
         if (sizeNames.has(sizeName)) errors.push(`Size chart ${index + 1}: duplicate size '${sizeName}'`);
         if (sizeName) sizeNames.add(sizeName);
-        if (!Number.isFinite(chest) || chest <= 0) {
+        if (category === 'bottoms' && (!Number.isFinite(waist) || waist <= 0)) {
+          errors.push(`Size chart ${index + 1}: garment_waist_actual must be greater than 0`);
+        }
+        if (category === 'bottoms' && (!Number.isFinite(hips) || hips <= 0)) {
+          errors.push(`Size chart ${index + 1}: garment_hips_actual must be greater than 0`);
+        }
+        if (category !== 'bottoms' && (!Number.isFinite(chest) || chest <= 0)) {
           errors.push(`Size chart ${index + 1}: garment_chest_actual must be greater than 0`);
         }
       });
