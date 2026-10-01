@@ -1,96 +1,352 @@
-import React from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Shield, LayoutDashboard, Home, LogIn, UserPlus, LogOut } from 'lucide-react';
-import { authService } from '../services/authService.js';
-import { Button } from './Button.jsx';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/Auth/useAuth.jsx";
+import { assets } from "../assets/assets.js";
+import { useCounterStore } from "../store/useStore.js";
+import { useCartStore } from "../store/cartStore.js";
+import { ProfileDropdown } from "./ProfileDropdown.jsx";
+import { SearchModal } from "./SearchModal.jsx";
 
 export const Navbar = () => {
+  const searchQuery = useCounterStore((state) => state.searchQuery);
+  const setSearchQuery = useCounterStore((state) => state.setSearchQuery);
+  const totalCartItems = useCartStore((state) =>
+    state.cartItems.reduce((acc, item) => acc + item.quantity, 0),
+  );
   const navigate = useNavigate();
   const location = useLocation();
-  const user = authService.getCurrentUser();
-  const isAuthenticated = authService.isAuthenticated();
+  const { user, isAuthenticated, logout } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isProductsHovered, setIsProductsHovered] = useState(false);
+  const navRef = useRef(null);
+  const searchButtonRef = useRef(null);
+  const productsTimeoutRef = useRef(null);
+
+  const handleMouseEnterProducts = () => {
+    if (productsTimeoutRef.current) {
+      clearTimeout(productsTimeoutRef.current);
+    }
+    setIsProductsHovered(true);
+  };
+
+  const handleMouseLeaveProducts = () => {
+    productsTimeoutRef.current = setTimeout(() => {
+      setIsProductsHovered(false);
+    }, 150);
+  };
+
+  const handleCategorySelect = (category) => {
+    if (productsTimeoutRef.current) {
+      clearTimeout(productsTimeoutRef.current);
+    }
+    setIsProductsHovered(false);
+    setIsMobileMenuOpen(false);
+    navigate(`/products?category=${category}`, {
+      state: { scrollTo: "products", timestamp: Date.now() },
+    });
+    const section = document.getElementById("products-section");
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const closeSearch = useCallback(() => {
+    setIsSearchOpen(false);
+    requestAnimationFrame(() => searchButtonRef.current?.focus());
+  }, []);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsProfileOpen(false);
+    setIsSearchOpen(false);
+    setIsProductsHovered(false);
+  }, [location.pathname, location.search, isAuthenticated]);
+
+  useEffect(() => {
+    return () => {
+      if (productsTimeoutRef.current) {
+        clearTimeout(productsTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return undefined;
+    const handlePointerDown = (event) => {
+      if (!navRef.current?.contains(event.target)) setIsMobileMenuOpen(false);
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setIsMobileMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMobileMenuOpen]);
 
   const handleLogout = () => {
-    authService.logout();
-    navigate('/login');
+    logout();
+    setIsProfileOpen(false);
+    setIsMobileMenuOpen(false);
+    setIsSearchOpen(false);
+    navigate("/login");
+  };
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    // Read the current value straight from the input so the latest typed text
+    // is never lost even if the store state update has not committed yet.
+    const formValue = event.currentTarget?.elements?.search?.value;
+    const keyword = (formValue !== undefined ? formValue : searchQuery).trim();
+    if (!keyword) return;
+    setIsSearchOpen(false);
+    setIsMobileMenuOpen(false);
+    navigate(`/products?search=${encodeURIComponent(keyword)}`);
+    setSearchQuery("");
   };
 
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Brand Logo */}
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 p-2 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform duration-200">
-            <Shield size={20} className="text-slate-950 font-extrabold" />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-extrabold text-lg tracking-tight text-white">
-              Hydra<span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Ranger</span>
-            </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-              Sprint 2
-            </span>
-          </div>
-        </Link>
-
-        {/* Navigation Links */}
-        <nav className="hidden md:flex items-center gap-6">
+    <>
+      <nav
+        ref={navRef}
+        aria-label="เมนูหลัก"
+        className="relative z-50 w-full border-b border-occasion-border/40 bg-surface py-2 sm:py-3 shadow-sm"
+      >
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link
             to="/"
-            className={`flex items-center gap-2 text-sm font-semibold transition-colors duration-150 ${
-              isActive('/') ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
-            }`}
+            aria-label="OCCASION หน้าแรก"
+            className="flex h-12 w-36 shrink-0 items-center justify-center overflow-hidden rounded-lg focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 sm:h-16 sm:w-48"
           >
-            <Home size={18} />
-            Home
+            <img
+              src={assets.newlogo}
+              alt="OCCASION"
+              className="h-auto w-36 max-w-none sm:w-48"
+            />
           </Link>
 
-          <Link
-            to="/dashboard"
-            className={`flex items-center gap-2 text-sm font-semibold transition-colors duration-150 ${
-              isActive('/dashboard') ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <LayoutDashboard size={18} />
-            Dashboard
-          </Link>
-        </nav>
-
-        {/* Auth Actions */}
-        <div className="flex items-center gap-3">
-          {isAuthenticated ? (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>{user?.username || 'HydraUser'}</span>
-              </div>
-              <Button
-                variant="danger"
-                size="sm"
-                icon={LogOut}
-                onClick={handleLogout}
+          <div className="flex flex-row gap-2 items-center md:hidden">
+            <Link
+              to="/cart"
+              className="relative inline-flex h-11 w-11 items-center justify-center rounded-xl text-secondary transition hover:bg-background hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
+              aria-label="ตะกร้าสินค้า"
+            >
+              <img
+                src={assets.cartBag}
+                alt=""
+                aria-hidden="true"
+                className="w-6 h-6"
+              />
+              {totalCartItems > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-extrabold text-white shadow-sm ring-2 ring-surface">
+                  {totalCartItems > 99 ? "99+" : totalCartItems}
+                </span>
+              )}
+            </Link>
+            <button
+              id="hamburger-btn"
+              type="button"
+              onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+              className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl text-secondary transition hover:bg-background hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
+              aria-label={isMobileMenuOpen ? "ปิดเมนู" : "เปิดเมนู"}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-menu"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
               >
-                Logout
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link to="/login">
-                <Button variant="ghost" size="sm" icon={LogIn}>
-                  Sign In
-                </Button>
-              </Link>
-              <Link to="/register">
-                <Button variant="primary" size="sm" icon={UserPlus}>
-                  Register
-                </Button>
-              </Link>
-            </div>
-          )}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div
+            id="mobile-menu"
+            className={`${isMobileMenuOpen ? "flex" : "hidden"} absolute left-0 top-full w-full border-t border-occasion-border/40 bg-surface p-5 shadow-xl md:static md:flex md:w-auto md:items-center md:justify-end md:border-0 md:bg-transparent md:p-0 md:shadow-none`}
+          >
+            <ul className="flex w-full flex-col items-center justify-center gap-2 text-base font-medium md:w-auto md:flex-row md:justify-end md:gap-0 md:divide-x md:divide-occasion-border/45">
+              <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-4 md:pb-0">
+                <button
+                  ref={searchButtonRef}
+                  type="button"
+                  onClick={() => setIsSearchOpen(true)}
+                  className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-0 bg-transparent text-primary transition hover:bg-background focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:h-11 md:w-11"
+                  id="search-button"
+                  aria-label="ค้นหาสินค้า"
+                  aria-haspopup="dialog"
+                  aria-expanded={isSearchOpen}
+                  aria-controls="search-modal"
+                >
+                  <img
+                    src={assets.search}
+                    alt=""
+                    aria-hidden="true"
+                    className="w-4 h-4"
+                  />
+                  <span className="text-primary block text-xl md:hidden font-medium">
+                    ค้นหา
+                  </span>
+                </button>
+              </li>
+
+              <li
+                className="relative group flex w-full flex-col items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:flex-row md:border-b-0 md:px-2 md:pb-0"
+                onMouseEnter={handleMouseEnterProducts}
+                onMouseLeave={handleMouseLeaveProducts}
+              >
+                <Link
+                  to="/products"
+                  aria-current={isActive("/products") ? "page" : undefined}
+                  className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${
+                    isActive("/products")
+                      ? "font-bold text-accent md:bg-accent/10"
+                      : ""
+                  }`}
+                >
+                  สินค้า
+                </Link>
+
+                {/* Mobile categories sub-links */}
+                <div className="flex w-full items-center justify-center gap-2 pt-1 md:hidden">
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect("tops")}
+                    className="flex-1 rounded-lg bg-primary/10 py-1.5 text-center text-xs font-bold text-primary transition hover:bg-primary hover:text-white cursor-pointer"
+                  >
+                    เสื้อ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect("bottoms")}
+                    className="flex-1 rounded-lg bg-accent/10 py-1.5 text-center text-xs font-bold text-accent transition hover:bg-accent hover:text-white cursor-pointer"
+                  >
+                    กางเกง
+                  </button>
+                </div>
+                <div
+                  className={`hidden flex-col gap-1.5 rounded-xl border border-occasion-border/40 bg-surface p-2 shadow-lg md:flex md:absolute md:top-[calc(100%+0.35rem)] md:left-1/2 md:-translate-x-1/2 z-50 w-32 transition-all duration-200 before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 before:content-[''] ${
+                    isProductsHovered
+                      ? "opacity-100 visible translate-y-0 pointer-events-auto"
+                      : "opacity-0 invisible md:-translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:pointer-events-auto"
+                  }`}
+                  onMouseEnter={handleMouseEnterProducts}
+                  onMouseLeave={handleMouseLeaveProducts}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect("tops")}
+                    className="w-full rounded-lg bg-primary px-4 py-2 text-center text-xs font-bold tracking-wide text-white transition-all hover:bg-primary-hover active:scale-[0.98] cursor-pointer sm:text-sm"
+                  >
+                    เสื้อ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect("bottoms")}
+                    className="w-full rounded-lg bg-accent px-4 py-2 text-center text-xs font-bold tracking-wide text-white transition-all hover:bg-accent-hover active:scale-[0.98] cursor-pointer sm:text-sm"
+                  >
+                    กางเกง
+                  </button>
+                </div>
+              </li>
+
+              <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0">
+                <Link
+                  to="/lookbook"
+                  aria-current={isActive("/lookbook") ? "page" : undefined}
+                  className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/lookbook") ? "font-bold text-accent md:bg-accent/10" : ""}`}
+                >
+                  ลุกบุ๊ก
+                </Link>
+              </li>
+
+              <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0">
+                <Link
+                  to="/mix-and-match"
+                  aria-current={isActive("/mix-and-match") ? "page" : undefined}
+                  className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/mix-and-match") ? "font-bold text-accent md:bg-accent/10" : ""}`}
+                >
+                  มิก & แมตช์
+                </Link>
+              </li>
+
+              <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0">
+                <Link
+                  to="/article"
+                  aria-current={isActive("/article") ? "page" : undefined}
+                  className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/article") ? "font-bold text-accent md:bg-accent/10" : ""}`}
+                >
+                  บทความ
+                </Link>
+              </li>
+
+              {!isAuthenticated ? (
+                <li className="flex w-full items-center justify-center border-b border-occasion-border/35 pb-2 md:w-auto md:border-b-0 md:px-2 md:pb-0">
+                  <Link
+                    to="/login"
+                    aria-current={isActive("/login") ? "page" : undefined}
+                    className={`relative w-full rounded-lg px-3 py-2 text-center text-primary transition hover:bg-background hover:text-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45 md:w-auto ${isActive("/login") ? "font-bold text-accent md:bg-accent/10" : ""}`}
+                  >
+                    {"เข้าสู่ระบบ"}
+                  </Link>
+                </li>
+              ) : (
+                <ProfileDropdown
+                  username={user?.username}
+                  membership={user?.membership}
+                  isOpen={isProfileOpen}
+                  onToggle={() => setIsProfileOpen((isOpen) => !isOpen)}
+                  onClose={() => setIsProfileOpen(false)}
+                  onLogout={handleLogout}
+                />
+              )}
+
+              <li className="w-full hidden md:w-auto md:flex justify-center items-center md:pl-5 pt-2 md:pt-0">
+                <Link
+                  to="/cart"
+                  className="relative flex h-11 w-11 items-center justify-center rounded-xl transition hover:bg-background focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/45"
+                  aria-label="ตะกร้าสินค้า"
+                >
+                  <img
+                    src={assets.cartBag}
+                    alt=""
+                    aria-hidden="true"
+                    className="w-6 h-6"
+                  />
+                  {totalCartItems > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-extrabold text-white shadow-sm ring-2 ring-surface">
+                      {totalCartItems > 99 ? "99+" : totalCartItems}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
-      </div>
-    </header>
+      </nav>
+      {/*เมื่อ isSearchOpen เป็นจริง แล้วmodal จะทำงาน*/}
+      {isSearchOpen && (
+        <SearchModal
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          onClose={closeSearch}
+          onSubmit={handleSearchSubmit}
+        />
+      )}
+    </>
   );
 };

@@ -1,37 +1,46 @@
 import { User } from '../models/User.js';
 
 export const getAllUsers = async () => {
-  try {
-    return await User.find().select('-password');
-  } catch {
-    return [
-      {
-        id: 'mock-1',
-        username: 'HydraLeader',
-        email: 'leader@hydraranger.dev',
-        role: 'admin',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'mock-2',
-        username: 'HydraDev',
-        email: 'developer@hydraranger.dev',
-        role: 'user',
-        createdAt: new Date().toISOString()
-      }
-    ];
-  }
+  return User.find().select('-password -sizeProfile');
 };
 
-export const getUserById = async (id) => {
-  try {
-    return await User.findById(id).select('-password');
-  } catch {
-    return {
-      id,
-      username: 'HydraMember',
-      email: 'member@hydraranger.dev',
-      role: 'user'
-    };
-  }
+export const getUserById = async (id, includeSizeProfile = false) => {
+  const fields = includeSizeProfile ? '-password' : '-password -sizeProfile';
+  return User.findById(id).select(fields);
 };
+
+export async function getSizeProfile(userId) {
+  const user = await User.findById(userId).select('sizeProfile');
+  if (!user) throw new Error('User not found');
+  return user.sizeProfile || null;
+}
+
+export async function saveSizeProfile(userId, profileData) {
+  const sizeProfile = {
+    chestCm: Number(profileData.chestCm),
+    waistCm: Number(profileData.waistCm),
+    hipsCm: Number(profileData.hipsCm),
+    preferredFit: profileData.preferredFit,
+    consentGiven: profileData.consentGiven,
+    updatedAt: new Date()
+  };
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { sizeProfile },
+    { new: true, runValidators: true }
+  ).select('sizeProfile');
+
+  if (!user) throw new Error('User not found');
+  return user.sizeProfile;
+}
+
+export async function deleteSizeProfile(userId) {
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { $unset: { sizeProfile: 1 } },
+    { new: true }
+  );
+
+  if (!user) throw new Error('User not found');
+}

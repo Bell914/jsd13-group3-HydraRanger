@@ -1,26 +1,44 @@
 {
-  "name": "hydraranger-server",
+  "name": "occasion-server",
   "version": "1.0.0",
-  "description": "Backend API Server for HydraRanger (Group 3) - Sprint 2",
+  "description": "Backend API Server for OCCASION by HydraRanger Team - Sprint 2",
   "main": "src/server.js",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
+    "dev": "node --watch src/server.js",
     "seed": "node src/scripts/seed.js",
-    "test:conn": "node src/scripts/testConnection.js"
+    "backfill:size-charts": "node src/scripts/backfillSizeCharts.js",
+    "test": "NODE_ENV=production JWT_SECRET=test-only-secret node --test src/tests/*.test.js",
+    "test:conn": "node src/scripts/testConnection.js",
+    "test:loyalty": "node src/scripts/testLoyaltyBackend.js",
+    "test:coupon": "node src/scripts/testCouponBackend.js",
+    "test:security": "NODE_ENV=production JWT_SECRET=test-only-secret node --test src/tests/*.test.js"
   },
-  "keywords": ["express", "rest-api", "nodejs", "hydraranger", "mern"],
+  "keywords": [
+    "express",
+    "rest-api",
+    "nodejs",
+    "occasion",
+    "hydraranger",
+    "mern"
+  ],
   "author": "HydraRanger Team",
   "license": "MIT",
   "dependencies": {
     "bcryptjs": "^3.0.2",
-    "cors": "^2.8.5",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.5",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "multer": "^2.4.0",
+    "nodemailer": "^10.0.10",
+    "validator": "^13.15.35"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"

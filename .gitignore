@@ -36,7 +36,15 @@ Thumbs.db
 # Testing & Coverage
 coverage/
 .nyc_output/
+test-results/
+playwright-report/
+blob-report/
 
 # Temporary files
 tmp/
 temp/
+
+# User-uploaded images (created at runtime by the API upload endpoint)
+client/public/collection-2026/mixandmatch/
+.vercel
+.env*

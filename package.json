@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.1",
+    "daisyui": "^5.7.22"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

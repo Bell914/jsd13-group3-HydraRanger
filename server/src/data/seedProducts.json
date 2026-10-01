@@ -1,0 +1,172 @@
+[
+  {
+    "productId": "top-001",
+    "name": "Oversized T-Shirt",
+    "description": "เสื้อยืดคอตตอนทรง Relaxed Oversized สไตล์เรียบง่าย สวมใส่สบายได้ทุกโอกาส",
+    "category": "tops",
+    "gender": "unisex",
+    "tags": ["casual", "minimal", "relaxed"],
+    "imageUrl": "/collection-2026/products/top-01-off-white.png",
+    "variants": [
+      { "sku": "TOP-001-OW-S", "color": "Off White", "colorCode": "OW", "size": "S", "price": 590, "stockQuantity": 15, "imageUrl": "/collection-2026/products/top-01-off-white.png" },
+      { "sku": "TOP-001-OW-M", "color": "Off White", "colorCode": "OW", "size": "M", "price": 590, "stockQuantity": 12, "imageUrl": "/collection-2026/products/top-01-off-white.png" },
+      { "sku": "TOP-001-OW-L", "color": "Off White", "colorCode": "OW", "size": "L", "price": 590, "stockQuantity": 8, "imageUrl": "/collection-2026/products/top-01-off-white.png" },
+      { "sku": "TOP-001-CH-S", "color": "Charcoal", "colorCode": "CH", "size": "S", "price": 590, "stockQuantity": 10, "imageUrl": "/collection-2026/products/top-01-charcoal.png" },
+      { "sku": "TOP-001-CH-M", "color": "Charcoal", "colorCode": "CH", "size": "M", "price": 590, "stockQuantity": 14, "imageUrl": "/collection-2026/products/top-01-charcoal.png" },
+      { "sku": "TOP-001-CH-L", "color": "Charcoal", "colorCode": "CH", "size": "L", "price": 590, "stockQuantity": 6, "imageUrl": "/collection-2026/products/top-01-charcoal.png" }
+    ]
+  },
+  {
+    "productId": "top-002",
+    "name": "Classic Linen Shirt",
+    "description": "เสื้อเชิ้ตลินินทรง Oversized โปร่งเบา สำหรับลุค Casual และ Minimal",
+    "category": "tops",
+    "gender": "unisex",
+    "tags": ["classic", "casual", "linen"],
+    "imageUrl": "/collection-2026/products/top-02-white.png",
+    "variants": [
+      { "sku": "TOP-002-WH-S", "color": "White", "colorCode": "WH", "size": "S", "price": 790, "stockQuantity": 10, "imageUrl": "/collection-2026/products/top-02-white.png" },
+      { "sku": "TOP-002-WH-M", "color": "White", "colorCode": "WH", "size": "M", "price": 790, "stockQuantity": 8, "imageUrl": "/collection-2026/products/top-02-white.png" },
+      { "sku": "TOP-002-WH-L", "color": "White", "colorCode": "WH", "size": "L", "price": 790, "stockQuantity": 5, "imageUrl": "/collection-2026/products/top-02-white.png" },
+      { "sku": "TOP-002-SB-S", "color": "Sky Blue", "colorCode": "SB", "size": "S", "price": 790, "stockQuantity": 7, "imageUrl": "/collection-2026/products/top-02-sky-blue.png" },
+      { "sku": "TOP-002-SB-M", "color": "Sky Blue", "colorCode": "SB", "size": "M", "price": 790, "stockQuantity": 9, "imageUrl": "/collection-2026/products/top-02-sky-blue.png" },
+      { "sku": "TOP-002-SB-L", "color": "Sky Blue", "colorCode": "SB", "size": "L", "price": 790, "stockQuantity": 4, "imageUrl": "/collection-2026/products/top-02-sky-blue.png" }
+    ]
+  },
+  {
+    "productId": "top-003",
+    "name": "Compact Knit Polo",
+    "description": "เสื้อโปโลผ้าถัก Compact Knit เรียบหรู ให้สัมผัสนุ่มมีน้ำหนัก",
+    "category": "tops",
+    "gender": "unisex",
+    "tags": ["smart-casual", "retro", "knit"],
+    "imageUrl": "/collection-2026/products/top-03-forest.png",
+    "variants": [
+      { "sku": "TOP-003-FG-S", "color": "Forest Green", "colorCode": "FG", "size": "S", "price": 690, "stockQuantity": 12, "imageUrl": "/collection-2026/products/top-03-forest.png" },
+      { "sku": "TOP-003-FG-M", "color": "Forest Green", "colorCode": "FG", "size": "M", "price": 690, "stockQuantity": 10, "imageUrl": "/collection-2026/products/top-03-forest.png" },
+      { "sku": "TOP-003-FG-L", "color": "Forest Green", "colorCode": "FG", "size": "L", "price": 690, "stockQuantity": 6, "imageUrl": "/collection-2026/products/top-03-forest.png" },
+      { "sku": "TOP-003-SD-S", "color": "Sand", "colorCode": "SD", "size": "S", "price": 690, "stockQuantity": 8, "imageUrl": "/collection-2026/products/top-03-sand.png" },
+      { "sku": "TOP-003-SD-M", "color": "Sand", "colorCode": "SD", "size": "M", "price": 690, "stockQuantity": 11, "imageUrl": "/collection-2026/products/top-03-sand.png" },
+      { "sku": "TOP-003-SD-L", "color": "Sand", "colorCode": "SD", "size": "L", "price": 690, "stockQuantity": 5, "imageUrl": "/collection-2026/products/top-03-sand.png" }
+    ]
+  },
+  {
+    "productId": "top-004",
+    "name": "Utility Overshirt",
+    "description": "เสื้อคลุม Utility Overshirt ทรงบ็อกซี พร้อมกระเป๋าหน้า ให้ลุคเวิร์กแวร์ร่วมสมัย",
+    "category": "tops",
+    "gender": "unisex",
+    "tags": ["utility", "layering", "jacket"],
+    "imageUrl": "/collection-2026/products/top-04-navy.png",
+    "variants": [
+      { "sku": "TOP-004-NV-S", "color": "Navy", "colorCode": "NV", "size": "S", "price": 990, "stockQuantity": 8, "imageUrl": "/collection-2026/products/top-04-navy.png" },
+      { "sku": "TOP-004-NV-M", "color": "Navy", "colorCode": "NV", "size": "M", "price": 990, "stockQuantity": 9, "imageUrl": "/collection-2026/products/top-04-navy.png" },
+      { "sku": "TOP-004-NV-L", "color": "Navy", "colorCode": "NV", "size": "L", "price": 990, "stockQuantity": 5, "imageUrl": "/collection-2026/products/top-04-navy.png" },
+      { "sku": "TOP-004-MO-S", "color": "Muted Olive", "colorCode": "MO", "size": "S", "price": 990, "stockQuantity": 7, "imageUrl": "/collection-2026/products/top-04-olive.png" },
+      { "sku": "TOP-004-MO-M", "color": "Muted Olive", "colorCode": "MO", "size": "M", "price": 990, "stockQuantity": 8, "imageUrl": "/collection-2026/products/top-04-olive.png" },
+      { "sku": "TOP-004-MO-L", "color": "Muted Olive", "colorCode": "MO", "size": "L", "price": 990, "stockQuantity": 3, "imageUrl": "/collection-2026/products/top-04-olive.png" }
+    ]
+  },
+  {
+    "productId": "top-005",
+    "name": "Breton Striped Long Sleeve",
+    "description": "เสื้อแขนยาวลายทาง Breton สไตล์เฟรนช์แคชชวล ผ้าเนื้อดีไม่ย้วย",
+    "category": "tops",
+    "gender": "unisex",
+    "tags": ["nautical", "casual", "stripes"],
+    "imageUrl": "/collection-2026/products/top-05-navy-stripe.png",
+    "variants": [
+      { "sku": "TOP-005-NS-S", "color": "Navy Stripe", "colorCode": "NS", "size": "S", "price": 590, "stockQuantity": 15, "imageUrl": "/collection-2026/products/top-05-navy-stripe.png" },
+      { "sku": "TOP-005-NS-M", "color": "Navy Stripe", "colorCode": "NS", "size": "M", "price": 590, "stockQuantity": 12, "imageUrl": "/collection-2026/products/top-05-navy-stripe.png" },
+      { "sku": "TOP-005-NS-L", "color": "Navy Stripe", "colorCode": "NS", "size": "L", "price": 590, "stockQuantity": 9, "imageUrl": "/collection-2026/products/top-05-navy-stripe.png" },
+      { "sku": "TOP-005-RS-S", "color": "Red Stripe", "colorCode": "RS", "size": "S", "price": 590, "stockQuantity": 10, "imageUrl": "/collection-2026/products/top-05-red-stripe.png" },
+      { "sku": "TOP-005-RS-M", "color": "Red Stripe", "colorCode": "RS", "size": "M", "price": 590, "stockQuantity": 11, "imageUrl": "/collection-2026/products/top-05-red-stripe.png" },
+      { "sku": "TOP-005-RS-L", "color": "Red Stripe", "colorCode": "RS", "size": "L", "price": 590, "stockQuantity": 6, "imageUrl": "/collection-2026/products/top-05-red-stripe.png" }
+    ]
+  },
+  {
+    "productId": "bot-001",
+    "name": "Relaxed Straight Jeans",
+    "description": "กางเกงยีนส์เดนิมฟอกทรงตรง Relaxed สวมใส่สบาย แมตช์ได้กับทุกลุค",
+    "category": "bottoms",
+    "gender": "unisex",
+    "tags": ["denim", "relaxed", "jeans"],
+    "imageUrl": "/collection-2026/products/bottom-01-indigo.png",
+    "variants": [
+      { "sku": "BOT-001-MI-S", "color": "Medium Indigo", "colorCode": "MI", "size": "S", "price": 990, "stockQuantity": 10, "imageUrl": "/collection-2026/products/bottom-01-indigo.png" },
+      { "sku": "BOT-001-MI-M", "color": "Medium Indigo", "colorCode": "MI", "size": "M", "price": 990, "stockQuantity": 14, "imageUrl": "/collection-2026/products/bottom-01-indigo.png" },
+      { "sku": "BOT-001-MI-L", "color": "Medium Indigo", "colorCode": "MI", "size": "L", "price": 990, "stockQuantity": 8, "imageUrl": "/collection-2026/products/bottom-01-indigo.png" },
+      { "sku": "BOT-001-WB-S", "color": "Washed Black", "colorCode": "WB", "size": "S", "price": 990, "stockQuantity": 8, "imageUrl": "/collection-2026/products/bottom-01-black.png" },
+      { "sku": "BOT-001-WB-M", "color": "Washed Black", "colorCode": "WB", "size": "M", "price": 990, "stockQuantity": 11, "imageUrl": "/collection-2026/products/bottom-01-black.png" },
+      { "sku": "BOT-001-WB-L", "color": "Washed Black", "colorCode": "WB", "size": "L", "price": 990, "stockQuantity": 6, "imageUrl": "/collection-2026/products/bottom-01-black.png" }
+    ]
+  },
+  {
+    "productId": "bot-002",
+    "name": "Easy Pleated Wide Pants",
+    "description": "กางเกงขากว้างจับจีบหน้า Easy Pleated ทิ้งตัวสวยงาม ใส่สบายไม่อึดอัด",
+    "category": "bottoms",
+    "gender": "unisex",
+    "tags": ["pleated", "wide-leg", "smart-casual"],
+    "imageUrl": "/collection-2026/products/bottom-02-charcoal.png",
+    "variants": [
+      { "sku": "BOT-002-CH-S", "color": "Charcoal", "colorCode": "CH", "size": "S", "price": 890, "stockQuantity": 10, "imageUrl": "/collection-2026/products/bottom-02-charcoal.png" },
+      { "sku": "BOT-002-CH-M", "color": "Charcoal", "colorCode": "CH", "size": "M", "price": 890, "stockQuantity": 12, "imageUrl": "/collection-2026/products/bottom-02-charcoal.png" },
+      { "sku": "BOT-002-CH-L", "color": "Charcoal", "colorCode": "CH", "size": "L", "price": 890, "stockQuantity": 7, "imageUrl": "/collection-2026/products/bottom-02-charcoal.png" },
+      { "sku": "BOT-002-WT-S", "color": "Warm Taupe", "colorCode": "WT", "size": "S", "price": 890, "stockQuantity": 8, "imageUrl": "/collection-2026/products/bottom-02-taupe.png" },
+      { "sku": "BOT-002-WT-M", "color": "Warm Taupe", "colorCode": "WT", "size": "M", "price": 890, "stockQuantity": 10, "imageUrl": "/collection-2026/products/bottom-02-taupe.png" },
+      { "sku": "BOT-002-WT-L", "color": "Warm Taupe", "colorCode": "WT", "size": "L", "price": 890, "stockQuantity": 5, "imageUrl": "/collection-2026/products/bottom-02-taupe.png" }
+    ]
+  },
+  {
+    "productId": "bot-003",
+    "name": "Utility Cargo Tapered Pants",
+    "description": "กางเกงคาร์โก้ขากระบอกเล็ก Tapered ดีไซน์กระเป๋าข้างฟังก์ชันครบ",
+    "category": "bottoms",
+    "gender": "unisex",
+    "tags": ["cargo", "utility", "streetwear"],
+    "imageUrl": "/collection-2026/products/bottom-03-olive.png",
+    "variants": [
+      { "sku": "BOT-003-MO-S", "color": "Muted Olive", "colorCode": "MO", "size": "S", "price": 990, "stockQuantity": 9, "imageUrl": "/collection-2026/products/bottom-03-olive.png" },
+      { "sku": "BOT-003-MO-M", "color": "Muted Olive", "colorCode": "MO", "size": "M", "price": 990, "stockQuantity": 11, "imageUrl": "/collection-2026/products/bottom-03-olive.png" },
+      { "sku": "BOT-003-MO-L", "color": "Muted Olive", "colorCode": "MO", "size": "L", "price": 990, "stockQuantity": 6, "imageUrl": "/collection-2026/products/bottom-03-olive.png" },
+      { "sku": "BOT-003-MB-S", "color": "Matte Black", "colorCode": "MB", "size": "S", "price": 990, "stockQuantity": 12, "imageUrl": "/collection-2026/products/bottom-03-black.png" },
+      { "sku": "BOT-003-MB-M", "color": "Matte Black", "colorCode": "MB", "size": "M", "price": 990, "stockQuantity": 14, "imageUrl": "/collection-2026/products/bottom-03-black.png" },
+      { "sku": "BOT-003-MB-L", "color": "Matte Black", "colorCode": "MB", "size": "L", "price": 990, "stockQuantity": 8, "imageUrl": "/collection-2026/products/bottom-03-black.png" }
+    ]
+  },
+  {
+    "productId": "bot-004",
+    "name": "Nylon Easy Shorts",
+    "description": "กางเกงขาสั้นผ้าไนลอนเบาสบาย แห้งไว พร้อมเอวยางยืดและเชือกผูก",
+    "category": "bottoms",
+    "gender": "unisex",
+    "tags": ["shorts", "nylon", "summer"],
+    "imageUrl": "/collection-2026/products/bottom-04-navy.png",
+    "variants": [
+      { "sku": "BOT-004-DN-S", "color": "Deep Navy", "colorCode": "DN", "size": "S", "price": 590, "stockQuantity": 16, "imageUrl": "/collection-2026/products/bottom-04-navy.png" },
+      { "sku": "BOT-004-DN-M", "color": "Deep Navy", "colorCode": "DN", "size": "M", "price": 590, "stockQuantity": 18, "imageUrl": "/collection-2026/products/bottom-04-navy.png" },
+      { "sku": "BOT-004-DN-L", "color": "Deep Navy", "colorCode": "DN", "size": "L", "price": 590, "stockQuantity": 10, "imageUrl": "/collection-2026/products/bottom-04-navy.png" },
+      { "sku": "BOT-004-TC-S", "color": "Terracotta", "colorCode": "TC", "size": "S", "price": 590, "stockQuantity": 10, "imageUrl": "/collection-2026/products/bottom-04-terracotta.png" },
+      { "sku": "BOT-004-TC-M", "color": "Terracotta", "colorCode": "TC", "size": "M", "price": 590, "stockQuantity": 12, "imageUrl": "/collection-2026/products/bottom-04-terracotta.png" },
+      { "sku": "BOT-004-TC-L", "color": "Terracotta", "colorCode": "TC", "size": "L", "price": 590, "stockQuantity": 7, "imageUrl": "/collection-2026/products/bottom-04-terracotta.png" }
+    ]
+  },
+  {
+    "productId": "bot-005",
+    "name": "Jersey Daily Jogger",
+    "description": "กางเกงจ็อกเกอร์ผ้าเจอร์ซีย์หนานุ่ม ทรงสวย เหมาะกับทั้งออกกำลังกายและวันพักผ่อน",
+    "category": "bottoms",
+    "gender": "unisex",
+    "tags": ["athleisure", "jogger", "comfort"],
+    "imageUrl": "/collection-2026/products/bottom-05-gray.png",
+    "variants": [
+      { "sku": "BOT-005-HG-S", "color": "Heather Gray", "colorCode": "HG", "size": "S", "price": 690, "stockQuantity": 14, "imageUrl": "/collection-2026/products/bottom-05-gray.png" },
+      { "sku": "BOT-005-HG-M", "color": "Heather Gray", "colorCode": "HG", "size": "M", "price": 690, "stockQuantity": 15, "imageUrl": "/collection-2026/products/bottom-05-gray.png" },
+      { "sku": "BOT-005-HG-L", "color": "Heather Gray", "colorCode": "HG", "size": "L", "price": 690, "stockQuantity": 9, "imageUrl": "/collection-2026/products/bottom-05-gray.png" },
+      { "sku": "BOT-005-FG-S", "color": "Forest Green", "colorCode": "FG", "size": "S", "price": 690, "stockQuantity": 10, "imageUrl": "/collection-2026/products/bottom-05-forest.png" },
+      { "sku": "BOT-005-FG-M", "color": "Forest Green", "colorCode": "FG", "size": "M", "price": 690, "stockQuantity": 12, "imageUrl": "/collection-2026/products/bottom-05-forest.png" },
+      { "sku": "BOT-005-FG-L", "color": "Forest Green", "colorCode": "FG", "size": "L", "price": 690, "stockQuantity": 5, "imageUrl": "/collection-2026/products/bottom-05-forest.png" }
+    ]
+  }
+]

@@ -1,195 +1,168 @@
-# 📖 REST API Specification - HydraRanger Backend
+# OCCASION API Specification — Sprint 3
 
-Base URL: `http://localhost:5000/api`
+Base URL ในเครื่อง: `http://localhost:5002/api`
 
----
+JSON ใช้ `camelCase` ยกเว้นโครงสร้าง Product รุ่นปัจจุบันที่คงชื่อฐานข้อมูลบางฟิลด์ เช่น `category_id`, `is_active`, `stock_quantity` และ `size_chart`
 
-## 🔐 1. Authentication Endpoints
+API ที่ต้อง Login อ่าน HttpOnly cookie แยกระหว่าง Customer (`occasion_session`) และ Admin (`occasion_admin_session`) Frontend ต้องส่ง `credentials: include` และยังรองรับ `Authorization: Bearer <token>` สำหรับเครื่องมือภายนอก
 
-### 1.1 Register User
-- **Method**: `POST`
-- **Path**: `/auth/register`
-- **Auth Required**: No
-- **Request Body**:
+## Public API
+
+| Method | Path | หน้าที่ |
+| --- | --- | --- |
+| GET | `/` | ข้อมูล API และลิงก์ endpoint หลัก |
+| GET | `/health` | สถานะ Server, Database และบริการที่ตั้งค่าไว้ |
+| GET | `/products`, `/products/:id` | สินค้าที่เปิดขายและรายละเอียดสินค้า |
+| GET | `/lookbooks`, `/lookbooks/:id` | Lookbook ที่เปิดแสดง |
+| GET | `/articles`, `/articles/:id` | บทความที่เผยแพร่แล้ว |
+| GET | `/uploads/:id` | อ่านรูปจาก GridFS |
+| POST | `/recommend` | วิเคราะห์รูป Mix & Match สูงสุด 2 รูป |
+| POST | `/contact` | ส่งแบบฟอร์มติดต่อหลังผ่าน validation |
+
+`POST /recommend` รับ multipart fields ชื่อ `top` และ `bottom` อย่างน้อยหนึ่งรูป รองรับ JPG, PNG, WebP และ GIF ไม่เกิน 5 MB ต่อไฟล์ ระบบตรวจ MIME และ file signature ก่อนส่งให้ Gemini หากรูปไม่ใช่เสื้อผ้าจะคืน `422` พร้อม `data.invalidSlots`
+
+## Authentication
+
+| Method | Path | สิทธิ์/ผลลัพธ์ |
+| --- | --- | --- |
+| POST | `/auth/register` | สมัคร Customer และตั้ง session |
+| POST | `/auth/login` | Login Customer |
+| POST | `/auth/refresh` | ต่ออายุ session |
+| POST | `/auth/logout` | ล้าง Customer session |
+| GET | `/auth/me` | Customer ที่ Login |
+| PUT | `/auth/profile` | แก้ Profile |
+| POST | `/auth/change-password` | เปลี่ยนรหัสผ่านและยกเลิก token เก่า |
+| POST | `/auth/forgot-password` | ขออีเมล Reset Password |
+| POST | `/auth/reset-password/:token` | ตั้งรหัสผ่านใหม่ด้วย token |
+| POST | `/admin/auth/login` | Login Admin และตั้ง Admin session |
+| GET | `/admin/auth/me` | ตรวจ Admin session |
+| POST | `/admin/auth/logout` | ล้าง Admin session |
+
+SMTP ต้องตั้ง `SMTP_USER` และ `SMTP_PASS` ก่อน Forgot Password และ Welcome Coupon จะส่งอีเมลจริง
+
+## Customer API
+
+| Method | Path | หน้าที่ |
+| --- | --- | --- |
+| GET, POST | `/users/addresses` | อ่าน/เพิ่มที่อยู่ของ Customer |
+| PUT, DELETE | `/users/addresses/:addressId` | แก้/ลบที่อยู่ |
+| PATCH | `/users/addresses/:addressId/default` | ตั้งที่อยู่หลัก |
+| GET, PUT, DELETE | `/users/me/size-profile` | อ่าน/บันทึก/ลบ Size Profile ของตนเอง |
+| POST | `/lookbooks/:id/favorite` | เพิ่มหรือลบ Favorite Lookbook |
+| POST | `/orders` | สร้าง Order จากข้อมูลที่ Server ตรวจราคาและ stock แล้ว |
+| GET | `/orders/my` | Order History ของ Customer |
+| GET | `/orders/my/:id` | รายละเอียด Order ของตนเอง |
+| PATCH | `/orders/my/:id/cancel` | ยกเลิก Order ตามสถานะที่ระบบอนุญาต |
+| POST | `/orders/my/:id/confirm-payment` | ยืนยันการชำระเงินจำลอง แล้วเปลี่ยน Order จาก `pending` เป็น `paid` |
+| POST | `/coupons/validate` | ตรวจ Coupon กับผู้ใช้และยอดสั่งซื้อ |
+
+ระบบชำระเงินเป็นโหมดเดโม ไม่มี payment gateway และไม่มีการตัดเงินจริง รองรับ `paymentMethod` เพียง `promptpay` และ `credit-card` เท่านั้น โดย `POST /orders` จะสร้าง Order สถานะ `pending` และ `POST /orders/my/:id/confirm-payment` จะเปลี่ยนเป็น `paid` ซึ่งเป็นจุดที่ loyalty, coupon และสต็อกถูกประมวลผล ถ้าไม่ยืนยันภายใน 30 นาทีระบบจะยกเลิก Order และคืนสต็อกอัตโนมัติ
+
+`POST /orders/my/:id/confirm-payment` เปิดให้บริการด้วยตัวแปร `DEMO_PAYMENT_ENABLED` เมื่อปิดจะตอบ `503` และไม่เปลี่ยนสถานะ Order โดยค่าเริ่มต้นคือปิดเมื่อ `NODE_ENV=production` และเปิดเมื่อเป็น `development` หรือ `test` สถานะปัจจุบันรายงานที่ `GET /health` ในฟิลด์ `services.demoPaymentEnabled`
+
+### Size Profile
+
 ```json
 {
-  "username": "johndoe",
-  "email": "johndoe@example.com",
-  "password": "SecurePassword123!",
-  "role": "user"
-}
-```
-- **Response (201 Created)**:
-```json
-{
-  "success": true,
-  "message": "User registered successfully",
-  "data": {
-    "user": {
-      "id": "64f1a2b3c4d5e6f7a8b9c0d1",
-      "username": "johndoe",
-      "email": "johndoe@example.com",
-      "role": "user",
-      "createdAt": "2026-08-24T10:00:00.000Z"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-### 1.2 Login User
-- **Method**: `POST`
-- **Path**: `/auth/login`
-- **Auth Required**: No
-- **Request Body**:
-```json
-{
-  "email": "johndoe@example.com",
-  "password": "SecurePassword123!"
-}
-```
-- **Response (200 OK)**:
-```json
-{
-  "success": true,
-  "message": "Login successful",
-  "data": {
-    "user": {
-      "id": "64f1a2b3c4d5e6f7a8b9c0d1",
-      "username": "johndoe",
-      "email": "johndoe@example.com",
-      "role": "user"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-### 1.3 Get Current User Profile (Me)
-- **Method**: `GET`
-- **Path**: `/auth/me`
-- **Auth Required**: Yes (`Bearer <token>`)
-- **Response (200 OK)**:
-```json
-{
-  "success": true,
-  "data": {
-    "id": "64f1a2b3c4d5e6f7a8b9c0d1",
-    "username": "johndoe",
-    "email": "johndoe@example.com",
-    "role": "user"
-  }
+  "chestCm": 90,
+  "waistCm": 76,
+  "hipsCm": 96,
+  "preferredFit": "regular",
+  "consentGiven": true
 }
 ```
 
----
+- `preferredFit` รองรับ `fitted`, `regular`, `relaxed`
+- ต้องยืนยัน Consent ก่อนบันทึก
+- Customer เข้าถึงได้เฉพาะข้อมูลตนเอง และ Admin Customer API ไม่ส่ง `sizeProfile`
+- Product Detail ใช้ `size_chart` ก่อน หากไม่มีจะใช้เกณฑ์ S/M/L กลางและแจ้งระดับความมั่นใจ
+- คำแนะนำเลือกเฉพาะไซส์ของสินค้า ส่วนสต็อกของสี/ไซส์แสดงเป็นสถานะแยกกัน
 
-## 👥 2. User Management Endpoints
+## Admin API
 
-### 2.1 Get All Users
-- **Method**: `GET`
-- **Path**: `/users`
-- **Auth Required**: Yes (`Bearer <token>`)
-- **Response (200 OK)**:
+ทุก endpoint ด้านล่างต้องมี Admin session และ role `admin`
+
+| Method | Path | หน้าที่ |
+| --- | --- | --- |
+| GET | `/admin/dashboard` | ยอดสรุปสำหรับ Dashboard |
+| GET, POST | `/admin/products` | อ่านสินค้าทั้งหมด/เพิ่มสินค้า |
+| PUT, DELETE | `/admin/products/:id` | แก้ไข/ซ่อนสินค้า |
+| GET | `/admin/orders` | อ่าน Order ทั้งหมด |
+| PATCH | `/admin/orders/:id/status` | เปลี่ยนสถานะ Order |
+| GET | `/admin/customers` | อ่าน Customer โดยไม่ส่ง Size Profile |
+| PUT | `/admin/customers/:id` | แก้ username/avatar |
+| PATCH | `/admin/customers/:id/status` | ระงับ/เปิดบัญชี |
+| GET | `/users` | Legacy Admin User list |
+| GET | `/users/:id` | Customer อ่านได้เฉพาะตนเอง; Admin อ่านผู้ใช้รายคน |
+| GET, POST | `/admin/lookbooks` | อ่านทั้งหมด/เพิ่ม Lookbook |
+| PUT | `/admin/lookbooks/:id` | แก้ Lookbook |
+| PATCH | `/admin/lookbooks/:id/status` | เปิด/ซ่อน Lookbook |
+| GET, POST | `/admin/articles` | อ่านทั้งหมด/เพิ่มบทความ |
+| PUT | `/admin/articles/:id` | แก้บทความ |
+| PATCH | `/admin/articles/:id/status` | เผยแพร่/ซ่อนบทความ |
+| GET, POST | `/admin/coupons` | อ่าน/เพิ่ม General Coupon |
+| PUT | `/admin/coupons/:id` | แก้ Coupon |
+| PATCH | `/admin/coupons/:id/status` | เปิด/ปิด Coupon |
+| POST | `/uploads` | อัปโหลดรูปหนึ่งไฟล์เข้า GridFS |
+
+Review endpoints ไม่มีอยู่ในระบบปัจจุบัน
+
+## Product Payload
+
 ```json
 {
-  "success": true,
-  "count": 2,
-  "data": [
+  "productId": "TOP-001",
+  "category_id": "CATEGORY_MONGODB_ID",
+  "title": "Everyday T-Shirt",
+  "description": "เสื้อยืด Unisex",
+  "tags": ["casual"],
+  "gender": "unisex",
+  "is_active": true,
+  "images": [
+    {"image_url": "/api/uploads/IMAGE_ID", "display_order": 0}
+  ],
+  "variants": [
     {
-      "id": "64f1a2b3c4d5e6f7a8b9c0d1",
-      "username": "johndoe",
-      "email": "johndoe@example.com",
-      "role": "user"
+      "sku": "TOP-WHT-M",
+      "size_or_color": "M / White",
+      "size": "M",
+      "color": "White",
+      "price": 590,
+      "stock_quantity": 10
+    }
+  ],
+  "size_chart": [
+    {
+      "size_name": "M",
+      "garment_chest_actual": 104,
+      "garment_waist_actual": 100,
+      "garment_hips_actual": 104
     }
   ]
 }
 ```
 
-### 2.2 Get User by ID
-- **Method**: `GET`
-- **Path**: `/users/:id`
-- **Auth Required**: Yes (`Bearer <token>`)
+- Product ต้องมีอย่างน้อยหนึ่ง variant
+- ราคาและ stock ต้องไม่ติดลบ; API ตรวจราคาและรูปแบบข้อมูลเพิ่มเติม
+- ไม่ส่ง `size_chart` ตอนแก้ไขหมายถึงเก็บค่าเดิม ส่ง array เพื่อแทนที่ และส่ง `[]` เพื่อล้าง
+- `DELETE /admin/products/:id` เป็น soft delete โดยปิด `is_active`
 
----
+## Rate Limits
 
-## 📦 3. Items / Resources Endpoints (CRUD)
+| Endpoint | Limit ต่อ IP |
+| --- | --- |
+| Customer Login | 20 ครั้ง / 15 นาที |
+| Admin Login | 10 ครั้ง / 15 นาที |
+| Register | 10 ครั้ง / 1 ชั่วโมง |
+| Forgot Password | 5 ครั้ง / 1 ชั่วโมง |
+| Reset Password | 10 ครั้ง / 1 ชั่วโมง |
+| Mix & Match | 10 ครั้ง / 15 นาที |
+| Admin Upload | 30 ครั้ง / 15 นาที |
 
-### 3.1 Get All Items
-- **Method**: `GET`
-- **Path**: `/items`
-- **Query Parameters**:
-  - `page` (optional, default: 1)
-  - `limit` (optional, default: 10)
-  - `category` (optional)
-  - `search` (optional)
-- **Response (200 OK)**:
-```json
-{
-  "success": true,
-  "count": 3,
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "totalPages": 1
-  },
-  "data": [
-    {
-      "id": "item-101",
-      "title": "Hydra Task Master",
-      "description": "Task management module for Sprint 2",
-      "category": "Development",
-      "status": "In Progress",
-      "priority": "High",
-      "createdBy": "johndoe",
-      "createdAt": "2026-08-24T10:30:00.000Z"
-    }
-  ]
-}
-```
+ตัวนับใช้ MongoDB ร่วมกันเมื่อฐานข้อมูลพร้อม และ fallback เป็น memory ของ process เมื่อ shared store ใช้งานไม่ได้
 
-### 3.2 Create New Item
-- **Method**: `POST`
-- **Path**: `/items`
-- **Auth Required**: Yes (`Bearer <token>`)
-- **Request Body**:
-```json
-{
-  "title": "Hydra Task Master",
-  "description": "Task management module for Sprint 2",
-  "category": "Development",
-  "status": "In Progress",
-  "priority": "High"
-}
-```
-- **Response (201 Created)**:
-```json
-{
-  "success": true,
-  "message": "Item created successfully",
-  "data": {
-    "id": "item-101",
-    "title": "Hydra Task Master",
-    "description": "Task management module for Sprint 2",
-    "category": "Development",
-    "status": "In Progress",
-    "priority": "High",
-    "createdAt": "2026-08-24T10:30:00.000Z"
-  }
-}
-```
+## ขอบเขตที่ยังไม่มี
 
-### 3.3 Get Item by ID
-- **Method**: `GET`
-- **Path**: `/items/:id`
-- **Auth Required**: No
-
-### 3.4 Update Item
-- **Method**: `PUT` / `PATCH`
-- **Path**: `/items/:id`
-- **Auth Required**: Yes (`Bearer <token>`)
-
-### 3.5 Delete Item
-- **Method**: `DELETE`
-- **Path**: `/items/:id`
-- **Auth Required**: Yes (`Bearer <token>`)
+- Cart อยู่ใน Customer Client; ยังไม่มี Cart model หรือ `/cart` route
+- Product flow ใช้ `/products`; scaffold `/items` ถูกนำออกแล้ว
+- Review feature ถูกถอดออกแล้ว
