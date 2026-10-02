@@ -1,6 +1,6 @@
 import app from "./app.js";
 import { ENV } from "./config/env.js";
-import { connectDB } from "./config/db.js";
+import { connectDB, disconnectDB } from "./config/db.js";
 import { cleanupExpiredPendingPayments } from "./services/orderService.js";
 
 const PAYMENT_CLEANUP_INTERVAL = 60 * 1000;
@@ -31,11 +31,21 @@ const startServer = async () => {
   });
 
   // Graceful shutdown handling
+  let shutdownStarted = false;
   const handleShutdown = (signal) => {
+    if (shutdownStarted) return;
+    shutdownStarted = true;
     console.log(`\n🛑 Received ${signal}. Shutting down gracefully...`);
-    server.close(() => {
-      console.log("🏁 HTTP Server closed.");
-      process.exit(0);
+    clearInterval(paymentCleanupTimer);
+    server.close(async () => {
+      try {
+        await disconnectDB();
+        console.log("🏁 HTTP Server and MongoDB connection closed.");
+        process.exit(0);
+      } catch (error) {
+        console.error("Could not close MongoDB cleanly:", error);
+        process.exit(1);
+      }
     });
   };
 
