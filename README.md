@@ -158,13 +158,4 @@ npm run backfill:size-charts --prefix server
 - [Review Slides Outline](docs/REVIEW_SLIDES.md)
 - [Contribution Guidelines](CONTRIBUTING.md)
 
-## Checklist ก่อน Demo หรือ Deploy
-
-- `/api/health` ต้องรายงานว่า Server และ Database พร้อมใช้งาน และ `services.demoPaymentEnabled` เป็น `true`
-- ตั้ง SMTP และ `DEMO_PAYMENT_ENABLED=true` ให้ครบก่อนทดสอบ Checkout และอีเมลจริง
-- ทดสอบ Checkout ทั้ง 2 ช่องทาง (PromptPay QR และบัตรเดโม) แล้วเช็คว่า order เปลี่ยนเป็น `paid` พร้อมเพิ่มยอดสะสมสมาชิก
-- ตั้ง `GEMINI_API_KEY` ก่อนทดสอบ Mix & Match
-- ตรวจว่าสินค้า Tops/Bottoms บน staging มี `size_chart`
-- ทดสอบ Customer/Admin session, Product, Checkout, Upload และ Rate Limit บน environment เป้าหมาย
-
 โปรเจกต์นี้จัดทำเพื่อการเรียนรู้และฝึกทำงานเป็นทีมในหลักสูตร JSD13
