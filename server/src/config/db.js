@@ -27,7 +27,6 @@ export function buildMongoOptions(env = ENV) {
     heartbeatFrequencyMS: 10000,
   };
 }
-
 function scheduleReconnect() {
   if (!reconnectEnabled || reconnectTimer || connecting) return;
   reconnectTimer = setTimeout(async () => {
