@@ -8,6 +8,25 @@ let reconnectEnabled = true;
 
 const RECONNECT_DELAY_MS = 5000;
 
+function parsePoolSetting(value, fallback, minimum) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed >= minimum ? parsed : fallback;
+}
+
+export function buildMongoOptions(env = ENV) {
+  const maxPoolSize = parsePoolSetting(env.MONGODB_MAX_POOL_SIZE, 3, 1);
+  const requestedMinPoolSize = parsePoolSetting(env.MONGODB_MIN_POOL_SIZE, 0, 0);
+
+  return {
+    serverSelectionTimeoutMS: 10000,
+    bufferCommands: true,
+    maxPoolSize,
+    minPoolSize: Math.min(requestedMinPoolSize, maxPoolSize),
+    maxIdleTimeMS: parsePoolSetting(env.MONGODB_MAX_IDLE_TIME_MS, 60000, 10000),
+    waitQueueTimeoutMS: 5000,
+    heartbeatFrequencyMS: 10000,
+  };
+}
 function scheduleReconnect() {
   if (!reconnectEnabled || reconnectTimer || connecting) return;
   reconnectTimer = setTimeout(async () => {
@@ -30,13 +49,7 @@ export const connectDB = async () => {
   mongoose.set("bufferTimeoutMS", 3000);
 
   try {
-    const conn = await mongoose.connect(ENV.MONGODB_URI, {
-      serverSelectionTimeoutMS: 10000,
-      bufferCommands: true,
-      maxPoolSize: 10,
-      minPoolSize: 1,
-      heartbeatFrequencyMS: 10000,
-    });
+    const conn = await mongoose.connect(ENV.MONGODB_URI, buildMongoOptions());
     isConnected = true;
     console.log(`✅ MongoDB Connected successfully: ${conn.connection.host}`);
   } catch (error) {
